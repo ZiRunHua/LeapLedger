@@ -1,0 +1,33 @@
+Redis:
+  Db: 0
+  # Addr未空则表示不适用redis
+  Addr: ""
+  Password: ""
+
+System:
+  Env: public
+  Addr: 8080
+  RouterPrefix: ""
+
+Mysql:
+  Path: "202.23.32.1"
+  Port: "3306"
+  Config: "parseTime=True&loc=Local"
+  DbName: "keep_account"
+  Username: "root"
+  Password: "123456"
+
+Captcha:
+  KeyLong: 6
+  ImgWidth: 180
+  ImgHeight: 50
+  OpenCaptcha: 0
+  OpenCaptchaTimeout: 3600
+  EmailCaptcha: 0
+  EmailCaptchaTimeOut: 3600
+ThirdParty:
+  # WeCom目前只用于邮件的发生
+  # CorpId和CorpSecret未空则表示未开启服务
+  WeCom:
+    CorpId: ""
+    CorpSecret: ""
