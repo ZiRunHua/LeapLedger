@@ -1,4 +1,4 @@
-package v1
+package util
 
 import (
 	"KeepAccount/api/response"
@@ -7,14 +7,23 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func checkAccountBelong(accountId interface{}, ctx *gin.Context) (bool, *accountModel.Account) {
+type _checkFunc interface {
+	AccountBelong(accountId interface{}, ctx *gin.Context) (bool, *accountModel.Account)
+}
+
+type checkFunc struct {
+}
+
+var CheckFunc = new(checkFunc)
+
+func (ckf *checkFunc) AccountBelong(accountId interface{}, ctx *gin.Context) (bool, *accountModel.Account) {
 	var account accountModel.Account
 	err := global.GvaDb.First(&account, accountId).Error
 	if err != nil {
 		response.FailToError(ctx, err)
 		return false, nil
 	}
-	if account.UserId != current.GetUserId(ctx) {
+	if account.UserId != ctx.MustGet(_UserId) {
 		response.Forbidden(ctx)
 		return false, nil
 	}

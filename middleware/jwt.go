@@ -1,23 +1,17 @@
 package middleware
 
 import (
+	"KeepAccount/api/response"
+	apiUtil "KeepAccount/api/util"
 	"KeepAccount/util"
-	"net/http"
-
 	"github.com/gin-gonic/gin"
 )
 
 func JWTAuth() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
-		token := ctx.Request.Header.Get("authorization")
+		token := apiUtil.ContextFunc.GetToken(ctx)
 		if token == "" {
-			ctx.JSON(
-				http.StatusUnauthorized, gin.H{
-					"msg":  "未登录或非法访问",
-					"data": gin.H{},
-				},
-			)
-			ctx.Abort()
+			response.Forbidden(ctx)
 			return
 		}
 		jwt := util.NewJWT()
@@ -25,26 +19,14 @@ func JWTAuth() gin.HandlerFunc {
 		claims, err := jwt.ParseToken(token)
 		if err != nil {
 			if err == util.TokenExpired {
-				ctx.JSON(
-					http.StatusUnauthorized, gin.H{
-						"data": gin.H{},
-						"msg":  "授权已过期",
-					},
-				)
-				ctx.Abort()
+				response.TokenExpired(ctx)
 				return
 			}
-			ctx.JSON(
-				http.StatusUnauthorized, gin.H{
-					"data": gin.H{},
-					"msg":  err.Error(),
-				},
-			)
-			ctx.Abort()
+			response.FailToError(ctx, err)
 			return
 		}
-		ctx.Set("claims", claims)
-		ctx.Set("userId", claims.UserId)
+		apiUtil.ContextFunc.SetUserId(claims.UserId, ctx)
+		apiUtil.ContextFunc.SetClaims(claims, ctx)
 		ctx.Next()
 	}
 }

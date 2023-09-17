@@ -100,7 +100,7 @@ func (p *ProductApi) GetMappingTree(ctx *gin.Context) {
 		response.FailToParameter(ctx, err)
 		return
 	}
-	if pass, _ := checkAccountBelong(requestData.AccountId, ctx); pass == false {
+	if pass, _ := checkFunc.AccountBelong(requestData.AccountId, ctx); pass == false {
 		response.Forbidden(ctx)
 		return
 	}

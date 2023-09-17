@@ -25,7 +25,7 @@ func (catApi *CategoryApi) CreateOne(ctx *gin.Context) {
 	}
 	father := new(categoryModel.Father)
 	err := father.SelectById(requestData.FatherId, false)
-	if pass, _ := checkAccountBelong(father.AccountID, ctx); false == pass {
+	if pass, _ := checkFunc.AccountBelong(father.AccountID, ctx); false == pass {
 		return
 	}
 	if err != nil {
@@ -222,7 +222,7 @@ func (catApi *CategoryApi) Delete(ctx *gin.Context) {
 		response.FailToError(ctx, err)
 		return
 	}
-	if pass, _ := checkAccountBelong(category.AccountID, ctx); pass == false {
+	if pass, _ := checkFunc.AccountBelong(category.AccountID, ctx); pass == false {
 		return
 	}
 	err = categoryService.Delete(&category)
@@ -240,7 +240,7 @@ func (catApi *CategoryApi) DeleteFather(ctx *gin.Context) {
 		response.FailToError(ctx, err)
 		return
 	}
-	if pass, _ := checkAccountBelong(father.AccountID, ctx); pass == false {
+	if pass, _ := checkFunc.AccountBelong(father.AccountID, ctx); pass == false {
 		return
 	}
 	err = global.GvaDb.Transaction(

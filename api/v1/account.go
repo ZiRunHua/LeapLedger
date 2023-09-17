@@ -17,12 +17,12 @@ func (a *AccountApi) CreateOne(ctx *gin.Context) {
 		response.FailToParameter(ctx, err)
 		return
 	}
-	user, err := current.GetUser(ctx)
+	user, err := contextFunc.GetUser(ctx)
 	if err != nil {
 		response.FailToError(ctx, err)
 		return
 	}
-	account, err := accountService.CreateOne(user, requestData.Name)
+	account, err := accountService.Base.CreateOne(user, requestData.Name)
 	if err != nil {
 		response.FailToError(ctx, err)
 		return
@@ -42,7 +42,7 @@ func (a *AccountApi) Update(ctx *gin.Context) {
 		response.FailToParameter(ctx, err)
 		return
 	}
-	pass, account := checkAccountBelong(ctx.Param("id"), ctx)
+	pass, account := checkFunc.AccountBelong(ctx.Param("id"), ctx)
 	if false == pass {
 		return
 	}
@@ -55,7 +55,7 @@ func (a *AccountApi) Update(ctx *gin.Context) {
 }
 
 func (a *AccountApi) Delete(ctx *gin.Context) {
-	pass, account := checkAccountBelong(ctx.Param("id"), ctx)
+	pass, account := checkFunc.AccountBelong(ctx.Param("id"), ctx)
 	if false == pass {
 		return
 	}
@@ -69,7 +69,7 @@ func (a *AccountApi) Delete(ctx *gin.Context) {
 
 func (a *AccountApi) GetList(ctx *gin.Context) {
 	var account accountModel.Account
-	rows, err := global.GvaDb.Model(accountModel.Account{}).Where("user_id = ?", current.GetUserId(ctx)).Rows()
+	rows, err := global.GvaDb.Model(accountModel.Account{}).Where("user_id = ?", contextFunc.GetUserId(ctx)).Rows()
 	if err != nil {
 		response.FailToError(ctx, err)
 		return
@@ -93,7 +93,7 @@ func (a *AccountApi) GetList(ctx *gin.Context) {
 }
 
 func (a *AccountApi) GetOne(ctx *gin.Context) {
-	pass, account := checkAccountBelong(ctx.Param("id"), ctx)
+	pass, account := checkFunc.AccountBelong(ctx.Param("id"), ctx)
 	if false == pass {
 		return
 	}

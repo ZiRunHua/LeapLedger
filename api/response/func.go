@@ -75,6 +75,10 @@ func Forbidden(ctx *gin.Context) {
 	ResponseAndAbort(403, map[string]interface{}{}, "无权访问", ctx)
 }
 
+func TokenExpired(ctx *gin.Context) {
+	ResponseAndAbort(403, map[string]interface{}{}, "token expired", ctx)
+}
+
 func logError(ctx *gin.Context, err error) {
 	reqMethod := ctx.Request.Method
 	reqPath := ctx.Request.URL.Path

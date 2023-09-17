@@ -19,7 +19,7 @@ func (a *TransactionApi) CreateOne(ctx *gin.Context) {
 	if err := ctx.ShouldBindJSON(&requestData); err != nil {
 		response.FailToParameter(ctx, err)
 	}
-	if pass, _ := checkAccountBelong(requestData.AccountId, ctx); false == pass {
+	if pass, _ := checkFunc.AccountBelong(requestData.AccountId, ctx); false == pass {
 		return
 	}
 
@@ -52,7 +52,7 @@ func (a *TransactionApi) Update(ctx *gin.Context) {
 	if err := ctx.ShouldBindJSON(&requestData); err != nil {
 		response.FailToParameter(ctx, err)
 	}
-	if pass, _ := checkAccountBelong(requestData.AccountId, ctx); false == pass {
+	if pass, _ := checkFunc.AccountBelong(requestData.AccountId, ctx); false == pass {
 		return
 	}
 
@@ -76,7 +76,7 @@ func (a *TransactionApi) Delete(ctx *gin.Context) {
 	if err := ctx.ShouldBindJSON(&requestData); err != nil {
 		response.FailToParameter(ctx, err)
 	}
-	if pass, _ := checkAccountBelong(requestData.AccountId, ctx); false == pass {
+	if pass, _ := checkFunc.AccountBelong(requestData.AccountId, ctx); false == pass {
 		return
 	}
 

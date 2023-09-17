@@ -74,7 +74,7 @@ func (p *PublicApi) Login(ctx *gin.Context) {
 	//	response.FailWithMessage("验证码错误", ctx)
 	//	return
 	//}
-	client := current.GetClient(ctx)
+	client := contextFunc.GetClient(ctx)
 	currentAccount, token, err := userService.Login(request.Username, request.Password, client)
 	if err != nil {
 		// 验证码次数+1

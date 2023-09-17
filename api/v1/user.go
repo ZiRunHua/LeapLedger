@@ -25,13 +25,13 @@ func (u *UserApi) SetCurrentAccount(ctx *gin.Context) {
 		return
 	}
 	var user *userModel.User
-	if user, err = current.GetUser(ctx); err != nil {
+	if user, err = contextFunc.GetUser(ctx); err != nil {
 		response.FailToError(ctx, err)
 		return
 	}
 	account.BeginTransaction()
 	defer account.DeferCommit(ctx)
-	if err = userService.SetClientAccount(user, current.GetClient(ctx), account); err != nil {
+	if err = userService.SetClientAccount(user, contextFunc.GetClient(ctx), account); err != nil {
 		response.FailToError(ctx, err)
 		return
 	}
