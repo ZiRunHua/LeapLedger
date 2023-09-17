@@ -1,8 +1,8 @@
 package v1
 
 import (
-	"KeepAccount/api/v1/request"
-	"KeepAccount/api/v1/response"
+	"KeepAccount/api/request"
+	"KeepAccount/api/response"
 	accountModel "KeepAccount/model/account"
 	"KeepAccount/model/common/query"
 	userModel "KeepAccount/model/user"

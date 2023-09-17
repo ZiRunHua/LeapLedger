@@ -1,7 +1,7 @@
 package middleware
 
 import (
-	"KeepAccount/api/v1/response"
+	"KeepAccount/api/response"
 	"KeepAccount/global"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"

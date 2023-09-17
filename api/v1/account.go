@@ -1,8 +1,8 @@
 package v1
 
 import (
-	"KeepAccount/api/v1/request"
-	"KeepAccount/api/v1/response"
+	"KeepAccount/api/request"
+	"KeepAccount/api/response"
 	"KeepAccount/global"
 	accountModel "KeepAccount/model/account"
 	"github.com/gin-gonic/gin"

@@ -1,7 +1,7 @@
 package v1
 
 import (
-	"KeepAccount/api/v1/response"
+	"KeepAccount/api/response"
 	"KeepAccount/service"
 	commonService "KeepAccount/service/common"
 	"github.com/gin-gonic/gin"

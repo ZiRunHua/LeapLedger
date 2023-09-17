@@ -1,7 +1,7 @@
 package request
 
 import (
-	"KeepAccount/api/v1/response"
+	"KeepAccount/api/response"
 	"KeepAccount/global"
 	"encoding/csv"
 	"fmt"
