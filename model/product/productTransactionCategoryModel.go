@@ -2,14 +2,15 @@ package productModel
 
 import (
 	"KeepAccount/global"
+	"KeepAccount/global/constant"
 	commonModel "KeepAccount/model/common"
 )
 
 type TransactionCategory struct {
-	ID            uint                 `gorm:"primary_key;column:id"`
-	ProductKey    string               `gorm:"column:product_key"`
-	IncomeExpense global.IncomeExpense `gorm:"column:income_expense;size:8;comment:'收支类型'"`
-	Name          string               `gorm:"column:name;size:64"`
+	ID            uint                   `gorm:"primary_key;column:id"`
+	ProductKey    string                 `gorm:"column:product_key"`
+	IncomeExpense constant.IncomeExpense `gorm:"column:income_expense;size:8;comment:'收支类型'"`
+	Name          string                 `gorm:"column:name;size:64"`
 	commonModel.BaseModel
 }
 
@@ -49,7 +50,7 @@ func (tc *TransactionCategory) GetMap(productKey string) (map[uint]TransactionCa
 }
 
 func (tc *TransactionCategory) GetIncomeExpenseAndNameMap(productKey string) (
-	result map[global.IncomeExpense]map[string]TransactionCategory, err error,
+	result map[constant.IncomeExpense]map[string]TransactionCategory, err error,
 ) {
 	var prodTransCategory TransactionCategory
 	rows, err := global.GvaDb.Model(&prodTransCategory).Where(
@@ -58,7 +59,7 @@ func (tc *TransactionCategory) GetIncomeExpenseAndNameMap(productKey string) (
 	if err != nil {
 		return
 	}
-	result = map[global.IncomeExpense]map[string]TransactionCategory{}
+	result = map[constant.IncomeExpense]map[string]TransactionCategory{}
 	for rows.Next() {
 		err = global.GvaDb.ScanRows(rows, &prodTransCategory)
 		if err != nil {

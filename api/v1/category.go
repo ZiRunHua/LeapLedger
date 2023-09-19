@@ -7,7 +7,6 @@ import (
 	accountModel "KeepAccount/model/account"
 	categoryModel "KeepAccount/model/category"
 	"KeepAccount/model/common/query"
-	"KeepAccount/util"
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
@@ -92,7 +91,8 @@ func (catApi *CategoryApi) MoveCategory(ctx *gin.Context) {
 	}
 	err = global.GvaDb.Transaction(
 		func(tx *gorm.DB) error {
-			util.SetTxOfModels(tx, &category, &previous)
+			category.SetTx(tx)
+			previous.SetTx(tx)
 			return categoryService.MoveCategory(&category, &previous, &father)
 		},
 	)

@@ -1,7 +1,7 @@
 package productService
 
 import (
-	"KeepAccount/global"
+	"KeepAccount/global/constant"
 	accountModel "KeepAccount/model/account"
 	productModel "KeepAccount/model/product"
 	transactionModel "KeepAccount/model/transaction"
@@ -86,7 +86,7 @@ func (pbiService *ProductBillImport) doImport(tx *gorm.DB) error {
 
 type bill struct {
 	info               productModel.Bill
-	ptcMapping         map[global.IncomeExpense]map[string]productModel.TransactionCategory
+	ptcMapping         map[constant.IncomeExpense]map[string]productModel.TransactionCategory
 	transDataMapping   transactionDataColumnMapping
 	rows               [][]string
 	ptcIdToMapping     map[uint]productModel.TransactionCategoryMapping
@@ -194,11 +194,11 @@ func (b *bill) checkOrderStatus() bool {
 
 func (b *bill) setTransCategory() bool {
 	incomeExpenseStr := strings.TrimSpace(b.currentRow[b.transDataMapping.IncomeExpense])
-	var incomeExpense global.IncomeExpense
+	var incomeExpense constant.IncomeExpense
 	if incomeExpenseStr == "收入" {
-		incomeExpense = global.Income
+		incomeExpense = constant.Income
 	} else if incomeExpenseStr == "支出" {
-		incomeExpense = global.Expense
+		incomeExpense = constant.Expense
 	} else {
 		return false
 	}

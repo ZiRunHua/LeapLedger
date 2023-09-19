@@ -1,9 +1,11 @@
 package request
 
-import "KeepAccount/global"
+import (
+	"KeepAccount/global/constant"
+)
 
 type IncomeExpense struct {
-	IncomeExpense global.IncomeExpense `json:"Income_expense"`
+	IncomeExpense constant.IncomeExpense `json:"Income_expense"`
 }
 type Name struct {
 	Name string

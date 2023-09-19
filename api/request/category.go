@@ -1,6 +1,8 @@
 package request
 
-import "KeepAccount/global"
+import (
+	"KeepAccount/global/constant"
+)
 
 type CategoryOne struct {
 	Id            uint
@@ -17,7 +19,7 @@ type CategoryCreateOne struct {
 type CategoryCreateOneFather struct {
 	AccountId     uint
 	Name          string
-	IncomeExpense global.IncomeExpense
+	IncomeExpense constant.IncomeExpense
 }
 type CategoryMoveCategory struct {
 	Previous *uint
@@ -27,10 +29,10 @@ type CategoryMoveFather struct {
 	Previous *uint
 }
 type CategoryGetTree struct {
-	AccountId     uint                 `binding:"required"`
-	IncomeExpense global.IncomeExpense `binding:"required"`
+	AccountId     uint                   `binding:"required"`
+	IncomeExpense constant.IncomeExpense `binding:"required"`
 }
 type CategoryGetList struct {
-	AccountId     uint                 `binding:"required"`
-	IncomeExpense global.IncomeExpense `binding:"required"`
+	AccountId     uint                   `binding:"required"`
+	IncomeExpense constant.IncomeExpense `binding:"required"`
 }

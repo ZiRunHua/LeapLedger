@@ -2,6 +2,7 @@ package userService
 
 import (
 	"KeepAccount/global"
+	"KeepAccount/global/constant"
 	accountModel "KeepAccount/model/account"
 	"KeepAccount/model/common/query"
 	userModel "KeepAccount/model/user"
@@ -12,7 +13,7 @@ import (
 
 type User struct{}
 
-func (u *User) Login(username string, password string, clientType global.Client) (
+func (u *User) Login(username string, password string, clientType constant.Client) (
 	*accountModel.Account, string, error,
 ) {
 	var user userModel.User
@@ -39,7 +40,9 @@ func (u *User) Login(username string, password string, clientType global.Client)
 	return account, token, err
 }
 
-func (userSvc *User) SetClientAccount(user *userModel.User, client global.Client, account *accountModel.Account) error {
+func (userSvc *User) SetClientAccount(
+	user *userModel.User, client constant.Client, account *accountModel.Account,
+) error {
 	if user.ID != account.UserId {
 		return errors.Wrap(global.ErrInvalidParameter, "userService SetClientAccount")
 	}
@@ -63,4 +66,25 @@ func (userSvc *User) SetClientAccount(user *userModel.User, client global.Client
 		return err
 	}
 	return nil
+}
+
+type AddUserData struct {
+	username string
+	password string
+}
+
+func (userSvc *User) AddUser(addData *AddUserData, tx gorm.DB) error {
+
+	addData.password = commonService.Common.HashPassword(addData.username, addData.password)
+
+	if exist, err := query.Exist[*userModel.User]("username = ?", addData.username); err != nil {
+		return err
+	} else if exist {
+		return errors.New("该用户已存在")
+	}
+	user := &userModel.User{
+		Username: addData.username,
+		Password: addData.password,
+	}
+	return tx.Create(&user).Error
 }

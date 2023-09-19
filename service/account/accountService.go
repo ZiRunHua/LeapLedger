@@ -7,9 +7,9 @@ import (
 	"github.com/pkg/errors"
 )
 
-type Account struct{}
+type base struct{}
 
-func (a *Account) CreateOne(user *userModel.User, name string) (*accountModel.Account, error) {
+func (b *base) CreateOne(user *userModel.User, name string) (*accountModel.Account, error) {
 	if name == "" {
 		name = "账本"
 	}
@@ -21,11 +21,11 @@ func (a *Account) CreateOne(user *userModel.User, name string) (*accountModel.Ac
 	return account, errors.Wrap(err, "Create(account)")
 }
 
-func (a *Account) Delete(account *accountModel.Account) error {
+func (b *base) Delete(account *accountModel.Account) error {
 	return account.GetDb().Delete(account).Error
 }
 
-func (a *Account) Update(account *accountModel.Account, name string) error {
+func (b *base) Update(account *accountModel.Account, name string) error {
 	if name == "" {
 		return errors.Wrap(global.ErrInvalidParameter, "name")
 	}

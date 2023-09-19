@@ -1,6 +1,8 @@
 package response
 
-import "KeepAccount/global"
+import (
+	"KeepAccount/global/constant"
+)
 
 type ProductGetOne struct {
 	UniqueKey string
@@ -14,7 +16,7 @@ type ProductGetList struct {
 type ProductGetTransactionCategory struct {
 	Id            uint
 	Name          string
-	IncomeExpense global.IncomeExpense
+	IncomeExpense constant.IncomeExpense
 }
 
 type ProductGetTransactionCategoryList struct {

@@ -1,18 +1,16 @@
-package initialize
+package router
 
 import (
 	"KeepAccount/global"
-	"KeepAccount/middleware"
-	"KeepAccount/router"
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"net/http"
 	"time"
 )
 
-func Routers() *gin.Engine {
-	Router := gin.New()
-	Router.Use(
+func Init() *gin.Engine {
+	engine := gin.New()
+	engine.Use(
 		middleware.RequestLogger(global.RequestLogger),
 		gin.LoggerWithConfig(
 			gin.LoggerConfig{
@@ -33,9 +31,9 @@ func Routers() *gin.Engine {
 		gin.CustomRecovery(middleware.Recovery),
 	)
 
-	APIv1Router := router.RouterGroupApp.APIv1
+	APIv1Router := RouterGroupApp.APIv1
 	//公共
-	PublicGroup := Router.Group(global.GvaConfig.System.RouterPrefix)
+	PublicGroup := engine.Group(global.Config.System.RouterPrefix)
 	{
 		// 健康监测
 		PublicGroup.GET(
@@ -48,7 +46,7 @@ func Routers() *gin.Engine {
 		APIv1Router.InitPublicRouter(PublicGroup)
 	}
 	//需要登录校验
-	PrivateGroup := Router.Group(global.GvaConfig.System.RouterPrefix)
+	PrivateGroup := engine.Group(global.Config.System.RouterPrefix)
 	PrivateGroup.Use(middleware.JWTAuth())
 	{
 		APIv1Router.InitUserRouter(PrivateGroup)
@@ -56,12 +54,5 @@ func Routers() *gin.Engine {
 		APIv1Router.InitAccountRouter(PrivateGroup)
 		APIv1Router.InitTransactionImportRouter(PrivateGroup)
 	}
-	PrivateGroup.Use(
-		func(ctx *gin.Context) {
-			if result, ok := ctx.Get("result"); ok {
-				fmt.Println("处理请求的函数的返回值：", result)
-			}
-		},
-	)
-	return Router
+	return engine
 }

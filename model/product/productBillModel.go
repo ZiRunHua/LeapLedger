@@ -1,14 +1,14 @@
 package productModel
 
 import (
-	"KeepAccount/global"
+	"KeepAccount/global/constant"
 	commonModel "KeepAccount/model/common"
 	"KeepAccount/model/common/query"
 )
 
 type Bill struct {
 	ProductKey string `gorm:"primary_key;column:product_key"`
-	Encoding   global.Encoding
+	Encoding   constant.Encoding
 	StartRow   int
 	DateFormat string
 	commonModel.BaseModel

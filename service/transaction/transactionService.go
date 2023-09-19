@@ -2,6 +2,7 @@ package transactionService
 
 import (
 	"KeepAccount/global"
+	"KeepAccount/global/constant"
 	accountModel "KeepAccount/model/account"
 	categoryModel "KeepAccount/model/category"
 	transactionModel "KeepAccount/model/transaction"
@@ -29,17 +30,17 @@ func (txnService *Transaction) CreateOne(transaction *transactionModel.Transacti
 }
 
 func (txnService *Transaction) updateStatistic(
-	incomeExpense global.IncomeExpense, tradeTime time.Time, categoryId uint, accountId uint, amount int,
+	incomeExpense constant.IncomeExpense, tradeTime time.Time, categoryId uint, accountId uint, amount int,
 ) error {
 	switch incomeExpense {
-	case global.Income:
+	case constant.Income:
 		var incomeStatistic transactionModel.IncomeStatistic
 		if err := incomeStatistic.Accumulate(
 			tradeTime, categoryId, accountId, amount,
 		); err != nil {
 			return errors.Wrap(err, "incomeStatistic.Accumulate")
 		}
-	case global.Expense:
+	case constant.Expense:
 		var expenseStatistic transactionModel.ExpenseStatistic
 		if err := expenseStatistic.Accumulate(
 			tradeTime, categoryId, accountId, amount,
@@ -134,7 +135,7 @@ func (txnService *Transaction) CreateMultiple(
 			failTransList = append(failTransList, &transaction)
 			continue
 		}
-		if transaction.IncomeExpense == global.Income {
+		if transaction.IncomeExpense == constant.Income {
 			incomeTransList = append(incomeTransList, &transaction)
 			key = transaction.TradeTime.Format("2006-01-02")
 			if incomeAmount[key] == nil {
@@ -142,7 +143,7 @@ func (txnService *Transaction) CreateMultiple(
 			} else {
 				incomeAmount[key][transaction.CategoryID] += transaction.Amount
 			}
-		} else if transaction.IncomeExpense == global.Expense {
+		} else if transaction.IncomeExpense == constant.Expense {
 			expenseTransList = append(expenseTransList, &transaction)
 			key = transaction.TradeTime.Format("2006-01-02")
 			if expenseAmount[key] == nil {
@@ -165,7 +166,7 @@ func (txnService *Transaction) CreateMultiple(
 			return nil, err
 		}
 
-		if err = txnService.addStatisticAfterCreateMultiple(account, global.Income, incomeAmount); err != nil {
+		if err = txnService.addStatisticAfterCreateMultiple(account, constant.Income, incomeAmount); err != nil {
 			return nil, err
 		}
 	}
@@ -173,7 +174,7 @@ func (txnService *Transaction) CreateMultiple(
 		if err = tx.Model(&transaction).Create(expenseTransList).Error; err != nil {
 			return nil, err
 		}
-		if err = txnService.addStatisticAfterCreateMultiple(account, global.Expense, expenseAmount); err != nil {
+		if err = txnService.addStatisticAfterCreateMultiple(account, constant.Expense, expenseAmount); err != nil {
 			return nil, err
 		}
 	}
@@ -181,7 +182,7 @@ func (txnService *Transaction) CreateMultiple(
 }
 
 func (txnService *Transaction) addStatisticAfterCreateMultiple(
-	account *accountModel.Account, incomeExpense global.IncomeExpense, amountList map[string]map[uint]int,
+	account *accountModel.Account, incomeExpense constant.IncomeExpense, amountList map[string]map[uint]int,
 ) error {
 	var err error
 	var tradeTime time.Time

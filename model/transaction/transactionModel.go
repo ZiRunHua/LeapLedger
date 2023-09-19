@@ -1,7 +1,7 @@
 package transaction
 
 import (
-	"KeepAccount/global"
+	"KeepAccount/global/constant"
 	commonModel "KeepAccount/model/common"
 	"gorm.io/gorm"
 	"time"
@@ -11,7 +11,7 @@ type Transaction struct {
 	gorm.Model
 	AccountID     uint `gorm:"column:account_id"`
 	CategoryID    uint `gorm:"column:category_id"`
-	IncomeExpense global.IncomeExpense
+	IncomeExpense constant.IncomeExpense
 	Amount        int
 	Remark        string
 	TradeTime     time.Time

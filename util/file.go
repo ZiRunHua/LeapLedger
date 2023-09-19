@@ -1,7 +1,7 @@
 package util
 
 import (
-	"KeepAccount/global"
+	"KeepAccount/global/constant"
 	"encoding/csv"
 	"github.com/xuri/excelize/v2"
 	"golang.org/x/text/encoding/simplifiedchinese"
@@ -15,14 +15,14 @@ type file struct{}
 
 var File file
 
-func (f *file) GetFileReader(file *multipart.FileHeader, encoding global.Encoding) io.Reader {
+func (f *file) GetFileReader(file *multipart.FileHeader, encoding constant.Encoding) io.Reader {
 	uploadedFile, err := file.Open()
 	if err != nil {
 		return nil
 	}
 	defer uploadedFile.Close()
 	var reader io.Reader
-	if encoding == global.GBK {
+	if encoding == constant.GBK {
 		reader = transform.NewReader(uploadedFile, simplifiedchinese.GBK.NewDecoder())
 	} else {
 		reader = uploadedFile

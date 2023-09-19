@@ -2,7 +2,7 @@ package request
 
 import (
 	"KeepAccount/api/response"
-	"KeepAccount/global"
+	"KeepAccount/global/constant"
 	"encoding/csv"
 	"fmt"
 	"github.com/gin-gonic/gin"
@@ -25,7 +25,7 @@ func GetJsonRequest(obj any, ctx *gin.Context) {
 //	response.FailToParameter(ctx, err)
 //}
 
-func ReaderExcelFile(ctx *gin.Context, encoding global.Encoding) *csv.Reader {
+func ReaderExcelFile(ctx *gin.Context, encoding constant.Encoding) *csv.Reader {
 	file, err := ctx.FormFile("file")
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -42,7 +42,7 @@ func ReaderExcelFile(ctx *gin.Context, encoding global.Encoding) *csv.Reader {
 	}
 	defer uploadedFile.Close()
 	var reader io.Reader
-	if encoding == global.GBK {
+	if encoding == constant.GBK {
 		reader = transform.NewReader(uploadedFile, simplifiedchinese.GBK.NewDecoder())
 	} else {
 		reader = uploadedFile

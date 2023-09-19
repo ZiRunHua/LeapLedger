@@ -1,7 +1,7 @@
 package categoryModel
 
 import (
-	"KeepAccount/global"
+	"KeepAccount/global/constant"
 	accountModel "KeepAccount/model/account"
 	commonModel "KeepAccount/model/common"
 	"database/sql"
@@ -11,14 +11,14 @@ import (
 )
 
 type Category struct {
-	ID             uint                 `gorm:"primary_key;column:id;comment:'主键'" `
-	AccountID      uint                 `gorm:"column:account_id;comment:'账本ID'"`
-	FatherID       uint                 `gorm:"column:father_id;comment:'category_father表ID'" `
-	IncomeExpense  global.IncomeExpense `gorm:"column:income_expense;comment:'收支类型'"`
-	Name           string               `gorm:"column:name;size:128;comment:'名称'"`
-	Previous       uint                 `gorm:"column:previous;comment:'前一位'"`
-	OrderUpdatedAt time.Time            `gorm:"default:CURRENT_TIMESTAMP;comment:'顺序更新时间'"`
-	CreatedAt      time.Time            `gorm:"default:CURRENT_TIMESTAMP;comment:'创建时间'"`
+	ID             uint                   `gorm:"primary_key;column:id;comment:'主键'" `
+	AccountID      uint                   `gorm:"column:account_id;comment:'账本ID'"`
+	FatherID       uint                   `gorm:"column:father_id;comment:'category_father表ID'" `
+	IncomeExpense  constant.IncomeExpense `gorm:"column:income_expense;comment:'收支类型'"`
+	Name           string                 `gorm:"column:name;size:128;comment:'名称'"`
+	Previous       uint                   `gorm:"column:previous;comment:'前一位'"`
+	OrderUpdatedAt time.Time              `gorm:"default:CURRENT_TIMESTAMP;comment:'顺序更新时间'"`
+	CreatedAt      time.Time              `gorm:"default:CURRENT_TIMESTAMP;comment:'创建时间'"`
 	commonModel.BaseModel
 }
 
@@ -78,7 +78,7 @@ func (c *Category) SetFather() error {
 		},
 	).Error
 }
-func (c *Category) GetAll(account *accountModel.Account, incomeExpense global.IncomeExpense) (*sql.Rows, error) {
+func (c *Category) GetAll(account *accountModel.Account, incomeExpense constant.IncomeExpense) (*sql.Rows, error) {
 	db := c.GetDb().Model(&c)
 	db.Where("account_id = ? AND income_expense = ?", account.ID, incomeExpense)
 	return db.Order("income_expense asc,previous asc,order_updated_at desc").Rows()

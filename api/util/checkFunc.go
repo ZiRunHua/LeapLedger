@@ -23,7 +23,7 @@ func (ckf *checkFunc) AccountBelong(accountId interface{}, ctx *gin.Context) (bo
 		response.FailToError(ctx, err)
 		return false, nil
 	}
-	if account.UserId != ctx.MustGet(_UserId) {
+	if account.UserId != ContextFunc.GetUserId(ctx) {
 		response.Forbidden(ctx)
 		return false, nil
 	}

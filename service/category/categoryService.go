@@ -2,6 +2,7 @@ package categoryService
 
 import (
 	"KeepAccount/global"
+	"KeepAccount/global/constant"
 	accountModel "KeepAccount/model/account"
 	categoryModel "KeepAccount/model/category"
 	transactionModel "KeepAccount/model/transaction"
@@ -28,7 +29,7 @@ func (catSvc *Category) CreateOne(
 }
 
 func (catSvc *Category) CreateOneFather(
-	account *accountModel.Account, InEx global.IncomeExpense, name string,
+	account *accountModel.Account, InEx constant.IncomeExpense, name string,
 ) (*categoryModel.Father, error) {
 	father := &categoryModel.Father{
 		AccountID:      account.ID,
@@ -100,7 +101,7 @@ func (catSvc *Category) SetFather(
 }
 
 func (catSvc *Category) GetSequenceCategory(
-	account *accountModel.Account, incomeExpense global.IncomeExpense,
+	account *accountModel.Account, incomeExpense constant.IncomeExpense,
 ) (map[uint]*[]categoryModel.Category, error) {
 	rows, err := new(categoryModel.Category).GetAll(account, incomeExpense)
 	if err != nil {
@@ -143,7 +144,7 @@ func (catSvc *Category) makeSequenceOfCategory(
 }
 
 func (catSvc *Category) GetSequenceFather(
-	account *accountModel.Account, incomeExpense global.IncomeExpense,
+	account *accountModel.Account, incomeExpense constant.IncomeExpense,
 ) ([]categoryModel.Father, error) {
 	var model categoryModel.Father
 	rows, err := model.GetAll(account, incomeExpense)

@@ -2,6 +2,7 @@ package userModel
 
 import (
 	"KeepAccount/global"
+	"KeepAccount/global/constant"
 	commonModel "KeepAccount/model/common"
 	"errors"
 	"gorm.io/gorm"
@@ -9,13 +10,13 @@ import (
 	"time"
 )
 
-type ClientMap map[global.Client]Client
+type ClientMap map[constant.Client]Client
 
 func GetClients() ClientMap {
 	return ClientMap{
-		global.Web:     new(UserClientWeb),
-		global.Android: new(UserClientAndroid),
-		global.Ios:     new(UserClientIos),
+		constant.Web:     new(UserClientWeb),
+		constant.Android: new(UserClientAndroid),
+		constant.Ios:     new(UserClientIos),
 	}
 }
 
@@ -73,13 +74,13 @@ func (a *UserClientAndroid) CheckUserAgent(userAgent string) bool {
 func (i *UserClientIos) CheckUserAgent(userAgent string) bool {
 	return strings.Contains(userAgent, "iPhone") || strings.Contains(userAgent, "iPad")
 }
-func GetUserClientModel(client global.Client) (Client, error) {
+func GetUserClientModel(client constant.Client) (Client, error) {
 	switch client {
-	case global.Web:
+	case constant.Web:
 		return new(UserClientWeb), nil
-	case global.Android:
+	case constant.Android:
 		return new(UserClientAndroid), nil
-	case global.Ios:
+	case constant.Ios:
 		return new(UserClientIos), nil
 	default:
 		return nil, errors.New("unknown client")

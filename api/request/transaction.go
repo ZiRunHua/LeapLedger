@@ -1,27 +1,29 @@
 package request
 
-import "KeepAccount/global"
+import (
+	"KeepAccount/global/constant"
+)
 
 type TransactionCreateOne struct {
-	AccountId     uint                 `json:"account_id"`
-	Amount        int                  `json:"amount"`
-	CategoryId    uint                 `json:"category_id"`
-	IncomeExpense global.IncomeExpense `json:"income_expense"`
-	Remark        string               `json:"remark"`
-	TradeTime     uint                 `json:"trade_time"`
+	AccountId     uint                   `json:"account_id"`
+	Amount        int                    `json:"amount"`
+	CategoryId    uint                   `json:"category_id"`
+	IncomeExpense constant.IncomeExpense `json:"income_expense"`
+	Remark        string                 `json:"remark"`
+	TradeTime     uint                   `json:"trade_time"`
 }
 
 type TransactionUpdateOne struct {
-	AccountId     uint                 `json:"account_id"`
-	Amount        int                  `json:"amount"`
-	CategoryId    uint                 `json:"category_id"`
-	IncomeExpense global.IncomeExpense `json:"income_expense"`
-	Remark        string               `json:"remark"`
-	TradeTime     uint                 `json:"trade_time"`
+	AccountId     uint                   `json:"account_id"`
+	Amount        int                    `json:"amount"`
+	CategoryId    uint                   `json:"category_id"`
+	IncomeExpense constant.IncomeExpense `json:"income_expense"`
+	Remark        string                 `json:"remark"`
+	TradeTime     uint                   `json:"trade_time"`
 }
 
 type TransactionGetList struct {
-	IncomeExpense global.IncomeExpense `json:"income_expense"`
+	IncomeExpense constant.IncomeExpense `json:"income_expense"`
 	CategoryId    uint
 	StartTime     uint
 	EndTime       uint

@@ -1,7 +1,7 @@
 package util
 
 import (
-	"KeepAccount/global"
+	"KeepAccount/global/constant"
 	userModel "KeepAccount/model/user"
 	"KeepAccount/util"
 	"github.com/gin-gonic/gin"
@@ -14,7 +14,7 @@ type _contextFunc interface {
 	GetUser(ctx *gin.Context) (*userModel.User, error)
 	GetToken(ctx *gin.Context) string
 	GetClaims(ctx *gin.Context) util.CustomClaims
-	GetClient(ctx *gin.Context) global.Client
+	GetClient(ctx *gin.Context) constant.Client
 }
 
 type contextFunc struct {
@@ -53,7 +53,7 @@ func (cf *contextFunc) GetClaims(ctx *gin.Context) util.CustomClaims {
 	return ctx.MustGet(_Claims).(util.CustomClaims)
 }
 
-func (cf *contextFunc) GetClient(ctx *gin.Context) global.Client {
+func (cf *contextFunc) GetClient(ctx *gin.Context) constant.Client {
 	userAgent := ctx.GetHeader("User-Agent")
 	for clientType, client := range userModel.GetClients() {
 		if client.CheckUserAgent(userAgent) {

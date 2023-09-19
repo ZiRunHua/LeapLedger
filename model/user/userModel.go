@@ -2,16 +2,25 @@ package userModel
 
 import (
 	"KeepAccount/global"
+	commonModel "KeepAccount/model/common"
 	"crypto/sha1"
 	"encoding/hex"
-	"time"
+	"gorm.io/gorm"
 )
 
 type User struct {
-	ID         uint      `gorm:"primary_key;auto_increment;comment:'主键'"`
-	Username   string    `gorm:"type:varchar(128);comment:'用户名'"`
-	Password   string    `gorm:"type:varchar(64);comment:'密码'"`
-	CreateTime time.Time `gorm:"type:datetime;default:current_timestamp;comment:'创建时间'"`
+	Username string `gorm:"type:varchar(128);comment:'用户名'"`
+	Password string `gorm:"type:varchar(64);comment:'密码'"`
+	gorm.Model
+	commonModel.BaseModel
+}
+
+func (u *User) TableName() string {
+	return "user"
+}
+
+func (u *User) IsEmpty() bool {
+	return u.ID == 0
 }
 
 func (u *User) SelectById(id uint) error {

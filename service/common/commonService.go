@@ -16,11 +16,11 @@ var Common = new(common)
 
 // CheckCaptchaStatus 判断验证码是否开启
 func (cm *common) CheckCaptchaStatus(key string) bool {
-	openCaptcha := global.GvaConfig.Captcha.OpenCaptcha               // 是否开启防爆次数
-	openCaptchaTimeOut := global.GvaConfig.Captcha.OpenCaptchaTimeOut // 缓存超时时间
-	v, ok := global.BlackCache.Get(key)
+	openCaptcha := global.Config.Captcha.OpenCaptcha               // 是否开启防爆次数
+	openCaptchaTimeOut := global.Config.Captcha.OpenCaptchaTimeOut // 缓存超时时间
+	v, ok := global.Cache.Get(key)
 	if !ok {
-		global.BlackCache.Set(key, 1, time.Second*time.Duration(openCaptchaTimeOut))
+		global.Cache.Set(key, 1, time.Second*time.Duration(openCaptchaTimeOut))
 	}
 	return openCaptcha == 0 || openCaptcha < interfaceToInt(v)
 }
