@@ -201,7 +201,7 @@ func (catSvc *Category) Delete(category *categoryModel.Category) error {
 }
 
 func (catSvc *Category) DeleteFather(father *categoryModel.Father) error {
-	if false == father.InTransaction() {
+	if false == father.InTx() {
 		return errors.Wrap(global.ErrNotInTransaction, "")
 	}
 

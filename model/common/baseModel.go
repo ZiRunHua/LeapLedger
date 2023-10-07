@@ -17,7 +17,7 @@ type BaseModel struct {
 }
 
 func (base *BaseModel) GetDb() *gorm.DB {
-	if base.InTransaction() {
+	if base.InTx() {
 		return base.tx
 	} else {
 		return global.GvaDb
@@ -29,22 +29,22 @@ func (base *BaseModel) SetTx(tx *gorm.DB) *gorm.DB {
 	return tx
 }
 
-func (base *BaseModel) InTransaction() bool {
+func (base *BaseModel) InTx() bool {
 	if base == nil || base.tx == nil {
 		return false
 	}
 	return true
 }
 
-func (base *BaseModel) GetTransaction() *gorm.DB {
-	if false == base.InTransaction() {
+func (base *BaseModel) GetTx() *gorm.DB {
+	if false == base.InTx() {
 		panic("not in transaction")
 	}
 	return base.tx
 }
 
 func (base *BaseModel) BeginTransaction() {
-	if base.InTransaction() {
+	if base.InTx() {
 		return
 	}
 	base.SetTx(global.GvaDb.Begin())
@@ -55,7 +55,7 @@ func (base *BaseModel) CommitTransaction() {
 }
 
 func (base *BaseModel) DeferCommit(ctx *gin.Context) {
-	txn := base.GetTransaction()
+	txn := base.GetTx()
 	if r := recover(); r != nil {
 		// 发生异常时回滚事务
 		txn.Rollback()
