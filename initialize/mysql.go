@@ -5,6 +5,7 @@ import (
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
 	"gorm.io/gorm/schema"
+	"time"
 )
 
 type _mysql struct {
@@ -29,12 +30,17 @@ func (m *_mysql) do() error {
 	if err != nil {
 		return err
 	}
+	sqlDb, _ := db.DB()
+	sqlDb.SetMaxIdleConns(25)
+	sqlDb.SetMaxOpenConns(200)
+	sqlDb.SetConnMaxLifetime(5 * time.Minute)
 	db.InstanceSet("gorm:table_options", "ENGINE=InnoDB")
 	Db = db
 	return nil
 }
 func (m *_mysql) GormConfig() *gorm.Config {
 	config := &gorm.Config{
+		SkipDefaultTransaction: true,
 		NamingStrategy: schema.NamingStrategy{
 			SingularTable: true,
 		},
