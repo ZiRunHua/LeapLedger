@@ -15,6 +15,6 @@ type Id struct {
 }
 
 type PageData struct {
-	page  int
-	limit int
+	Offset int
+	Limit  int
 }

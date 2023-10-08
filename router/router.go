@@ -53,6 +53,7 @@ func Init() *gin.Engine {
 		APIv1Router.InitCategoryRouter(PrivateGroup)
 		APIv1Router.InitAccountRouter(PrivateGroup)
 		APIv1Router.InitTransactionImportRouter(PrivateGroup)
+		APIv1Router.InitTransactionRouter(PrivateGroup)
 	}
 	return engine
 }

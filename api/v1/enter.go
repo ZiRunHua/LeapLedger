@@ -16,6 +16,7 @@ type ApiGroup struct {
 	AccountApi
 	CategoryApi
 	UserApi
+	TransactionApi
 	PublicApi
 	ProductApi
 }

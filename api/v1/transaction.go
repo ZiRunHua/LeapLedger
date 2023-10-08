@@ -5,24 +5,47 @@ import (
 	"KeepAccount/api/response"
 	"KeepAccount/global"
 	transactionModel "KeepAccount/model/transaction"
-	"database/sql"
+	"errors"
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 	"time"
 )
 
+type _transactionApi interface {
+	transactionApi()
+	GetOne(ctx *gin.Context)
+	CreateOne(ctx *gin.Context)
+	Update(ctx *gin.Context)
+	Delete(ctx *gin.Context)
+	GetList(ctx *gin.Context)
+}
+
 type TransactionApi struct {
+}
+
+func (a *TransactionApi) transactionApi() {}
+func (a *TransactionApi) GetOne(ctx *gin.Context) {
+	trans, ok := contextFunc.GetTransByParam(ctx)
+	if false == ok {
+		return
+	}
+	response.OkWithData(response.TransactionModelToResponse(trans), ctx)
 }
 
 func (a *TransactionApi) CreateOne(ctx *gin.Context) {
 	var requestData request.TransactionCreateOne
 	if err := ctx.ShouldBindJSON(&requestData); err != nil {
 		response.FailToParameter(ctx, err)
+		return
 	}
 	if pass, _ := checkFunc.AccountBelong(requestData.AccountId, ctx); false == pass {
 		return
 	}
-
+	user, err := contextFunc.GetUser(ctx)
+	if err != nil {
+		response.FailToError(ctx, err)
+		return
+	}
 	transaction := &transactionModel.Transaction{
 		AccountID:     requestData.AccountId,
 		CategoryID:    requestData.CategoryId,
@@ -31,31 +54,35 @@ func (a *TransactionApi) CreateOne(ctx *gin.Context) {
 		Remark:        requestData.Remark,
 		TradeTime:     time.Unix(int64(requestData.TradeTime), 0),
 	}
-	err := global.GvaDb.Transaction(
+	err = global.GvaDb.Transaction(
 		func(tx *gorm.DB) error {
 			transaction.SetTx(tx)
-			err := transactionService.CreateOne(transaction)
-			if err != nil {
-				return err
-			}
-			return nil
+			return transactionService.CreateOne(transaction, user)
 		},
 	)
 	if err != nil {
 		response.FailToError(ctx, err)
+		return
 	}
-	response.Ok(ctx)
+	responseData := response.Id{
+		Id: transaction.ID,
+	}
+	response.OkWithData(responseData, ctx)
 }
 
 func (a *TransactionApi) Update(ctx *gin.Context) {
 	var requestData request.TransactionUpdateOne
 	if err := ctx.ShouldBindJSON(&requestData); err != nil {
 		response.FailToParameter(ctx, err)
+		return
+	}
+	id, ok := contextFunc.GetParamId(ctx)
+	if false == ok {
+		return
 	}
 	if pass, _ := checkFunc.AccountBelong(requestData.AccountId, ctx); false == pass {
 		return
 	}
-
 	transaction := &transactionModel.Transaction{
 		AccountID:     requestData.AccountId,
 		CategoryID:    requestData.CategoryId,
@@ -64,33 +91,34 @@ func (a *TransactionApi) Update(ctx *gin.Context) {
 		Remark:        requestData.Remark,
 		TradeTime:     time.Unix(int64(requestData.TradeTime), 0),
 	}
-	err := transactionService.CreateOne(transaction)
+	transaction.ID = id
+	err := global.GvaDb.Transaction(
+		func(tx *gorm.DB) error {
+			transaction.SetTx(tx)
+			return transactionService.Update(transaction)
+		},
+	)
 	if err != nil {
 		response.FailToError(ctx, err)
+		return
 	}
 	response.Ok(ctx)
 }
 
 func (a *TransactionApi) Delete(ctx *gin.Context) {
-	var requestData request.TransactionUpdateOne
-	if err := ctx.ShouldBindJSON(&requestData); err != nil {
-		response.FailToParameter(ctx, err)
-	}
-	if pass, _ := checkFunc.AccountBelong(requestData.AccountId, ctx); false == pass {
+	trans, ok := contextFunc.GetTransByParam(ctx)
+	if false == ok {
 		return
 	}
-
-	transaction := &transactionModel.Transaction{
-		AccountID:     requestData.AccountId,
-		CategoryID:    requestData.CategoryId,
-		IncomeExpense: requestData.IncomeExpense,
-		Amount:        requestData.Amount,
-		Remark:        requestData.Remark,
-		TradeTime:     time.Unix(int64(requestData.TradeTime), 0),
-	}
-	err := transactionService.CreateOne(transaction)
+	err := global.GvaDb.Transaction(
+		func(tx *gorm.DB) error {
+			trans.SetTx(tx)
+			return transactionService.Delete(trans)
+		},
+	)
 	if err != nil {
 		response.FailToError(ctx, err)
+		return
 	}
 	response.Ok(ctx)
 }
@@ -99,42 +127,44 @@ func (a *TransactionApi) GetList(ctx *gin.Context) {
 	var requestData request.TransactionGetList
 	if err := ctx.ShouldBindJSON(&requestData); err != nil {
 		response.FailToParameter(ctx, err)
+		return
 	}
-
-	var transaction transactionModel.Transaction
-	where := map[string]interface{}{
-		"category_id": requestData.CategoryId, "income_expense": requestData.IncomeExpense,
+	user, err := contextFunc.GetUser(ctx)
+	if err != err {
+		response.FailToError(ctx, err)
+		return
 	}
-	var rows *sql.Rows
-	var err error
-	if requestData.StartTime != 0 && requestData.EndTime != 0 {
-		rows, err = global.GvaDb.Model(&transaction).Where(where).Where("trans_time Between ? And ?").Rows()
-		if handelError(err, ctx) {
-			return
-		}
-	} else {
-		rows, err = global.GvaDb.Model(&transaction).Where(where).Rows()
-		if handelError(err, ctx) {
+	if requestData.UserId != nil && user.ID != *requestData.UserId {
+		response.FailToError(ctx, errors.New("UserId数据异常"))
+		return
+	}
+	if requestData.AccountId != nil {
+		if pass, _ := checkFunc.AccountBelong(*requestData.AccountId, ctx); pass == false {
 			return
 		}
 	}
 
-	var responseData response.TransactionGetList
-	for rows.Next() {
-		err = global.GvaDb.ScanRows(rows, transaction)
-		if handelError(err, ctx) {
-			return
-		}
+	var startTime, endTime *time.Time
+	startTime = request.GetTimeByTimestamp(requestData.StartTime)
+	endTime = request.GetTimeByTimestamp(requestData.EndTime)
+	transactionList, err := transactionModel.NewTransactionDao(nil).GetListByCondition(
+		&transactionModel.TransactionCondition{
+			UserID: requestData.UserId, AccountID: requestData.AccountId,
+			CategoryID: requestData.CategoryId, IncomeExpense: requestData.IncomeExpense, TradeStartTime: startTime,
+			TradeEndTime: endTime,
+		},
+		requestData.Limit,
+		requestData.Offset,
+	)
+	if err != nil {
+		response.FailToError(ctx, err)
+		return
+	}
+	responseData := response.TransactionGetList{List: []response.TransactionOne{}}
+	for _, transaction := range *transactionList {
 		responseData.List = append(
-			responseData.List, response.TransactionOne{
-				AccountId:     transaction.AccountID,
-				Amount:        transaction.Amount,
-				CategoryId:    transaction.CategoryID,
-				IncomeExpense: transaction.IncomeExpense,
-				Remark:        transaction.Remark,
-				TradeTime:     transaction.TradeTime.Unix(),
-			},
+			responseData.List, *response.TransactionModelToResponse(&transaction),
 		)
 	}
-	response.Ok(ctx)
+	response.OkWithData(responseData, ctx)
 }

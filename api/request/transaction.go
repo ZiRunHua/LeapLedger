@@ -5,27 +5,29 @@ import (
 )
 
 type TransactionCreateOne struct {
-	AccountId     uint                   `json:"account_id"`
-	Amount        int                    `json:"amount"`
-	CategoryId    uint                   `json:"category_id"`
-	IncomeExpense constant.IncomeExpense `json:"income_expense"`
-	Remark        string                 `json:"remark"`
-	TradeTime     uint                   `json:"trade_time"`
+	AccountId     uint
+	Amount        int
+	CategoryId    uint
+	IncomeExpense constant.IncomeExpense
+	Remark        string
+	TradeTime     uint
 }
 
 type TransactionUpdateOne struct {
-	AccountId     uint                   `json:"account_id"`
-	Amount        int                    `json:"amount"`
-	CategoryId    uint                   `json:"category_id"`
-	IncomeExpense constant.IncomeExpense `json:"income_expense"`
-	Remark        string                 `json:"remark"`
-	TradeTime     uint                   `json:"trade_time"`
+	AccountId     uint
+	Amount        int
+	CategoryId    uint
+	IncomeExpense constant.IncomeExpense
+	Remark        string
+	TradeTime     uint
 }
 
 type TransactionGetList struct {
-	IncomeExpense constant.IncomeExpense `json:"income_expense"`
-	CategoryId    uint
-	StartTime     uint
-	EndTime       uint
-	PageData      `json:"page_data"`
+	UserId        *uint
+	AccountId     *uint
+	CategoryId    *uint
+	IncomeExpense *constant.IncomeExpense
+	StartTime     *int64
+	EndTime       *int64
+	PageData
 }

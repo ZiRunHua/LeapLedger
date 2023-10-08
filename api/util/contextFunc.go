@@ -1,10 +1,12 @@
 package util
 
 import (
+	"KeepAccount/api/response"
 	"KeepAccount/global/constant"
 	userModel "KeepAccount/model/user"
 	"KeepAccount/util"
 	"github.com/gin-gonic/gin"
+	"strconv"
 )
 
 type _contextFunc interface {
@@ -15,6 +17,7 @@ type _contextFunc interface {
 	GetToken(ctx *gin.Context) string
 	GetClaims(ctx *gin.Context) util.CustomClaims
 	GetClient(ctx *gin.Context) constant.Client
+	GetParamId(ctx *gin.Context) (uint, bool)
 }
 
 type contextFunc struct {
@@ -61,4 +64,13 @@ func (cf *contextFunc) GetClient(ctx *gin.Context) constant.Client {
 		}
 	}
 	panic("Not found client")
+}
+
+func (cf *contextFunc) GetParamId(ctx *gin.Context) (uint, bool) {
+	id, err := strconv.Atoi(ctx.Param("id"))
+	if err != nil {
+		response.FailToParameter(ctx, err)
+		return 0, false
+	}
+	return uint(id), true
 }

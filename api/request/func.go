@@ -10,6 +10,7 @@ import (
 	"golang.org/x/text/transform"
 	"io"
 	"net/http"
+	"time"
 )
 
 func GetJsonRequest(obj any, ctx *gin.Context) {
@@ -49,4 +50,12 @@ func ReaderExcelFile(ctx *gin.Context, encoding constant.Encoding) *csv.Reader {
 	}
 
 	return csv.NewReader(reader)
+}
+
+func GetTimeByTimestamp(timestamp *int64) *time.Time {
+	if timestamp != nil {
+		result := time.Unix(*timestamp, 0)
+		return &result
+	}
+	return nil
 }

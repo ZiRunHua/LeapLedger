@@ -1,0 +1,27 @@
+package util
+
+import (
+	"KeepAccount/api/response"
+	transactionModel "KeepAccount/model/transaction"
+	"github.com/gin-gonic/gin"
+)
+
+type _getModelByContextFunc interface {
+	GetTransByParam(ctx *gin.Context) (*transactionModel.Transaction, bool)
+}
+
+func (cf *contextFunc) GetTransByParam(ctx *gin.Context) (*transactionModel.Transaction, bool) {
+	id, ok := cf.GetParamId(ctx)
+	if false == ok {
+		return nil, false
+	}
+	trans := &transactionModel.Transaction{}
+	if err := trans.SelectById(id, false); err != nil {
+		response.FailToError(ctx, err)
+		return nil, false
+	}
+	if pass, _ := CheckFunc.AccountBelong(trans.AccountID, ctx); false == pass {
+		return nil, false
+	}
+	return trans, true
+}

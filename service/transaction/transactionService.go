@@ -5,7 +5,9 @@ import (
 	"KeepAccount/global/constant"
 	accountModel "KeepAccount/model/account"
 	categoryModel "KeepAccount/model/category"
+	"KeepAccount/model/common/query"
 	transactionModel "KeepAccount/model/transaction"
+	userModel "KeepAccount/model/user"
 	"KeepAccount/util"
 	"fmt"
 	"github.com/pkg/errors"
@@ -15,35 +17,57 @@ import (
 
 type Transaction struct{}
 
-func (txnService *Transaction) CreateOne(transaction *transactionModel.Transaction) error {
-	if err := txnService.checkTransaction(transaction); err != nil {
-		return err
-	}
-	err := transaction.GetDb().Create(&transaction).Error
-	if err != nil {
-		return errors.Wrap(err, "")
-	}
-	return txnService.updateStatistic(
-		transaction.IncomeExpense, transaction.TradeTime, transaction.CategoryID, transaction.AccountID,
-		transaction.Amount,
-	)
+type UpdateStatisticData struct {
+	accountID     uint
+	incomeExpense constant.IncomeExpense
+	categoryID    uint
+	tradeTime     time.Time
+	amount        int
 }
 
-func (txnService *Transaction) updateStatistic(
-	incomeExpense constant.IncomeExpense, tradeTime time.Time, categoryId uint, accountId uint, amount int,
-) error {
-	switch incomeExpense {
+func getUpdateStatisticData(transaction *transactionModel.Transaction) *UpdateStatisticData {
+	return &UpdateStatisticData{
+		accountID: transaction.AccountID, incomeExpense: transaction.IncomeExpense,
+		categoryID: transaction.CategoryID, tradeTime: transaction.TradeTime,
+		amount: transaction.Amount,
+	}
+}
+
+func (txnService *Transaction) CreateOne(transaction *transactionModel.Transaction, user *userModel.User) error {
+	account, err := query.FirstByPrimaryKey[*accountModel.Account](transaction.AccountID)
+	if err == nil && account.UserId != user.ID {
+		return errors.Wrap(err, "账本不属于当前用户")
+	}
+	transaction.UserID = user.ID
+	if err = txnService.checkTransaction(transaction); err != nil {
+		return err
+	}
+	if err = transaction.GetDb().Create(transaction).Error; err != nil {
+		return errors.Wrap(err, "")
+	}
+	return txnService.updateStatistic(getUpdateStatisticData(transaction))
+}
+
+func (txnService *Transaction) addUpdateStatisticTask(data UpdateStatisticData) error {
+	chanUpdateStatistic <- updateStatisticTask{
+		data: data,
+	}
+	return nil
+}
+
+func (txnService *Transaction) updateStatistic(data *UpdateStatisticData) error {
+	switch data.incomeExpense {
 	case constant.Income:
 		var incomeStatistic transactionModel.IncomeStatistic
 		if err := incomeStatistic.Accumulate(
-			tradeTime, categoryId, accountId, amount,
+			data.tradeTime, data.categoryID, data.accountID, data.amount,
 		); err != nil {
 			return errors.Wrap(err, "incomeStatistic.Accumulate")
 		}
 	case constant.Expense:
 		var expenseStatistic transactionModel.ExpenseStatistic
 		if err := expenseStatistic.Accumulate(
-			tradeTime, categoryId, accountId, amount,
+			data.tradeTime, data.categoryID, data.accountID, data.amount,
 		); err != nil {
 			return errors.Wrap(err, "expenseStatistic.Accumulate")
 		}
@@ -70,43 +94,55 @@ func (txnService *Transaction) Update(transaction *transactionModel.Transaction)
 	if err = txnService.checkTransaction(transaction); err != nil {
 		return err
 	}
-	oldTransaction := transactionModel.NewTransaction(transaction.GetTransaction())
+	oldTransaction := transactionModel.NewTransaction(transaction.GetTx())
 	if err = oldTransaction.SelectById(transaction.ID, true); err != nil {
 		return errors.Wrap(err, "transactionModel SelectById")
 	}
 	if err = transaction.Update(); err != nil {
 		return errors.Wrap(err, "transactionModel Update")
 	}
-	return nil
+	return txnService.updateStatisticAfterUpdate(oldTransaction, transaction)
 }
 
 func (txnService *Transaction) updateStatisticAfterUpdate(
-	oldTxn *transactionModel.Transaction, txn transactionModel.Transaction,
+	oldTxn *transactionModel.Transaction, txn *transactionModel.Transaction,
 ) error {
 	var err error
 	if oldTxn.IncomeExpense == txn.IncomeExpense && oldTxn.CategoryID == txn.CategoryID && util.IsSameDay(
 		oldTxn.TradeTime, txn.TradeTime,
 	) { //同表同一条记录特殊处理
-		err = txnService.updateStatistic(
-			txn.IncomeExpense, txn.TradeTime, txn.CategoryID, txn.AccountID, txn.Amount-oldTxn.Amount,
-		)
+		updateStatisticData := getUpdateStatisticData(txn)
+		updateStatisticData.amount -= oldTxn.Amount
+		err = txnService.updateStatistic(updateStatisticData)
 		if err != nil {
 			return err
 		}
 	} else {
-		if err = txnService.updateStatistic(
-			oldTxn.IncomeExpense, oldTxn.TradeTime, oldTxn.CategoryID, oldTxn.AccountID, -oldTxn.Amount,
-		); err != nil {
+		updateStatisticData := getUpdateStatisticData(oldTxn)
+		updateStatisticData.amount = -updateStatisticData.amount
+		if err = txnService.updateStatistic(updateStatisticData); err != nil {
 			return err
 		}
-
-		if err = txnService.updateStatistic(
-			txn.IncomeExpense, txn.TradeTime, txn.CategoryID, txn.AccountID, txn.Amount,
-		); err != nil {
+		if err = txnService.updateStatistic(getUpdateStatisticData(txn)); err != nil {
 			return err
 		}
 	}
 	return nil
+}
+
+func (txnService *Transaction) Delete(txn *transactionModel.Transaction) error {
+	if err := txn.GetTx().Delete(txn, txn.ID).Error; err != nil {
+		return err
+	}
+	return txnService.updateStatisticAfterDelete(txn)
+}
+
+func (txnService *Transaction) updateStatisticAfterDelete(
+	txn *transactionModel.Transaction,
+) error {
+	updateStatisticData := getUpdateStatisticData(txn)
+	updateStatisticData.amount = -updateStatisticData.amount
+	return txnService.updateStatistic(updateStatisticData)
 }
 
 func (txnService *Transaction) CreateMultiple(
@@ -191,7 +227,11 @@ func (txnService *Transaction) addStatisticAfterCreateMultiple(
 			return err
 		}
 		for categoryId, amount := range categoryList {
-			if err = txnService.updateStatistic(incomeExpense, tradeTime, categoryId, account.ID, amount); err != nil {
+			if err = txnService.updateStatistic(
+				&UpdateStatisticData{
+					account.ID, incomeExpense, categoryId, tradeTime, amount,
+				},
+			); err != nil {
 				return err
 			}
 		}

@@ -21,6 +21,7 @@ func (i *IncomeStatistic) TableName() string {
 func (i *IncomeStatistic) Accumulate(
 	tradeTime time.Time, categoryId uint, accountId uint, amount int,
 ) error {
+	tradeTime = tradeTime.Truncate(24 * time.Hour)
 	if amount == 0 {
 		return nil
 	}
@@ -33,7 +34,7 @@ func (i *IncomeStatistic) Accumulate(
 		i.AccountID = accountId
 		i.Amount = amount
 		err = i.GetDb().Create(i).Error
-		if errors.Is(err, gorm.ErrPrimaryKeyRequired) {
+		if errors.Is(err, gorm.ErrDuplicatedKey) {
 			err = where.Update("amount", gorm.Expr("amount + ?", amount)).Error
 		}
 	}
