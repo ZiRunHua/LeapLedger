@@ -11,21 +11,53 @@ import (
 	"time"
 )
 
-type Category struct{}
+type Category struct {
+}
 
-func (catSvc *Category) CreateOne(
-	father *categoryModel.Father, name string,
-) (*categoryModel.Category, error) {
+type CreateData struct {
+	Name string
+}
+
+func (catSvc *Category) NewCategoryData(category *categoryModel.Category) *CreateData {
+	return &CreateData{
+		Name: category.Name,
+	}
+}
+
+func (catSvc *Category) CreateOne(father *categoryModel.Father, data *CreateData) (*categoryModel.Category, error) {
 	category := &categoryModel.Category{
 		AccountID:      father.AccountID,
 		FatherID:       father.ID,
 		IncomeExpense:  father.IncomeExpense,
-		Name:           name,
+		Name:           data.Name,
 		Previous:       0,
 		OrderUpdatedAt: time.Now(),
 	}
 	err := category.CreateOne()
 	return category, errors.Wrap(err, "category.CreateOne()")
+}
+
+func (catSvc *Category) CreateList(
+	father *categoryModel.Father, list []CreateData, tx *gorm.DB,
+) ([]categoryModel.Category, error) {
+	categoryList := []categoryModel.Category{}
+	for _, data := range list {
+		categoryList = append(
+			categoryList, categoryModel.Category{
+				AccountID:      father.AccountID,
+				FatherID:       father.ID,
+				IncomeExpense:  father.IncomeExpense,
+				Name:           data.Name,
+				Previous:       0,
+				OrderUpdatedAt: time.Now(),
+			},
+		)
+	}
+	var err error
+	if len(categoryList) > 0 {
+		err = tx.Create(&categoryList).Error
+	}
+	return categoryList, errors.Wrap(err, "category.CreateOne()")
 }
 
 func (catSvc *Category) CreateOneFather(

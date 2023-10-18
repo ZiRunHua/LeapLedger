@@ -5,7 +5,9 @@ import (
 	"KeepAccount/api/response"
 	"KeepAccount/global"
 	accountModel "KeepAccount/model/account"
+	userModel "KeepAccount/model/user"
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 )
 
 type AccountApi struct {
@@ -22,7 +24,7 @@ func (a *AccountApi) CreateOne(ctx *gin.Context) {
 		response.FailToError(ctx, err)
 		return
 	}
-	account, err := accountService.Base.CreateOne(user, requestData.Name)
+	account, err := accountService.Base.CreateOne(user, requestData.Name, global.GvaDb)
 	if err != nil {
 		response.FailToError(ctx, err)
 		return
@@ -100,4 +102,51 @@ func (a *AccountApi) GetOne(ctx *gin.Context) {
 	response.OkWithData(
 		response.AccountModelToResponse(account), ctx,
 	)
+}
+
+func (a *AccountApi) CreateOneByTemplate(ctx *gin.Context) {
+	id, ok := contextFunc.GetUintParamByKey("id", ctx)
+	if false == ok {
+		return
+	}
+	user, account := &userModel.User{}, &accountModel.Account{}
+	err := global.GvaDb.First(&account, id).Error
+	if responseError(err, ctx) {
+		return
+	}
+	if user, err = contextFunc.GetUser(ctx); responseError(err, ctx) {
+		return
+	}
+	err = global.GvaDb.Transaction(
+		func(tx *gorm.DB) error {
+			account, err = templateService.CreateAccount(user, account, tx)
+			return err
+		},
+	)
+	if responseError(err, ctx) {
+		return
+	}
+	response.OkWithData(
+		response.AccountTemplateOne{
+			Id:   account.ID,
+			Name: account.Name,
+		}, ctx,
+	)
+}
+
+func (a *AccountApi) GetAccountTemplateList(ctx *gin.Context) {
+	list, err := templateService.GetList()
+	if responseError(err, ctx) {
+		return
+	}
+	responseData := response.AccountTemplateList{List: []response.AccountTemplateOne{}}
+	for _, account := range list {
+		responseData.List = append(
+			responseData.List, response.AccountTemplateOne{
+				Id:   account.ID,
+				Name: account.Name,
+			},
+		)
+	}
+	response.OkWithData(responseData, ctx)
 }

@@ -16,5 +16,9 @@ func (a *AccountRouter) InitAccountRouter(Router *gin.RouterGroup) {
 		router.DELETE("/:id", baseApi.Delete)
 		router.GET("/list", baseApi.GetList)
 		router.GET("/:id", baseApi.GetOne)
+		//模板
+		router.GET("/template/list", baseApi.GetAccountTemplateList)
+		router.POST("/form/template/:id", baseApi.CreateOneByTemplate)
+
 	}
 }

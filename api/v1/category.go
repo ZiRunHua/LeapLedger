@@ -31,7 +31,9 @@ func (catApi *CategoryApi) CreateOne(ctx *gin.Context) {
 		response.FailToError(ctx, err)
 		return
 	}
-	category, err := categoryService.CreateOne(father, requestData.Name)
+	category, err := categoryService.CreateOne(
+		father, categoryService.NewCategoryData(&categoryModel.Category{Name: requestData.Name}),
+	)
 	if err != nil {
 		response.FailToError(ctx, err)
 		return

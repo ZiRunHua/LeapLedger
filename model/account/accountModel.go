@@ -25,3 +25,7 @@ func (b *Account) SelectByPrimaryKey(id uint) (*Account, error) {
 func (c *Account) Exits(query interface{}, args ...interface{}) (bool, error) {
 	return commonModel.ExistOfModel(c, query, args)
 }
+
+func (a *Account) CreateOne() error {
+	return a.GetDb().Create(a).Error
+}

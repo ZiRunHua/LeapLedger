@@ -66,11 +66,15 @@ func (cf *contextFunc) GetClient(ctx *gin.Context) constant.Client {
 	panic("Not found client")
 }
 
-func (cf *contextFunc) GetParamId(ctx *gin.Context) (uint, bool) {
-	id, err := strconv.Atoi(ctx.Param("id"))
+func (cf *contextFunc) GetUintParamByKey(key string, ctx *gin.Context) (uint, bool) {
+	id, err := strconv.Atoi(ctx.Param(key))
 	if err != nil {
 		response.FailToParameter(ctx, err)
 		return 0, false
 	}
 	return uint(id), true
+}
+
+func (cf *contextFunc) GetParamId(ctx *gin.Context) (uint, bool) {
+	return cf.GetUintParamByKey("id", ctx)
 }

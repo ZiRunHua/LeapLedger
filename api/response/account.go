@@ -25,3 +25,12 @@ type AccountGetOne struct {
 type AccountGetAll struct {
 	List []AccountOne
 }
+
+type AccountTemplateOne struct {
+	Name string
+	Id   uint
+}
+
+type AccountTemplateList struct {
+	List []AccountTemplateOne
+}

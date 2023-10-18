@@ -4,6 +4,7 @@ import (
 	accountService "KeepAccount/service/account"
 	categoryService "KeepAccount/service/category"
 	productService "KeepAccount/service/product"
+	templateService "KeepAccount/service/template"
 	transactionService "KeepAccount/service/transaction"
 	userService "KeepAccount/service/user"
 )
@@ -16,4 +17,5 @@ type Group struct {
 	TransactionServiceGroup transactionService.Group
 	UserServiceGroup        userService.Group
 	ProductServiceGroup     productService.Group
+	TemplateService         templateService.Group
 }

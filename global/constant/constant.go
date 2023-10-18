@@ -1,5 +1,18 @@
 package constant
 
+import "os"
+
+var WorkDir string
+
+func init() {
+	var err error
+	WorkDir, err = os.Getwd()
+	if err != nil {
+		panic(err)
+	}
+	WorkDir += ""
+}
+
 // IncomeExpense 收支类型
 type IncomeExpense string
 

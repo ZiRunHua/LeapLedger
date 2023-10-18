@@ -5,11 +5,12 @@ import (
 	accountModel "KeepAccount/model/account"
 	userModel "KeepAccount/model/user"
 	"github.com/pkg/errors"
+	"gorm.io/gorm"
 )
 
 type base struct{}
 
-func (b *base) CreateOne(user *userModel.User, name string) (*accountModel.Account, error) {
+func (b *base) CreateOne(user *userModel.User, name string, tx *gorm.DB) (*accountModel.Account, error) {
 	if name == "" {
 		name = "账本"
 	}
@@ -17,7 +18,7 @@ func (b *base) CreateOne(user *userModel.User, name string) (*accountModel.Accou
 		UserId: user.ID,
 		Name:   name,
 	}
-	err := global.GvaDb.Create(account).Error
+	err := account.CreateOne()
 	return account, errors.Wrap(err, "Create(account)")
 }
 

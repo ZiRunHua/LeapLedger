@@ -33,6 +33,7 @@ var (
 	categoryService    = service.GroupApp.CategoryServiceGroup.Category
 	transactionService = service.GroupApp.TransactionServiceGroup.Transaction
 	productService     = service.GroupApp.ProductServiceGroup.Product
+	templateService    = service.GroupApp.TemplateService.Template
 )
 
 // util
@@ -40,6 +41,14 @@ var contextFunc = apiUtil.ContextFunc
 var checkFunc = apiUtil.CheckFunc
 
 func handelError(err error, ctx *gin.Context) bool {
+	if err != nil {
+		response.FailToError(ctx, err)
+		return true
+	}
+	return false
+}
+
+func responseError(err error, ctx *gin.Context) bool {
 	if err != nil {
 		response.FailToError(ctx, err)
 		return true
