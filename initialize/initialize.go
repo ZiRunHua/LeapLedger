@@ -32,7 +32,7 @@ type initializer interface {
 	do() error
 }
 
-func Do() {
+func init() {
 	var err error
 	if err = initConfig(); err != nil {
 		print(fmt.Sprint("配置初始化失败 err: %v", err))

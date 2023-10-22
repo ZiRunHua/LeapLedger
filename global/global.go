@@ -17,7 +17,7 @@ var (
 	PanicLogger   *zap.Logger
 )
 
-func Init() {
+func init() {
 	GvaDb = initialize.Db
 	Config = initialize.Config
 	Cache = initialize.Cache
