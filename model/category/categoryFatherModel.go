@@ -56,8 +56,12 @@ func (f *Father) SetPrevious(previous *Father) error {
 	return f.GetDb().Model(f).Updates(updateData).Error
 }
 
-func (f *Father) GetAll(account *accountModel.Account, incomeExpense constant.IncomeExpense) (*sql.Rows, error) {
+func (f *Father) GetAll(account *accountModel.Account, incomeExpense *constant.IncomeExpense) (*sql.Rows, error) {
 	db := f.GetDb().Model(&f)
-	db.Where("account_id = ? AND income_expense = ?", account.ID, incomeExpense)
+	if incomeExpense == nil {
+		db.Where("account_id = ?", account.ID)
+	} else {
+		db.Where("account_id = ? AND income_expense = ?", account.ID, incomeExpense)
+	}
 	return db.Order("income_expense asc,previous asc,order_updated_at desc").Rows()
 }

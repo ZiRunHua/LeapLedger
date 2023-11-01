@@ -7,7 +7,6 @@ import (
 	accountModel "KeepAccount/model/account"
 	categoryModel "KeepAccount/model/category"
 	"KeepAccount/model/common/query"
-	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
 	"gorm.io/gorm"
@@ -182,36 +181,32 @@ func (catApi *CategoryApi) GetTree(ctx *gin.Context) {
 		response.FailToParameter(ctx, err)
 		return
 	}
-	var account accountModel.Account
-	err = global.GvaDb.First(&account, requestData.AccountId).Error
-	if err != nil {
-		response.FailToError(ctx, errors.Wrap(err, ""))
+	pass, account := checkFunc.AccountBelong(requestData.AccountId, ctx)
+	if false == pass {
 		return
 	}
-	fatherSequence, err := categoryService.GetSequenceFather(&account, requestData.IncomeExpense)
+	fatherSequence, err := categoryService.GetSequenceFather(account, requestData.IncomeExpense)
 	if err != nil {
 		response.FailToError(ctx, err)
 		return
 	}
-	fmt.Println(fatherSequence)
-	categorySequence, err := categoryService.GetSequenceCategory(&account, requestData.IncomeExpense)
+	categorySequence, err := categoryService.GetSequenceCategory(account, requestData.IncomeExpense)
 	if err != nil {
 		response.FailToError(ctx, err)
 		return
 	}
-	fmt.Println(categorySequence)
-	var responseTree response.TwoLevelTree
-	var responseChildren []response.NameId
+	var responseTree response.CategoryTree
+	var responseChildren []response.CategoryOne
 	for _, father := range fatherSequence {
-		responseChildren = make([]response.NameId, 0)
+		responseChildren = make([]response.CategoryOne, 0)
 		if categorySequence[father.ID] != nil {
 			for _, category := range *categorySequence[father.ID] {
-				responseChildren = append(responseChildren, response.NameId{Name: category.Name, Id: category.ID})
+				responseChildren = append(responseChildren, response.CategoryOne{Name: category.Name, Id: category.ID, IncomeExpense: category.IncomeExpense})
 			}
 		}
 		responseTree.Tree = append(
 			responseTree.Tree,
-			response.Father{NameId: response.NameId{Name: father.Name, Id: father.ID}, Children: responseChildren},
+			response.FatherOne{Name: father.Name, Id: father.ID, IncomeExpense: father.IncomeExpense, Children: responseChildren},
 		)
 	}
 	response.OkWithData(responseTree, ctx)

@@ -29,8 +29,8 @@ type CategoryMoveFather struct {
 	Previous *uint
 }
 type CategoryGetTree struct {
-	AccountId     uint                   `binding:"required"`
-	IncomeExpense constant.IncomeExpense `binding:"required"`
+	AccountId     uint `binding:"required"`
+	IncomeExpense *constant.IncomeExpense
 }
 type CategoryGetList struct {
 	AccountId     uint                   `binding:"required"`

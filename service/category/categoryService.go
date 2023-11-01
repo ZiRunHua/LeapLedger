@@ -133,7 +133,7 @@ func (catSvc *Category) SetFather(
 }
 
 func (catSvc *Category) GetSequenceCategory(
-	account *accountModel.Account, incomeExpense constant.IncomeExpense,
+	account *accountModel.Account, incomeExpense *constant.IncomeExpense,
 ) (map[uint]*[]categoryModel.Category, error) {
 	rows, err := new(categoryModel.Category).GetAll(account, incomeExpense)
 	if err != nil {
@@ -176,7 +176,7 @@ func (catSvc *Category) makeSequenceOfCategory(
 }
 
 func (catSvc *Category) GetSequenceFather(
-	account *accountModel.Account, incomeExpense constant.IncomeExpense,
+	account *accountModel.Account, incomeExpense *constant.IncomeExpense,
 ) ([]categoryModel.Father, error) {
 	var model categoryModel.Father
 	rows, err := model.GetAll(account, incomeExpense)

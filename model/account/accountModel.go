@@ -29,3 +29,7 @@ func (c *Account) Exits(query interface{}, args ...interface{}) (bool, error) {
 func (a *Account) CreateOne() error {
 	return a.GetDb().Create(a).Error
 }
+
+func (a *Account) GetUser() (*userModel.User, error) {
+	return query.FirstByPrimaryKey[*userModel.User](a.UserId)
+}
