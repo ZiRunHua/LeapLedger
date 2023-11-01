@@ -34,7 +34,7 @@ func (i *ExpenseStatistic) Accumulate(
 		i.AccountID = accountId
 		i.Amount = amount
 		err = i.GetDb().Create(i).Error
-		if errors.Is(err, gorm.ErrPrimaryKeyRequired) {
+		if errors.Is(err, gorm.ErrDuplicatedKey) {
 			err = where.Update("amount", gorm.Expr("amount + ?", amount)).Error
 		}
 	}
