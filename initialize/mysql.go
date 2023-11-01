@@ -45,6 +45,7 @@ func (m *_mysql) GormConfig() *gorm.Config {
 			SingularTable: true,
 		},
 		DisableForeignKeyConstraintWhenMigrating: true,
+		TranslateError:                           true,
 		Logger:                                   logger.Default.LogMode(logger.Info),
 	}
 	return config
