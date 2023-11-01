@@ -15,6 +15,6 @@ type Id struct {
 }
 
 type PageData struct {
-	Offset int
-	Limit  int
+	Offset int `binding:"gte=0"`
+	Limit  int `binding:"gt=0"`
 }

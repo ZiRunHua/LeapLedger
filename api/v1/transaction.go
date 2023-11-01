@@ -138,18 +138,15 @@ func (a *TransactionApi) GetList(ctx *gin.Context) {
 		response.FailToError(ctx, errors.New("UserId数据异常"))
 		return
 	}
-	if requestData.AccountId != nil {
-		if pass, _ := checkFunc.AccountBelong(*requestData.AccountId, ctx); pass == false {
-			return
-		}
+	if pass, _ := checkFunc.AccountBelong(requestData.AccountId, ctx); pass == false {
+		return
 	}
-
 	var startTime, endTime *time.Time
 	startTime = request.GetTimeByTimestamp(requestData.StartTime)
 	endTime = request.GetTimeByTimestamp(requestData.EndTime)
 	transactionList, err := transactionModel.NewTransactionDao(nil).GetListByCondition(
 		&transactionModel.TransactionCondition{
-			UserID: requestData.UserId, AccountID: requestData.AccountId,
+			UserID: requestData.UserId, AccountID: &requestData.AccountId,
 			CategoryID: requestData.CategoryId, IncomeExpense: requestData.IncomeExpense, TradeStartTime: startTime,
 			TradeEndTime: endTime,
 		},
