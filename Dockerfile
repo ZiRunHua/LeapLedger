@@ -8,6 +8,9 @@ ENV GOPROXY=https://goproxy.io,direct
 # 设置工作目录
 WORKDIR /server/KeepAccount
 
+COPY go.mod go.mod
+COPY go.sum go.sum
+RUN go mod download
 # 将本地代码复制到容器中
 COPY . .
 
