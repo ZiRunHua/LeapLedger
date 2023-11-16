@@ -1,6 +1,7 @@
 package util
 
 import (
+	"KeepAccount/global/constant"
 	"context"
 	"fmt"
 	"github.com/go-redis/redis/v8"
@@ -9,18 +10,28 @@ import (
 )
 
 type Cache interface {
+	GetKey(tab constant.CacheTab, unique string) string
 	Init() error
 	Get(key string) (interface{}, bool)
 	Set(key string, value interface{}, duration time.Duration)
 	Increment(key string, number int64) error
 	Close() error
+	Delete(key string) error
+}
+type cacheBase struct {
+}
+
+func (cb *cacheBase) GetKey(tab constant.CacheTab, unique string) string {
+	return string(tab) + "_" + unique
 }
 
 type LocalCache struct {
+	cacheBase
 	local_cache.Cache
 }
 
 type RedisCache struct {
+	cacheBase
 	client   *redis.Client
 	DB       int
 	Addr     string
@@ -70,6 +81,16 @@ func (rc *RedisCache) Increment(key string, number int64) error {
 	return nil
 }
 
+func (rc *RedisCache) Delete(key string) error {
+	ctx := context.Background()
+	_, err := rc.client.Del(ctx, key).Result()
+	if err != nil {
+		fmt.Printf("Error while Delete key %s: %v\n", key, err)
+		return err
+	}
+	return nil
+}
+
 func (rc *RedisCache) Close() error {
 	return rc.client.Close()
 }
@@ -82,5 +103,10 @@ func (r *LocalCache) Init() error {
 }
 
 func (r *LocalCache) Close() error {
+	return nil
+}
+
+func (r *LocalCache) Delete(key string) error {
+	r.Cache.Delete(key)
 	return nil
 }
