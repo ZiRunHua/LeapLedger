@@ -18,6 +18,7 @@ type _contextFunc interface {
 	GetClaims(ctx *gin.Context) util.CustomClaims
 	GetClient(ctx *gin.Context) constant.Client
 	GetParamId(ctx *gin.Context) (uint, bool)
+	GetCacheKeyByType(t string, ctx *gin.Context) string
 }
 
 type contextFunc struct {
@@ -77,4 +78,8 @@ func (cf *contextFunc) GetUintParamByKey(key string, ctx *gin.Context) (uint, bo
 
 func (cf *contextFunc) GetParamId(ctx *gin.Context) (uint, bool) {
 	return cf.GetUintParamByKey("id", ctx)
+}
+
+func (cf *contextFunc) GetCacheKey(t constant.CacheTab, ctx *gin.Context) string {
+	return string(t) + "_" + ctx.ClientIP()
 }

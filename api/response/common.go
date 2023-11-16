@@ -1,10 +1,10 @@
 package response
 
 type CommonCaptcha struct {
-	CaptchaId     string `json:"captcha_id"`
-	PicPath       string `json:"pic_path"`
-	CaptchaLength int    `json:"captcha_length"`
-	OpenCaptcha   bool   `json:"open_captcha"`
+	CaptchaId     string
+	PicBase64     string
+	CaptchaLength int
+	OpenCaptcha   bool
 }
 type Id struct {
 	Id uint
@@ -39,4 +39,8 @@ type PageData struct {
 	page  int
 	limit int
 	count int
+}
+
+type ExpirationTime struct {
+	ExpirationTime int
 }

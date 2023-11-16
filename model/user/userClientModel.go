@@ -21,8 +21,10 @@ func GetClients() ClientMap {
 }
 
 type Client interface {
+	commonModel.Model
 	GetByUser(*User) error
 	CheckUserAgent(userAgent string) bool
+	InitByUser(*User, *gorm.DB) error
 }
 
 type UserClientBaseInfo struct {
@@ -55,6 +57,16 @@ type UserClientIos struct {
 	commonModel.BaseModel
 }
 
+func (w *UserClientWeb) IsEmpty() bool {
+	return w.UserID == 0
+}
+func (a *UserClientAndroid) IsEmpty() bool {
+	return a.UserID == 0
+}
+func (i *UserClientIos) IsEmpty() bool {
+	return i.UserID == 0
+}
+
 func (w *UserClientWeb) GetByUser(user *User) error {
 	return global.GvaDb.Where("user_id = ?", user.ID).First(&w).Error
 }
@@ -74,6 +86,26 @@ func (a *UserClientAndroid) CheckUserAgent(userAgent string) bool {
 func (i *UserClientIos) CheckUserAgent(userAgent string) bool {
 	return strings.Contains(userAgent, "iPhone") || strings.Contains(userAgent, "iPad")
 }
+
+func (w *UserClientWeb) InitByUser(user *User, tx *gorm.DB) error {
+	w.UserID = user.ID
+	w.CurrentAccountID = 0
+	w.LoginTime = time.Now()
+	return tx.Create(w).Error
+}
+func (a *UserClientAndroid) InitByUser(user *User, tx *gorm.DB) error {
+	a.UserID = user.ID
+	a.CurrentAccountID = 0
+	a.LoginTime = time.Now()
+	return tx.Create(a).Error
+}
+func (i *UserClientIos) InitByUser(user *User, tx *gorm.DB) error {
+	i.UserID = user.ID
+	i.CurrentAccountID = 0
+	i.LoginTime = time.Now()
+	return tx.Create(i).Error
+}
+
 func GetUserClientModel(client constant.Client) (Client, error) {
 	switch client {
 	case constant.Web:

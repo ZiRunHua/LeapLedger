@@ -6,36 +6,19 @@ import (
 	"KeepAccount/global"
 	"github.com/gin-gonic/gin"
 	"github.com/mojocn/base64Captcha"
-	"net/http"
-	"time"
 )
 
 type CommonApi struct {
 }
 
-var store = base64Captcha.DefaultMemStore
+var captchaStore = base64Captcha.DefaultMemStore
 
 func (p *PublicApi) Captcha(c *gin.Context) {
-	// 判断验证码是否开启
-	openCaptcha := global.Config.Captcha.OpenCaptcha               // 是否开启防爆次数
-	openCaptchaTimeOut := global.Config.Captcha.OpenCaptchaTimeOut // 缓存超时时间
-	key := c.ClientIP()
-	v, ok := global.Cache.Get(key)
-	if !ok {
-		global.Cache.Set(key, 1, time.Second*time.Duration(openCaptchaTimeOut))
-	}
-
-	var oc bool
-	if openCaptcha == 0 || openCaptcha < interfaceToInt(v) {
-		oc = true
-	}
-	// 字符,公式,验证码配置
-	// 生成默认数字的driver
 	driver := base64Captcha.NewDriverDigit(
 		global.Config.Captcha.ImgHeight, global.Config.Captcha.ImgWidth, global.Config.Captcha.KeyLong, 0.7,
 		80,
 	)
-	cp := base64Captcha.NewCaptcha(driver, store)
+	cp := base64Captcha.NewCaptcha(driver, captchaStore)
 	id, b64s, err := cp.Generate()
 	if err != nil {
 		response.FailWithMessage("验证码获取失败", c)
@@ -44,50 +27,27 @@ func (p *PublicApi) Captcha(c *gin.Context) {
 	response.OkWithDetailed(
 		response.CommonCaptcha{
 			CaptchaId:     id,
-			PicPath:       b64s,
+			PicBase64:     b64s,
 			CaptchaLength: global.Config.Captcha.KeyLong,
-			OpenCaptcha:   oc,
 		}, "验证码获取成功", c,
 	)
 }
 
-// 类型转换
-func interfaceToInt(v interface{}) (i int) {
-	switch v := v.(type) {
-	case int:
-		i = v
-	default:
-		i = 0
+func (u *PublicApi) SendEmailCaptcha(ctx *gin.Context) {
+	var requestData request.CommonSendEmailCaptcha
+	if err := ctx.ShouldBindJSON(&requestData); err != nil {
+		response.FailToParameter(ctx, err)
+		return
 	}
-	return
-}
 
-func (p *PublicApi) Login(ctx *gin.Context) {
-	var request request.UserLogin
-	if err := ctx.ShouldBindJSON(&request); err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	if false == captchaStore.Verify(requestData.CaptchaId, requestData.Captcha, true) {
+		response.FailWithMessage("验证码错误", ctx)
 		return
 	}
-	key := ctx.ClientIP()
-	//oc := commonService.CheckCaptchaStatus(key)
-	//if oc || store.Verify(request.CaptchaId, request.Captcha, true) {
-	//	response.FailWithMessage("验证码错误", ctx)
-	//	return
-	//}
-	client := contextFunc.GetClient(ctx)
-	currentAccount, token, err := userService.Login(request.Username, request.Password, client)
-	if err != nil {
-		// 验证码次数+1
-		global.Cache.Increment(key, 1)
-		response.FailWithMessage("用户名不存在或者密码错误", ctx)
+
+	err := thirdpartyService.SendCaptchaEmail(requestData.Email, requestData.Type)
+	if responseError(err, ctx) {
 		return
 	}
-	if token == "" {
-		response.FailWithMessage("token获取失败", ctx)
-	}
-	response.OkWithDetailed(
-		response.Login{
-			Token: token, CurrentAccount: response.AccountModelToResponse(currentAccount),
-		}, "登录成功", ctx,
-	)
+	response.OkWithData(response.ExpirationTime{ExpirationTime: global.Config.Captcha.EmailCaptchaTimeOut}, ctx)
 }

@@ -67,6 +67,10 @@ func FailWithMessage(message string, ctx *gin.Context) {
 	ResponseAndAbort(500, map[string]interface{}{}, message, ctx)
 }
 
+func FrequentOperation(ctx *gin.Context) {
+	ResponseAndAbort(500, map[string]interface{}{}, "请勿频繁操作，请稍后再试！", ctx)
+}
+
 func FailWithDetailed(data interface{}, message string, ctx *gin.Context) {
 	ResponseAndAbort(500, data, message, ctx)
 }

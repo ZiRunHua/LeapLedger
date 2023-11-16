@@ -11,6 +11,7 @@ import (
 type User struct {
 	Username string `gorm:"type:varchar(128);comment:'用户名'"`
 	Password string `gorm:"type:varchar(64);comment:'密码'"`
+	Email    string `gorm:"type:varchar(64);comment:'邮箱'"`
 	gorm.Model
 	commonModel.BaseModel
 }

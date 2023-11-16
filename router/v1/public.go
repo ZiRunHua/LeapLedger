@@ -11,9 +11,12 @@ func (s *PublicRouter) InitPublicRouter(Router *gin.RouterGroup) *gin.RouterGrou
 	publicRouter := Router.Group("public")
 	publicApi := v1.ApiGroupApp.PublicApi
 	{
-		publicRouter.POST("captcha", publicApi.Captcha)
-		publicRouter.POST("login", publicApi.Login)
+		publicRouter.GET("/captcha", publicApi.Captcha)
+		publicRouter.POST("/captcha/email/send", publicApi.SendEmailCaptcha)
 
+		publicRouter.POST("/user/login", publicApi.Login)
+		publicRouter.POST("/user/register", publicApi.Register)
+		publicRouter.PUT("/user/password", publicApi.UpdatePassword)
 	}
 	return publicRouter
 }

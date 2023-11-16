@@ -9,35 +9,112 @@ import (
 	commonService "KeepAccount/service/common"
 	"github.com/pkg/errors"
 	"gorm.io/gorm"
+	"time"
 )
 
 type User struct{}
 
-func (u *User) Login(username string, password string, clientType constant.Client) (
-	*accountModel.Account, string, error,
+func (u *User) Login(email string, password string, clientType constant.Client, tx *gorm.DB) (
+	user *userModel.User, clientBaseInfo *userModel.UserClientBaseInfo, token string, err error,
 ) {
-	var user userModel.User
-	password = commonService.Common.HashPassword(username, password)
-	err := global.GvaDb.Where("username = ? And password = ?", username, password).First(&user).Error
+	password = commonService.Common.HashPassword(email, password)
+	err = global.GvaDb.Where("email = ? And password = ?", email, password).First(&user).Error
 	if err != nil {
-		return nil, "", errors.New("账号或密码错误")
+		return
 	}
 	userClient, err := userModel.GetUserClientModel(clientType)
 	if err != nil {
-		return nil, "", err
+		return
 	}
-	err = userClient.GetByUser(&user)
+	err = userClient.GetByUser(user)
 	if err != nil {
-		return nil, "", err
+		return
 	}
-	userClientInfo := userModel.GetUserClientBaseInfo(userClient)
-	customClaims := commonService.Common.MakeCustomClaims(userClientInfo)
-	token, err := commonService.Common.GenerateJWT(customClaims)
+	clientBaseInfo = userModel.GetUserClientBaseInfo(userClient)
+	customClaims := commonService.Common.MakeCustomClaims(clientBaseInfo.UserID)
+	token, err = commonService.Common.GenerateJWT(customClaims)
 	if err != nil {
-		return nil, "", err
+		return
 	}
-	account, err := query.FirstByPrimaryKey[*accountModel.Account](userClientInfo.CurrentAccountID)
-	return account, token, err
+	err = u.updateDataAfterLogin(user, userClient, tx)
+	if err != nil {
+		return
+	}
+	return
+}
+
+func (u *User) updateDataAfterLogin(user *userModel.User, client userModel.Client, tx *gorm.DB) error {
+	var err error
+	client.SetTx(tx)
+	clientHandlerFunc := func(db *gorm.DB) error {
+		err = db.Update("login_time", time.Now()).Error
+		if err != nil {
+			return err
+		}
+		return nil
+	}
+	err = userModel.HandleUserClient(client, clientHandlerFunc)
+	if err != nil {
+		return err
+	}
+	_, err = u.RecordAction(user, constant.Login, tx)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (userSvc *User) Register(addData *userModel.AddData, tx *gorm.DB) (*userModel.User, error) {
+	addData.Password = commonService.Common.HashPassword(addData.Email, addData.Password)
+	exist, err := query.Exist[*userModel.User]("email = ?", addData.Email)
+	if err != nil {
+		return nil, err
+	} else if exist {
+		return nil, errors.New("该邮箱已注册")
+	}
+	userDao := userModel.NewUserDao(tx)
+	user, err := userDao.Add(addData)
+	if err != nil {
+		if errors.Is(err, gorm.ErrDuplicatedKey) {
+			return nil, errors.New("该邮箱已注册")
+		}
+		return nil, err
+	}
+	for _, client := range userModel.GetClients() {
+		if err = client.InitByUser(user, tx); err != nil {
+			return nil, err
+		}
+	}
+	_, err = userSvc.RecordAction(user, constant.Register, tx)
+	if err != nil {
+		return nil, err
+	}
+	return user, nil
+}
+
+func (userSvc *User) UpdatePassword(user *userModel.User, newPassword string, tx *gorm.DB) error {
+	password := commonService.Common.HashPassword(user.Email, newPassword)
+	logRemark := ""
+	if password == user.Password {
+		logRemark = global.ErrSameAsTheOldPassword.Error()
+	}
+	err := tx.Model(user).Update("password", password).Error
+	if err != nil {
+		return err
+	}
+	_, err = userSvc.RecordActionAndRemark(user, constant.UpdatePassword, logRemark, tx)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (userSvc *User) UpdateInfo(user *userModel.User, username string, tx *gorm.DB) error {
+	err := tx.Model(user).Update("username", username).Error
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func (userSvc *User) SetClientAccount(
@@ -68,23 +145,24 @@ func (userSvc *User) SetClientAccount(
 	return nil
 }
 
-type AddUserData struct {
-	username string
-	password string
+func (userSvc *User) RecordAction(user *userModel.User, action constant.UserAction, tx *gorm.DB) (
+	*userModel.Log, error,
+) {
+	dao := userModel.NewLogDao(tx)
+	log, err := dao.Add(user, &userModel.LogAddData{Action: action})
+	if err != nil {
+		return nil, err
+	}
+	return log, err
 }
 
-func (userSvc *User) AddUser(addData *AddUserData, tx gorm.DB) error {
-
-	addData.password = commonService.Common.HashPassword(addData.username, addData.password)
-
-	if exist, err := query.Exist[*userModel.User]("username = ?", addData.username); err != nil {
-		return err
-	} else if exist {
-		return errors.New("该用户已存在")
+func (userSvc *User) RecordActionAndRemark(
+	user *userModel.User, action constant.UserAction, remark string, tx *gorm.DB,
+) (*userModel.Log, error) {
+	dao := userModel.NewLogDao(tx)
+	log, err := dao.Add(user, &userModel.LogAddData{Action: action, Remark: remark})
+	if err != nil {
+		return nil, err
 	}
-	user := &userModel.User{
-		Username: addData.username,
-		Password: addData.password,
-	}
-	return tx.Create(&user).Error
+	return log, err
 }

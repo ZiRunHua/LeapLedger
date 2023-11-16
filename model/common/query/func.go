@@ -21,7 +21,7 @@ func FirstByField[T commonModel.Model](field string, value interface{}) (T, erro
 
 func Exist[T commonModel.Model](query interface{}, args ...interface{}) (bool, error) {
 	var result T
-	err := result.GetDb().Where(query, args...).Take(&result).Error
+	err := global.GvaDb.Where(query, args...).Take(&result).Error
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		return false, nil
 	} else if err == nil {

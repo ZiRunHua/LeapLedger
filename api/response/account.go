@@ -3,6 +3,9 @@ package response
 import accountModel "KeepAccount/model/account"
 
 func AccountModelToResponse(account *accountModel.Account) *AccountOne {
+	if account == nil {
+		return &AccountOne{}
+	}
 	return &AccountOne{
 		Id:        account.ID,
 		Name:      account.Name,

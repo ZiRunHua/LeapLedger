@@ -4,11 +4,10 @@ import (
 	"KeepAccount/api/response"
 	apiUtil "KeepAccount/api/util"
 	"KeepAccount/service"
-	commonService "KeepAccount/service/common"
 	"github.com/gin-gonic/gin"
 )
 
-// api
+// 接口
 type PublicApi struct {
 }
 
@@ -23,9 +22,9 @@ type ApiGroup struct {
 
 var ApiGroupApp = new(ApiGroup)
 
-// service
+// 服务
 var (
-	common = commonService.Common
+	commonService = service.GroupApp.CommonServiceGroup
 )
 var (
 	userService        = service.GroupApp.UserServiceGroup.User
@@ -34,9 +33,15 @@ var (
 	transactionService = service.GroupApp.TransactionServiceGroup.Transaction
 	productService     = service.GroupApp.ProductServiceGroup.Product
 	templateService    = service.GroupApp.TemplateService.Template
+	//第三方服务
+	thirdpartyService = service.GroupApp.ThirdpartyServiceGroup
 )
 
-// util
+func init() {
+
+}
+
+// 工具
 var contextFunc = apiUtil.ContextFunc
 var checkFunc = apiUtil.CheckFunc
 
@@ -54,4 +59,15 @@ func responseError(err error, ctx *gin.Context) bool {
 		return true
 	}
 	return false
+}
+
+// 类型转换
+func interfaceToInt(v interface{}) (i int) {
+	switch v := v.(type) {
+	case int:
+		i = v
+	default:
+		i = 0
+	}
+	return
 }
