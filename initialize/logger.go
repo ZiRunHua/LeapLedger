@@ -7,10 +7,10 @@ import (
 )
 
 type _logger struct {
-	Path    string
-	Level   string
-	Format  string
-	encoder zapcore.Encoder
+	Path    string          `yaml:"Path"`   // 日志路径
+	Level   string          `yaml:"Level"`  // 日志级别
+	Format  string          `yaml:"Format"` // 日志格式
+	encoder zapcore.Encoder // 这是一个字段，不需要YAML标签
 }
 
 const (

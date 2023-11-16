@@ -10,17 +10,16 @@ import (
 )
 
 type _config struct {
-	Redis   _redis
-	Mysql   _mysql
-	Logger  _logger
-	System  _system
-	Captcha _captcha
+	Redis      _redis      `yaml:"Redis"`
+	Mysql      _mysql      `yaml:"Mysql"`
+	Logger     _logger     `yaml:"Logger"`
+	System     _system     `yaml:"System"`
+	Captcha    _captcha    `yaml:"Captcha"`
+	ThirdParty _thirdParty `yaml:"ThirdParty"`
 }
 
 var (
-	Config = &_config{
-		Redis: _redis{}, Mysql: _mysql{}, Logger: _logger{}, System: _system{}, Captcha: _captcha{},
-	}
+	Config        *_config
 	Cache         util.Cache
 	Db            *gorm.DB
 	RequestLogger *zap.Logger
@@ -34,6 +33,10 @@ type initializer interface {
 
 func init() {
 	var err error
+	Config = &_config{
+		Redis: _redis{}, Mysql: _mysql{}, Logger: _logger{}, System: _system{}, Captcha: _captcha{},
+		ThirdParty: _thirdParty{WeCom: _weCom{}},
+	}
 	if err = initConfig(); err != nil {
 		print(fmt.Sprint("配置初始化失败 err: %v", err))
 	}

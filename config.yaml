@@ -1,27 +1,33 @@
-redis:
-  db: 0
-  addr: 127.0.0.1:6379
-  password: "123456"
+Redis:
+  Db: 0
+  # Addr未空则表示不适用redis
+  Addr: ""
+  Password: ""
 
-system:
-  env: public
-  addr: 8080
-  dbType: mysql
-  routerPrefix: ""
+System:
+  Env: public
+  Addr: 8080
+  RouterPrefix: ""
 
-mysql:
-  path: "202.23.32.1"
-  port: "3306"
-  config: "parseTime=True"
-  dbName: "keep_account"
-  username: "root"
-  password: "123456"
-  logMode: ""
+Mysql:
+  Path: "202.23.32.1"
+  Port: "3306"
+  Config: "parseTime=True"
+  DbName: "keep_account"
+  Username: "root"
+  Password: "123456"
 
-captcha:
-  keyLong: 6
-  imgWidth: 240
-  imgHeight: 80
-  openCaptcha: 0
-  openCaptchaTimeout: 3600
-
+Captcha:
+  KeyLong: 6
+  ImgWidth: 180
+  ImgHeight: 50
+  OpenCaptcha: 0
+  OpenCaptchaTimeout: 3600
+  EmailCaptcha: 0
+  EmailCaptchaTimeOut: 3600
+ThirdParty:
+  # WeCom目前只用于邮件的发生
+  # CorpId和CorpSecret未空则表示未开启服务
+  WeCom:
+    CorpId: ""
+    CorpSecret: ""

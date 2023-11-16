@@ -9,17 +9,18 @@ import (
 )
 
 type _mysql struct {
-	Path     string
-	Port     string
-	Config   string
-	Dbname   string
-	Username string
-	Password string
+	Path     string `yaml:"Path"`
+	Port     string `yaml:"Port"`
+	Config   string `yaml:"Config"`
+	DbName   string `yaml:"DbName"`
+	Username string `yaml:"Username"`
+	Password string `yaml:"Password"`
 }
 
 func (m *_mysql) Dsn() string {
-	return m.Username + ":" + m.Password + "@tcp(" + m.Path + ":" + m.Port + ")/" + m.Dbname + "?" + m.Config
+	return m.Username + ":" + m.Password + "@tcp(" + m.Path + ":" + m.Port + ")/" + m.DbName + "?" + m.Config
 }
+
 func (m *_mysql) do() error {
 	mysqlConfig := mysql.Config{
 		DSN:                       m.Dsn(), // DSN data source name
@@ -38,6 +39,7 @@ func (m *_mysql) do() error {
 	Db = db
 	return nil
 }
+
 func (m *_mysql) GormConfig() *gorm.Config {
 	config := &gorm.Config{
 		SkipDefaultTransaction: true,
