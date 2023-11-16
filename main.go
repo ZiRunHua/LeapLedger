@@ -2,6 +2,7 @@ package main
 
 import (
 	_ "KeepAccount/global"
+	_ "KeepAccount/global/constant"
 	"KeepAccount/initialize"
 	"KeepAccount/router"
 	"fmt"
