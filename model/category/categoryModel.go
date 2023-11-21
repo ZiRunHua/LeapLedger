@@ -6,7 +6,6 @@ import (
 	commonModel "KeepAccount/model/common"
 	"database/sql"
 	"errors"
-	"gorm.io/gorm"
 	"time"
 )
 
@@ -16,19 +15,13 @@ type Category struct {
 	FatherID       uint                   `gorm:"column:father_id;comment:'category_father表ID'" `
 	IncomeExpense  constant.IncomeExpense `gorm:"column:income_expense;comment:'收支类型'"`
 	Name           string                 `gorm:"column:name;size:128;comment:'名称'"`
+	Icon           string                 `gorm:"comment:图标;size:64"`
 	Previous       uint                   `gorm:"column:previous;comment:'前一位'"`
 	OrderUpdatedAt time.Time              `gorm:"default:CURRENT_TIMESTAMP;comment:'顺序更新时间'"`
 	CreatedAt      time.Time              `gorm:"default:CURRENT_TIMESTAMP;comment:'创建时间'"`
 	commonModel.BaseModel
 }
 
-func NewCategory(db *gorm.DB) *Category {
-	c := new(Category)
-	if db != nil {
-		c.SetTx(db)
-	}
-	return c
-}
 func (c *Category) IsEmpty() bool {
 	return c.ID == 0
 }

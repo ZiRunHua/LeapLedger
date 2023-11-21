@@ -31,7 +31,8 @@ func (catApi *CategoryApi) CreateOne(ctx *gin.Context) {
 		return
 	}
 	category, err := categoryService.CreateOne(
-		father, categoryService.NewCategoryData(&categoryModel.Category{Name: requestData.Name}),
+		father,
+		categoryService.NewCategoryData(&categoryModel.Category{Name: requestData.Name, Icon: requestData.Icon}),
 	)
 	if err != nil {
 		response.FailToError(ctx, err)
@@ -135,7 +136,7 @@ func (catApi *CategoryApi) MoveFather(ctx *gin.Context) {
 }
 
 func (catApi *CategoryApi) Update(ctx *gin.Context) {
-	var requestData request.Name
+	var requestData request.CategoryUpdateOne
 	if err := ctx.ShouldBindJSON(&requestData); err != nil {
 		response.FailToParameter(ctx, err)
 		return
@@ -146,9 +147,12 @@ func (catApi *CategoryApi) Update(ctx *gin.Context) {
 		response.FailToError(ctx, err)
 		return
 	}
-	err = categoryService.Update(&category, requestData.Name)
-	if err != nil {
-		response.FailToError(ctx, err)
+	txFunc := func(tx *gorm.DB) error {
+		return categoryService.Update(
+			&category, categoryModel.CategoryUpdateData{Name: requestData.Name, Icon: requestData.Icon}, tx,
+		)
+	}
+	if err = global.GvaDb.Transaction(txFunc); responseError(err, ctx) {
 		return
 	}
 	response.Ok(ctx)
@@ -201,12 +205,17 @@ func (catApi *CategoryApi) GetTree(ctx *gin.Context) {
 		responseChildren = make([]response.CategoryOne, 0)
 		if categorySequence[father.ID] != nil {
 			for _, category := range *categorySequence[father.ID] {
-				responseChildren = append(responseChildren, response.CategoryOne{Name: category.Name, Id: category.ID, IncomeExpense: category.IncomeExpense})
+				responseChildren = append(
+					responseChildren,
+					*response.CategoryModelToResponse(&category),
+				)
 			}
 		}
 		responseTree.Tree = append(
 			responseTree.Tree,
-			response.FatherOne{Name: father.Name, Id: father.ID, IncomeExpense: father.IncomeExpense, Children: responseChildren},
+			response.FatherOne{
+				Name: father.Name, Id: father.ID, IncomeExpense: father.IncomeExpense, Children: responseChildren,
+			},
 		)
 	}
 	response.OkWithData(responseTree, ctx)

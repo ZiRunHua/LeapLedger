@@ -9,9 +9,9 @@ import (
 
 type Account struct {
 	gorm.Model
-	UserId uint
-	Name   string
-	User   userModel.User
+	UserId uint   `gorm:"comment:用户id;not null"`
+	Name   string `gorm:"comment:名称;size:128"`
+	Icon   string `gorm:"comment:图标;size:64"`
 	commonModel.BaseModel
 }
 

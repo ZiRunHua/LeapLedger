@@ -1,5 +1,11 @@
 package request
 
 type AccountCreateOne struct {
-	Name string `json:"name" binding:"required"`
+	Name string `binding:"required"`
+	Icon string `binding:"required"`
+}
+
+type AccountUpdateOne struct {
+	Name *string
+	Icon *string
 }

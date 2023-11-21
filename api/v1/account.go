@@ -24,22 +24,19 @@ func (a *AccountApi) CreateOne(ctx *gin.Context) {
 		response.FailToError(ctx, err)
 		return
 	}
-	account, err := accountService.Base.CreateOne(user, requestData.Name, global.GvaDb)
-	if err != nil {
-		response.FailToError(ctx, err)
+	var account *accountModel.Account
+	txFunc := func(tx *gorm.DB) error {
+		account, err = accountService.Base.CreateOne(user, requestData.Name, requestData.Icon, tx)
+		return err
+	}
+	if err = global.GvaDb.Transaction(txFunc); responseError(err, ctx) {
 		return
 	}
-	response.OkWithData(
-		response.CreateResponse{
-			Id:        account.ID,
-			UpdatedAt: account.UpdatedAt.Unix(),
-			CreatedAt: account.CreatedAt.Unix(),
-		}, ctx,
-	)
+	response.OkWithData(response.AccountModelToResponse(account), ctx)
 }
 
 func (a *AccountApi) Update(ctx *gin.Context) {
-	var requestData request.Name
+	var requestData request.AccountUpdateOne
 	if err := ctx.ShouldBindJSON(&requestData); err != nil {
 		response.FailToParameter(ctx, err)
 		return
@@ -48,8 +45,12 @@ func (a *AccountApi) Update(ctx *gin.Context) {
 	if false == pass {
 		return
 	}
-	err := global.GvaDb.Model(account).Update("name", requestData.Name).Error
-	if err != nil {
+	txFunc := func(tx *gorm.DB) error {
+		return accountModel.Dao.NewAccount(tx).Update(
+			account, &accountModel.AccountUpdateData{Name: requestData.Name, Icon: requestData.Icon},
+		)
+	}
+	if err := global.GvaDb.Transaction(txFunc); err != nil {
 		response.FailToError(ctx, err)
 		return
 	}
@@ -85,10 +86,7 @@ func (a *AccountApi) GetList(ctx *gin.Context) {
 			return
 		}
 		responseData.List = append(
-			responseData.List, response.AccountOne{
-				Id: account.ID, Name: account.Name, CreatedAt: account.CreatedAt.Unix(),
-				UpdatedAt: account.UpdatedAt.Unix(),
-			},
+			responseData.List, *response.AccountModelToResponse(&account),
 		)
 	}
 	response.OkWithData(responseData, ctx)
@@ -126,12 +124,7 @@ func (a *AccountApi) CreateOneByTemplate(ctx *gin.Context) {
 	if responseError(err, ctx) {
 		return
 	}
-	response.OkWithData(
-		response.AccountTemplateOne{
-			Id:   account.ID,
-			Name: account.Name,
-		}, ctx,
-	)
+	response.OkWithData(response.AccountModelToResponse(account), ctx)
 }
 
 func (a *AccountApi) GetAccountTemplateList(ctx *gin.Context) {
@@ -144,6 +137,7 @@ func (a *AccountApi) GetAccountTemplateList(ctx *gin.Context) {
 		responseData.List = append(
 			responseData.List, response.AccountTemplateOne{
 				Id:   account.ID,
+				Icon: account.Icon,
 				Name: account.Name,
 			},
 		)

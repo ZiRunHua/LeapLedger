@@ -16,11 +16,13 @@ type Category struct {
 
 type CreateData struct {
 	Name string
+	Icon string
 }
 
 func (catSvc *Category) NewCategoryData(category *categoryModel.Category) *CreateData {
 	return &CreateData{
 		Name: category.Name,
+		Icon: category.Icon,
 	}
 }
 
@@ -30,6 +32,7 @@ func (catSvc *Category) CreateOne(father *categoryModel.Father, data *CreateData
 		FatherID:       father.ID,
 		IncomeExpense:  father.IncomeExpense,
 		Name:           data.Name,
+		Icon:           data.Icon,
 		Previous:       0,
 		OrderUpdatedAt: time.Now(),
 	}
@@ -207,11 +210,10 @@ func (catSvc *Category) makeSequenceOfFather(
 	}
 }
 
-func (catSvc *Category) Update(category *categoryModel.Category, name string) error {
-	if name == "" {
-		return global.ErrInvalidParameter
-	}
-	return global.GvaDb.Model(category).Update("name", name).Error
+func (catSvc *Category) Update(
+	category *categoryModel.Category, data categoryModel.CategoryUpdateData, tx *gorm.DB,
+) error {
+	return categoryModel.Dao.NewCategory(tx).Update(category, &data)
 }
 
 func (catSvc *Category) UpdateFather(father *categoryModel.Father, name string) error {

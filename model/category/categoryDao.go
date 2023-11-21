@@ -3,6 +3,7 @@ package categoryModel
 import (
 	"KeepAccount/global"
 	accountModel "KeepAccount/model/account"
+	"KeepAccount/util"
 	"gorm.io/gorm"
 )
 
@@ -10,21 +11,37 @@ type categoryDao struct {
 	db *gorm.DB
 }
 
-func (d *dao) New(db *gorm.DB) *categoryDao {
+func (d *dao) NewCategory(db *gorm.DB) *categoryDao {
 	if db == nil {
 		db = global.GvaDb
 	}
 	return &categoryDao{db}
 }
 
-func (f *categoryDao) GetListByFather(father *Father) ([]Category, error) {
+type CategoryUpdateData struct {
+	Name *string
+	Icon *string
+}
+
+func (c *categoryDao) Update(category *Category, data *CategoryUpdateData) error {
+	updateData := &Category{}
+	if err := util.Data.CopyNotEmptyStringOptional(data.Name, &updateData.Name); err != nil {
+		return err
+	}
+	if err := util.Data.CopyNotEmptyStringOptional(data.Icon, &updateData.Icon); err != nil {
+		return err
+	}
+	return c.db.Model(&category).Updates(updateData).Error
+}
+
+func (c *categoryDao) GetListByFather(father *Father) ([]Category, error) {
 	list := []Category{}
-	err := f.db.Where("father_id = ?", father.ID).Find(&list).Error
+	err := c.db.Where("father_id = ?", father.ID).Find(&list).Error
 	return list, err
 }
 
-func (f *categoryDao) GetListByAccount(account *accountModel.Account) ([]Category, error) {
+func (c *categoryDao) GetListByAccount(account *accountModel.Account) ([]Category, error) {
 	list := []Category{}
-	err := f.db.Where("account_id = ?", account.ID).Find(&list).Error
+	err := c.db.Where("category_id = ?", account.ID).Find(&list).Error
 	return list, err
 }

@@ -23,7 +23,7 @@ func (t *template) CreateAccount(
 	if tmplAccount.UserId != tempUser.ID {
 		return nil, ErrNotBelongTemplate
 	}
-	account, err := accountService.GroupApp.Base.CreateOne(user, tmplAccount.Name, tx)
+	account, err := accountService.GroupApp.Base.CreateOne(user, tmplAccount.Name, tmplAccount.Icon, tx)
 	if err != nil {
 		return nil, err
 	}
@@ -47,7 +47,7 @@ func (t *template) CreateFatherCategory(
 		return err
 	}
 
-	tmplCategoryList, err := categoryModel.Dao.New(tx).GetListByFather(tmplFather)
+	tmplCategoryList, err := categoryModel.Dao.NewCategory(tx).GetListByFather(tmplFather)
 	if err != nil {
 		return err
 	}

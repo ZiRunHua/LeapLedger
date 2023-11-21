@@ -9,6 +9,7 @@ func AccountModelToResponse(account *accountModel.Account) *AccountOne {
 	return &AccountOne{
 		Id:        account.ID,
 		Name:      account.Name,
+		Icon:      account.Icon,
 		UpdatedAt: account.UpdatedAt.Unix(),
 		CreatedAt: account.CreatedAt.Unix(),
 	}
@@ -16,13 +17,10 @@ func AccountModelToResponse(account *accountModel.Account) *AccountOne {
 
 type AccountOne struct {
 	Id        uint
-	Name      string `binding:"required"`
+	Name      string
+	Icon      string
 	CreatedAt int64
 	UpdatedAt int64
-}
-
-type AccountGetOne struct {
-	AccountOne
 }
 
 type AccountGetAll struct {
@@ -30,8 +28,9 @@ type AccountGetAll struct {
 }
 
 type AccountTemplateOne struct {
-	Name string
 	Id   uint
+	Name string
+	Icon string
 }
 
 type AccountTemplateList struct {

@@ -10,14 +10,16 @@ import (
 
 type base struct{}
 
-func (b *base) CreateOne(user *userModel.User, name string, tx *gorm.DB) (*accountModel.Account, error) {
-	if name == "" {
-		name = "账本"
+func (b *base) CreateOne(user *userModel.User, name string, icon string, tx *gorm.DB) (*accountModel.Account, error) {
+	if name == "" || icon == "" {
+		return nil, global.NewErrDataIsEmpty("name或icon")
 	}
 	account := &accountModel.Account{
 		UserId: user.ID,
 		Name:   name,
+		Icon:   icon,
 	}
+	account.SetTx(tx)
 	err := account.CreateOne()
 	return account, errors.Wrap(err, "Create(account)")
 }
