@@ -12,6 +12,15 @@ import (
 	"gorm.io/gorm"
 )
 
+type _productApi interface {
+	GetList(ctx *gin.Context)
+	GetTransactionCategory(ctx *gin.Context)
+	MappingTransactionCategory(ctx *gin.Context)
+	DeleteTransactionCategoryMapping(ctx *gin.Context)
+	GetMappingTree(ctx *gin.Context)
+	ImportProductBill(ctx *gin.Context)
+}
+
 type ProductApi struct {
 }
 
@@ -70,8 +79,7 @@ func (p *ProductApi) GetTransactionCategory(ctx *gin.Context) {
 func (p *ProductApi) MappingTransactionCategory(ctx *gin.Context) {
 	var transactionCategory productModel.TransactionCategory
 	err := global.GvaDb.Model(&transactionCategory).First(&transactionCategory, ctx.Param("id")).Error
-	if err != nil {
-		response.FailToError(ctx, err)
+	if responseError(err, ctx) {
 		return
 	}
 	var requestData request.ProductMappingTransactionCategory
@@ -82,13 +90,35 @@ func (p *ProductApi) MappingTransactionCategory(ctx *gin.Context) {
 
 	var category categoryModel.Category
 	err = global.GvaDb.Model(&category).First(&category, requestData.CategoryId).Error
-	if err != nil {
-		response.FailToError(ctx, err)
+	if responseError(err, ctx) {
 		return
 	}
 	_, err = productService.MappingTransactionCategory(&category, &transactionCategory)
-	if err != nil {
-		response.FailToError(ctx, err)
+	if responseError(err, ctx) {
+		return
+	}
+	response.Ok(ctx)
+}
+
+func (p *ProductApi) DeleteTransactionCategoryMapping(ctx *gin.Context) {
+	var ptc productModel.TransactionCategory
+	err := global.GvaDb.Model(&ptc).First(&ptc, ctx.Param("id")).Error
+	if responseError(err, ctx) {
+		return
+	}
+	var requestData request.ProductMappingTransactionCategory
+	if err = ctx.ShouldBindJSON(&requestData); err != nil {
+		response.FailToParameter(ctx, err)
+		return
+	}
+
+	pass, category, _ := checkFunc.TransactionCategoryBelong(requestData.CategoryId, ctx)
+	if pass == false {
+		return
+	}
+
+	err = productService.DeleteMappingTransactionCategory(category, &ptc)
+	if responseError(err, ctx) {
 		return
 	}
 	response.Ok(ctx)
@@ -101,7 +131,6 @@ func (p *ProductApi) GetMappingTree(ctx *gin.Context) {
 		return
 	}
 	if pass, _ := checkFunc.AccountBelong(requestData.AccountId, ctx); pass == false {
-		response.Forbidden(ctx)
 		return
 	}
 	var prodTransCategory productModel.TransactionCategory
@@ -183,8 +212,4 @@ func (p *ProductApi) ImportProductBill(ctx *gin.Context) {
 func (p *ProductApi) getProductByParam(ctx *gin.Context) (*productModel.Product, error) {
 	product := productModel.Product{}
 	return product.SelectByPrimaryKey(ctx.Param("key"))
-}
-
-func (p *ProductApi) ProcessProductBillBeforeImport(ctx *gin.Context) {
-
 }

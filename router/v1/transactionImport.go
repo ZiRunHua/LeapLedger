@@ -14,7 +14,8 @@ func (a *TransactionImportRouter) InitTransactionImportRouter(Router *gin.Router
 		router.GET("/product/list", baseApi.GetList)
 		router.GET("/product/:key/transaction/category", baseApi.GetTransactionCategory)
 		router.GET("/product/category/mapping/tree", baseApi.GetMappingTree)
-		router.GET("/product/transaction/category/:id/mapping", baseApi.MappingTransactionCategory)
-		router.POST("/product/:key/import/bill", baseApi.ImportProductBill)
+		router.POST("/product/transaction/category/:id/mapping", baseApi.MappingTransactionCategory)
+		router.DELETE("/product/transaction/category/:id/mapping", baseApi.DeleteTransactionCategoryMapping)
+		router.POST("/product/:key/bill/import", baseApi.ImportProductBill)
 	}
 }

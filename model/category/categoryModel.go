@@ -4,6 +4,7 @@ import (
 	"KeepAccount/global/constant"
 	accountModel "KeepAccount/model/account"
 	commonModel "KeepAccount/model/common"
+	"KeepAccount/model/common/query"
 	"database/sql"
 	"errors"
 	"time"
@@ -31,6 +32,10 @@ func (c *Category) SelectById(id uint, forUpdate bool) error {
 
 func (c *Category) Exits(query interface{}, args ...interface{}) (bool, error) {
 	return commonModel.ExistOfModel(c, query, args)
+}
+
+func (c *Category) GetAccount() (*accountModel.Account, error) {
+	return query.FirstByPrimaryKey[*accountModel.Account](c.AccountID)
 }
 
 func (c *Category) GetOneByPrevious(previous uint) error {
