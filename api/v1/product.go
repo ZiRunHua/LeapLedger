@@ -6,8 +6,9 @@ import (
 	"KeepAccount/global"
 	accountModel "KeepAccount/model/account"
 	categoryModel "KeepAccount/model/category"
-	"KeepAccount/model/common/query"
 	productModel "KeepAccount/model/product"
+	userModel "KeepAccount/model/user"
+	"KeepAccount/util"
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 )
@@ -41,7 +42,7 @@ func (p *ProductApi) GetList(ctx *gin.Context) {
 			return
 		}
 		responseData.List = append(
-			responseData.List, response.ProductGetOne{Name: product.Name, UniqueKey: product.Key},
+			responseData.List, response.ProductGetOne{Name: product.Name, UniqueKey: string(product.Key)},
 		)
 	}
 	response.OkWithData(responseData, ctx)
@@ -181,35 +182,41 @@ func (p *ProductApi) GetMappingTree(ctx *gin.Context) {
 }
 
 func (p *ProductApi) ImportProductBill(ctx *gin.Context) {
-	product, err := p.getProductByParam(ctx)
+	var err error
+	fileHeader, err := ctx.FormFile("File")
 	if err != nil {
-		response.FailToError(ctx, err)
 		return
 	}
-	file, err := ctx.FormFile("File")
+	file, err := util.File.GetNewFileWithSuffixByFileHeader(fileHeader)
 	if err != nil {
-		response.FailToError(ctx, err)
 		return
 	}
-
-	account, err := query.FirstByPrimaryKey[*accountModel.Account](ctx.Param("AccountId"))
-	if err != nil {
-		response.FailToError(ctx, err)
+	user, product, account, pass := &userModel.User{}, &productModel.Product{}, &accountModel.Account{}, false
+	if user, err = contextFunc.GetUser(ctx); err != nil {
+		return
+	}
+	if pass, account = checkFunc.AccountBelong(ctx.PostForm("AccountId"), ctx); false == pass {
+		return
+	}
+	if product, err = p.getProductByParam(ctx); err != nil {
 		return
 	}
 	err = global.GvaDb.Transaction(
 		func(tx *gorm.DB) error {
-			return productService.BillImport.BillImport(account, product, file, tx)
+			return productService.BillImport(*user, *account, *product, file, tx)
 		},
 	)
 	if err != nil {
-		response.FailToError(ctx, err)
 		return
 	}
-	response.Ok(ctx)
+	defer response.HandleAndCleanup(
+		err, nil, func() error {
+			return file.Close()
+		}, ctx,
+	)
 }
 
 func (p *ProductApi) getProductByParam(ctx *gin.Context) (*productModel.Product, error) {
 	product := productModel.Product{}
-	return product.SelectByPrimaryKey(ctx.Param("key"))
+	return product.SelectByKey(productModel.KeyValue(ctx.Param("key")))
 }

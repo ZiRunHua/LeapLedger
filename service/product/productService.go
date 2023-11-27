@@ -2,13 +2,16 @@ package productService
 
 import (
 	"KeepAccount/global"
+	accountModel "KeepAccount/model/account"
 	categoryModel "KeepAccount/model/category"
 	productModel "KeepAccount/model/product"
+	userModel "KeepAccount/model/user"
+	"KeepAccount/util"
 	"github.com/pkg/errors"
+	"gorm.io/gorm"
 )
 
 type Product struct {
-	BillImport ProductBillImport
 }
 type _productService interface {
 	MappingTransactionCategory(category *categoryModel.Category, productTransCat *productModel.TransactionCategory) (*productModel.TransactionCategoryMapping, error)
@@ -39,4 +42,15 @@ func (proService *Product) DeleteMappingTransactionCategory(
 	}
 	err := global.GvaDb.Model(&productModel.TransactionCategoryMapping{}).Delete("category_id = ? AND ptc_id = ?", category.ID, productTransCat.ID).Error
 	return err
+}
+
+func (proService *Product) BillImport(
+	user userModel.User, account accountModel.Account, product productModel.Product, file *util.FileWithSuffix,
+	tx *gorm.DB,
+) error {
+	importServer := newProductBillImport(user, account, product)
+	if err := importServer.init(); err != nil {
+		return err
+	}
+	return importServer.doImport(file, tx)
 }

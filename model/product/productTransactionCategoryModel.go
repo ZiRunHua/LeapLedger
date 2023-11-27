@@ -49,7 +49,7 @@ func (tc *TransactionCategory) GetMap(productKey string) (map[uint]TransactionCa
 	return transCategoryMap, nil
 }
 
-func (tc *TransactionCategory) GetIncomeExpenseAndNameMap(productKey string) (
+func (tc *TransactionCategory) GetIncomeExpenseAndNameMap(productKey KeyValue) (
 	result map[constant.IncomeExpense]map[string]TransactionCategory, err error,
 ) {
 	var prodTransCategory TransactionCategory

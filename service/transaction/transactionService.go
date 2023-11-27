@@ -9,7 +9,6 @@ import (
 	transactionModel "KeepAccount/model/transaction"
 	userModel "KeepAccount/model/user"
 	"KeepAccount/util"
-	"fmt"
 	"github.com/pkg/errors"
 	"gorm.io/gorm"
 	"time"
@@ -137,16 +136,14 @@ func (txnService *Transaction) Delete(txn *transactionModel.Transaction) error {
 	return txnService.updateStatisticAfterDelete(txn)
 }
 
-func (txnService *Transaction) updateStatisticAfterDelete(
-	txn *transactionModel.Transaction,
-) error {
+func (txnService *Transaction) updateStatisticAfterDelete(txn *transactionModel.Transaction) error {
 	updateStatisticData := getUpdateStatisticData(txn)
 	updateStatisticData.amount = -updateStatisticData.amount
 	return txnService.updateStatistic(updateStatisticData)
 }
 
 func (txnService *Transaction) CreateMultiple(
-	account *accountModel.Account, transactionList []transactionModel.Transaction, tx *gorm.DB,
+	user userModel.User, account *accountModel.Account, transactionList []transactionModel.Transaction, tx *gorm.DB,
 ) ([]*transactionModel.Transaction, error) {
 	var categoryIds []uint
 	var err error
@@ -166,6 +163,7 @@ func (txnService *Transaction) CreateMultiple(
 
 	var key string
 	for index, _ := range transactionList {
+		transactionList[index].UserID = user.ID
 		transaction := transactionList[index]
 		if !categoryIdMap[transaction.CategoryID] {
 			failTransList = append(failTransList, &transaction)
@@ -191,10 +189,6 @@ func (txnService *Transaction) CreateMultiple(
 			failTransList = append(failTransList, &transaction)
 			continue
 		}
-	}
-	fmt.Println(incomeTransList)
-	for _, t := range expenseTransList {
-		fmt.Println(t)
 	}
 	var transaction transactionModel.Transaction
 	if len(incomeTransList) > 0 {

@@ -22,6 +22,7 @@ func (e *ExpenseStatistic) TableName() string {
 func (i *ExpenseStatistic) Accumulate(
 	tradeTime time.Time, categoryId uint, accountId uint, amount int,
 ) error {
+	tradeTime = tradeTime.Truncate(24 * time.Hour)
 	if amount == 0 {
 		return nil
 	}

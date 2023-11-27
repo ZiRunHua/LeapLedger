@@ -37,10 +37,6 @@ var (
 	thirdpartyService = service.GroupApp.ThirdpartyServiceGroup
 )
 
-func init() {
-
-}
-
 // 工具
 var contextFunc = apiUtil.ContextFunc
 var checkFunc = apiUtil.CheckFunc
@@ -59,15 +55,4 @@ func responseError(err error, ctx *gin.Context) bool {
 		return true
 	}
 	return false
-}
-
-// 类型转换
-func interfaceToInt(v interface{}) (i int) {
-	switch v := v.(type) {
-	case int:
-		i = v
-	default:
-		i = 0
-	}
-	return
 }

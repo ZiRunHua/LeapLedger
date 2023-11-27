@@ -26,7 +26,7 @@ type TransactionGetList struct {
 	UserId        *uint
 	AccountId     uint `binding:"required"`
 	CategoryId    *uint
-	IncomeExpense *constant.IncomeExpense `binding:"oneof=income expense"`
+	IncomeExpense *constant.IncomeExpense `binding:"omitempty,oneof=income expense"`
 	StartTime     *int64                  `binding:"omitempty,gt=0"`
 	EndTime       *int64                  `binding:"omitempty,gt=0"`
 	PageData
