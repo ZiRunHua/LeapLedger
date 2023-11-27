@@ -97,3 +97,27 @@ func logError(ctx *gin.Context, err error) {
 		),
 	)
 }
+
+func Handle(err error, data interface{}, ctx *gin.Context) {
+	//recover交给gin框架
+	if r := recover(); r != nil {
+		return
+	}
+	if true == ctx.IsAborted() {
+		return
+	}
+	if err != nil {
+		FailToError(ctx, err)
+	} else if data != nil {
+		OkWithData(data, ctx)
+	} else {
+		Ok(ctx)
+	}
+}
+
+func HandleAndCleanup(err error, data interface{}, closer func() error, ctx *gin.Context) {
+	if closerErr := closer(); closerErr != nil && err == nil {
+		err = closerErr
+	}
+	Handle(err, data, ctx)
+}
