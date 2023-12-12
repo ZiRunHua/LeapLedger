@@ -4,7 +4,7 @@ FROM golang:1.20-alpine
 # 设置环境变量
 ENV GO111MODULE=on
 ENV GOPROXY=https://goproxy.io,direct
-
+ENV TZ=Asia/Shanghai
 # 设置工作目录
 WORKDIR /server/KeepAccount
 
