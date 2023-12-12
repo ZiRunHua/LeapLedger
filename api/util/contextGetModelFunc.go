@@ -21,7 +21,7 @@ func (cf *contextFunc) GetTransByParam(ctx *gin.Context) (*transactionModel.Tran
 		response.FailToError(ctx, err)
 		return nil, false
 	}
-	if pass, _ := CheckFunc.AccountBelong(trans.AccountID, ctx); false == pass {
+	if pass, _ := CheckFunc.AccountBelong(trans.AccountId, ctx); false == pass {
 		return nil, false
 	}
 	return trans, true

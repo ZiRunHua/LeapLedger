@@ -14,8 +14,12 @@ import (
 type Product struct {
 }
 type _productService interface {
-	MappingTransactionCategory(category *categoryModel.Category, productTransCat *productModel.TransactionCategory) (*productModel.TransactionCategoryMapping, error)
-	DeleteMappingTransactionCategory(category *categoryModel.Category, productTransCat *productModel.TransactionCategory) error
+	MappingTransactionCategory(
+		category *categoryModel.Category, productTransCat *productModel.TransactionCategory,
+	) (*productModel.TransactionCategoryMapping, error)
+	DeleteMappingTransactionCategory(
+		category *categoryModel.Category, productTransCat *productModel.TransactionCategory,
+	) error
 }
 
 func (proService *Product) MappingTransactionCategory(
@@ -25,7 +29,7 @@ func (proService *Product) MappingTransactionCategory(
 		return nil, errors.Wrap(global.ErrInvalidParameter, "")
 	}
 	mapping := &productModel.TransactionCategoryMapping{
-		AccountID:  category.AccountID,
+		AccountID:  category.AccountId,
 		CategoryID: category.ID,
 		PtcID:      productTransCat.ID,
 		ProductKey: productTransCat.ProductKey,
@@ -40,7 +44,9 @@ func (proService *Product) DeleteMappingTransactionCategory(
 	if category.IncomeExpense != productTransCat.IncomeExpense {
 		return errors.Wrap(global.ErrInvalidParameter, "")
 	}
-	err := global.GvaDb.Model(&productModel.TransactionCategoryMapping{}).Delete("category_id = ? AND ptc_id = ?", category.ID, productTransCat.ID).Error
+	err := global.GvaDb.Model(&productModel.TransactionCategoryMapping{}).Delete(
+		"category_id = ? AND ptc_id = ?", category.ID, productTransCat.ID,
+	).Error
 	return err
 }
 

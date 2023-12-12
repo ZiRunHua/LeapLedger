@@ -28,8 +28,8 @@ func (catSvc *Category) NewCategoryData(category *categoryModel.Category) *Creat
 
 func (catSvc *Category) CreateOne(father *categoryModel.Father, data *CreateData) (*categoryModel.Category, error) {
 	category := &categoryModel.Category{
-		AccountID:      father.AccountID,
-		FatherID:       father.ID,
+		AccountId:      father.AccountID,
+		FatherId:       father.ID,
 		IncomeExpense:  father.IncomeExpense,
 		Name:           data.Name,
 		Icon:           data.Icon,
@@ -47,8 +47,8 @@ func (catSvc *Category) CreateList(
 	for _, data := range list {
 		categoryList = append(
 			categoryList, categoryModel.Category{
-				AccountID:      father.AccountID,
-				FatherID:       father.ID,
+				AccountId:      father.AccountID,
+				FatherId:       father.ID,
 				IncomeExpense:  father.IncomeExpense,
 				Name:           data.Name,
 				Previous:       0,
@@ -82,10 +82,10 @@ func (catSvc *Category) MoveCategory(
 ) error {
 	orlPrevious := category.Previous
 	if previous != nil && false == previous.IsEmpty() {
-		if category.IsEmpty() || previous.AccountID != category.AccountID || previous.IncomeExpense != category.IncomeExpense {
+		if category.IsEmpty() || previous.AccountId != category.AccountId || previous.IncomeExpense != category.IncomeExpense {
 			return errors.Wrap(global.ErrInvalidParameter, "categoryService.MoveCategory")
 		}
-		if false == father.IsEmpty() && (previous.AccountID != father.AccountID || previous.FatherID != father.ID || previous.IncomeExpense != father.IncomeExpense) {
+		if false == father.IsEmpty() && (previous.AccountId != father.AccountID || previous.FatherId != father.ID || previous.IncomeExpense != father.IncomeExpense) {
 			return errors.Wrap(global.ErrInvalidParameter, "categoryService.MoveCategory father")
 		}
 	}
@@ -122,16 +122,16 @@ func (catSvc *Category) MoveFather(father *categoryModel.Father, previous *categ
 func (catSvc *Category) SetFather(
 	category categoryModel.Category, father categoryModel.Father, previous *categoryModel.Category,
 ) error {
-	if category.FatherID == father.ID || previous.FatherID != father.ID || category.IncomeExpense != father.IncomeExpense || category.AccountID != father.AccountID {
+	if category.FatherId == father.ID || previous.FatherId != father.ID || category.IncomeExpense != father.IncomeExpense || category.AccountId != father.AccountID {
 		return errors.Wrap(global.ErrInvalidParameter, "categoryService.SetFather")
 	}
 	if previous != nil {
-		if father.AccountID != previous.AccountID || father.IncomeExpense != previous.IncomeExpense {
+		if father.AccountID != previous.AccountId || father.IncomeExpense != previous.IncomeExpense {
 			return errors.Wrap(global.ErrInvalidParameter, "categoryService.SetFather")
 		}
 		category.Previous = previous.ID
 	}
-	category.FatherID = father.ID
+	category.FatherId = father.ID
 	return category.SetFather()
 }
 
@@ -147,14 +147,14 @@ func (catSvc *Category) GetSequenceCategory(
 	heads := make(map[uint]uint)
 	for rows.Next() {
 		if err = global.GvaDb.ScanRows(rows, &category); err == nil {
-			if _, ok := tree[category.FatherID]; !ok {
-				tree[category.FatherID] = make(map[uint][]categoryModel.Category)
+			if _, ok := tree[category.FatherId]; !ok {
+				tree[category.FatherId] = make(map[uint][]categoryModel.Category)
 			}
-			if _, ok := tree[category.FatherID][category.Previous]; !ok {
-				tree[category.FatherID][category.Previous] = []categoryModel.Category{category}
+			if _, ok := tree[category.FatherId][category.Previous]; !ok {
+				tree[category.FatherId][category.Previous] = []categoryModel.Category{category}
 			} else {
-				tree[category.FatherID][category.Previous] = append(
-					tree[category.FatherID][category.Previous], category,
+				tree[category.FatherId][category.Previous] = append(
+					tree[category.FatherId][category.Previous], category,
 				)
 			}
 		}

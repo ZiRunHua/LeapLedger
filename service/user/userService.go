@@ -72,7 +72,7 @@ func (userSvc *User) Register(addData *userModel.AddData, tx *gorm.DB) (*userMod
 	} else if exist {
 		return nil, errors.New("该邮箱已注册")
 	}
-	userDao := userModel.NewUserDao(tx)
+	userDao := userModel.Dao.NewUser(tx)
 	user, err := userDao.Add(addData)
 	if err != nil {
 		if errors.Is(err, gorm.ErrDuplicatedKey) {

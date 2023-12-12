@@ -12,8 +12,8 @@ import (
 
 type Category struct {
 	ID             uint                   `gorm:"primary_key;column:id;comment:'主键'" `
-	AccountID      uint                   `gorm:"column:account_id;comment:'账本ID'"`
-	FatherID       uint                   `gorm:"column:father_id;comment:'category_father表ID'" `
+	AccountId      uint                   `gorm:"column:account_id;comment:'账本ID'"`
+	FatherId       uint                   `gorm:"column:father_id;comment:'category_father表ID'" `
 	IncomeExpense  constant.IncomeExpense `gorm:"column:income_expense;comment:'收支类型'"`
 	Name           string                 `gorm:"column:name;size:128;comment:'名称'"`
 	Icon           string                 `gorm:"comment:图标;size:64"`
@@ -35,7 +35,7 @@ func (c *Category) Exits(query interface{}, args ...interface{}) (bool, error) {
 }
 
 func (c *Category) GetAccount() (*accountModel.Account, error) {
-	return query.FirstByPrimaryKey[*accountModel.Account](c.AccountID)
+	return query.FirstByPrimaryKey[*accountModel.Account](c.AccountId)
 }
 
 func (c *Category) GetOneByPrevious(previous uint) error {
@@ -43,14 +43,14 @@ func (c *Category) GetOneByPrevious(previous uint) error {
 	return err
 }
 func (c *Category) CreateOne() error {
-	if c.FatherID == 0 {
+	if c.FatherId == 0 {
 		return errors.New("error")
 	}
 	return c.GetDb().Create(c).Error
 }
 func (c *Category) GetHead() (*Category, error) {
 	result := &Category{}
-	db := c.GetDb().Where("account_id = ? AND income_expense = ? AND previous = 0", c.AccountID, c.IncomeExpense)
+	db := c.GetDb().Where("account_id = ? AND income_expense = ? AND previous = 0", c.AccountId, c.IncomeExpense)
 	err := db.Order("previous asc,order_updated_at desc").First(&result).Error
 	return result, err
 }
@@ -60,8 +60,8 @@ func (c *Category) SetPrevious(previous *Category) error {
 		updateData["previous"] = 0
 	} else {
 		updateData["previous"] = previous.ID
-		if c.FatherID != previous.FatherID {
-			updateData["father_id"] = previous.FatherID
+		if c.FatherId != previous.FatherId {
+			updateData["father_id"] = previous.FatherId
 		}
 	}
 	updateData["order_updated_at"] = time.Now()
@@ -70,7 +70,7 @@ func (c *Category) SetPrevious(previous *Category) error {
 func (c *Category) SetFather() error {
 	return c.GetDb().Model(c).Select("father_id", "previous", "order_updated_at").Updates(
 		Category{
-			FatherID:       c.FatherID,
+			FatherId:       c.FatherId,
 			Previous:       c.Previous,
 			OrderUpdatedAt: time.Now(),
 		},

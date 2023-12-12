@@ -9,7 +9,7 @@ type UserDao struct {
 	db *gorm.DB
 }
 
-func NewUserDao(db *gorm.DB) *UserDao {
+func (*dao) NewUser(db *gorm.DB) *UserDao {
 	if db == nil {
 		db = global.GvaDb
 	}

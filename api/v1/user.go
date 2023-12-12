@@ -143,7 +143,7 @@ func (u *PublicApi) UpdatePassword(ctx *gin.Context) {
 	if responseError(err, ctx) {
 		return
 	}
-	user, err := userModel.NewUserDao(nil).SelectByEmail(requestData.Email)
+	user, err := userModel.Dao.NewUser(nil).SelectByEmail(requestData.Email)
 	if responseError(err, ctx) {
 		return
 	}

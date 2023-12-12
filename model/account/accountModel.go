@@ -23,7 +23,7 @@ func (a *Account) IsEmpty() bool {
 	return a.ID == 0
 }
 
-func (a *Account) SelectByPrimaryKey(id uint) (*Account, error) {
+func (a *Account) SelectById(id uint) (*Account, error) {
 	return query.FirstByPrimaryKey[*Account](id)
 }
 

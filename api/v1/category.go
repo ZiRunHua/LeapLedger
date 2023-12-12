@@ -228,7 +228,7 @@ func (catApi *CategoryApi) Delete(ctx *gin.Context) {
 		response.FailToError(ctx, err)
 		return
 	}
-	if pass, _ := checkFunc.AccountBelong(category.AccountID, ctx); pass == false {
+	if pass, _ := checkFunc.AccountBelong(category.AccountId, ctx); pass == false {
 		return
 	}
 	err = categoryService.Delete(&category)

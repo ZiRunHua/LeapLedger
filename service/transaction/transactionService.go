@@ -26,18 +26,18 @@ type UpdateStatisticData struct {
 
 func getUpdateStatisticData(transaction *transactionModel.Transaction) *UpdateStatisticData {
 	return &UpdateStatisticData{
-		accountID: transaction.AccountID, incomeExpense: transaction.IncomeExpense,
-		categoryID: transaction.CategoryID, tradeTime: transaction.TradeTime,
+		accountID: transaction.AccountId, incomeExpense: transaction.IncomeExpense,
+		categoryID: transaction.CategoryId, tradeTime: transaction.TradeTime,
 		amount: transaction.Amount,
 	}
 }
 
 func (txnService *Transaction) CreateOne(transaction *transactionModel.Transaction, user *userModel.User) error {
-	account, err := query.FirstByPrimaryKey[*accountModel.Account](transaction.AccountID)
+	account, err := query.FirstByPrimaryKey[*accountModel.Account](transaction.AccountId)
 	if err == nil && account.UserId != user.ID {
 		return errors.Wrap(err, "账本不属于当前用户")
 	}
-	transaction.UserID = user.ID
+	transaction.UserId = user.ID
 	if err = txnService.checkTransaction(transaction); err != nil {
 		return err
 	}
@@ -78,11 +78,11 @@ func (txnService *Transaction) updateStatistic(data *UpdateStatisticData) error 
 
 func (txnService *Transaction) checkTransaction(transaction *transactionModel.Transaction) error {
 	var category categoryModel.Category
-	err := category.SelectById(transaction.CategoryID, false)
+	err := category.SelectById(transaction.CategoryId, false)
 	if err != nil {
 		return errors.Wrap(err, "")
 	}
-	if category.AccountID != transaction.AccountID || transaction.Amount < 0 {
+	if category.AccountId != transaction.AccountId || transaction.Amount < 0 {
 		return errors.Wrap(global.ErrInvalidParameter, "")
 	}
 	return nil
@@ -107,7 +107,7 @@ func (txnService *Transaction) updateStatisticAfterUpdate(
 	oldTxn *transactionModel.Transaction, txn *transactionModel.Transaction,
 ) error {
 	var err error
-	if oldTxn.IncomeExpense == txn.IncomeExpense && oldTxn.CategoryID == txn.CategoryID && util.IsSameDay(
+	if oldTxn.IncomeExpense == txn.IncomeExpense && oldTxn.CategoryId == txn.CategoryId && util.Time.IsSameDay(
 		oldTxn.TradeTime, txn.TradeTime,
 	) { //同表同一条记录特殊处理
 		updateStatisticData := getUpdateStatisticData(txn)
@@ -163,9 +163,9 @@ func (txnService *Transaction) CreateMultiple(
 
 	var key string
 	for index, _ := range transactionList {
-		transactionList[index].UserID = user.ID
+		transactionList[index].UserId = user.ID
 		transaction := transactionList[index]
-		if !categoryIdMap[transaction.CategoryID] {
+		if !categoryIdMap[transaction.CategoryId] {
 			failTransList = append(failTransList, &transaction)
 			continue
 		}
@@ -173,17 +173,17 @@ func (txnService *Transaction) CreateMultiple(
 			incomeTransList = append(incomeTransList, &transaction)
 			key = transaction.TradeTime.Format("2006-01-02")
 			if incomeAmount[key] == nil {
-				incomeAmount[key] = map[uint]int{transaction.CategoryID: transaction.Amount}
+				incomeAmount[key] = map[uint]int{transaction.CategoryId: transaction.Amount}
 			} else {
-				incomeAmount[key][transaction.CategoryID] += transaction.Amount
+				incomeAmount[key][transaction.CategoryId] += transaction.Amount
 			}
 		} else if transaction.IncomeExpense == constant.Expense {
 			expenseTransList = append(expenseTransList, &transaction)
 			key = transaction.TradeTime.Format("2006-01-02")
 			if expenseAmount[key] == nil {
-				expenseAmount[key] = map[uint]int{transaction.CategoryID: transaction.Amount}
+				expenseAmount[key] = map[uint]int{transaction.CategoryId: transaction.Amount}
 			} else {
-				expenseAmount[key][transaction.CategoryID] += transaction.Amount
+				expenseAmount[key][transaction.CategoryId] += transaction.Amount
 			}
 		} else {
 			failTransList = append(failTransList, &transaction)

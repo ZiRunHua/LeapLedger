@@ -56,7 +56,7 @@ func (b *WeChatPayReader) setTransCategory() bool {
 		return false
 	}
 	b.currentTransaction.IncomeExpense = incomeExpense
-	b.currentTransaction.CategoryID = mapping.CategoryID
+	b.currentTransaction.CategoryId = mapping.CategoryID
 	return true
 }
 
