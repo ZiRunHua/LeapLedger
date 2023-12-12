@@ -21,7 +21,7 @@ func (m *_middleware) JWTAuth() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		token := apiUtil.ContextFunc.GetToken(ctx)
 		if token == "" {
-			response.Forbidden(ctx)
+			response.TokenExpired(ctx)
 			return
 		}
 		jwt := util.NewJWT()
