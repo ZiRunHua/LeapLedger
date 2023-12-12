@@ -80,7 +80,7 @@ func Forbidden(ctx *gin.Context) {
 }
 
 func TokenExpired(ctx *gin.Context) {
-	ResponseAndAbort(403, map[string]interface{}{}, "token expired", ctx)
+	ResponseAndAbort(401, map[string]interface{}{}, "token expired", ctx)
 }
 
 func logError(ctx *gin.Context, err error) {
