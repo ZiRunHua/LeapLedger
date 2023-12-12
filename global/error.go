@@ -16,7 +16,8 @@ var (
 
 // 数据校验
 var (
-	ErrDataIsEmpty = NewErrDataIsEmpty("")
+	ErrDataIsEmpty        = NewErrDataIsEmpty("")
+	ErrTimeFrameIsTooLong = errors.New("时间范围过长")
 )
 
 type errDataIsEmpty struct {

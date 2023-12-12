@@ -1,4 +1,4 @@
-package transaction
+package transactionModel
 
 import (
 	"KeepAccount/global/constant"
@@ -9,9 +9,9 @@ import (
 
 type Transaction struct {
 	gorm.Model
-	UserID        uint `gorm:"column:user_id"`
-	AccountID     uint `gorm:"column:account_id"`
-	CategoryID    uint `gorm:"column:category_id"`
+	UserId        uint `gorm:"column:user_id"`
+	AccountId     uint `gorm:"column:account_id"`
+	CategoryId    uint `gorm:"column:category_id"`
 	IncomeExpense constant.IncomeExpense
 	Amount        int
 	Remark        string

@@ -1,6 +1,7 @@
 package response
 
 import (
+	"KeepAccount/global"
 	"KeepAccount/global/constant"
 	transactionModel "KeepAccount/model/transaction"
 )
@@ -8,9 +9,10 @@ import (
 func TransactionModelToResponse(trans *transactionModel.Transaction) *TransactionOne {
 	return &TransactionOne{
 		Id:            trans.ID,
-		AccountId:     trans.AccountID,
+		UserId:        trans.UserId,
+		AccountId:     trans.AccountId,
 		Amount:        trans.Amount,
-		CategoryId:    trans.CategoryID,
+		CategoryId:    trans.CategoryId,
 		IncomeExpense: trans.IncomeExpense,
 		Remark:        trans.Remark,
 		TradeTime:     trans.TradeTime.Unix(),
@@ -21,6 +23,7 @@ func TransactionModelToResponse(trans *transactionModel.Transaction) *Transactio
 
 type TransactionOne struct {
 	Id            uint
+	UserId        uint
 	AccountId     uint
 	Amount        int
 	CategoryId    uint
@@ -31,7 +34,38 @@ type TransactionOne struct {
 	CreateTime    int64
 }
 
+type TransactionDetail struct {
+	Id                 uint
+	UserId             uint
+	UserName           string
+	AccountId          uint
+	AccountName        string
+	Amount             int
+	CategoryId         uint
+	CategoryIcon       string
+	CategoryName       string
+	CategoryFatherName string
+	IncomeExpense      constant.IncomeExpense
+	Remark             string
+	TradeTime          int64
+	UpdateTime         int64
+	CreateTime         int64
+}
+
 type TransactionGetList struct {
-	List []TransactionOne
+	List []TransactionDetail
 	PageData
+}
+type TransactionTotal struct {
+	global.IncomeExpenseStatistic
+}
+
+type TransactionStatistic struct {
+	global.IncomeExpenseStatistic
+	StartTime int64
+	EndTime   int64
+}
+
+type TransactionMonthStatistic struct {
+	List []TransactionStatistic
 }

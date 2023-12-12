@@ -16,5 +16,7 @@ func (c *TransactionRouter) InitTransactionRouter(Router *gin.RouterGroup) {
 		router.PUT("/:id", baseApi.Update)
 		router.DELETE("/:id", baseApi.Delete)
 		router.GET("/list", baseApi.GetList)
+		router.GET("/total", baseApi.GetTotal)
+		router.GET("/month/statistic", baseApi.GetMonthStatistic)
 	}
 }

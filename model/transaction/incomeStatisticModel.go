@@ -1,4 +1,4 @@
-package transaction
+package transactionModel
 
 import (
 	commonModel "KeepAccount/model/common"

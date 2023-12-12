@@ -22,12 +22,25 @@ type TransactionUpdateOne struct {
 	TradeTime     uint
 }
 
-type TransactionGetList struct {
-	UserId        *uint
+type TransactionQueryCondition struct {
 	AccountId     uint `binding:"required"`
-	CategoryId    *uint
+	UserIds       *[]uint
+	CategoryIds   *[]uint
 	IncomeExpense *constant.IncomeExpense `binding:"omitempty,oneof=income expense"`
-	StartTime     *int64                  `binding:"omitempty,gt=0"`
-	EndTime       *int64                  `binding:"omitempty,gt=0"`
+	MinimumAmount *int                    `binding:"omitempty,min=0"`
+	MaximumAmount *int                    `binding:"omitempty,min=0"`
+	TimeFrame
+}
+
+type TransactionGetList struct {
+	TransactionQueryCondition
 	PageData
+}
+
+type TransactionTotal struct {
+	TransactionQueryCondition
+}
+
+type TransactionMonthStatistic struct {
+	TransactionQueryCondition
 }
