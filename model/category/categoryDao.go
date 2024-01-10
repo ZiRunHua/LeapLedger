@@ -42,6 +42,6 @@ func (c *categoryDao) GetListByFather(father *Father) ([]Category, error) {
 
 func (c *categoryDao) GetListByAccount(account *accountModel.Account) ([]Category, error) {
 	list := []Category{}
-	err := c.db.Where("category_id = ?", account.ID).Find(&list).Error
+	err := c.db.Where("account_id = ?", account.ID).Find(&list).Error
 	return list, err
 }
