@@ -22,13 +22,22 @@ type UpdateStatisticData struct {
 	categoryID    uint
 	tradeTime     time.Time
 	amount        int
+	count         int
 }
 
-func getUpdateStatisticData(transaction *transactionModel.Transaction) *UpdateStatisticData {
-	return &UpdateStatisticData{
-		accountID: transaction.AccountId, incomeExpense: transaction.IncomeExpense,
-		categoryID: transaction.CategoryId, tradeTime: transaction.TradeTime,
-		amount: transaction.Amount,
+func getUpdateStatisticData(transaction *transactionModel.Transaction, isAdd bool) *UpdateStatisticData {
+	if isAdd {
+		return &UpdateStatisticData{
+			accountID: transaction.AccountId, incomeExpense: transaction.IncomeExpense,
+			categoryID: transaction.CategoryId, tradeTime: transaction.TradeTime,
+			amount: transaction.Amount, count: 1,
+		}
+	} else {
+		return &UpdateStatisticData{
+			accountID: transaction.AccountId, incomeExpense: transaction.IncomeExpense,
+			categoryID: transaction.CategoryId, tradeTime: transaction.TradeTime,
+			amount: -transaction.Amount, count: -1,
+		}
 	}
 }
 
@@ -44,7 +53,7 @@ func (txnService *Transaction) CreateOne(transaction *transactionModel.Transacti
 	if err = transaction.GetDb().Create(transaction).Error; err != nil {
 		return errors.Wrap(err, "")
 	}
-	return txnService.updateStatistic(getUpdateStatisticData(transaction))
+	return txnService.updateStatistic(getUpdateStatisticData(transaction, true))
 }
 
 func (txnService *Transaction) addUpdateStatisticTask(data UpdateStatisticData) error {
@@ -59,14 +68,14 @@ func (txnService *Transaction) updateStatistic(data *UpdateStatisticData) error 
 	case constant.Income:
 		var incomeStatistic transactionModel.IncomeStatistic
 		if err := incomeStatistic.Accumulate(
-			data.tradeTime, data.categoryID, data.accountID, data.amount,
+			data.tradeTime, data.categoryID, data.accountID, data.amount, data.count,
 		); err != nil {
 			return errors.Wrap(err, "incomeStatistic.Accumulate")
 		}
 	case constant.Expense:
 		var expenseStatistic transactionModel.ExpenseStatistic
 		if err := expenseStatistic.Accumulate(
-			data.tradeTime, data.categoryID, data.accountID, data.amount,
+			data.tradeTime, data.categoryID, data.accountID, data.amount, data.count,
 		); err != nil {
 			return errors.Wrap(err, "expenseStatistic.Accumulate")
 		}
@@ -110,19 +119,19 @@ func (txnService *Transaction) updateStatisticAfterUpdate(
 	if oldTxn.IncomeExpense == txn.IncomeExpense && oldTxn.CategoryId == txn.CategoryId && util.Time.IsSameDay(
 		oldTxn.TradeTime, txn.TradeTime,
 	) { //同表同一条记录特殊处理
-		updateStatisticData := getUpdateStatisticData(txn)
+		updateStatisticData := getUpdateStatisticData(txn, true)
 		updateStatisticData.amount -= oldTxn.Amount
+		updateStatisticData.count = 0
 		err = txnService.updateStatistic(updateStatisticData)
 		if err != nil {
 			return err
 		}
 	} else {
-		updateStatisticData := getUpdateStatisticData(oldTxn)
-		updateStatisticData.amount = -updateStatisticData.amount
+		updateStatisticData := getUpdateStatisticData(oldTxn, false)
 		if err = txnService.updateStatistic(updateStatisticData); err != nil {
 			return err
 		}
-		if err = txnService.updateStatistic(getUpdateStatisticData(txn)); err != nil {
+		if err = txnService.updateStatistic(getUpdateStatisticData(txn, true)); err != nil {
 			return err
 		}
 	}
@@ -137,8 +146,7 @@ func (txnService *Transaction) Delete(txn *transactionModel.Transaction) error {
 }
 
 func (txnService *Transaction) updateStatisticAfterDelete(txn *transactionModel.Transaction) error {
-	updateStatisticData := getUpdateStatisticData(txn)
-	updateStatisticData.amount = -updateStatisticData.amount
+	updateStatisticData := getUpdateStatisticData(txn, false)
 	return txnService.updateStatistic(updateStatisticData)
 }
 
@@ -158,6 +166,7 @@ func (txnService *Transaction) CreateMultiple(
 	}
 
 	incomeAmount, expenseAmount := make(map[string]map[uint]int), make(map[string]map[uint]int)
+	incomeCount, expenseCount := make(map[string]map[uint]int), make(map[string]map[uint]int)
 	failTransList, incomeTransList, expenseTransList := []*transactionModel.Transaction{}, []*transactionModel.Transaction{},
 		[]*transactionModel.Transaction{}
 
@@ -174,16 +183,20 @@ func (txnService *Transaction) CreateMultiple(
 			key = transaction.TradeTime.Format("2006-01-02")
 			if incomeAmount[key] == nil {
 				incomeAmount[key] = map[uint]int{transaction.CategoryId: transaction.Amount}
+				incomeCount[key] = map[uint]int{transaction.CategoryId: 1}
 			} else {
 				incomeAmount[key][transaction.CategoryId] += transaction.Amount
+				incomeCount[key][transaction.CategoryId]++
 			}
 		} else if transaction.IncomeExpense == constant.Expense {
 			expenseTransList = append(expenseTransList, &transaction)
 			key = transaction.TradeTime.Format("2006-01-02")
 			if expenseAmount[key] == nil {
 				expenseAmount[key] = map[uint]int{transaction.CategoryId: transaction.Amount}
+				expenseCount[key] = map[uint]int{transaction.CategoryId: 1}
 			} else {
 				expenseAmount[key][transaction.CategoryId] += transaction.Amount
+				expenseCount[key][transaction.CategoryId]++
 			}
 		} else {
 			failTransList = append(failTransList, &transaction)
@@ -196,7 +209,9 @@ func (txnService *Transaction) CreateMultiple(
 			return nil, err
 		}
 
-		if err = txnService.addStatisticAfterCreateMultiple(account, constant.Income, incomeAmount); err != nil {
+		if err = txnService.addStatisticAfterCreateMultiple(
+			account, constant.Income, incomeAmount, incomeCount,
+		); err != nil {
 			return nil, err
 		}
 	}
@@ -204,7 +219,9 @@ func (txnService *Transaction) CreateMultiple(
 		if err = tx.Model(&transaction).Create(expenseTransList).Error; err != nil {
 			return nil, err
 		}
-		if err = txnService.addStatisticAfterCreateMultiple(account, constant.Expense, expenseAmount); err != nil {
+		if err = txnService.addStatisticAfterCreateMultiple(
+			account, constant.Expense, expenseAmount, expenseCount,
+		); err != nil {
 			return nil, err
 		}
 	}
@@ -213,6 +230,7 @@ func (txnService *Transaction) CreateMultiple(
 
 func (txnService *Transaction) addStatisticAfterCreateMultiple(
 	account *accountModel.Account, incomeExpense constant.IncomeExpense, amountList map[string]map[uint]int,
+	countList map[string]map[uint]int,
 ) error {
 	var err error
 	var tradeTime time.Time
@@ -223,7 +241,7 @@ func (txnService *Transaction) addStatisticAfterCreateMultiple(
 		for categoryId, amount := range categoryList {
 			if err = txnService.updateStatistic(
 				&UpdateStatisticData{
-					account.ID, incomeExpense, categoryId, tradeTime, amount,
+					account.ID, incomeExpense, categoryId, tradeTime, amount, countList[date][categoryId],
 				},
 			); err != nil {
 				return err
