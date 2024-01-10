@@ -30,6 +30,10 @@ func (c *Category) SelectById(id uint, forUpdate bool) error {
 	return commonModel.SelectByIdOfModel(c, id, forUpdate)
 }
 
+func (c *Category) GetFather() (*Father, error) {
+	return query.FirstByPrimaryKey[*Father](c.FatherId)
+}
+
 func (c *Category) Exits(query interface{}, args ...interface{}) (bool, error) {
 	return commonModel.ExistOfModel(c, query, args)
 }
