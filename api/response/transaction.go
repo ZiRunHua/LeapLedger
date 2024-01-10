@@ -69,3 +69,13 @@ type TransactionStatistic struct {
 type TransactionMonthStatistic struct {
 	List []TransactionStatistic
 }
+
+type TransactionDayStatistic struct {
+	global.AmountCount
+	Date int64
+}
+
+type TransactionCategoryAmountRank struct {
+	Category CategoryOne
+	global.AmountCount
+}

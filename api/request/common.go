@@ -4,6 +4,7 @@ import (
 	"KeepAccount/global"
 	"KeepAccount/global/constant"
 	"github.com/pkg/errors"
+	"time"
 )
 
 type IncomeExpense struct {
@@ -45,4 +46,13 @@ func (t *TimeFrame) CheckTimeFrame() error {
 		return global.ErrTimeFrameIsTooLong
 	}
 	return nil
+}
+
+// 格式化日时间 将时间转为time.Time类型 并将StartTime置为当日第一秒 endTime置为当日最后一秒
+func (t *TimeFrame) FormatDayTime() (startTime time.Time, endTime time.Time) {
+	startTime = time.Unix(t.StartTime, 0)
+	endTime = time.Unix(t.EndTime, 0)
+	startTime = time.Date(startTime.Year(), startTime.Month(), startTime.Day(), 0, 0, 0, 0, time.Local)
+	endTime = time.Date(endTime.Year(), endTime.Month(), endTime.Day(), 23, 59, 59, 0, time.Local)
+	return
 }

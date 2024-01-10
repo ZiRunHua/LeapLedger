@@ -14,6 +14,7 @@ type TransactionCreateOne struct {
 }
 
 type TransactionUpdateOne struct {
+	UserId        uint
 	AccountId     uint
 	Amount        int
 	CategoryId    uint
@@ -43,4 +44,18 @@ type TransactionTotal struct {
 
 type TransactionMonthStatistic struct {
 	TransactionQueryCondition
+}
+
+type TransactionDayStatistic struct {
+	AccountId     uint `binding:"required"`
+	CategoryIds   *[]uint
+	IncomeExpense *constant.IncomeExpense `binding:"omitempty,oneof=income expense"`
+	TimeFrame
+}
+
+type TransactionCategoryAmountRank struct {
+	AccountId     uint                   `binding:"required"`
+	IncomeExpense constant.IncomeExpense `binding:"required,oneof=income expense"`
+	Limit         int                    `binding:"required"`
+	TimeFrame
 }

@@ -4,12 +4,13 @@ import (
 	"KeepAccount/api/request"
 	"KeepAccount/api/response"
 	"KeepAccount/global"
+	"KeepAccount/global/constant"
 	accountModel "KeepAccount/model/account"
 	categoryModel "KeepAccount/model/category"
+	"KeepAccount/model/common/query"
 	transactionModel "KeepAccount/model/transaction"
 	userModel "KeepAccount/model/user"
 	"KeepAccount/util"
-	"fmt"
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 	"reflect"
@@ -37,13 +38,14 @@ func (a *TransactionApi) GetOne(ctx *gin.Context) {
 	response.OkWithData(response.TransactionModelToResponse(trans), ctx)
 }
 
-func (a *TransactionApi) CreateOne(ctx *gin.Context) {
+func (t *TransactionApi) CreateOne(ctx *gin.Context) {
 	var requestData request.TransactionCreateOne
 	if err := ctx.ShouldBindJSON(&requestData); err != nil {
 		response.FailToParameter(ctx, err)
 		return
 	}
-	if pass, _ := checkFunc.AccountBelong(requestData.AccountId, ctx); false == pass {
+	pass, account := checkFunc.AccountBelong(requestData.AccountId, ctx)
+	if false == pass {
 		return
 	}
 	user, err := contextFunc.GetUser(ctx)
@@ -65,17 +67,18 @@ func (a *TransactionApi) CreateOne(ctx *gin.Context) {
 			return transactionService.CreateOne(transaction, user)
 		},
 	)
-	if err != nil {
-		response.FailToError(ctx, err)
+	if responseError(err, ctx) {
 		return
 	}
-	responseData := response.Id{
-		Id: transaction.ID,
+
+	var responseData *response.TransactionDetail
+	if responseData, err = t.getResponseDetail(*transaction, account); responseError(err, ctx) {
+		return
 	}
 	response.OkWithData(responseData, ctx)
 }
 
-func (a *TransactionApi) Update(ctx *gin.Context) {
+func (t *TransactionApi) Update(ctx *gin.Context) {
 	var requestData request.TransactionUpdateOne
 	if err := ctx.ShouldBindJSON(&requestData); err != nil {
 		response.FailToParameter(ctx, err)
@@ -85,10 +88,12 @@ func (a *TransactionApi) Update(ctx *gin.Context) {
 	if false == ok {
 		return
 	}
-	if pass, _ := checkFunc.AccountBelong(requestData.AccountId, ctx); false == pass {
+	pass, account := checkFunc.AccountBelong(requestData.AccountId, ctx)
+	if false == pass {
 		return
 	}
 	transaction := &transactionModel.Transaction{
+		UserId:        requestData.UserId,
 		AccountId:     requestData.AccountId,
 		CategoryId:    requestData.CategoryId,
 		IncomeExpense: requestData.IncomeExpense,
@@ -103,11 +108,56 @@ func (a *TransactionApi) Update(ctx *gin.Context) {
 			return transactionService.Update(transaction)
 		},
 	)
-	if err != nil {
-		response.FailToError(ctx, err)
+	if responseError(err, ctx) {
 		return
 	}
-	response.Ok(ctx)
+
+	var responseData *response.TransactionDetail
+	if responseData, err = t.getResponseDetail(*transaction, account); responseError(err, ctx) {
+		return
+	}
+	response.OkWithData(responseData, ctx)
+}
+func (t *TransactionApi) getResponseDetail(
+	trans transactionModel.Transaction, account *accountModel.Account,
+) (*response.TransactionDetail, error) {
+	var (
+		user     *userModel.User
+		category *categoryModel.Category
+		father   *categoryModel.Father
+		err      error
+	)
+	if account == nil {
+		if account, err = trans.GetAccount(); err != nil {
+			return nil, err
+		}
+	}
+	if user, err = trans.GetUser(); err != nil {
+		return nil, err
+	}
+	if category, err = trans.GetCategory(); err != nil {
+		return nil, err
+	}
+	if father, err = category.GetFather(); err != nil {
+		return nil, err
+	}
+	return &response.TransactionDetail{
+		Id:                 trans.ID,
+		UserId:             user.ID,
+		UserName:           user.Username,
+		AccountId:          account.ID,
+		AccountName:        account.Name,
+		Amount:             trans.Amount,
+		CategoryId:         trans.CategoryId,
+		CategoryIcon:       category.Icon,
+		CategoryName:       category.Name,
+		CategoryFatherName: father.Name,
+		IncomeExpense:      category.IncomeExpense,
+		Remark:             category.Icon,
+		TradeTime:          trans.TradeTime.Unix(),
+		UpdateTime:         trans.UpdatedAt.Unix(),
+		CreateTime:         trans.CreatedAt.Unix(),
+	}, nil
 }
 
 func (a *TransactionApi) Delete(ctx *gin.Context) {
@@ -247,8 +297,7 @@ func (t *TransactionApi) getFieldValues(transList []transactionModel.Transaction
 	structType := reflect.TypeOf(transList[0])
 	field, found := structType.FieldByName(fieldName)
 	if !found {
-		fmt.Println("Field not found")
-		return nil
+		panic("TransactionApi.getFieldValues:Field not found")
 	}
 
 	fieldIndex := field.Index[0]
@@ -351,4 +400,128 @@ func (t *TransactionApi) GetMonthStatistic(ctx *gin.Context) {
 		)
 	}
 	response.OkWithData(response.TransactionMonthStatistic{List: responseList}, ctx)
+}
+
+func (t *TransactionApi) GetDayStatistic(ctx *gin.Context) {
+	var requestData request.TransactionDayStatistic
+	if err := ctx.ShouldBindJSON(&requestData); err != nil {
+		response.FailToParameter(ctx, err)
+		return
+	}
+	if err := requestData.CheckTimeFrame(); err != nil {
+		response.FailToParameter(ctx, err)
+		return
+	}
+	pass, account := checkFunc.AccountBelong(requestData.AccountId, ctx)
+	if pass == false {
+		return
+	}
+	// 处理请求
+	startTime, endTime := requestData.FormatDayTime()
+	days := util.Time.SplitDays(startTime, endTime)
+	dayMap := make(map[time.Time]*response.TransactionDayStatistic, len(days))
+	condition := transactionModel.DayStatisticCondition{
+		Account:     *account,
+		CategoryIds: requestData.CategoryIds,
+		StartTime:   startTime,
+		EndTime:     endTime,
+	}
+	handleFunc := func(ie constant.IncomeExpense) error {
+		statistics, err := transactionModel.Dao.NewStatisticDao(nil).GetDayStatisticByCondition(ie, condition)
+		if err != nil {
+			return err
+		}
+		for _, item := range statistics {
+			dayMap[item.Date].Amount += item.Amount
+			dayMap[item.Date].Count += item.Count
+		}
+		return nil
+	}
+	// 处理响应
+	var err error
+	responseData := make([]response.TransactionDayStatistic, len(days), len(days))
+	for i, day := range days {
+		responseData[i] = response.TransactionDayStatistic{Date: day.Unix()}
+		dayMap[day] = &responseData[i]
+	}
+	if requestData.IncomeExpense != nil {
+		err = handleFunc(*requestData.IncomeExpense)
+		if responseError(err, ctx) {
+			return
+		}
+	} else {
+		if err = handleFunc(constant.Income); responseError(err, ctx) {
+			return
+		}
+		if err = handleFunc(constant.Expense); responseError(err, ctx) {
+			return
+		}
+	}
+	response.OkWithData(
+		response.List[response.TransactionDayStatistic]{List: responseData}, ctx,
+	)
+}
+
+func (t *TransactionApi) GetCategoryAmountRank(ctx *gin.Context) {
+	var requestData request.TransactionCategoryAmountRank
+	if err := ctx.ShouldBindJSON(&requestData); err != nil {
+		response.FailToParameter(ctx, err)
+		return
+	}
+	if err := requestData.CheckTimeFrame(); responseError(err, ctx) {
+		return
+	}
+	pass, account := checkFunc.AccountBelong(requestData.AccountId, ctx)
+	if pass == false {
+		return
+	}
+	// 处理查询
+	startTime, endTime := requestData.FormatDayTime()
+	condition := transactionModel.CategoryAmountRankCondition{
+		Account:   *account,
+		StartTime: startTime,
+		EndTime:   endTime,
+	}
+	rankingList, err := transactionModel.Dao.NewStatisticDao(nil).GetCategoryAmountRank(
+		requestData.IncomeExpense, condition, requestData.Limit,
+	)
+	if responseError(err, ctx) {
+		return
+	}
+	// 处理响应
+	var category *categoryModel.Category
+	responseData := make([]response.TransactionCategoryAmountRank, len(rankingList), requestData.Limit)
+	categoryIds := []uint{}
+	for i, rank := range rankingList {
+		responseData[i].Amount = rank.Amount
+		responseData[i].Count = rank.Count
+		category, err = query.FirstByPrimaryKey[*categoryModel.Category](rank.CategoryId)
+		categoryIds = append(categoryIds, rank.CategoryId)
+		if responseError(err, ctx) {
+			return
+		}
+		responseData[i].Category = *response.CategoryModelToResponse(category)
+	}
+	//数量不足时补足响应数量
+	if len(rankingList) < requestData.Limit {
+		categoryList := []categoryModel.Category{}
+		limit := requestData.Limit - len(rankingList)
+		query := global.GvaDb
+		query = query.Where("account_id = ?", account.ID)
+		query = query.Where("income_expense = ?", requestData.IncomeExpense)
+		err = query.Where("id NOT IN (?)", categoryIds).Limit(limit).Find(&categoryList).Error
+		if responseError(err, ctx) {
+			return
+		}
+		for _, c := range categoryList {
+			responseData = append(
+				responseData, response.TransactionCategoryAmountRank{
+					Category: *response.CategoryModelToResponse(&c),
+				},
+			)
+		}
+	}
+	response.OkWithData(
+		response.List[response.TransactionCategoryAmountRank]{List: responseData}, ctx,
+	)
 }

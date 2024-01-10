@@ -15,5 +15,6 @@ func (s *PublicRouter) InitUserRouter(Router *gin.RouterGroup) {
 		router.PUT("/client/current/account", baseApi.SetCurrentAccount)
 		router.PUT("/current/password", baseApi.UpdatePassword)
 		router.PUT("/current", baseApi.UpdateInfo)
+		router.GET("/home", baseApi.Home)
 	}
 }

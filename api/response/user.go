@@ -30,3 +30,19 @@ func UserModelToResponse(user *userModel.User) *UserOne {
 		CreateTime: user.CreatedAt.Unix(),
 	}
 }
+
+type UserHome struct {
+	HeaderCard           *UserHomeHeaderCard
+	TimePeriodStatistics *UserHomeTimePeriodStatistics
+}
+
+type UserHomeHeaderCard struct {
+	*TransactionStatistic
+}
+
+type UserHomeTimePeriodStatistics struct {
+	TodayData     *TransactionStatistic
+	YesterdayData *TransactionStatistic
+	WeekData      *TransactionStatistic
+	YearData      *TransactionStatistic
+}

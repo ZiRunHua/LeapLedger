@@ -7,9 +7,12 @@ import (
 	"KeepAccount/global/constant"
 	accountModel "KeepAccount/model/account"
 	"KeepAccount/model/common/query"
+	transactionModel "KeepAccount/model/transaction"
 	userModel "KeepAccount/model/user"
+	"KeepAccount/util"
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
+	"github.com/songzhibin97/gkit/egroup"
 	"gorm.io/gorm"
 	"time"
 )
@@ -256,4 +259,98 @@ func (u *UserApi) SendCaptchaEmail(ctx *gin.Context) {
 		return
 	}
 	response.OkWithData(response.ExpirationTime{ExpirationTime: global.Config.Captcha.EmailCaptchaTimeOut}, ctx)
+}
+
+func (u *UserApi) Home(ctx *gin.Context) {
+	var requestData request.UserHome
+	if err := ctx.ShouldBindJSON(&requestData); err != nil {
+		response.FailToParameter(ctx, err)
+		return
+	}
+
+	group := egroup.WithContext(ctx)
+	nowTime := time.Now()
+	year, month, day := time.Now().Date()
+	var todayData, yesterdayData, weekData, monthData, yearData response.TransactionStatistic
+	condition := &transactionModel.StatisticCondition{
+		ForeignKeyCondition: transactionModel.ForeignKeyCondition{AccountId: &requestData.AccountId},
+	}
+	handelOneTime := func(data *response.TransactionStatistic, start time.Time, end time.Time) error {
+		result, err := transactionModel.Dao.NewTransaction(nil).GetStatisticByCondition(
+			condition,
+			start,
+			end,
+		)
+		if err != nil {
+			return err
+		}
+		*data = response.TransactionStatistic{
+			IncomeExpenseStatistic: *result,
+			StartTime:              start.Unix(),
+			EndTime:                end.Unix(),
+		}
+		return nil
+	}
+	handelGoroutineOne := func() error {
+		var err error
+		//今日统计
+		if err = handelOneTime(
+			&todayData,
+			time.Date(year, month, day, 0, 0, 0, 0, time.Local),
+			time.Date(year, month, day, 23, 59, 59, 0, time.Local),
+		); err != nil {
+			return err
+		}
+		//昨日统计
+		if err = handelOneTime(
+			&yesterdayData,
+			time.Date(year, month, day-1, 0, 0, 0, 0, time.Local),
+			time.Date(year, month, day-1, 23, 59, 59, 0, time.Local),
+		); err != nil {
+			return err
+		}
+		//周统计
+		if err = handelOneTime(
+			&weekData,
+			util.Time.GetFirstSecondOfMonday(nowTime),
+			time.Date(year, month, day, 23, 59, 59, 0, time.Local),
+		); err != nil {
+			return err
+		}
+		return err
+	}
+
+	handelGoroutineTwo := func() error {
+		var err error
+		//月统计
+		if err = handelOneTime(
+			&monthData,
+			util.Time.GetFirstSecondOfMonth(nowTime),
+			time.Date(year, month, day, 23, 59, 59, 0, time.Local),
+		); err != nil {
+			return err
+		}
+		//年统计
+		if err = handelOneTime(
+			&yearData,
+			util.Time.GetFirstSecondOfYear(nowTime),
+			time.Date(year, month, day, 23, 59, 59, 0, time.Local),
+		); err != nil {
+			return err
+		}
+		return err
+	}
+	group.Go(handelGoroutineOne)
+	group.Go(handelGoroutineTwo)
+	// 等待所有 Goroutine 完成
+	if err := group.Wait(); responseError(err, ctx) {
+		return
+	}
+	// 处理响应
+	responseData := &response.UserHome{}
+	responseData.HeaderCard = &response.UserHomeHeaderCard{&monthData}
+	responseData.TimePeriodStatistics = &response.UserHomeTimePeriodStatistics{
+		TodayData: &todayData, YesterdayData: &yesterdayData, WeekData: &weekData, YearData: &yearData,
+	}
+	response.OkWithData(responseData, ctx)
 }

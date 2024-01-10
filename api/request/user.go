@@ -34,3 +34,7 @@ type UserSendEmail struct {
 	PicCaptcha
 	Type constant.UserAction `binding:"required,oneof=updatePassword"`
 }
+
+type UserHome struct {
+	AccountId uint
+}

@@ -8,7 +8,7 @@ require (
 	github.com/go-redis/redis/v8 v8.11.4
 	github.com/mojocn/base64Captcha v1.3.5
 	github.com/pkg/errors v0.9.1
-	github.com/songzhibin97/gkit v1.2.10
+	github.com/songzhibin97/gkit v1.2.11
 	github.com/xuri/excelize/v2 v2.8.0
 	go.uber.org/zap v1.24.0
 	golang.org/x/crypto v0.14.0
@@ -46,6 +46,8 @@ require (
 	github.com/ugorji/go/codec v1.2.11 // indirect
 	github.com/xuri/efp v0.0.0-20230802181842-ad255f2331ca // indirect
 	github.com/xuri/nfp v0.0.0-20230819163627-dc951e3ffe1a // indirect
+	go.opentelemetry.io/otel v1.3.0 // indirect
+	go.opentelemetry.io/otel/trace v1.3.0 // indirect
 	go.uber.org/atomic v1.10.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 	golang.org/x/arch v0.3.0 // indirect

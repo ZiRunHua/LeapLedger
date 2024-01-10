@@ -10,9 +10,10 @@ func CategoryModelToResponse(category *categoryModel.Category) *CategoryOne {
 		return &CategoryOne{}
 	}
 	return &CategoryOne{
-		Id:   category.ID,
-		Name: category.Name,
-		Icon: category.Icon,
+		Id:            category.ID,
+		Name:          category.Name,
+		Icon:          category.Icon,
+		IncomeExpense: category.IncomeExpense,
 	}
 }
 

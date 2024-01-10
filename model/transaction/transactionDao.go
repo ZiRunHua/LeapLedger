@@ -125,11 +125,13 @@ func (t *TransactionDao) getIncomeExpenseStatisticByWhere(
 	//根据传入的IncomeExpense条件判断查询 以减少查询次数
 	if incomeExpense == nil {
 		//查询收入和支出
-		err = t.doAmountCountStatistic(incomeExpense, TradeStartTime, TradeEndTime, &result.Income)
+		queryType := constant.Income
+		err = t.doAmountCountStatistic(&queryType, TradeStartTime, TradeEndTime, &result.Income)
 		if err != nil {
 			return
 		}
-		err = t.doAmountCountStatistic(incomeExpense, TradeStartTime, TradeEndTime, &result.Expense)
+		queryType = constant.Expense
+		err = t.doAmountCountStatistic(&queryType, TradeStartTime, TradeEndTime, &result.Expense)
 		if err != nil {
 			return
 		}
@@ -156,7 +158,7 @@ func (t *TransactionDao) doAmountCountStatistic(
 	result *global.AmountCount,
 ) (err error) {
 	query := t.db.Where("income_expense = ?", incomeExpense)
-	query = t.db.Where("trade_time BETWEEN ? AND ?", TradeStartTime, TradeEndTime)
+	query = query.Where("trade_time BETWEEN ? AND ?", TradeStartTime, TradeEndTime)
 
 	err = query.Model(&Transaction{}).Count(&result.Count).Error
 	if err != nil {

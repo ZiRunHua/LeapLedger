@@ -44,3 +44,7 @@ type PageData struct {
 type ExpirationTime struct {
 	ExpirationTime int
 }
+
+type List[T interface{}] struct {
+	List []T
+}

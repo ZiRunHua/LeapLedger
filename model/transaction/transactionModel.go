@@ -1,8 +1,12 @@
 package transactionModel
 
 import (
+	"KeepAccount/global"
 	"KeepAccount/global/constant"
+	accountModel "KeepAccount/model/account"
+	categoryModel "KeepAccount/model/category"
 	commonModel "KeepAccount/model/common"
+	userModel "KeepAccount/model/user"
 	"gorm.io/gorm"
 	"time"
 )
@@ -42,4 +46,22 @@ func (t *Transaction) Update() error {
 
 func (t *Transaction) CreateOne(transaction *Transaction) error {
 	return t.GetDb().Create(transaction).Error
+}
+
+func (t *Transaction) GetCategory() (*categoryModel.Category, error) {
+	var category categoryModel.Category
+	err := global.GvaDb.Model(&category).First(&category, t.CategoryId).Error
+	return &category, err
+}
+
+func (t *Transaction) GetUser() (*userModel.User, error) {
+	var user userModel.User
+	err := global.GvaDb.Model(&user).First(&user, t.UserId).Error
+	return &user, err
+}
+
+func (t *Transaction) GetAccount() (*accountModel.Account, error) {
+	var account accountModel.Account
+	err := global.GvaDb.Model(&account).First(&account, t.AccountId).Error
+	return &account, err
 }
