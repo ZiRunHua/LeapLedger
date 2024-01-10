@@ -12,7 +12,7 @@ System:
 Mysql:
   Path: "202.23.32.1"
   Port: "3306"
-  Config: "parseTime=True"
+  Config: "parseTime=True&loc=Local"
   DbName: "keep_account"
   Username: "root"
   Password: "123456"
