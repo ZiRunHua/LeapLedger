@@ -27,6 +27,12 @@ func (u *User) IsEmpty() bool {
 func (u *User) SelectById(id uint) error {
 	return global.GvaDb.First(&u, id).Error
 }
+
+func (u *User) GetTransactionShareConfig() (*TransactionShareConfig, error) {
+	data := &TransactionShareConfig{}
+	return data, data.SelectByUserId(u.ID)
+}
+
 func (u *User) hashPassword() error {
 	data := []byte(u.Username + u.Password)
 	h := sha1.Sum(data)

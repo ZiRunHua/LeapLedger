@@ -46,3 +46,22 @@ type UserHomeTimePeriodStatistics struct {
 	WeekData      *TransactionStatistic
 	YearData      *TransactionStatistic
 }
+
+type UserTransactionShareConfig struct {
+	Account    bool
+	CreateTime bool
+	UpdateTime bool
+	Remark     bool
+}
+
+func UserTransactionShareConfigModelToResponse(data *userModel.TransactionShareConfig) *UserTransactionShareConfig {
+	if data == nil {
+		return &UserTransactionShareConfig{}
+	}
+	return &UserTransactionShareConfig{
+		Account:    data.GetFlagStatus(userModel.FLAG_ACCOUNT),
+		CreateTime: data.GetFlagStatus(userModel.FLAG_CREATE_TIME),
+		UpdateTime: data.GetFlagStatus(userModel.FLAG_UPDATE_TIME),
+		Remark:     data.GetFlagStatus(userModel.FLAG_REMARK),
+	}
+}

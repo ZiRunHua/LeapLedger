@@ -354,3 +354,55 @@ func (u *UserApi) Home(ctx *gin.Context) {
 	}
 	response.OkWithData(responseData, ctx)
 }
+
+func (u *UserApi) GetTransactionShareConfig(ctx *gin.Context) {
+	user, err := contextFunc.GetUser(ctx)
+	if responseError(err, ctx) {
+		return
+	}
+	config := &userModel.TransactionShareConfig{}
+	if err = config.SelectByUserId(user.ID); responseError(err, ctx) {
+		return
+	}
+	responseData := response.UserTransactionShareConfigModelToResponse(config)
+	response.OkWithData(responseData, ctx)
+}
+
+func (u *UserApi) UpdateTransactionShareConfig(ctx *gin.Context) {
+	var err error
+	// 处理请求数据
+	var requestData request.UserTransactionShareConfigUpdate
+	if err = ctx.ShouldBindJSON(&requestData); err != nil {
+		response.FailToParameter(ctx, err)
+		return
+	}
+	user, err := contextFunc.GetUser(ctx)
+	if responseError(err, ctx) {
+		return
+	}
+	// 处理
+	config, err := user.GetTransactionShareConfig()
+	if responseError(err, ctx) {
+		return
+	}
+	flag, err := request.GetFlagByFlagName(requestData.Flag)
+	if responseError(err, ctx) {
+		return
+	}
+
+	if requestData.Status {
+		err = config.OpenDisplayFlag(flag, global.GvaDb)
+	} else {
+		err = config.ClosedDisplayFlag(flag, global.GvaDb)
+	}
+	// 响应
+	if responseError(err, ctx) {
+		return
+	}
+	config, err = user.GetTransactionShareConfig()
+	if responseError(err, ctx) {
+		return
+	}
+	responseData := response.UserTransactionShareConfigModelToResponse(config)
+	response.OkWithData(responseData, ctx)
+}

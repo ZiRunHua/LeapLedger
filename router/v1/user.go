@@ -16,5 +16,8 @@ func (s *PublicRouter) InitUserRouter(Router *gin.RouterGroup) {
 		router.PUT("/current/password", baseApi.UpdatePassword)
 		router.PUT("/current", baseApi.UpdateInfo)
 		router.GET("/home", baseApi.Home)
+
+		router.GET("/transaction/share/config", baseApi.GetTransactionShareConfig)
+		router.PUT("/transaction/share/config", baseApi.UpdateTransactionShareConfig)
 	}
 }
