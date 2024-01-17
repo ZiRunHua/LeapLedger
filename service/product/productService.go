@@ -44,9 +44,9 @@ func (proService *Product) DeleteMappingTransactionCategory(
 	if category.IncomeExpense != productTransCat.IncomeExpense {
 		return errors.Wrap(global.ErrInvalidParameter, "")
 	}
-	err := global.GvaDb.Model(&productModel.TransactionCategoryMapping{}).Delete(
+	err := global.GvaDb.Where(
 		"category_id = ? AND ptc_id = ?", category.ID, productTransCat.ID,
-	).Error
+	).Delete(&productModel.TransactionCategoryMapping{}).Error
 	return err
 }
 

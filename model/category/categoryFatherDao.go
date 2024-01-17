@@ -19,6 +19,8 @@ func (d *dao) NewFather(db *gorm.DB) *fatherDao {
 
 func (f *fatherDao) GetListByAccount(account *accountModel.Account) ([]Father, error) {
 	list := []Father{}
-	err := f.db.Where("account_id = ?", account.ID).Find(&list).Error
+	err := f.db.Where(
+		"account_id = ?", account.ID,
+	).Order("income_expense asc,previous asc,order_updated_at desc").Find(&list).Error
 	return list, err
 }

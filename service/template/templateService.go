@@ -14,7 +14,7 @@ type template struct{}
 
 func (t *template) GetList() ([]accountModel.Account, error) {
 	list := []accountModel.Account{}
-	err := global.GvaDb.Where("user_id = ?", tempUser.ID).First(&list).Error
+	err := global.GvaDb.Where("user_id = ?", tempUser.ID).Find(&list).Error
 	return list, err
 }
 func (t *template) CreateAccount(
