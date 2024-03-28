@@ -1,4 +1,4 @@
-package util
+package log
 
 import (
 	"go.uber.org/zap"
@@ -7,12 +7,7 @@ import (
 	"path/filepath"
 )
 
-type log struct{}
-
-var Log = &log{}
-
-// Deprecated: 改用 log.GetNewZapLogger 更有利于阅读
-func (l *log) GetNewZapLogger(logPath string) (*zap.Logger, error) {
+func GetNewZapLogger(logPath string) (*zap.Logger, error) {
 	logDir := filepath.Dir(logPath)
 	err := os.MkdirAll(logDir, os.ModePerm)
 	if err != nil {
