@@ -27,8 +27,18 @@ const (
 	Expense IncomeExpense = "expense"
 )
 
+func (ie *IncomeExpense) QueryIncome() bool {
+	return ie == nil || *ie == Income
+}
+
+func (ie *IncomeExpense) QueryExpense() bool {
+	return ie == nil || *ie == Expense
+}
+
 // Client 客户端
 type Client string
+
+var ClientList = []Client{Web, Android, Ios}
 
 const (
 	Web     Client = "web"
@@ -66,4 +76,12 @@ const (
 	NotificationOfCaptcha             Notification = iota
 	NotificationOfRegistrationSuccess Notification = iota
 	NotificationOfUpdatePassword      Notification = iota
+)
+
+type LogOperation string
+
+const (
+	LogOperationOfAdd    LogOperation = "add"
+	LogOperationOfUpdate LogOperation = "update"
+	LogOperationOfDelete LogOperation = "delete"
 )
