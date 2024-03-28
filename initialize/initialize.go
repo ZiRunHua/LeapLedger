@@ -2,7 +2,6 @@ package initialize
 
 import (
 	"KeepAccount/util"
-	"fmt"
 	"go.uber.org/zap"
 	"gopkg.in/yaml.v3"
 	"gorm.io/gorm"
@@ -12,6 +11,7 @@ import (
 type _config struct {
 	Redis      _redis      `yaml:"Redis"`
 	Mysql      _mysql      `yaml:"Mysql"`
+	Nats       _nats       `yaml:"Nats"`
 	Logger     _logger     `yaml:"Logger"`
 	System     _system     `yaml:"System"`
 	Captcha    _captcha    `yaml:"Captcha"`
@@ -34,11 +34,11 @@ type initializer interface {
 func init() {
 	var err error
 	Config = &_config{
-		Redis: _redis{}, Mysql: _mysql{}, Logger: _logger{}, System: _system{}, Captcha: _captcha{},
+		Redis: _redis{}, Mysql: _mysql{}, Logger: _logger{}, System: _system{}, Captcha: _captcha{}, Nats: _nats{},
 		ThirdParty: _thirdParty{WeCom: _weCom{}},
 	}
 	if err = initConfig(); err != nil {
-		print(fmt.Sprint("配置初始化失败 err: %v", err))
+		print("配置初始化失败 err: %v", err)
 	}
 	if err = Config.Logger.do(); err != nil {
 		print("初始化logger错误 err: %v", err)
@@ -48,6 +48,9 @@ func init() {
 	}
 	if err = Config.Redis.do(); err != nil {
 		print("初始化Redis错误 err: %v", err)
+	}
+	if err = Config.Nats.do(); err != nil {
+		print("初始化nast错误 err: %v", err)
 	}
 }
 
