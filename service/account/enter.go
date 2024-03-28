@@ -1,7 +1,14 @@
 package accountService
 
-var GroupApp = &Group{}
+import (
+	log "KeepAccount/service/log"
+)
+
+var ServiceGroupApp = &Group{}
 
 type Group struct {
-	Base base
+	Base  base
+	Share share
 }
+
+var logServer = log.Log

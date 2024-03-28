@@ -3,21 +3,20 @@ package productService
 import (
 	accountModel "KeepAccount/model/account"
 	productModel "KeepAccount/model/product"
-	userModel "KeepAccount/model/user"
 	"KeepAccount/service/product/bill"
 	"KeepAccount/util"
 	"gorm.io/gorm"
 )
 
 type ProductBillImport struct {
-	user       userModel.User
-	account    accountModel.Account
-	product    productModel.Product
-	billReader *bill.ReaderTemplate
+	accountUser accountModel.User
+	account     accountModel.Account
+	product     productModel.Product
+	billReader  *bill.ReaderTemplate
 }
 
 func newProductBillImport(
-	user userModel.User, account accountModel.Account, product productModel.Product,
+	accountUser accountModel.User, account accountModel.Account, product productModel.Product,
 ) *ProductBillImport {
 	var currentBill bill.ReaderTemplate
 	//根据第三方产品设置当前账单的读取器
@@ -32,10 +31,10 @@ func newProductBillImport(
 		panic("未开放该第三方账本导入功能")
 	}
 	return &ProductBillImport{
-		user:       user,
-		account:    account,
-		product:    product,
-		billReader: &currentBill,
+		accountUser: accountUser,
+		account:     account,
+		product:     product,
+		billReader:  &currentBill,
 	}
 }
 
@@ -53,7 +52,7 @@ func (pbiService *ProductBillImport) doImport(file *util.FileWithSuffix, tx *gor
 		return err
 	}
 	_, err := transactionServer.CreateMultiple(
-		pbiService.user, &pbiService.account, pbiService.billReader.SuccessTransList, tx,
+		pbiService.accountUser, pbiService.account, pbiService.billReader.SuccessTransList, tx,
 	)
 	return err
 }

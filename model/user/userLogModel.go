@@ -46,7 +46,7 @@ type LogAddData struct {
 	Remark string
 }
 
-func (l *LogDao) Add(user *User, data *LogAddData) (*Log, error) {
+func (l *LogDao) Add(user User, data *LogAddData) (*Log, error) {
 	log := &Log{
 		UserId: user.ID,
 		Action: data.Action,

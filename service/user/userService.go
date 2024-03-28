@@ -14,85 +14,73 @@ import (
 
 type User struct{}
 
-func (u *User) Login(email string, password string, clientType constant.Client, tx *gorm.DB) (
-	user *userModel.User, clientBaseInfo *userModel.UserClientBaseInfo, token string, err error,
+func (userSvc *User) Login(email string, password string, clientType constant.Client, tx *gorm.DB) (
+	user userModel.User, clientBaseInfo userModel.UserClientBaseInfo, token string, err error,
 ) {
 	password = commonService.Common.HashPassword(email, password)
 	err = global.GvaDb.Where("email = ? And password = ?", email, password).First(&user).Error
 	if err != nil {
 		return
 	}
-	userClient, err := userModel.GetUserClientModel(clientType)
+	clientBaseInfo, err = userModel.NewDao(tx).SelectUserClientBaseInfo(user.ID, clientType)
 	if err != nil {
 		return
 	}
-	err = userClient.GetByUser(user)
-	if err != nil {
-		return
-	}
-	clientBaseInfo = userModel.GetUserClientBaseInfo(userClient)
-	customClaims := commonService.Common.MakeCustomClaims(clientBaseInfo.UserID)
+	customClaims := commonService.Common.MakeCustomClaims(clientBaseInfo.UserId)
 	token, err = commonService.Common.GenerateJWT(customClaims)
 	if err != nil {
 		return
 	}
-	err = u.updateDataAfterLogin(user, userClient, tx)
+	err = userSvc.updateDataAfterLogin(user, clientType, tx)
 	if err != nil {
 		return
 	}
 	return
 }
 
-func (u *User) updateDataAfterLogin(user *userModel.User, client userModel.Client, tx *gorm.DB) error {
-	var err error
-	client.SetTx(tx)
-	clientHandlerFunc := func(db *gorm.DB) error {
-		err = db.Update("login_time", time.Now()).Error
-		if err != nil {
-			return err
-		}
-		return nil
-	}
-	err = userModel.HandleUserClient(client, clientHandlerFunc)
+func (userSvc *User) updateDataAfterLogin(user userModel.User, clientType constant.Client, tx *gorm.DB) error {
+	err := tx.Model(userModel.GetUserClientModel(clientType)).Where("user_id = ?", user.ID).Update(
+		"login_time", time.Now(),
+	).Error
 	if err != nil {
 		return err
 	}
-	_, err = u.RecordAction(user, constant.Login, tx)
+	_, err = userSvc.RecordAction(user, constant.Login, tx)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func (userSvc *User) Register(addData *userModel.AddData, tx *gorm.DB) (*userModel.User, error) {
+func (userSvc *User) Register(addData userModel.AddData, tx *gorm.DB) (user userModel.User, err error) {
 	addData.Password = commonService.Common.HashPassword(addData.Email, addData.Password)
 	exist, err := query.Exist[*userModel.User]("email = ?", addData.Email)
 	if err != nil {
-		return nil, err
+		return
 	} else if exist {
-		return nil, errors.New("该邮箱已注册")
+		return user, errors.New("该邮箱已注册")
 	}
-	userDao := userModel.Dao.NewUser(tx)
-	user, err := userDao.Add(addData)
+	userDao := userModel.NewDao(tx)
+	user, err = userDao.Add(addData)
 	if err != nil {
 		if errors.Is(err, gorm.ErrDuplicatedKey) {
-			return nil, errors.New("该邮箱已注册")
+			return user, errors.New("该邮箱已注册")
 		}
-		return nil, err
+		return
 	}
 	for _, client := range userModel.GetClients() {
 		if err = client.InitByUser(user, tx); err != nil {
-			return nil, err
+			return
 		}
 	}
 	_, err = userSvc.RecordAction(user, constant.Register, tx)
 	if err != nil {
-		return nil, err
+		return
 	}
-	return user, nil
+	return
 }
 
-func (userSvc *User) UpdatePassword(user *userModel.User, newPassword string, tx *gorm.DB) error {
+func (userSvc *User) UpdatePassword(user userModel.User, newPassword string, tx *gorm.DB) error {
 	password := commonService.Common.HashPassword(user.Email, newPassword)
 	logRemark := ""
 	if password == user.Password {
@@ -118,34 +106,36 @@ func (userSvc *User) UpdateInfo(user *userModel.User, username string, tx *gorm.
 }
 
 func (userSvc *User) SetClientAccount(
-	user *userModel.User, client constant.Client, account *accountModel.Account,
+	accountUser accountModel.User, client constant.Client, account accountModel.Account, tx *gorm.DB,
 ) error {
-	if user.ID != account.UserId {
-		return errors.Wrap(global.ErrInvalidParameter, "userService SetClientAccount")
+	if accountUser.AccountId != account.ID {
+		return global.ErrAccountId
 	}
-	userClient, err := userModel.GetUserClientModel(client)
+	err := tx.Model(userModel.GetUserClientModel(client)).Where("user_id = ?", accountUser.UserId).Update(
+		"current_account_id", account.ID,
+	).Error
 	if err != nil {
 		return errors.Wrap(err, "")
-	}
-	if err = userClient.GetByUser(user); err != nil {
-		return errors.Wrap(err, "userClient.GetByUser")
-	}
-
-	if err = userModel.HandleUserClient(
-		userClient, func(db *gorm.DB) error {
-			err = db.Update("current_account_id", account.ID).Error
-			if err != nil {
-				return errors.Wrap(err, "update userClient:current_account_id")
-			}
-			return nil
-		},
-	); err != nil {
-		return err
 	}
 	return nil
 }
 
-func (userSvc *User) RecordAction(user *userModel.User, action constant.UserAction, tx *gorm.DB) (
+func (userSvc *User) SetClientShareAccount(
+	accountUser accountModel.User, client constant.Client, account accountModel.Account, tx *gorm.DB,
+) error {
+	if accountUser.AccountId != account.ID {
+		return global.ErrAccountId
+	}
+	err := tx.Model(userModel.GetUserClientModel(client)).Where(
+		"user_id = ?", accountUser.UserId,
+	).Update("current_share_account_id", account.ID).Error
+	if err != nil {
+		return errors.Wrap(err, "")
+	}
+	return nil
+}
+
+func (userSvc *User) RecordAction(user userModel.User, action constant.UserAction, tx *gorm.DB) (
 	*userModel.Log, error,
 ) {
 	dao := userModel.NewLogDao(tx)
@@ -157,7 +147,7 @@ func (userSvc *User) RecordAction(user *userModel.User, action constant.UserActi
 }
 
 func (userSvc *User) RecordActionAndRemark(
-	user *userModel.User, action constant.UserAction, remark string, tx *gorm.DB,
+	user userModel.User, action constant.UserAction, remark string, tx *gorm.DB,
 ) (*userModel.Log, error) {
 	dao := userModel.NewLogDao(tx)
 	log, err := dao.Add(user, &userModel.LogAddData{Action: action, Remark: remark})

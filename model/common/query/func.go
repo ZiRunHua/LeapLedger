@@ -30,3 +30,8 @@ func Exist[T commonModel.Model](query interface{}, args ...interface{}) (bool, e
 		return false, errors.Wrap(err, "exist")
 	}
 }
+
+func GetAmountCountStatistic(query *gorm.DB) (result global.AmountCount, err error) {
+	err = query.Select("COUNT(*) as Count,SUM(amount) as Amount").Scan(&result).Error
+	return
+}

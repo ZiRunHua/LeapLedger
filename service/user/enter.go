@@ -1,7 +1,8 @@
 package userService
 
 type Group struct {
-	User
+	Base   User
+	Friend Friend
 }
 
 var GroupApp = new(Group)

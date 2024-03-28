@@ -3,11 +3,10 @@ package transactionService
 import (
 	"KeepAccount/global"
 	"KeepAccount/global/constant"
+	"KeepAccount/global/nats"
 	accountModel "KeepAccount/model/account"
 	categoryModel "KeepAccount/model/category"
-	"KeepAccount/model/common/query"
 	transactionModel "KeepAccount/model/transaction"
-	userModel "KeepAccount/model/user"
 	"KeepAccount/util"
 	"github.com/pkg/errors"
 	"gorm.io/gorm"
@@ -17,67 +16,79 @@ import (
 type Transaction struct{}
 
 type UpdateStatisticData struct {
-	accountID     uint
-	incomeExpense constant.IncomeExpense
-	categoryID    uint
-	tradeTime     time.Time
-	amount        int
-	count         int
+	AccountId     uint
+	UserId        uint
+	IncomeExpense constant.IncomeExpense
+	CategoryId    uint
+	TradeTime     time.Time
+	Amount        int
+	Count         int
 }
 
-func getUpdateStatisticData(transaction *transactionModel.Transaction, isAdd bool) *UpdateStatisticData {
+func (txnService *Transaction) CreateOne(
+	transaction transactionModel.Transaction, accountUser accountModel.User, asyncUpdateStatistic bool, tx *gorm.DB,
+) (transactionModel.Transaction, error) {
+	account, err := transaction.GetAccount()
+	if err != nil {
+		return transaction, err
+	} else if account.ID != accountUser.AccountId {
+		return transaction, global.ErrAccountId
+	}
+	err = accountUser.CheckTransAddByUserId(accountUser.UserId)
+	if err != nil {
+		return transaction, err
+	}
+
+	transaction.UserId = accountUser.UserId
+	if err = txnService.checkTransaction(transaction); err != nil {
+		return transaction, err
+	}
+	if err = tx.Create(&transaction).Error; err != nil {
+		return transaction, errors.Wrap(err, "")
+	}
+	if asyncUpdateStatistic {
+		return transaction, txnService.asyncUpdateStatistic(getUpdateStatisticData(transaction, true), tx)
+	}
+	return transaction, txnService.updateStatistic(getUpdateStatisticData(transaction, true), tx)
+}
+
+func getUpdateStatisticData(transaction transactionModel.Transaction, isAdd bool) UpdateStatisticData {
 	if isAdd {
-		return &UpdateStatisticData{
-			accountID: transaction.AccountId, incomeExpense: transaction.IncomeExpense,
-			categoryID: transaction.CategoryId, tradeTime: transaction.TradeTime,
-			amount: transaction.Amount, count: 1,
+		return UpdateStatisticData{
+			AccountId: transaction.AccountId, UserId: transaction.UserId, IncomeExpense: transaction.IncomeExpense,
+			CategoryId: transaction.CategoryId, TradeTime: transaction.TradeTime,
+			Amount: transaction.Amount, Count: 1,
 		}
 	} else {
-		return &UpdateStatisticData{
-			accountID: transaction.AccountId, incomeExpense: transaction.IncomeExpense,
-			categoryID: transaction.CategoryId, tradeTime: transaction.TradeTime,
-			amount: -transaction.Amount, count: -1,
+		return UpdateStatisticData{
+			AccountId: transaction.AccountId, UserId: transaction.UserId, IncomeExpense: transaction.IncomeExpense,
+			CategoryId: transaction.CategoryId, TradeTime: transaction.TradeTime,
+			Amount: -transaction.Amount, Count: -1,
 		}
 	}
 }
 
-func (txnService *Transaction) CreateOne(transaction *transactionModel.Transaction, user *userModel.User) error {
-	account, err := query.FirstByPrimaryKey[*accountModel.Account](transaction.AccountId)
-	if err == nil && account.UserId != user.ID {
-		return errors.Wrap(err, "账本不属于当前用户")
+func (txnService *Transaction) asyncUpdateStatistic(data UpdateStatisticData, tx *gorm.DB) error {
+	if nats.Publish[UpdateStatisticData](nats.TaskStatisticUpdate, data) {
+		return nil
 	}
-	transaction.UserId = user.ID
-	if err = txnService.checkTransaction(transaction); err != nil {
-		return err
-	}
-	if err = transaction.GetDb().Create(transaction).Error; err != nil {
-		return errors.Wrap(err, "")
-	}
-	return txnService.updateStatistic(getUpdateStatisticData(transaction, true))
+	// 添加异步失败直接执行
+	return txnService.updateStatistic(data, tx)
 }
 
-func (txnService *Transaction) addUpdateStatisticTask(data UpdateStatisticData) error {
-	chanUpdateStatistic <- updateStatisticTask{
-		data: data,
-	}
-	return nil
-}
-
-func (txnService *Transaction) updateStatistic(data *UpdateStatisticData) error {
-	switch data.incomeExpense {
+func (txnService *Transaction) updateStatistic(data UpdateStatisticData, tx *gorm.DB) error {
+	switch data.IncomeExpense {
 	case constant.Income:
-		var incomeStatistic transactionModel.IncomeStatistic
-		if err := incomeStatistic.Accumulate(
-			data.tradeTime, data.categoryID, data.accountID, data.amount, data.count,
+		if err := transactionModel.IncomeAccumulate(
+			data.TradeTime, data.AccountId, data.UserId, data.CategoryId, data.Amount, data.Count, tx,
 		); err != nil {
-			return errors.Wrap(err, "incomeStatistic.Accumulate")
+			return errors.Wrap(err, "transactionModel.IncomeAccumulate")
 		}
 	case constant.Expense:
-		var expenseStatistic transactionModel.ExpenseStatistic
-		if err := expenseStatistic.Accumulate(
-			data.tradeTime, data.categoryID, data.accountID, data.amount, data.count,
+		if err := transactionModel.ExpenseAccumulate(
+			data.TradeTime, data.AccountId, data.UserId, data.CategoryId, data.Amount, data.Count, tx,
 		); err != nil {
-			return errors.Wrap(err, "expenseStatistic.Accumulate")
+			return errors.Wrap(err, "transactionModel.ExpenseAccumulate")
 		}
 	default:
 		panic("income Expense error")
@@ -85,9 +96,9 @@ func (txnService *Transaction) updateStatistic(data *UpdateStatisticData) error 
 	return nil
 }
 
-func (txnService *Transaction) checkTransaction(transaction *transactionModel.Transaction) error {
+func (txnService *Transaction) checkTransaction(transaction transactionModel.Transaction) error {
 	var category categoryModel.Category
-	err := category.SelectById(transaction.CategoryId, false)
+	err := category.SelectById(transaction.CategoryId)
 	if err != nil {
 		return errors.Wrap(err, "")
 	}
@@ -97,64 +108,91 @@ func (txnService *Transaction) checkTransaction(transaction *transactionModel.Tr
 	return nil
 }
 
-func (txnService *Transaction) Update(transaction *transactionModel.Transaction) error {
-	var err error
+func (txnService *Transaction) Update(
+	transaction transactionModel.Transaction, accountUser accountModel.User, tx *gorm.DB,
+) error {
+	// check
+	if transaction.AccountId != accountUser.AccountId {
+		return global.ErrAccountId
+	}
+	err := accountUser.CheckTransEditByUserId(transaction.UserId)
+	if err != nil {
+		return err
+	}
 	if err = txnService.checkTransaction(transaction); err != nil {
 		return err
 	}
-	oldTransaction := transactionModel.NewTransaction(transaction.GetTx())
-	if err = oldTransaction.SelectById(transaction.ID, true); err != nil {
-		return errors.Wrap(err, "transactionModel SelectById")
+	// handle
+	var oldTransaction transactionModel.Transaction
+	oldTransaction, err = transactionModel.NewDao(tx).SelectById(transaction.ID, true)
+	if err != nil {
+		return errors.WithStack(err)
 	}
-	if err = transaction.Update(); err != nil {
-		return errors.Wrap(err, "transactionModel Update")
+	if err = tx.Updates(transaction).Error; err != nil {
+		return errors.WithStack(err)
 	}
-	return txnService.updateStatisticAfterUpdate(oldTransaction, transaction)
+	return txnService.updateStatisticAfterUpdate(oldTransaction, transaction, tx)
 }
 
 func (txnService *Transaction) updateStatisticAfterUpdate(
-	oldTxn *transactionModel.Transaction, txn *transactionModel.Transaction,
+	oldTxn transactionModel.Transaction, txn transactionModel.Transaction, tx *gorm.DB,
 ) error {
 	var err error
 	if oldTxn.IncomeExpense == txn.IncomeExpense && oldTxn.CategoryId == txn.CategoryId && util.Time.IsSameDay(
 		oldTxn.TradeTime, txn.TradeTime,
 	) { //同表同一条记录特殊处理
 		updateStatisticData := getUpdateStatisticData(txn, true)
-		updateStatisticData.amount -= oldTxn.Amount
-		updateStatisticData.count = 0
-		err = txnService.updateStatistic(updateStatisticData)
+		updateStatisticData.Amount -= oldTxn.Amount
+		updateStatisticData.Count = 0
+		err = txnService.asyncUpdateStatistic(updateStatisticData, tx)
 		if err != nil {
 			return err
 		}
 	} else {
 		updateStatisticData := getUpdateStatisticData(oldTxn, false)
-		if err = txnService.updateStatistic(updateStatisticData); err != nil {
+		if err = txnService.asyncUpdateStatistic(updateStatisticData, tx); err != nil {
 			return err
 		}
-		if err = txnService.updateStatistic(getUpdateStatisticData(txn, true)); err != nil {
+		if err = txnService.asyncUpdateStatistic(getUpdateStatisticData(txn, true), tx); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func (txnService *Transaction) Delete(txn *transactionModel.Transaction) error {
-	if err := txn.GetTx().Delete(txn, txn.ID).Error; err != nil {
+func (txnService *Transaction) Delete(
+	txn transactionModel.Transaction, accountUser accountModel.User, tx *gorm.DB,
+) error {
+	err := accountUser.CheckTransEditByUserId(txn.UserId)
+	if err != nil {
 		return err
 	}
-	return txnService.updateStatisticAfterDelete(txn)
+	err = txnService.updateStatisticAfterDelete(txn, tx)
+	if err != nil {
+		return err
+	}
+	return tx.Delete(&txn).Error
 }
 
-func (txnService *Transaction) updateStatisticAfterDelete(txn *transactionModel.Transaction) error {
+func (txnService *Transaction) updateStatisticAfterDelete(txn transactionModel.Transaction, tx *gorm.DB) error {
 	updateStatisticData := getUpdateStatisticData(txn, false)
-	return txnService.updateStatistic(updateStatisticData)
+	return txnService.asyncUpdateStatistic(updateStatisticData, tx)
 }
 
 func (txnService *Transaction) CreateMultiple(
-	user userModel.User, account *accountModel.Account, transactionList []transactionModel.Transaction, tx *gorm.DB,
-) ([]*transactionModel.Transaction, error) {
+	accountUser accountModel.User, account accountModel.Account, transactionList []transactionModel.Transaction,
+	tx *gorm.DB,
+) (failTransList []*transactionModel.Transaction, err error) {
+	if account.ID != accountUser.AccountId {
+		err = global.ErrAccountId
+		return
+	}
+	err = accountUser.CheckTransAddByUserId(accountUser.UserId)
+	if err != nil {
+		return
+	}
+
 	var categoryIds []uint
-	var err error
 	if err = global.GvaDb.Model(&categoryModel.Category{}).Where("account_id = ?", account.ID).Pluck(
 		"id", &categoryIds,
 	).Error; err != nil {
@@ -167,12 +205,11 @@ func (txnService *Transaction) CreateMultiple(
 
 	incomeAmount, expenseAmount := make(map[string]map[uint]int), make(map[string]map[uint]int)
 	incomeCount, expenseCount := make(map[string]map[uint]int), make(map[string]map[uint]int)
-	failTransList, incomeTransList, expenseTransList := []*transactionModel.Transaction{}, []*transactionModel.Transaction{},
-		[]*transactionModel.Transaction{}
 
+	var incomeTransList, expenseTransList []*transactionModel.Transaction
 	var key string
-	for index, _ := range transactionList {
-		transactionList[index].UserId = user.ID
+	for index := range transactionList {
+		transactionList[index].UserId = accountUser.UserId
 		transaction := transactionList[index]
 		if !categoryIdMap[transaction.CategoryId] {
 			failTransList = append(failTransList, &transaction)
@@ -210,7 +247,7 @@ func (txnService *Transaction) CreateMultiple(
 		}
 
 		if err = txnService.addStatisticAfterCreateMultiple(
-			account, constant.Income, incomeAmount, incomeCount,
+			account, accountUser, constant.Income, incomeAmount, incomeCount, tx,
 		); err != nil {
 			return nil, err
 		}
@@ -220,7 +257,7 @@ func (txnService *Transaction) CreateMultiple(
 			return nil, err
 		}
 		if err = txnService.addStatisticAfterCreateMultiple(
-			account, constant.Expense, expenseAmount, expenseCount,
+			account, accountUser, constant.Expense, expenseAmount, expenseCount, tx,
 		); err != nil {
 			return nil, err
 		}
@@ -229,8 +266,8 @@ func (txnService *Transaction) CreateMultiple(
 }
 
 func (txnService *Transaction) addStatisticAfterCreateMultiple(
-	account *accountModel.Account, incomeExpense constant.IncomeExpense, amountList map[string]map[uint]int,
-	countList map[string]map[uint]int,
+	account accountModel.Account, accountUser accountModel.User, incomeExpense constant.IncomeExpense,
+	amountList map[string]map[uint]int, countList map[string]map[uint]int, tx *gorm.DB,
 ) error {
 	var err error
 	var tradeTime time.Time
@@ -240,9 +277,10 @@ func (txnService *Transaction) addStatisticAfterCreateMultiple(
 		}
 		for categoryId, amount := range categoryList {
 			if err = txnService.updateStatistic(
-				&UpdateStatisticData{
-					account.ID, incomeExpense, categoryId, tradeTime, amount, countList[date][categoryId],
-				},
+				UpdateStatisticData{
+					account.ID, accountUser.UserId, incomeExpense, categoryId, tradeTime, amount,
+					countList[date][categoryId],
+				}, tx,
 			); err != nil {
 				return err
 			}

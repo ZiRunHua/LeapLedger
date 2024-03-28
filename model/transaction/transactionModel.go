@@ -6,6 +6,7 @@ import (
 	accountModel "KeepAccount/model/account"
 	categoryModel "KeepAccount/model/category"
 	commonModel "KeepAccount/model/common"
+	queryFunc "KeepAccount/model/common/query"
 	userModel "KeepAccount/model/user"
 	"gorm.io/gorm"
 	"time"
@@ -23,45 +24,34 @@ type Transaction struct {
 	commonModel.BaseModel
 }
 
-func NewTransaction(db *gorm.DB) *Transaction {
-	t := &Transaction{}
-	t.SetTx(db)
-	return t
-}
 func (t *Transaction) IsEmpty() bool {
 	return t.ID == 0
 }
 
-func (t *Transaction) SelectById(id uint, forUpdate bool) error {
-	return commonModel.SelectByIdOfModel(t, id, forUpdate)
+func (t *Transaction) SelectById(id uint) error {
+	return global.GvaDb.First(t, id).Error
 }
 
 func (t *Transaction) Exits(query interface{}, args ...interface{}) (bool, error) {
-	return commonModel.ExistOfModel(t, query, args...)
+	return queryFunc.Exist[*Transaction](query, args)
 }
 
-func (t *Transaction) Update() error {
-	return t.GetDb().Updates(t).Error
+func (t *Transaction) GetCategory() (category categoryModel.Category, err error) {
+	err = global.GvaDb.First(&category, t.CategoryId).Error
+	return
 }
 
-func (t *Transaction) CreateOne(transaction *Transaction) error {
-	return t.GetDb().Create(transaction).Error
+func (t *Transaction) GetUser(selects ...interface{}) (user userModel.User, err error) {
+	if len(selects) > 0 {
+		err = global.GvaDb.Select(selects[0], selects[1:]...).First(&user, t.UserId).Error
+	} else {
+		err = global.GvaDb.First(&user, t.UserId).Error
+	}
+	return
 }
 
-func (t *Transaction) GetCategory() (*categoryModel.Category, error) {
-	var category categoryModel.Category
-	err := global.GvaDb.Model(&category).First(&category, t.CategoryId).Error
-	return &category, err
-}
-
-func (t *Transaction) GetUser() (*userModel.User, error) {
-	var user userModel.User
-	err := global.GvaDb.Model(&user).First(&user, t.UserId).Error
-	return &user, err
-}
-
-func (t *Transaction) GetAccount() (*accountModel.Account, error) {
+func (t *Transaction) GetAccount() (accountModel.Account, error) {
 	var account accountModel.Account
 	err := global.GvaDb.Model(&account).First(&account, t.AccountId).Error
-	return &account, err
+	return account, err
 }

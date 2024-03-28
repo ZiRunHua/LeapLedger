@@ -3,7 +3,7 @@ package productModel
 import (
 	"KeepAccount/global/constant"
 	commonModel "KeepAccount/model/common"
-	"KeepAccount/model/common/query"
+	queryFunc "KeepAccount/model/common/query"
 )
 
 type Bill struct {
@@ -23,9 +23,9 @@ func (b *Bill) IsEmpty() bool {
 }
 
 func (b *Bill) SelectByPrimaryKey(key string) (*Bill, error) {
-	return query.FirstByField[*Bill]("product_key", key)
+	return queryFunc.FirstByField[*Bill]("product_key", key)
 }
 
 func (b *Bill) Exits(query interface{}, args ...interface{}) (bool, error) {
-	return commonModel.ExistOfModel(b, query, args)
+	return queryFunc.Exist[*Bill](query, args)
 }

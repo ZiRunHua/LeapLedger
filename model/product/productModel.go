@@ -1,8 +1,8 @@
 package productModel
 
 import (
+	"KeepAccount/global"
 	commonModel "KeepAccount/model/common"
-	"KeepAccount/model/common/query"
 )
 
 type Product struct {
@@ -27,8 +27,9 @@ func (p *Product) IsEmpty() bool {
 	return p == nil || p.Key == ""
 }
 
-func (p *Product) SelectByKey(key KeyValue) (*Product, error) {
-	return query.FirstByField[*Product]("key", key)
+func (p *Product) SelectByKey(key KeyValue) (result Product, err error) {
+	err = global.GvaDb.Where("key = ?", key).First(&result).Error
+	return
 }
 
 func (p *Product) GetBill() (*Bill, error) {

@@ -1,10 +1,13 @@
 package categoryModel
 
 import (
+	"KeepAccount/global"
 	"KeepAccount/global/constant"
 	accountModel "KeepAccount/model/account"
 	commonModel "KeepAccount/model/common"
+	queryFunc "KeepAccount/model/common/query"
 	"database/sql"
+	"gorm.io/gorm"
 	"time"
 )
 
@@ -27,25 +30,15 @@ func (f *Father) IsEmpty() bool {
 	return f.ID == 0
 }
 
-func (f *Father) SelectById(id uint, forUpdate bool) error {
-	return commonModel.SelectByIdOfModel(f, id, forUpdate)
+func (f *Father) SelectById(id uint) error {
+	return global.GvaDb.First(f, id).Error
 }
 
 func (f *Father) Exits(query interface{}, args ...interface{}) (bool, error) {
-	return commonModel.ExistOfModel(f, query, args)
+	return queryFunc.Exist[*Father](query, args)
 }
 
-func (f *Father) CreateOne() error {
-	return f.GetDb().Create(f).Error
-}
-
-func (f *Father) GetHeader() (*Father, error) {
-	result := &Father{}
-	err := f.GetDb().Where("previous = 0").First(&result).Error
-	return result, err
-}
-
-func (f *Father) SetPrevious(previous *Father) error {
+func (f *Father) SetPrevious(previous *Father, tx *gorm.DB) error {
 	updateData := make(map[string]interface{})
 	if previous != nil {
 		updateData["previous"] = previous.ID
@@ -53,11 +46,11 @@ func (f *Father) SetPrevious(previous *Father) error {
 		updateData["previous"] = 0
 	}
 	updateData["order_updated_at"] = time.Now()
-	return f.GetDb().Model(f).Updates(updateData).Error
+	return tx.Model(f).Updates(updateData).Error
 }
 
-func (f *Father) GetAll(account *accountModel.Account, incomeExpense *constant.IncomeExpense) (*sql.Rows, error) {
-	db := f.GetDb().Model(&f)
+func (f *Father) GetAll(account accountModel.Account, incomeExpense *constant.IncomeExpense) (*sql.Rows, error) {
+	db := global.GvaDb.Model(&f)
 	if incomeExpense == nil {
 		db.Where("account_id = ?", account.ID)
 	} else {

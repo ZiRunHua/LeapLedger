@@ -4,6 +4,7 @@ import (
 	"KeepAccount/global"
 	accountModel "KeepAccount/model/account"
 	"KeepAccount/util"
+	"github.com/pkg/errors"
 	"gorm.io/gorm"
 )
 
@@ -23,7 +24,7 @@ type CategoryUpdateData struct {
 	Icon *string
 }
 
-func (c *categoryDao) Update(category *Category, data *CategoryUpdateData) error {
+func (c *categoryDao) Update(category Category, data CategoryUpdateData) error {
 	updateData := &Category{}
 	if err := util.Data.CopyNotEmptyStringOptional(data.Name, &updateData.Name); err != nil {
 		return err
@@ -46,4 +47,15 @@ func (c *categoryDao) GetListByAccount(account *accountModel.Account) ([]Categor
 		"account_id = ?", account.ID,
 	).Order("income_expense asc,previous asc,order_updated_at desc").Find(&list).Error
 	return list, err
+}
+
+func (c *categoryDao) Exist(account accountModel.Account) (bool, error) {
+	category := &Category{}
+	err := c.db.Where("account_id = ?", account.ID).Take(category).Error
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return false, nil
+	} else if err == nil {
+		return true, nil
+	}
+	return false, errors.WithStack(err)
 }

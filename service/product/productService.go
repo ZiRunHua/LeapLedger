@@ -5,7 +5,6 @@ import (
 	accountModel "KeepAccount/model/account"
 	categoryModel "KeepAccount/model/category"
 	productModel "KeepAccount/model/product"
-	userModel "KeepAccount/model/user"
 	"KeepAccount/util"
 	"github.com/pkg/errors"
 	"gorm.io/gorm"
@@ -13,17 +12,9 @@ import (
 
 type Product struct {
 }
-type _productService interface {
-	MappingTransactionCategory(
-		category *categoryModel.Category, productTransCat *productModel.TransactionCategory,
-	) (*productModel.TransactionCategoryMapping, error)
-	DeleteMappingTransactionCategory(
-		category *categoryModel.Category, productTransCat *productModel.TransactionCategory,
-	) error
-}
 
 func (proService *Product) MappingTransactionCategory(
-	category *categoryModel.Category, productTransCat *productModel.TransactionCategory,
+	category categoryModel.Category, productTransCat productModel.TransactionCategory,
 ) (*productModel.TransactionCategoryMapping, error) {
 	if category.IncomeExpense != productTransCat.IncomeExpense {
 		return nil, errors.Wrap(global.ErrInvalidParameter, "")
@@ -39,7 +30,7 @@ func (proService *Product) MappingTransactionCategory(
 }
 
 func (proService *Product) DeleteMappingTransactionCategory(
-	category *categoryModel.Category, productTransCat *productModel.TransactionCategory,
+	category categoryModel.Category, productTransCat productModel.TransactionCategory,
 ) error {
 	if category.IncomeExpense != productTransCat.IncomeExpense {
 		return errors.Wrap(global.ErrInvalidParameter, "")
@@ -51,11 +42,19 @@ func (proService *Product) DeleteMappingTransactionCategory(
 }
 
 func (proService *Product) BillImport(
-	user userModel.User, account accountModel.Account, product productModel.Product, file *util.FileWithSuffix,
+	accountUser accountModel.User, account accountModel.Account, product productModel.Product,
+	file *util.FileWithSuffix,
 	tx *gorm.DB,
 ) error {
-	importServer := newProductBillImport(user, account, product)
-	if err := importServer.init(); err != nil {
+	if accountUser.AccountId != account.ID {
+		return global.ErrAccountId
+	}
+	err := accountUser.CheckTransAddByUserId(accountUser.UserId)
+	if err != nil {
+		return err
+	}
+	importServer := newProductBillImport(accountUser, account, product)
+	if err = importServer.init(); err != nil {
 		return err
 	}
 	return importServer.doImport(file, tx)

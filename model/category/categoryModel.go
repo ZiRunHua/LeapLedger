@@ -1,12 +1,13 @@
 package categoryModel
 
 import (
+	"KeepAccount/global"
 	"KeepAccount/global/constant"
 	accountModel "KeepAccount/model/account"
 	commonModel "KeepAccount/model/common"
-	"KeepAccount/model/common/query"
+	queryFunc "KeepAccount/model/common/query"
 	"database/sql"
-	"errors"
+	"gorm.io/gorm"
 	"time"
 )
 
@@ -26,39 +27,36 @@ type Category struct {
 func (c *Category) IsEmpty() bool {
 	return c.ID == 0
 }
-func (c *Category) SelectById(id uint, forUpdate bool) error {
-	return commonModel.SelectByIdOfModel(c, id, forUpdate)
+func (c *Category) SelectById(id uint) error {
+	return global.GvaDb.First(c, id).Error
 }
 
-func (c *Category) GetFather() (*Father, error) {
-	return query.FirstByPrimaryKey[*Father](c.FatherId)
+func (c *Category) GetFather() (father Father, err error) {
+	err = global.GvaDb.First(&father, c.FatherId).Error
+	return
 }
 
 func (c *Category) Exits(query interface{}, args ...interface{}) (bool, error) {
-	return commonModel.ExistOfModel(c, query, args)
+	return queryFunc.Exist[*Category](query, args)
 }
 
-func (c *Category) GetAccount() (*accountModel.Account, error) {
-	return query.FirstByPrimaryKey[*accountModel.Account](c.AccountId)
+func (c *Category) GetAccount() (result accountModel.Account, err error) {
+	err = result.SelectById(c.AccountId)
+	return
 }
 
-func (c *Category) GetOneByPrevious(previous uint) error {
-	err := c.GetDb().Where("previous = ?", previous).Order("order_updated_at desc").First(&c).Error
+func (c *Category) GetOneByPrevious(previous uint, tx *gorm.DB) error {
+	err := tx.Where("previous = ?", previous).Order("order_updated_at desc").First(&c).Error
 	return err
 }
-func (c *Category) CreateOne() error {
-	if c.FatherId == 0 {
-		return errors.New("error")
-	}
-	return c.GetDb().Create(c).Error
-}
-func (c *Category) GetHead() (*Category, error) {
+
+func (c *Category) GetHead(tx *gorm.DB) (*Category, error) {
 	result := &Category{}
-	db := c.GetDb().Where("account_id = ? AND income_expense = ? AND previous = 0", c.AccountId, c.IncomeExpense)
+	db := tx.Where("account_id = ? AND income_expense = ? AND previous = 0", c.AccountId, c.IncomeExpense)
 	err := db.Order("previous asc,order_updated_at desc").First(&result).Error
 	return result, err
 }
-func (c *Category) SetPrevious(previous *Category) error {
+func (c *Category) SetPrevious(previous *Category, tx *gorm.DB) error {
 	updateData := make(map[string]interface{})
 	if previous == nil || previous.IsEmpty() {
 		updateData["previous"] = 0
@@ -69,19 +67,11 @@ func (c *Category) SetPrevious(previous *Category) error {
 		}
 	}
 	updateData["order_updated_at"] = time.Now()
-	return c.GetDb().Model(c).Updates(updateData).Error
+	return tx.Model(c).Updates(updateData).Error
 }
-func (c *Category) SetFather() error {
-	return c.GetDb().Model(c).Select("father_id", "previous", "order_updated_at").Updates(
-		Category{
-			FatherId:       c.FatherId,
-			Previous:       c.Previous,
-			OrderUpdatedAt: time.Now(),
-		},
-	).Error
-}
-func (c *Category) GetAll(account *accountModel.Account, incomeExpense *constant.IncomeExpense) (*sql.Rows, error) {
-	db := c.GetDb().Model(&c)
+
+func (c *Category) GetAll(account accountModel.Account, incomeExpense *constant.IncomeExpense) (*sql.Rows, error) {
+	db := global.GvaDb.Model(&c)
 	if incomeExpense == nil {
 		db.Where("account_id = ?", account.ID)
 	} else {

@@ -5,13 +5,12 @@ import "KeepAccount/global"
 type dao struct {
 }
 
-var (
-	Dao = &dao{}
-)
-
 func init() {
-	err := global.GvaDb.AutoMigrate(&TransactionShareConfig{})
-	if err != nil {
-		panic(err)
+	tables := []interface{}{TransactionShareConfig{}, Friend{}, FriendInvitation{}}
+	for _, table := range tables {
+		err := global.GvaDb.AutoMigrate(&table)
+		if err != nil {
+			panic(err)
+		}
 	}
 }

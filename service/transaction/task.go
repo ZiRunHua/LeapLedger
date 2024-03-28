@@ -1,32 +1,18 @@
 package transactionService
 
 import (
-	"time"
+	"KeepAccount/global/nats"
+	"gorm.io/gorm"
 )
 
-var chanUpdateStatistic = make(chan updateStatisticTask, 100)
-
 func init() {
-	go func() {
-		for true {
-			select {
-			case task := <-chanUpdateStatistic:
-				if err := task.handleTask(); err != nil {
-					panic(err)
-				}
-			case <-time.After(1 * time.Second):
-				time.Sleep(1 * time.Second)
-			}
-		}
-	}()
+	nats.TransSubscribe[UpdateStatisticData](
+		nats.TaskStatisticUpdate, func(db *gorm.DB, data UpdateStatisticData) error {
+			return GroupApp.Transaction.updateStatistic(data, db)
+		},
+	)
 }
 
 type updateStatisticTask struct {
 	data UpdateStatisticData
-}
-
-func (ust *updateStatisticTask) handleTask() error {
-	return GroupApp.Transaction.updateStatistic(
-		&ust.data,
-	)
 }

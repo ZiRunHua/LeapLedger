@@ -19,15 +19,15 @@ type CreateData struct {
 	Icon string
 }
 
-func (catSvc *Category) NewCategoryData(category *categoryModel.Category) *CreateData {
-	return &CreateData{
+func (catSvc *Category) NewCategoryData(category categoryModel.Category) CreateData {
+	return CreateData{
 		Name: category.Name,
 		Icon: category.Icon,
 	}
 }
 
-func (catSvc *Category) CreateOne(father *categoryModel.Father, data *CreateData) (*categoryModel.Category, error) {
-	category := &categoryModel.Category{
+func (catSvc *Category) CreateOne(father categoryModel.Father, data CreateData, tx *gorm.DB) (categoryModel.Category, error) {
+	category := categoryModel.Category{
 		AccountId:      father.AccountID,
 		FatherId:       father.ID,
 		IncomeExpense:  father.IncomeExpense,
@@ -36,12 +36,12 @@ func (catSvc *Category) CreateOne(father *categoryModel.Father, data *CreateData
 		Previous:       0,
 		OrderUpdatedAt: time.Now(),
 	}
-	err := category.CreateOne()
+	err := tx.Create(&category).Error
 	return category, errors.Wrap(err, "category.CreateOne()")
 }
 
 func (catSvc *Category) CreateList(
-	father *categoryModel.Father, list []CreateData, tx *gorm.DB,
+	father categoryModel.Father, list []CreateData, tx *gorm.DB,
 ) ([]categoryModel.Category, error) {
 	categoryList := []categoryModel.Category{}
 	for _, data := range list {
@@ -64,21 +64,21 @@ func (catSvc *Category) CreateList(
 }
 
 func (catSvc *Category) CreateOneFather(
-	account *accountModel.Account, InEx constant.IncomeExpense, name string,
-) (*categoryModel.Father, error) {
-	father := &categoryModel.Father{
+	account accountModel.Account, InEx constant.IncomeExpense, name string, tx *gorm.DB,
+) (categoryModel.Father, error) {
+	father := categoryModel.Father{
 		AccountID:      account.ID,
 		IncomeExpense:  InEx,
 		Name:           name,
 		Previous:       0,
 		OrderUpdatedAt: time.Now(),
 	}
-	err := father.CreateOne()
+	err := tx.Create(&father).Error
 	return father, errors.Wrap(err, "father.CreateOne()")
 }
 
 func (catSvc *Category) MoveCategory(
-	category *categoryModel.Category, previous *categoryModel.Category, father *categoryModel.Father,
+	category categoryModel.Category, previous *categoryModel.Category, father categoryModel.Father, tx *gorm.DB,
 ) error {
 	orlPrevious := category.Previous
 	if previous != nil && false == previous.IsEmpty() {
@@ -89,18 +89,18 @@ func (catSvc *Category) MoveCategory(
 			return errors.Wrap(global.ErrInvalidParameter, "categoryService.MoveCategory father")
 		}
 	}
-	err := category.SetPrevious(previous)
+	err := category.SetPrevious(previous, tx)
 	if nil != err {
 		return err
 	}
 	if orlPrevious == 0 {
 		// 0作为遍历的起始位置 不能没有
-		if _, err = category.GetHead(); errors.Is(err, gorm.ErrRecordNotFound) {
+		if _, err = category.GetHead(tx); errors.Is(err, gorm.ErrRecordNotFound) {
 			var newHead categoryModel.Category
-			if err = newHead.GetOneByPrevious(orlPrevious); err != nil {
+			if err = newHead.GetOneByPrevious(orlPrevious, tx); err != nil {
 				return err
 			}
-			if err = newHead.SetPrevious(nil); err != nil {
+			if err = newHead.SetPrevious(nil, tx); err != nil {
 				return err
 			}
 		} else if err != nil {
@@ -110,33 +110,17 @@ func (catSvc *Category) MoveCategory(
 	return nil
 }
 
-func (catSvc *Category) MoveFather(father *categoryModel.Father, previous *categoryModel.Father) error {
+func (catSvc *Category) MoveFather(father categoryModel.Father, previous *categoryModel.Father, tx *gorm.DB) error {
 	if previous != nil && false == previous.IsEmpty() {
 		if previous.AccountID != father.AccountID || previous.IncomeExpense != father.IncomeExpense {
 			panic("Data anomaly")
 		}
 	}
-	return father.SetPrevious(previous)
-}
-
-func (catSvc *Category) SetFather(
-	category categoryModel.Category, father categoryModel.Father, previous *categoryModel.Category,
-) error {
-	if category.FatherId == father.ID || previous.FatherId != father.ID || category.IncomeExpense != father.IncomeExpense || category.AccountId != father.AccountID {
-		return errors.Wrap(global.ErrInvalidParameter, "categoryService.SetFather")
-	}
-	if previous != nil {
-		if father.AccountID != previous.AccountId || father.IncomeExpense != previous.IncomeExpense {
-			return errors.Wrap(global.ErrInvalidParameter, "categoryService.SetFather")
-		}
-		category.Previous = previous.ID
-	}
-	category.FatherId = father.ID
-	return category.SetFather()
+	return father.SetPrevious(previous, tx)
 }
 
 func (catSvc *Category) GetSequenceCategory(
-	account *accountModel.Account, incomeExpense *constant.IncomeExpense,
+	account accountModel.Account, incomeExpense *constant.IncomeExpense,
 ) (map[uint]*[]categoryModel.Category, error) {
 	rows, err := new(categoryModel.Category).GetAll(account, incomeExpense)
 	if err != nil {
@@ -179,7 +163,7 @@ func (catSvc *Category) makeSequenceOfCategory(
 }
 
 func (catSvc *Category) GetSequenceFather(
-	account *accountModel.Account, incomeExpense *constant.IncomeExpense,
+	account accountModel.Account, incomeExpense *constant.IncomeExpense,
 ) ([]categoryModel.Father, error) {
 	var model categoryModel.Father
 	rows, err := model.GetAll(account, incomeExpense)
@@ -211,19 +195,19 @@ func (catSvc *Category) makeSequenceOfFather(
 }
 
 func (catSvc *Category) Update(
-	category *categoryModel.Category, data categoryModel.CategoryUpdateData, tx *gorm.DB,
+	category categoryModel.Category, data categoryModel.CategoryUpdateData, tx *gorm.DB,
 ) error {
-	return categoryModel.Dao.NewCategory(tx).Update(category, &data)
+	return categoryModel.Dao.NewCategory(tx).Update(category, data)
 }
 
-func (catSvc *Category) UpdateFather(father *categoryModel.Father, name string) error {
+func (catSvc *Category) UpdateFather(father categoryModel.Father, name string) error {
 	if name == "" {
 		return global.ErrInvalidParameter
 	}
-	return global.GvaDb.Model(father).Update("name", name).Error
+	return global.GvaDb.Model(&father).Update("name", name).Error
 }
 
-func (catSvc *Category) Delete(category *categoryModel.Category) error {
+func (catSvc *Category) Delete(category categoryModel.Category, tx *gorm.DB) error {
 	exits, err := catSvc.existTransaction(category)
 	if err != nil {
 		return err
@@ -231,15 +215,11 @@ func (catSvc *Category) Delete(category *categoryModel.Category) error {
 	if exits {
 		return errors.Wrap(ErrExistTransacion, "delete category")
 	}
-	return category.GetDb().Delete(category).Error
+	return tx.Delete(&category).Error
 }
 
-func (catSvc *Category) DeleteFather(father *categoryModel.Father) error {
-	if false == father.InTx() {
-		return errors.Wrap(global.ErrNotInTransaction, "")
-	}
-
-	categoryList := []*categoryModel.Category{}
+func (catSvc *Category) DeleteFather(father categoryModel.Father, tx *gorm.DB) error {
+	var categoryList []categoryModel.Category
 	err := global.GvaDb.Select("id").Where("father_id = ?", father.ID).Find(&categoryList).Error
 	if err != nil {
 		return errors.Wrap(err, "")
@@ -251,19 +231,19 @@ func (catSvc *Category) DeleteFather(father *categoryModel.Father) error {
 		return errors.Wrap(ErrExistTransacion, "delete category")
 	}
 
-	err = father.GetDb().Where("father_id = ?", father.ID).Delete(&categoryModel.Category{}).Error
+	err = tx.Where("father_id = ?", father.ID).Delete(&categoryModel.Category{}).Error
 	if err != nil {
 		return errors.Wrap(err, "")
 	}
 
-	err = father.GetDb().Delete(&father).Error
+	err = tx.Delete(&father).Error
 	if err != nil {
 		return errors.Wrap(err, "")
 	}
 	return nil
 }
 
-func (catSvc *Category) existTransaction(categoryList ...*categoryModel.Category) (bool, error) {
+func (catSvc *Category) existTransaction(categoryList ...categoryModel.Category) (bool, error) {
 	if len(categoryList) < 1 {
 		return false, nil
 	}

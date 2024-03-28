@@ -22,18 +22,19 @@ func GetClients() ClientMap {
 
 type Client interface {
 	commonModel.Model
-	GetByUser(*User) error
+	GetByUser(User) error
 	CheckUserAgent(userAgent string) bool
-	InitByUser(*User, *gorm.DB) error
+	InitByUser(User, *gorm.DB) error
 }
 
 type UserClientBaseInfo struct {
-	UserID           uint `gorm:"primaryKey"`
-	CurrentAccountID uint
-	LoginTime        time.Time
+	UserId                uint `gorm:"primaryKey"`
+	CurrentAccountId      uint
+	CurrentShareAccountId uint
+	LoginTime             time.Time
 }
 
-func (u *UserClientBaseInfo) GetByUser(user *User) error {
+func (u *UserClientBaseInfo) GetByUser(user User) error {
 	panic("implement me")
 }
 
@@ -58,22 +59,22 @@ type UserClientIos struct {
 }
 
 func (w *UserClientWeb) IsEmpty() bool {
-	return w.UserID == 0
+	return w.UserId == 0
 }
 func (a *UserClientAndroid) IsEmpty() bool {
-	return a.UserID == 0
+	return a.UserId == 0
 }
 func (i *UserClientIos) IsEmpty() bool {
-	return i.UserID == 0
+	return i.UserId == 0
 }
 
-func (w *UserClientWeb) GetByUser(user *User) error {
+func (w *UserClientWeb) GetByUser(user User) error {
 	return global.GvaDb.Where("user_id = ?", user.ID).First(&w).Error
 }
-func (a *UserClientAndroid) GetByUser(user *User) error {
+func (a *UserClientAndroid) GetByUser(user User) error {
 	return global.GvaDb.Where("user_id = ?", user.ID).First(&a).Error
 }
-func (i *UserClientIos) GetByUser(user *User) error {
+func (i *UserClientIos) GetByUser(user User) error {
 	return global.GvaDb.Where("user_id = ?", user.ID).First(&i).Error
 }
 
@@ -87,35 +88,35 @@ func (i *UserClientIos) CheckUserAgent(userAgent string) bool {
 	return strings.Contains(userAgent, "iPhone") || strings.Contains(userAgent, "iPad")
 }
 
-func (w *UserClientWeb) InitByUser(user *User, tx *gorm.DB) error {
-	w.UserID = user.ID
-	w.CurrentAccountID = 0
+func (w *UserClientWeb) InitByUser(user User, tx *gorm.DB) error {
+	w.UserId = user.ID
+	w.CurrentAccountId = 0
 	w.LoginTime = time.Now()
 	return tx.Create(w).Error
 }
-func (a *UserClientAndroid) InitByUser(user *User, tx *gorm.DB) error {
-	a.UserID = user.ID
-	a.CurrentAccountID = 0
+func (a *UserClientAndroid) InitByUser(user User, tx *gorm.DB) error {
+	a.UserId = user.ID
+	a.CurrentAccountId = 0
 	a.LoginTime = time.Now()
 	return tx.Create(a).Error
 }
-func (i *UserClientIos) InitByUser(user *User, tx *gorm.DB) error {
-	i.UserID = user.ID
-	i.CurrentAccountID = 0
+func (i *UserClientIos) InitByUser(user User, tx *gorm.DB) error {
+	i.UserId = user.ID
+	i.CurrentAccountId = 0
 	i.LoginTime = time.Now()
 	return tx.Create(i).Error
 }
 
-func GetUserClientModel(client constant.Client) (Client, error) {
+func GetUserClientModel(client constant.Client) Client {
 	switch client {
 	case constant.Web:
-		return new(UserClientWeb), nil
+		return &UserClientWeb{}
 	case constant.Android:
-		return new(UserClientAndroid), nil
+		return &UserClientAndroid{}
 	case constant.Ios:
-		return new(UserClientIos), nil
+		return &UserClientIos{}
 	default:
-		return nil, errors.New("unknown client")
+		panic("unknown client")
 	}
 }
 
@@ -126,22 +127,22 @@ func GetUserClientBaseInfo(client Client) *UserClientBaseInfo {
 	case *UserClientWeb:
 		clientWeb := client.(*UserClientWeb)
 		return &UserClientBaseInfo{
-			UserID:           clientWeb.UserID,
-			CurrentAccountID: clientWeb.CurrentAccountID,
+			UserId:           clientWeb.UserId,
+			CurrentAccountId: clientWeb.CurrentAccountId,
 			LoginTime:        clientWeb.LoginTime,
 		}
 	case *UserClientAndroid:
 		clientAndroid := client.(*UserClientAndroid)
 		return &UserClientBaseInfo{
-			UserID:           clientAndroid.UserID,
-			CurrentAccountID: clientAndroid.CurrentAccountID,
+			UserId:           clientAndroid.UserId,
+			CurrentAccountId: clientAndroid.CurrentAccountId,
 			LoginTime:        clientAndroid.LoginTime,
 		}
 	case *UserClientIos:
 		clientIos := client.(*UserClientIos)
 		return &UserClientBaseInfo{
-			UserID:           clientIos.UserID,
-			CurrentAccountID: clientIos.CurrentAccountID,
+			UserId:           clientIos.UserId,
+			CurrentAccountId: clientIos.CurrentAccountId,
 			LoginTime:        clientIos.LoginTime,
 		}
 	}
@@ -150,17 +151,17 @@ func GetUserClientBaseInfo(client Client) *UserClientBaseInfo {
 
 type UserClientDbFunc func(db *gorm.DB) error
 
-func HandleUserClient(client Client, handleFunc UserClientDbFunc) error {
+func HandleUserClient(client Client, handleFunc UserClientDbFunc, tx *gorm.DB) error {
 	switch client.(type) {
 	case *UserClientWeb:
 		clientWeb := client.(*UserClientWeb)
-		return handleFunc(clientWeb.GetDb().Model(clientWeb))
+		return handleFunc(tx.Model(clientWeb))
 	case *UserClientAndroid:
 		clientAndroid := client.(*UserClientAndroid)
-		return handleFunc(clientAndroid.GetDb().Model(clientAndroid))
+		return handleFunc(tx.Model(clientAndroid))
 	case *UserClientIos:
 		clientIos := client.(*UserClientIos)
-		return handleFunc(clientIos.GetDb().Model(clientIos))
+		return handleFunc(tx.Model(clientIos))
 	}
 	return nil
 }

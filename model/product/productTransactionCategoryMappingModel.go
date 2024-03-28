@@ -1,6 +1,7 @@
 package productModel
 
 import (
+	"KeepAccount/global"
 	accountModel "KeepAccount/model/account"
 	commonModel "KeepAccount/model/common"
 	"time"
@@ -27,7 +28,7 @@ func (tcm *TransactionCategoryMapping) IsEmpty() bool {
 func (tcm *TransactionCategoryMapping) GetPtcIdMapping(
 	account *accountModel.Account, productKey KeyValue,
 ) (result map[uint]TransactionCategoryMapping, err error) {
-	db := tcm.GetDb()
+	db := global.GvaDb
 	rows, err := db.Model(&TransactionCategoryMapping{}).Where(
 		"account_id = ? AND product_key = ?", account.ID, productKey,
 	).Rows()
