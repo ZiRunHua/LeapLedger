@@ -36,6 +36,7 @@ func (m *_mysql) do() error {
 	sqlDb.SetMaxOpenConns(200)
 	sqlDb.SetConnMaxLifetime(5 * time.Minute)
 	db.InstanceSet("gorm:table_options", "ENGINE=InnoDB")
+	db.InstanceSet("gorm:queryFields", "SET TRANSACTION ISOLATION LEVEL READ COMMITTED;")
 	Db = db
 	return nil
 }
