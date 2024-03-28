@@ -12,12 +12,15 @@ var (
 	ErrNotBelongCurrentUser = errors.New("not belong current user")
 	ErrInvalidRequest       = errors.New("invalid request")
 	ErrInvalidParameter     = errors.New("invalid parameter")
+	ErrNoPermission         = errors.New("无权限")
 )
 
 // 数据校验
 var (
 	ErrDataIsEmpty        = NewErrDataIsEmpty("")
 	ErrTimeFrameIsTooLong = errors.New("时间范围过长")
+
+	ErrAccountId = errors.New("error accountId")
 )
 
 type errDataIsEmpty struct {
@@ -43,3 +46,6 @@ var ErrUnsupportedUserAction = errors.New("暂不支持该操作")
 
 // 用户
 var ErrSameAsTheOldPassword = errors.New("新旧密码相同")
+
+// 账本
+var ErrAccountType = errors.New("账本类型不允许该操作")
