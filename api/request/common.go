@@ -34,8 +34,16 @@ type CommonSendEmailCaptcha struct {
 }
 
 type TimeFrame struct {
-	StartTime int64 `binding:"omitempty,gt=0"`
-	EndTime   int64 `binding:"omitempty,gt=0"`
+	StartTime int64 `binding:"gt=0"`
+	EndTime   int64 `binding:"gt=0"`
+}
+
+func (t *TimeFrame) GetStartTime() time.Time {
+	return time.Unix(t.StartTime, 0)
+}
+
+func (t *TimeFrame) GetEndTime() time.Time {
+	return time.Unix(t.EndTime, 0)
 }
 
 func (t *TimeFrame) CheckTimeFrame() error {
@@ -56,3 +64,15 @@ func (t *TimeFrame) FormatDayTime() (startTime time.Time, endTime time.Time) {
 	endTime = time.Date(endTime.Year(), endTime.Month(), endTime.Day(), 23, 59, 59, 0, time.Local)
 	return
 }
+
+// 信息类型
+type InfoType string
+
+// 今日交易统计
+var TodayTransTotal InfoType = "todayTransTotal"
+
+// 本月交易统计
+var CurrentMonthTransTotal InfoType = "currentMonthTransTotal"
+
+// 最近交易数据
+var RecentTrans InfoType = "recentTrans"

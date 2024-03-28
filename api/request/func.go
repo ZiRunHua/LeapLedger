@@ -57,5 +57,5 @@ func GetTimeByTimestamp(timestamp *int64) *time.Time {
 		result := time.Unix(*timestamp, 0)
 		return &result
 	}
-	return nil
+	panic("GetTimeByTimestamp error")
 }

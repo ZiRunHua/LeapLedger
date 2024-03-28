@@ -27,7 +27,7 @@ var (
 	commonService = service.GroupApp.CommonServiceGroup
 )
 var (
-	userService        = service.GroupApp.UserServiceGroup.User
+	userService        = service.GroupApp.UserServiceGroup
 	accountService     = service.GroupApp.AccountServiceGroup
 	categoryService    = service.GroupApp.CategoryServiceGroup.Category
 	transactionService = service.GroupApp.TransactionServiceGroup.Transaction

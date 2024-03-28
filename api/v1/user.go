@@ -6,7 +6,6 @@ import (
 	"KeepAccount/global"
 	"KeepAccount/global/constant"
 	accountModel "KeepAccount/model/account"
-	"KeepAccount/model/common/query"
 	transactionModel "KeepAccount/model/transaction"
 	userModel "KeepAccount/model/user"
 	"KeepAccount/util"
@@ -20,9 +19,40 @@ import (
 type UserApi struct {
 }
 
-func (u *PublicApi) Login(ctx *gin.Context) {
+type _userPublic interface {
+	Login(ctx *gin.Context)
+	Register(ctx *gin.Context)
+	UpdatePassword(ctx *gin.Context)
+}
+
+type _userBase interface {
+	responseAndMaskUserInfo(userModel.UserInfo) response.UserInfo
+	UpdatePassword(ctx *gin.Context)
+	UpdateInfo(ctx *gin.Context)
+	SetCurrentAccount(ctx *gin.Context)
+	SendCaptchaEmail(ctx *gin.Context)
+	Home(ctx *gin.Context)
+}
+
+type _userFriend interface {
+	GetFriendList(ctx *gin.Context)
+	responseUserFriendInvitation(userModel.FriendInvitation) (response.UserFriendInvitation, error)
+	CreateFriendInvitation(ctx *gin.Context)
+	getFriendInvitationByParam(ctx *gin.Context) (userModel.FriendInvitation, bool)
+	AcceptFriendInvitation(ctx *gin.Context)
+	RefuseFriendInvitation(ctx *gin.Context)
+	GetFriendInvitationList(ctx *gin.Context)
+}
+
+type _userConfig interface {
+	GetTransactionShareConfig(ctx *gin.Context)
+	UpdateTransactionShareConfig(ctx *gin.Context)
+}
+
+func (p *PublicApi) Login(ctx *gin.Context) {
 	var requestData request.UserLogin
 	var err error
+	// 处理错误方法
 	var loginFailResponseFunc = func() {
 		if err != nil {
 			key := global.Cache.GetKey(constant.LoginFailCount, requestData.Email)
@@ -46,28 +76,51 @@ func (u *PublicApi) Login(ctx *gin.Context) {
 		}
 	}
 	defer loginFailResponseFunc()
-
+	// 请求数据获取与校验
 	if err = ctx.ShouldBindJSON(&requestData); err != nil {
 		return
 	}
-
 	if false == captchaStore.Verify(requestData.CaptchaId, requestData.Captcha, true) {
 		response.FailWithMessage("验证码错误", ctx)
 		return
 	}
 
 	client := contextFunc.GetClient(ctx)
-	var currentAccount *accountModel.Account
-	var token string
-	var user *userModel.User
+	// 开始处理
+	var user userModel.User
+	responseData := response.Login{}
 	transactionFunc := func(tx *gorm.DB) error {
-		var clientBaseInfo *userModel.UserClientBaseInfo
-		user, clientBaseInfo, token, err = userService.Login(requestData.Email, requestData.Password, client, tx)
+		var clientBaseInfo userModel.UserClientBaseInfo
+		user, clientBaseInfo, responseData.Token, err = userService.Base.Login(
+			requestData.Email, requestData.Password, client, tx,
+		)
 		if err != nil {
 			return err
 		}
-		if clientBaseInfo.CurrentAccountID != 0 {
-			currentAccount, err = query.FirstByPrimaryKey[*accountModel.Account](clientBaseInfo.CurrentAccountID)
+		err = responseData.User.SetData(user)
+		if err != nil {
+			return err
+		}
+		// 当前客户端操作账本
+		if clientBaseInfo.CurrentAccountId != 0 {
+			var account accountModel.Account
+			account, err = accountModel.NewDao().SelectById(clientBaseInfo.CurrentAccountId)
+			if err != nil {
+				return err
+			}
+			err = responseData.CurrentAccount.SetDataFromAccount(account)
+			if err != nil {
+				return err
+			}
+		}
+		// 当前客户端操作共享账本
+		if clientBaseInfo.CurrentShareAccountId != 0 {
+			var accountUser accountModel.User
+			accountUser, err = accountModel.NewDao().SelectUser(clientBaseInfo.CurrentShareAccountId, user.ID)
+			if err != nil && false == errors.Is(err, gorm.ErrRecordNotFound) {
+				return err
+			}
+			err = responseData.CurrentShareAccount.SetData(accountUser)
 			if err != nil {
 				return err
 			}
@@ -79,21 +132,16 @@ func (u *PublicApi) Login(ctx *gin.Context) {
 		err = errors.New("用户名不存在或者密码错误")
 		return
 	}
-	if token == "" {
+	if responseData.Token == "" {
 		err = errors.New("token获取失败")
 		return
 	}
 	if err == nil {
-		response.OkWithDetailed(
-			response.Login{
-				Token: token, CurrentAccount: response.AccountModelToResponse(currentAccount),
-				User: response.UserModelToResponse(user),
-			}, "登录成功", ctx,
-		)
+		response.OkWithDetailed(responseData, "登录成功", ctx)
 	}
 }
 
-func (u *PublicApi) Register(ctx *gin.Context) {
+func (p *PublicApi) Register(ctx *gin.Context) {
 	var requestData request.UserRegister
 	var err error
 	if err = ctx.ShouldBindJSON(&requestData); err != nil {
@@ -105,12 +153,12 @@ func (u *PublicApi) Register(ctx *gin.Context) {
 		return
 	}
 
-	data := &userModel.AddData{Username: requestData.Username, Password: requestData.Password, Email: requestData.Email}
-	var user *userModel.User
+	data := userModel.AddData{Username: requestData.Username, Password: requestData.Password, Email: requestData.Email}
+	var user userModel.User
 	var token string
 	err = global.GvaDb.Transaction(
 		func(tx *gorm.DB) error {
-			user, err = userService.Register(data, tx)
+			user, err = userService.Base.Register(data, tx)
 			if err != nil {
 				return err
 			}
@@ -127,15 +175,17 @@ func (u *PublicApi) Register(ctx *gin.Context) {
 		return
 	}
 	// 发送不成功不影响主流程
-	_ = thirdpartyService.SendNotificationEmail(constant.NotificationOfRegistrationSuccess, user)
-	response.OkWithDetailed(
-		response.Register{
-			Token: token,
-		}, "注册成功", ctx,
-	)
+	_ = thirdpartyService.SendNotificationEmail(constant.NotificationOfRegistrationSuccess, &user)
+
+	responseData := response.Register{Token: token}
+	err = responseData.User.SetData(user)
+	if responseError(err, ctx) {
+		return
+	}
+	response.OkWithDetailed(responseData, "注册成功", ctx)
 }
 
-func (u *PublicApi) UpdatePassword(ctx *gin.Context) {
+func (p *PublicApi) UpdatePassword(ctx *gin.Context) {
 	var requestData request.UserForgetPassword
 	if err := ctx.ShouldBindJSON(&requestData); err != nil {
 		response.FailToParameter(ctx, err)
@@ -146,17 +196,17 @@ func (u *PublicApi) UpdatePassword(ctx *gin.Context) {
 	if responseError(err, ctx) {
 		return
 	}
-	user, err := userModel.Dao.NewUser(nil).SelectByEmail(requestData.Email)
+	user, err := userModel.NewDao().SelectByEmail(requestData.Email)
 	if responseError(err, ctx) {
 		return
 	}
 	err = global.GvaDb.Transaction(
 		func(tx *gorm.DB) error {
-			return userService.UpdatePassword(user, requestData.Password, tx)
+			return userService.Base.UpdatePassword(user, requestData.Password, tx)
 		},
 	)
 	// 发送不成功不影响主流程
-	_ = thirdpartyService.SendNotificationEmail(constant.NotificationOfUpdatePassword, user)
+	_ = thirdpartyService.SendNotificationEmail(constant.NotificationOfUpdatePassword, &user)
 	if responseError(err, ctx) {
 		return
 	}
@@ -181,11 +231,11 @@ func (u *UserApi) UpdatePassword(ctx *gin.Context) {
 
 	err = global.GvaDb.Transaction(
 		func(tx *gorm.DB) error {
-			return userService.UpdatePassword(user, requestData.Password, tx)
+			return userService.Base.UpdatePassword(user, requestData.Password, tx)
 		},
 	)
 	// 发送不成功不影响主流程
-	_ = thirdpartyService.SendNotificationEmail(constant.NotificationOfUpdatePassword, user)
+	_ = thirdpartyService.SendNotificationEmail(constant.NotificationOfUpdatePassword, &user)
 	if responseError(err, ctx) {
 		return
 	}
@@ -199,39 +249,84 @@ func (u *UserApi) UpdateInfo(ctx *gin.Context) {
 		response.FailToParameter(ctx, err)
 		return
 	}
-	var user *userModel.User
+	var user userModel.User
 	user, err = contextFunc.GetUser(ctx)
 	if responseError(err, ctx) {
 		return
 	}
-	err = global.GvaDb.Model(user).Update("username", requestData.Username).Error
+	err = global.GvaDb.Model(&user).Update("username", requestData.Username).Error
 	if responseError(err, ctx) {
 		return
 	}
 	response.Ok(ctx)
 }
 
-func (u *UserApi) SetCurrentAccount(ctx *gin.Context) {
-	var requestData request.Id
+func (u *UserApi) SearchUser(ctx *gin.Context) {
+	var requestData request.UserSearch
 	var err error
 	if err = ctx.ShouldBindJSON(&requestData); err != nil {
 		response.FailToParameter(ctx, err)
 		return
 	}
-	account, err := query.FirstByPrimaryKey[*accountModel.Account](requestData.Id)
-	if err != nil {
-		response.FailToError(ctx, err)
+	condition := userModel.Condition{
+		Id:                 requestData.Id,
+		LikePrefixUsername: &requestData.Username,
+		Offset:             requestData.Offset,
+		Limit:              requestData.Limit,
+	}
+	var list []userModel.UserInfo
+	list, err = userModel.NewDao().SelectUserInfoByCondition(condition)
+	var responseData response.List[response.UserInfo]
+	responseData.List = make([]response.UserInfo, len(list), len(list))
+	for i := 0; i < len(responseData.List); i++ {
+		responseData.List[i].SetMaskData(list[i])
+	}
+	response.OkWithData(responseData, ctx)
+}
+
+func (u *UserApi) SetCurrentAccount(ctx *gin.Context) {
+	var requestData request.Id
+	if err := ctx.ShouldBindJSON(&requestData); err != nil {
+		response.FailToParameter(ctx, err)
 		return
 	}
-	var user *userModel.User
-	if user, err = contextFunc.GetUser(ctx); err != nil {
-		response.FailToError(ctx, err)
+	account, accountUser, pass := checkFunc.AccountBelongAndGet(requestData.Id, ctx)
+	if false == pass {
 		return
 	}
-	account.BeginTransaction()
-	defer account.DeferCommit(ctx)
-	if err = userService.SetClientAccount(user, contextFunc.GetClient(ctx), account); err != nil {
-		response.FailToError(ctx, err)
+
+	err := global.GvaDb.Transaction(
+		func(tx *gorm.DB) error {
+			return userService.Base.SetClientAccount(accountUser, contextFunc.GetClient(ctx), account, tx)
+		},
+	)
+	if responseError(err, ctx) {
+		return
+	}
+	response.Ok(ctx)
+}
+
+func (u *UserApi) SetCurrentShareAccount(ctx *gin.Context) {
+	var requestData request.Id
+	if err := ctx.ShouldBindJSON(&requestData); err != nil {
+		response.FailToParameter(ctx, err)
+		return
+	}
+	account, accountUser, pass := checkFunc.AccountBelongAndGet(requestData.Id, ctx)
+	if false == pass {
+		return
+	}
+	if account.Type != accountModel.TypeShare {
+		response.FailToError(ctx, global.ErrAccountType)
+		return
+	}
+
+	err := global.GvaDb.Transaction(
+		func(tx *gorm.DB) error {
+			return userService.Base.SetClientShareAccount(accountUser, contextFunc.GetClient(ctx), account, tx)
+		},
+	)
+	if responseError(err, ctx) {
 		return
 	}
 	response.Ok(ctx)
@@ -267,27 +362,29 @@ func (u *UserApi) Home(ctx *gin.Context) {
 		response.FailToParameter(ctx, err)
 		return
 	}
+	pass := checkFunc.AccountBelong(requestData.AccountId, ctx)
+	if false == pass {
+		return
+	}
 
 	group := egroup.WithContext(ctx)
 	nowTime := time.Now()
 	year, month, day := time.Now().Date()
 	var todayData, yesterdayData, weekData, monthData, yearData response.TransactionStatistic
-	condition := &transactionModel.StatisticCondition{
-		ForeignKeyCondition: transactionModel.ForeignKeyCondition{AccountId: &requestData.AccountId},
+	condition := transactionModel.StatisticCondition{
+		ForeignKeyCondition: transactionModel.ForeignKeyCondition{AccountId: requestData.AccountId},
 	}
-	handelOneTime := func(data *response.TransactionStatistic, start time.Time, end time.Time) error {
-		result, err := transactionModel.Dao.NewTransaction(nil).GetStatisticByCondition(
-			condition,
-			start,
-			end,
-		)
+	handelOneTime := func(data *response.TransactionStatistic, startTime time.Time, endTime time.Time) error {
+		condition.StartTime = startTime
+		condition.EndTime = endTime
+		result, err := transactionModel.NewDao().GetIeStatisticByCondition(nil, condition, nil)
 		if err != nil {
 			return err
 		}
 		*data = response.TransactionStatistic{
-			IncomeExpenseStatistic: *result,
-			StartTime:              start.Unix(),
-			EndTime:                end.Unix(),
+			IncomeExpenseStatistic: result,
+			StartTime:              startTime.Unix(),
+			EndTime:                endTime.Unix(),
 		}
 		return nil
 	}
@@ -348,7 +445,7 @@ func (u *UserApi) Home(ctx *gin.Context) {
 	}
 	// 处理响应
 	responseData := &response.UserHome{}
-	responseData.HeaderCard = &response.UserHomeHeaderCard{&monthData}
+	responseData.HeaderCard = &response.UserHomeHeaderCard{TransactionStatistic: &monthData}
 	responseData.TimePeriodStatistics = &response.UserHomeTimePeriodStatistics{
 		TodayData: &todayData, YesterdayData: &yesterdayData, WeekData: &weekData, YearData: &yearData,
 	}
@@ -360,11 +457,15 @@ func (u *UserApi) GetTransactionShareConfig(ctx *gin.Context) {
 	if responseError(err, ctx) {
 		return
 	}
-	config := &userModel.TransactionShareConfig{}
+	var config userModel.TransactionShareConfig
 	if err = config.SelectByUserId(user.ID); responseError(err, ctx) {
 		return
 	}
-	responseData := response.UserTransactionShareConfigModelToResponse(config)
+	var responseData response.UserTransactionShareConfig
+	err = responseData.SetData(config)
+	if responseError(err, ctx) {
+		return
+	}
 	response.OkWithData(responseData, ctx)
 }
 
@@ -403,6 +504,217 @@ func (u *UserApi) UpdateTransactionShareConfig(ctx *gin.Context) {
 	if responseError(err, ctx) {
 		return
 	}
-	responseData := response.UserTransactionShareConfigModelToResponse(config)
+	var responseData response.UserTransactionShareConfig
+	err = responseData.SetData(config)
+	if responseError(err, ctx) {
+		return
+	}
 	response.OkWithData(responseData, ctx)
+}
+
+func (u *UserApi) responseAndMaskUserInfo(data userModel.UserInfo) response.UserInfo {
+	return response.UserInfo{
+		Id:       data.ID,
+		Username: data.Username,
+		Email:    util.Str.MaskEmail(data.Email),
+	}
+}
+
+func (u *UserApi) GetFriendList(ctx *gin.Context) {
+	user, err := contextFunc.GetUser(ctx)
+	if responseError(err, ctx) {
+		return
+	}
+	var friendList []userModel.Friend
+	friendList, err = userModel.NewDao().SelectFriendList(user.ID)
+
+	responseData := make([]response.UserInfo, len(friendList), len(friendList))
+	var info userModel.UserInfo
+	for i := 0; i < len(responseData); i++ {
+		info, err = friendList[i].GetFriendInfo()
+		if responseError(err, ctx) {
+			return
+		}
+		responseData[i].SetMaskData(info)
+
+	}
+	response.OkWithData(response.List[response.UserInfo]{List: responseData}, ctx)
+}
+
+func (u *UserApi) responseUserFriendInvitation(data userModel.FriendInvitation) (
+	responseData response.UserFriendInvitation, err error,
+) {
+	var inviterInfo userModel.UserInfo
+	var inviteeInfo userModel.UserInfo
+	inviterInfo, err = data.GetInviterInfo()
+	if err != nil {
+		return
+	}
+	inviteeInfo, err = data.GetInviteeInfo()
+	if err != nil {
+		return
+	}
+	responseData = response.UserFriendInvitation{
+		Id:         data.ID,
+		CreateTime: data.CreatedAt.Unix(),
+	}
+	responseData.Inviter.SetMaskData(inviterInfo)
+	responseData.Inviter.SetMaskData(inviteeInfo)
+	return
+}
+
+func (u *UserApi) CreateFriendInvitation(ctx *gin.Context) {
+	var requestData request.UserCreateFriendInvitation
+	if err := ctx.ShouldBindJSON(&requestData); err != nil {
+		response.FailToParameter(ctx, err)
+		return
+	}
+	user, err := contextFunc.GetUser(ctx)
+	if responseError(err, ctx) {
+		return
+	}
+	// 处理
+	var invitation userModel.FriendInvitation
+	txFunc := func(tx *gorm.DB) error {
+		var invitee userModel.User
+		invitee, err = userModel.NewDao(tx).SelectById(requestData.Invitee)
+		if err != nil {
+			return err
+		}
+		invitation, err = userService.Friend.CreateInvitation(user, invitee, tx)
+		if err != nil {
+			return err
+		}
+		return nil
+	}
+	err = global.GvaDb.Transaction(txFunc)
+	if responseError(err, ctx) {
+		return
+	}
+	// 响应
+	var responseData response.UserFriendInvitation
+	responseData, err = u.responseUserFriendInvitation(invitation)
+	if responseError(err, ctx) {
+		return
+	}
+	response.OkWithData(responseData, ctx)
+}
+
+func (u *UserApi) getFriendInvitationByParam(ctx *gin.Context) (result userModel.FriendInvitation, isSuccess bool) {
+	id, pass := contextFunc.GetUintParamByKey("id", ctx)
+	if false == pass {
+		return
+	}
+	if pass, result = checkFunc.FriendInvitationBelongAndGet(id, ctx); pass == false {
+		return
+	}
+	isSuccess = true
+	return
+}
+
+func (u *UserApi) AcceptFriendInvitation(ctx *gin.Context) {
+	invitation, pass := u.getFriendInvitationByParam(ctx)
+	if false == pass {
+		return
+	}
+	if invitation.Invitee != contextFunc.GetUserId(ctx) {
+		response.FailToError(ctx, errors.New("非被邀请者！"))
+		return
+	}
+	txFunc := func(tx *gorm.DB) error {
+		_, _, err := userService.Friend.AcceptInvitation(&invitation, tx)
+		return err
+	}
+	err := global.GvaDb.Transaction(txFunc)
+	if responseError(err, ctx) {
+		return
+	}
+	var responseData response.UserFriendInvitation
+	responseData, err = u.responseUserFriendInvitation(invitation)
+	if responseError(err, ctx) {
+		return
+	}
+	response.OkWithData(responseData, ctx)
+}
+
+func (u *UserApi) RefuseFriendInvitation(ctx *gin.Context) {
+	invitation, pass := u.getFriendInvitationByParam(ctx)
+	if false == pass {
+		return
+	}
+	if invitation.Invitee != contextFunc.GetUserId(ctx) {
+		response.FailToError(ctx, errors.New("非被邀请者！"))
+		return
+	}
+	txFunc := func(tx *gorm.DB) error {
+		err := userService.Friend.RefuseInvitation(&invitation, tx)
+		return err
+	}
+	err := global.GvaDb.Transaction(txFunc)
+	if responseError(err, ctx) {
+		return
+	}
+	var responseData response.UserFriendInvitation
+	responseData, err = u.responseUserFriendInvitation(invitation)
+	if responseError(err, ctx) {
+		return
+	}
+	response.OkWithData(responseData, ctx)
+}
+
+func (u *UserApi) GetFriendInvitationList(ctx *gin.Context) {
+	var requestData request.UserGetFriendInvitation
+	if err := ctx.ShouldBindJSON(&requestData); err != nil {
+		response.FailToParameter(ctx, err)
+		return
+	}
+
+	user, err := contextFunc.GetUser(ctx)
+	if responseError(err, ctx) {
+		return
+	}
+	var list []userModel.FriendInvitation
+	if requestData.IsInvite {
+		list, err = userModel.NewDao().SelectFriendInvitationList(&user.ID, nil)
+	} else {
+		list, err = userModel.NewDao().SelectFriendInvitationList(nil, &user.ID)
+	}
+
+	responseData := make([]response.UserFriendInvitation, len(list), len(list))
+	for i := 0; i < len(responseData); i++ {
+		responseData[i], err = u.responseUserFriendInvitation(list[i])
+		if responseError(err, ctx) {
+			return
+		}
+	}
+	response.OkWithData(response.List[response.UserFriendInvitation]{List: responseData}, ctx)
+}
+
+func (u *UserApi) GetAccountInvitationList(ctx *gin.Context) {
+	var err error
+	var requestData request.UserGetAccountInvitationList
+	if err = ctx.ShouldBindJSON(&requestData); err != nil {
+		response.FailToParameter(ctx, err)
+		return
+	}
+	// 查询
+	condition := accountModel.NewUserInvitationCondition(requestData.Limit, requestData.Offset)
+	condition.SetInviteeId(contextFunc.GetUserId(ctx))
+	var list []accountModel.UserInvitation
+	list, err = accountModel.NewDao().SelectUserInvitationByCondition(*condition)
+	if responseError(err, ctx) {
+		return
+	}
+	// 响应
+	responseData := make([]response.AccountUserInvitation, len(list), len(list))
+	for i := 0; i < len(responseData); i++ {
+		err = responseData[i].SetData(list[i])
+		if responseError(err, ctx) {
+			return
+		}
+	}
+	if responseError(err, ctx) {
+		return
+	}
+	response.OkWithData(response.List[response.AccountUserInvitation]{List: responseData}, ctx)
 }

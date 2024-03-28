@@ -45,6 +45,6 @@ type ExpirationTime struct {
 	ExpirationTime int
 }
 
-type List[T interface{}] struct {
+type List[T any] struct {
 	List []T
 }

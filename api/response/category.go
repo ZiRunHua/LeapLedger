@@ -24,6 +24,14 @@ type CategoryOne struct {
 	IncomeExpense constant.IncomeExpense
 }
 
+func (co *CategoryOne) SetData(category categoryModel.Category) error {
+	co.Id = category.ID
+	co.Name = category.Name
+	co.Icon = category.Icon
+	co.IncomeExpense = category.IncomeExpense
+	return nil
+}
+
 type FatherOne struct {
 	Id            uint
 	Name          string

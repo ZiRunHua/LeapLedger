@@ -1,28 +1,16 @@
 package util
 
 import (
+	"KeepAccount/api/request"
 	"KeepAccount/api/response"
+	"KeepAccount/global"
 	"KeepAccount/global/constant"
+	accountModel "KeepAccount/model/account"
 	userModel "KeepAccount/model/user"
 	"KeepAccount/util"
 	"github.com/gin-gonic/gin"
 	"strconv"
 )
-
-type _contextFunc interface {
-	SetUserId(id uint, ctx *gin.Context)
-	SetClaims(claims *util.CustomClaims, ctx *gin.Context)
-	GetUserId(ctx *gin.Context) uint
-	GetUser(ctx *gin.Context) (*userModel.User, error)
-	GetToken(ctx *gin.Context) string
-	GetClaims(ctx *gin.Context) util.CustomClaims
-	GetClient(ctx *gin.Context) constant.Client
-	GetParamId(ctx *gin.Context) (uint, bool)
-	GetCacheKeyByType(t string, ctx *gin.Context) string
-}
-
-type contextFunc struct {
-}
 
 var ContextFunc = new(contextFunc)
 
@@ -30,6 +18,9 @@ const (
 	_UserId = "_user_id_"
 	_Claims = "_claims_"
 )
+
+type contextFunc struct {
+}
 
 func (cf *contextFunc) SetUserId(id uint, ctx *gin.Context) {
 	ctx.Set(_UserId, id)
@@ -43,10 +34,10 @@ func (cf *contextFunc) GetUserId(ctx *gin.Context) uint {
 	return ctx.MustGet(_UserId).(uint)
 }
 
-func (cf *contextFunc) GetUser(ctx *gin.Context) (*userModel.User, error) {
+func (cf *contextFunc) GetUser(ctx *gin.Context) (userModel.User, error) {
 	user := new(userModel.User)
-	err := user.SelectById(cf.GetUserId(ctx))
-	return user, err
+	err := global.GvaDb.First(user, cf.GetUserId(ctx)).Error
+	return *user, err
 }
 
 func (cf *contextFunc) GetToken(ctx *gin.Context) string {
@@ -67,6 +58,10 @@ func (cf *contextFunc) GetClient(ctx *gin.Context) constant.Client {
 	panic("Not found client")
 }
 
+func (cf *contextFunc) GetUserCurrentClientInfo(ctx *gin.Context) (userModel.UserClientBaseInfo, error) {
+	return userModel.NewDao().SelectUserClientBaseInfo(cf.GetUserId(ctx), cf.GetClient(ctx))
+}
+
 func (cf *contextFunc) GetUintParamByKey(key string, ctx *gin.Context) (uint, bool) {
 	id, err := strconv.Atoi(ctx.Param(key))
 	if err != nil {
@@ -74,6 +69,14 @@ func (cf *contextFunc) GetUintParamByKey(key string, ctx *gin.Context) (uint, bo
 		return 0, false
 	}
 	return uint(id), true
+}
+
+func (cf *contextFunc) GetInfoTypeFormParam(ctx *gin.Context) request.InfoType {
+	return request.InfoType(ctx.Param("type"))
+}
+
+func (cf *contextFunc) GetAccountType(ctx *gin.Context) accountModel.Type {
+	return accountModel.Type(ctx.Param("type"))
 }
 
 func (cf *contextFunc) GetParamId(ctx *gin.Context) (uint, bool) {

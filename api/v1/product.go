@@ -4,23 +4,13 @@ import (
 	"KeepAccount/api/request"
 	"KeepAccount/api/response"
 	"KeepAccount/global"
-	accountModel "KeepAccount/model/account"
 	categoryModel "KeepAccount/model/category"
 	productModel "KeepAccount/model/product"
-	userModel "KeepAccount/model/user"
 	"KeepAccount/util"
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
+	"strconv"
 )
-
-type _productApi interface {
-	GetList(ctx *gin.Context)
-	GetTransactionCategory(ctx *gin.Context)
-	MappingTransactionCategory(ctx *gin.Context)
-	DeleteTransactionCategoryMapping(ctx *gin.Context)
-	GetMappingTree(ctx *gin.Context)
-	ImportProductBill(ctx *gin.Context)
-}
 
 type ProductApi struct {
 }
@@ -94,7 +84,7 @@ func (p *ProductApi) MappingTransactionCategory(ctx *gin.Context) {
 	if responseError(err, ctx) {
 		return
 	}
-	_, err = productService.MappingTransactionCategory(&category, &transactionCategory)
+	_, err = productService.MappingTransactionCategory(category, transactionCategory)
 	if responseError(err, ctx) {
 		return
 	}
@@ -113,12 +103,12 @@ func (p *ProductApi) DeleteTransactionCategoryMapping(ctx *gin.Context) {
 		return
 	}
 
-	pass, category, _ := checkFunc.TransactionCategoryBelong(requestData.CategoryId, ctx)
+	pass, category, _ := checkFunc.TransactionCategoryBelongAndGet(requestData.CategoryId, ctx)
 	if pass == false {
 		return
 	}
 
-	err = productService.DeleteMappingTransactionCategory(category, &ptc)
+	err = productService.DeleteMappingTransactionCategory(category, ptc)
 	if responseError(err, ctx) {
 		return
 	}
@@ -131,7 +121,7 @@ func (p *ProductApi) GetMappingTree(ctx *gin.Context) {
 		response.FailToParameter(ctx, err)
 		return
 	}
-	if pass, _ := checkFunc.AccountBelong(requestData.AccountId, ctx); pass == false {
+	if pass := checkFunc.AccountBelong(requestData.AccountId, ctx); pass == false {
 		return
 	}
 	var prodTransCategory productModel.TransactionCategory
@@ -155,7 +145,7 @@ func (p *ProductApi) GetMappingTree(ctx *gin.Context) {
 
 	var tree response.ProductGetMappingTree
 	children := make(map[uint][]uint)
-	fatherList := []uint{}
+	var fatherList []uint
 	for rows.Next() {
 		err = global.GvaDb.ScanRows(rows, &prodTransCategoryMapping)
 		if err != nil {
@@ -182,28 +172,33 @@ func (p *ProductApi) GetMappingTree(ctx *gin.Context) {
 }
 
 func (p *ProductApi) ImportProductBill(ctx *gin.Context) {
-	var err error
 	fileHeader, err := ctx.FormFile("File")
-	if err != nil {
+	if responseError(err, ctx) {
 		return
 	}
-	file, err := util.File.GetNewFileWithSuffixByFileHeader(fileHeader)
-	if err != nil {
+	var file *util.FileWithSuffix
+	file, err = util.File.GetNewFileWithSuffixByFileHeader(fileHeader)
+	if responseError(err, ctx) {
 		return
 	}
-	user, product, account, pass := &userModel.User{}, &productModel.Product{}, &accountModel.Account{}, false
-	if user, err = contextFunc.GetUser(ctx); err != nil {
+
+	var accountId int
+	accountId, err = strconv.Atoi(ctx.PostForm("AccountId"))
+	if responseError(err, ctx) {
 		return
 	}
-	if pass, account = checkFunc.AccountBelong(ctx.PostForm("AccountId"), ctx); false == pass {
+	account, accountUser, pass := checkFunc.AccountBelongAndGet(uint(accountId), ctx)
+	if false == pass {
 		return
 	}
+
+	var product productModel.Product
 	if product, err = p.getProductByParam(ctx); err != nil {
 		return
 	}
 	err = global.GvaDb.Transaction(
 		func(tx *gorm.DB) error {
-			return productService.BillImport(*user, *account, *product, file, tx)
+			return productService.BillImport(accountUser, account, product, file, tx)
 		},
 	)
 	if err != nil {
@@ -216,7 +211,7 @@ func (p *ProductApi) ImportProductBill(ctx *gin.Context) {
 	)
 }
 
-func (p *ProductApi) getProductByParam(ctx *gin.Context) (*productModel.Product, error) {
+func (p *ProductApi) getProductByParam(ctx *gin.Context) (productModel.Product, error) {
 	product := productModel.Product{}
 	return product.SelectByKey(productModel.KeyValue(ctx.Param("key")))
 }

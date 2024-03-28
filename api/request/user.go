@@ -34,6 +34,12 @@ type UserUpdateInfo struct {
 	Username string `binding:"required"`
 }
 
+type UserSearch struct {
+	Id       *uint  `binding:"omitempty"`
+	Username string `binding:"required"`
+	PageData
+}
+
 type UserSendEmail struct {
 	PicCaptcha
 	Type constant.UserAction `binding:"required,oneof=updatePassword"`
@@ -69,4 +75,16 @@ func GetFlagByFlagName(name TransactionShareConfigName) (userModel.Flag, error) 
 		return userModel.FLAG_REMARK, nil
 	}
 	return 0, errors.New("flag参数错误")
+}
+
+type UserCreateFriendInvitation struct {
+	Invitee uint
+}
+
+type UserGetFriendInvitation struct {
+	IsInvite bool
+}
+
+type UserGetAccountInvitationList struct {
+	PageData
 }

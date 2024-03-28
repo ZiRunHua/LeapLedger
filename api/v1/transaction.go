@@ -7,30 +7,19 @@ import (
 	"KeepAccount/global/constant"
 	accountModel "KeepAccount/model/account"
 	categoryModel "KeepAccount/model/category"
-	"KeepAccount/model/common/query"
 	transactionModel "KeepAccount/model/transaction"
-	userModel "KeepAccount/model/user"
 	"KeepAccount/util"
+	"KeepAccount/util/dataType"
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
-	"reflect"
 	"time"
 )
-
-type _transactionApi interface {
-	transactionApi()
-	GetOne(ctx *gin.Context)
-	CreateOne(ctx *gin.Context)
-	Update(ctx *gin.Context)
-	Delete(ctx *gin.Context)
-	GetList(ctx *gin.Context)
-}
 
 type TransactionApi struct {
 }
 
-func (a *TransactionApi) transactionApi() {}
-func (a *TransactionApi) GetOne(ctx *gin.Context) {
+func (t *TransactionApi) transactionApi() {}
+func (t *TransactionApi) GetOne(ctx *gin.Context) {
 	trans, ok := contextFunc.GetTransByParam(ctx)
 	if false == ok {
 		return
@@ -44,16 +33,12 @@ func (t *TransactionApi) CreateOne(ctx *gin.Context) {
 		response.FailToParameter(ctx, err)
 		return
 	}
-	pass, account := checkFunc.AccountBelong(requestData.AccountId, ctx)
+	account, accountUser, pass := checkFunc.AccountBelongAndGet(requestData.AccountId, ctx)
 	if false == pass {
 		return
 	}
-	user, err := contextFunc.GetUser(ctx)
-	if err != nil {
-		response.FailToError(ctx, err)
-		return
-	}
-	transaction := &transactionModel.Transaction{
+
+	transaction := transactionModel.Transaction{
 		AccountId:     requestData.AccountId,
 		CategoryId:    requestData.CategoryId,
 		IncomeExpense: requestData.IncomeExpense,
@@ -61,18 +46,24 @@ func (t *TransactionApi) CreateOne(ctx *gin.Context) {
 		Remark:        requestData.Remark,
 		TradeTime:     time.Unix(int64(requestData.TradeTime), 0),
 	}
-	err = global.GvaDb.Transaction(
+	err := global.GvaDb.Transaction(
 		func(tx *gorm.DB) error {
-			transaction.SetTx(tx)
-			return transactionService.CreateOne(transaction, user)
+			userClient, err := contextFunc.GetUserCurrentClientInfo(ctx)
+			if err != nil {
+				return err
+			}
+			// 新交易非客户端当前使用账本 则异步更新统计数据 以加快接口响应
+			asyncUpdateStatistic := transaction.AccountId != userClient.CurrentAccountId
+			transaction, err = transactionService.CreateOne(transaction, accountUser, asyncUpdateStatistic, tx)
+			return err
 		},
 	)
 	if responseError(err, ctx) {
 		return
 	}
 
-	var responseData *response.TransactionDetail
-	if responseData, err = t.getResponseDetail(*transaction, account); responseError(err, ctx) {
+	var responseData response.TransactionDetail
+	if err = responseData.SetData(transaction, &account); responseError(err, ctx) {
 		return
 	}
 	response.OkWithData(responseData, ctx)
@@ -88,11 +79,11 @@ func (t *TransactionApi) Update(ctx *gin.Context) {
 	if false == ok {
 		return
 	}
-	pass, account := checkFunc.AccountBelong(requestData.AccountId, ctx)
+	account, accountUser, pass := checkFunc.AccountBelongAndGet(requestData.AccountId, ctx)
 	if false == pass {
 		return
 	}
-	transaction := &transactionModel.Transaction{
+	transaction := transactionModel.Transaction{
 		UserId:        requestData.UserId,
 		AccountId:     requestData.AccountId,
 		CategoryId:    requestData.CategoryId,
@@ -104,71 +95,32 @@ func (t *TransactionApi) Update(ctx *gin.Context) {
 	transaction.ID = id
 	err := global.GvaDb.Transaction(
 		func(tx *gorm.DB) error {
-			transaction.SetTx(tx)
-			return transactionService.Update(transaction)
+			return transactionService.Update(transaction, accountUser, tx)
 		},
 	)
 	if responseError(err, ctx) {
 		return
 	}
 
-	var responseData *response.TransactionDetail
-	if responseData, err = t.getResponseDetail(*transaction, account); responseError(err, ctx) {
+	var responseData response.TransactionDetail
+	if err = responseData.SetData(transaction, &account); responseError(err, ctx) {
 		return
 	}
 	response.OkWithData(responseData, ctx)
 }
-func (t *TransactionApi) getResponseDetail(
-	trans transactionModel.Transaction, account *accountModel.Account,
-) (*response.TransactionDetail, error) {
-	var (
-		user     *userModel.User
-		category *categoryModel.Category
-		father   *categoryModel.Father
-		err      error
-	)
-	if account == nil {
-		if account, err = trans.GetAccount(); err != nil {
-			return nil, err
-		}
-	}
-	if user, err = trans.GetUser(); err != nil {
-		return nil, err
-	}
-	if category, err = trans.GetCategory(); err != nil {
-		return nil, err
-	}
-	if father, err = category.GetFather(); err != nil {
-		return nil, err
-	}
-	return &response.TransactionDetail{
-		Id:                 trans.ID,
-		UserId:             user.ID,
-		UserName:           user.Username,
-		AccountId:          account.ID,
-		AccountName:        account.Name,
-		Amount:             trans.Amount,
-		CategoryId:         trans.CategoryId,
-		CategoryIcon:       category.Icon,
-		CategoryName:       category.Name,
-		CategoryFatherName: father.Name,
-		IncomeExpense:      category.IncomeExpense,
-		Remark:             category.Icon,
-		TradeTime:          trans.TradeTime.Unix(),
-		UpdateTime:         trans.UpdatedAt.Unix(),
-		CreateTime:         trans.CreatedAt.Unix(),
-	}, nil
-}
 
-func (a *TransactionApi) Delete(ctx *gin.Context) {
-	trans, ok := contextFunc.GetTransByParam(ctx)
-	if false == ok {
+func (t *TransactionApi) Delete(ctx *gin.Context) {
+	trans, pass := contextFunc.GetTransByParam(ctx)
+	if false == pass {
 		return
 	}
-	err := global.GvaDb.Transaction(
+	accountUser, err := accountModel.NewDao().SelectUser(trans.AccountId, contextFunc.GetUserId(ctx))
+	if responseError(err, ctx) {
+		return
+	}
+	err = global.GvaDb.Transaction(
 		func(tx *gorm.DB) error {
-			trans.SetTx(tx)
-			return transactionService.Delete(trans)
+			return transactionService.Delete(trans, accountUser, tx)
 		},
 	)
 	if err != nil {
@@ -193,122 +145,25 @@ func (t *TransactionApi) GetList(ctx *gin.Context) {
 		return
 	}
 
-	if pass, _ := checkFunc.AccountBelong(requestData.AccountId, ctx); pass == false {
+	if pass := checkFunc.AccountBelong(requestData.AccountId, ctx); pass == false {
 		return
 	}
 
-	// 设置查询条件
-	condition := &transactionModel.TransactionCondition{
-		// 交易外键条件
-		ForeignKeyCondition: transactionModel.ForeignKeyCondition{
-			AccountId:   &requestData.AccountId,
-			UserIds:     requestData.UserIds,
-			CategoryIds: requestData.CategoryIds,
-		},
-		// 交易时间条件
-		TradeTimeCondition: transactionModel.TradeTimeCondition{
-			TradeStartTime: request.GetTimeByTimestamp(&requestData.StartTime),
-			TradeEndTime:   request.GetTimeByTimestamp(&requestData.EndTime),
-		},
-		IncomeExpense: requestData.IncomeExpense,
-		MinimumAmount: requestData.MinimumAmount,
-		MaximumAmount: requestData.MaximumAmount,
-	}
 	// 查询并获取结果
-	transactionList, err := transactionModel.Dao.NewTransaction(nil).GetListByCondition(
-		condition,
-		requestData.Limit,
-		requestData.Offset,
+	condition := requestData.GetCondition()
+	var transactionList []transactionModel.Transaction
+	transactionList, err = transactionModel.NewDao().GetListByCondition(
+		condition, requestData.Limit, requestData.Offset,
 	)
 	if responseError(err, ctx) {
 		return
 	}
-	var responseData response.TransactionGetList
-	if len(transactionList) > 0 {
-		responseData = response.TransactionGetList{List: t.getResponseDetailList(transactionList)}
-	} else {
-		responseData = response.TransactionGetList{List: make([]response.TransactionDetail, 0)}
+	responseData := response.TransactionGetList{List: response.TransactionDetailList{}}
+	err = responseData.List.SetData(transactionList)
+	if responseError(err, ctx) {
+		return
 	}
 	response.OkWithData(responseData, ctx)
-}
-
-func (t *TransactionApi) getResponseDetailList(transList []transactionModel.Transaction) []response.TransactionDetail {
-	// 用户
-	Ids := t.getFieldValues(transList, "UserId")
-	var userList []userModel.User
-	global.GvaDb.Select("username,id").Where("id IN (?)", Ids).Find(&userList)
-	userMap := make(map[uint]userModel.User)
-	for _, item := range userList {
-		userMap[item.ID] = item
-	}
-	// 账本
-	Ids = t.getFieldValues(transList, "AccountId")
-	var accountList []accountModel.Account
-	global.GvaDb.Select("name", "id").Where("id IN (?)", Ids).Find(&accountList)
-	accountMap := make(map[uint]accountModel.Account)
-	for _, item := range accountList {
-		accountMap[item.ID] = item
-	}
-	// 二级交易类型
-	Ids = t.getFieldValues(transList, "CategoryId")
-	var categoryList []categoryModel.Category
-	global.GvaDb.Select("icon", "name", "father_id", "id").Where("id IN (?)", Ids).Find(&categoryList)
-	categoryMap := make(map[uint]categoryModel.Category)
-	fatherIds := []uint{}
-	for _, item := range categoryList {
-		categoryMap[item.ID] = item
-		fatherIds = append(fatherIds, item.FatherId)
-	}
-	// 一级交易类型
-	var fatherList []categoryModel.Father
-	global.GvaDb.Select("name", "id").Where("id IN (?)", fatherIds).Find(&fatherList)
-	fatherMap := make(map[uint]categoryModel.Father)
-	for _, item := range fatherList {
-		fatherMap[item.ID] = item
-	}
-
-	result := make([]response.TransactionDetail, len(transList), len(transList))
-	for i, trans := range transList {
-		category := categoryMap[trans.CategoryId]
-		result[i] = response.TransactionDetail{
-			Id:                 trans.ID,
-			UserId:             trans.UserId,
-			UserName:           userMap[trans.UserId].Username,
-			AccountId:          trans.AccountId,
-			AccountName:        accountMap[trans.AccountId].Name,
-			Amount:             trans.Amount,
-			CategoryId:         trans.CategoryId,
-			CategoryIcon:       category.Icon,
-			CategoryName:       category.Name,
-			CategoryFatherName: fatherMap[category.FatherId].Name,
-			IncomeExpense:      trans.IncomeExpense,
-			Remark:             trans.Remark,
-			TradeTime:          trans.TradeTime.Unix(),
-			UpdateTime:         trans.UpdatedAt.Unix(),
-			CreateTime:         trans.CreatedAt.Unix(),
-		}
-
-	}
-	return result
-}
-func (t *TransactionApi) getFieldValues(transList []transactionModel.Transaction, fieldName string) []interface{} {
-	var fieldValues []interface{}
-
-	structType := reflect.TypeOf(transList[0])
-	field, found := structType.FieldByName(fieldName)
-	if !found {
-		panic("TransactionApi.getFieldValues:Field not found")
-	}
-
-	fieldIndex := field.Index[0]
-
-	for _, p := range transList {
-		val := reflect.ValueOf(p)
-		fieldValue := val.Field(fieldIndex).Interface()
-		fieldValues = append(fieldValues, fieldValue)
-	}
-
-	return fieldValues
 }
 
 func (t *TransactionApi) GetTotal(ctx *gin.Context) {
@@ -321,31 +176,20 @@ func (t *TransactionApi) GetTotal(ctx *gin.Context) {
 		response.FailToParameter(ctx, err)
 		return
 	}
-	if pass, _ := checkFunc.AccountBelong(requestData.AccountId, ctx); pass == false {
+	if pass := checkFunc.AccountBelong(requestData.AccountId, ctx); pass == false {
 		return
 	}
-	// 设置查询条件
-	condition := &transactionModel.StatisticCondition{
-		// 交易外键条件
-		ForeignKeyCondition: transactionModel.ForeignKeyCondition{
-			AccountId:   &requestData.AccountId,
-			UserIds:     requestData.UserIds,
-			CategoryIds: requestData.CategoryIds,
-		},
-		IncomeExpense: requestData.IncomeExpense,
-		MinimumAmount: requestData.MinimumAmount,
-		MaximumAmount: requestData.MaximumAmount,
-	}
-	// 处理查询时间
-	var startTime, endTime time.Time
-	startTime = *request.GetTimeByTimestamp(&requestData.StartTime)
-	endTime = *request.GetTimeByTimestamp(&requestData.EndTime)
+	// 查询条件
+	condition := requestData.GetStatisticCondition()
+	extCond := requestData.GetExtensionCondition()
 	// 查询并处理响应
-	total, err := transactionModel.Dao.NewTransaction(nil).GetStatisticByCondition(condition, startTime, endTime)
+	total, err := transactionModel.NewDao().GetIeStatisticByCondition(
+		requestData.IncomeExpense, condition, &extCond,
+	)
 	if responseError(err, ctx) {
 		return
 	}
-	response.OkWithData(response.TransactionTotal{*total}, ctx)
+	response.OkWithData(response.TransactionTotal{IncomeExpenseStatistic: total}, ctx)
 }
 
 func (t *TransactionApi) GetMonthStatistic(ctx *gin.Context) {
@@ -358,46 +202,28 @@ func (t *TransactionApi) GetMonthStatistic(ctx *gin.Context) {
 		response.FailToParameter(ctx, err)
 		return
 	}
-	if pass, _ := checkFunc.AccountBelong(requestData.AccountId, ctx); pass == false {
+	if pass := checkFunc.AccountBelong(requestData.AccountId, ctx); pass == false {
 		return
 	}
-
 	// 设置查询条件
-	condition := &transactionModel.StatisticCondition{
-		// 交易外键条件
-		ForeignKeyCondition: transactionModel.ForeignKeyCondition{
-			AccountId:   &requestData.AccountId,
-			UserIds:     requestData.UserIds,
-			CategoryIds: requestData.CategoryIds,
-		},
-		IncomeExpense: requestData.IncomeExpense,
-		MinimumAmount: requestData.MinimumAmount,
-		MaximumAmount: requestData.MaximumAmount,
-	}
-	// 处理查询时间
-	var startTime, endTime time.Time
-	startTime = *request.GetTimeByTimestamp(&requestData.StartTime)
-	endTime = *request.GetTimeByTimestamp(&requestData.EndTime)
-	months := util.Time.SplitMonths(startTime, endTime)
+	condition := requestData.GetStatisticCondition()
+	months := util.Time.SplitMonths(condition.StartTime, condition.EndTime)
 	// 查询并处理响应
-	responseList := make([]response.TransactionStatistic, 0, len(months))
-	dao := transactionModel.Dao.NewTransaction(nil)
-	for i := len(months) - 1; i >= 0; i-- {
-		monthStartTime := months[i]
-		monthEndTime := util.Time.GetLastSecondOfMonth(monthStartTime)
+	responseList := make([]response.TransactionStatistic, len(months), len(months))
+	dao := transactionModel.NewDao()
+	for i := 0; i < len(months); i++ {
+		condition.StartTime = months[len(months)-i-1]
+		condition.EndTime = util.Time.GetLastSecondOfMonth(condition.StartTime)
 
-		monthStatistic, err := dao.GetStatisticByCondition(condition, monthStartTime, monthEndTime)
-
+		monthStatistic, err := dao.GetIeStatisticByCondition(requestData.IncomeExpense, condition, nil)
 		if responseError(err, ctx) {
 			return
 		}
-		responseList = append(
-			responseList, response.TransactionStatistic{
-				IncomeExpenseStatistic: *monthStatistic,
-				StartTime:              monthStartTime.Unix(),
-				EndTime:                monthEndTime.Unix(),
-			},
-		)
+		responseList[i] = response.TransactionStatistic{
+			IncomeExpenseStatistic: monthStatistic,
+			StartTime:              condition.StartTime.Unix(),
+			EndTime:                condition.EndTime.Unix(),
+		}
 	}
 	response.OkWithData(response.TransactionMonthStatistic{List: responseList}, ctx)
 }
@@ -412,22 +238,24 @@ func (t *TransactionApi) GetDayStatistic(ctx *gin.Context) {
 		response.FailToParameter(ctx, err)
 		return
 	}
-	pass, account := checkFunc.AccountBelong(requestData.AccountId, ctx)
+	account, _, pass := checkFunc.AccountBelongAndGet(requestData.AccountId, ctx)
 	if pass == false {
 		return
 	}
 	// 处理请求
-	startTime, endTime := requestData.FormatDayTime()
+	var startTime, endTime = requestData.FormatDayTime()
 	days := util.Time.SplitDays(startTime, endTime)
 	dayMap := make(map[time.Time]*response.TransactionDayStatistic, len(days))
-	condition := transactionModel.DayStatisticCondition{
-		Account:     *account,
-		CategoryIds: requestData.CategoryIds,
-		StartTime:   startTime,
-		EndTime:     endTime,
+	condition := transactionModel.StatisticCondition{
+		ForeignKeyCondition: transactionModel.ForeignKeyCondition{
+			AccountId:   account.ID,
+			CategoryIds: requestData.CategoryIds,
+		},
+		StartTime: startTime,
+		EndTime:   endTime,
 	}
 	handleFunc := func(ie constant.IncomeExpense) error {
-		statistics, err := transactionModel.Dao.NewStatisticDao(nil).GetDayStatisticByCondition(ie, condition)
+		statistics, err := transactionModel.NewStatisticDao().GetDayStatisticByCondition(ie, condition)
 		if err != nil {
 			return err
 		}
@@ -471,57 +299,70 @@ func (t *TransactionApi) GetCategoryAmountRank(ctx *gin.Context) {
 	if err := requestData.CheckTimeFrame(); responseError(err, ctx) {
 		return
 	}
-	pass, account := checkFunc.AccountBelong(requestData.AccountId, ctx)
+	account, _, pass := checkFunc.AccountBelongAndGet(requestData.AccountId, ctx)
 	if pass == false {
 		return
 	}
 	// 处理查询
-	startTime, endTime := requestData.FormatDayTime()
+	var startTime, endTime = requestData.FormatDayTime()
 	condition := transactionModel.CategoryAmountRankCondition{
-		Account:   *account,
+		Account:   account,
 		StartTime: startTime,
 		EndTime:   endTime,
 	}
-	rankingList, err := transactionModel.Dao.NewStatisticDao(nil).GetCategoryAmountRank(
+	var err error
+	var rankingList dataType.Slice[uint, transactionModel.CategoryAmountRank]
+	rankingList, err = transactionModel.NewStatisticDao().GetCategoryAmountRank(
 		requestData.IncomeExpense, condition, requestData.Limit,
 	)
+
 	if responseError(err, ctx) {
 		return
 	}
+	categoryIds := rankingList.ExtractValues(
+		func(rank transactionModel.CategoryAmountRank) uint {
+			return rank.CategoryId
+		},
+	)
+	// 获取category
+	var categoryList dataType.Slice[uint, categoryModel.Category]
+	err = global.GvaDb.Where("id IN (?)", categoryIds).Find(&categoryList).Error
+	if responseError(err, ctx) {
+		return
+	}
+	categoryMap := categoryList.ToMap(
+		func(category categoryModel.Category) uint {
+			return category.ID
+		},
+	)
 	// 处理响应
-	var category *categoryModel.Category
 	responseData := make([]response.TransactionCategoryAmountRank, len(rankingList), requestData.Limit)
-	categoryIds := []uint{}
 	for i, rank := range rankingList {
 		responseData[i].Amount = rank.Amount
 		responseData[i].Count = rank.Count
-		category, err = query.FirstByPrimaryKey[*categoryModel.Category](rank.CategoryId)
-		categoryIds = append(categoryIds, rank.CategoryId)
+		err = responseData[i].Category.SetData(categoryMap[rank.CategoryId])
 		if responseError(err, ctx) {
 			return
 		}
-		responseData[i].Category = *response.CategoryModelToResponse(category)
 	}
 	//数量不足时补足响应数量
 	if len(rankingList) < requestData.Limit {
-		categoryList := []categoryModel.Category{}
+		categoryList = []categoryModel.Category{}
 		limit := requestData.Limit - len(rankingList)
-		query := global.GvaDb
-		query = query.Where("account_id = ?", account.ID)
-		query = query.Where("income_expense = ?", requestData.IncomeExpense)
-		err = query.Where("id NOT IN (?)", categoryIds).Limit(limit).Find(&categoryList).Error
+		db := global.GvaDb.Where("account_id = ?", account.ID)
+		db = db.Where("income_expense = ?", requestData.IncomeExpense)
+		err = db.Where("id NOT IN (?)", categoryIds).Limit(limit).Find(&categoryList).Error
 		if responseError(err, ctx) {
 			return
 		}
-		for _, c := range categoryList {
-			responseData = append(
-				responseData, response.TransactionCategoryAmountRank{
-					Category: *response.CategoryModelToResponse(&c),
-				},
-			)
+		for _, category := range categoryList {
+			responseCategory := response.TransactionCategoryAmountRank{}
+			err = responseCategory.Category.SetData(category)
+			if responseError(err, ctx) {
+				return
+			}
+			responseData = append(responseData, responseCategory)
 		}
 	}
-	response.OkWithData(
-		response.List[response.TransactionCategoryAmountRank]{List: responseData}, ctx,
-	)
+	response.OkWithData(response.List[response.TransactionCategoryAmountRank]{List: responseData}, ctx)
 }

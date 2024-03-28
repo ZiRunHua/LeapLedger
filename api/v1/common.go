@@ -33,7 +33,7 @@ func (p *PublicApi) Captcha(c *gin.Context) {
 	)
 }
 
-func (u *PublicApi) SendEmailCaptcha(ctx *gin.Context) {
+func (p *PublicApi) SendEmailCaptcha(ctx *gin.Context) {
 	var requestData request.CommonSendEmailCaptcha
 	if err := ctx.ShouldBindJSON(&requestData); err != nil {
 		response.FailToParameter(ctx, err)
