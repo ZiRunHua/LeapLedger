@@ -36,6 +36,6 @@ func (a *AccountRouter) InitAccountRouter(Router *gin.RouterGroup) {
 		router.GET("/:id/mapping/list", baseApi.GetAccountMappingList)
 		router.DELETE("/mapping/:id", baseApi.DeleteAccountMapping)
 		router.POST("/:id/mapping", baseApi.CreateAccountMapping)
-		router.PUT("/:id/mapping", baseApi.UpdateAccountMapping)
+		router.PUT("/mapping/:id", baseApi.UpdateAccountMapping)
 	}
 }

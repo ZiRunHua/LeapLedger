@@ -710,7 +710,7 @@ func (a *AccountApi) UpdateAccountMapping(ctx *gin.Context) {
 		if err != nil {
 			return err
 		}
-		err = accountService.Share.UpdateAccountMapping(user, mapping, relatedAccount, tx)
+		mapping, err = accountService.Share.UpdateAccountMapping(user, mapping, relatedAccount, tx)
 		if err != nil {
 			return err
 		}

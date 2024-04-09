@@ -69,6 +69,26 @@ func (a *AccountDetail) SetData(accountUser accountModel.User) error {
 	a.JoinTime = accountUser.CreatedAt.Unix()
 	return nil
 }
+
+func (a *AccountDetail) SetDataFromAccountAndUser(account accountModel.Account, user userModel.User) error {
+	a.setAccount(account)
+	creator, err := account.GetUser("username")
+	if err != nil {
+		return err
+	}
+	a.CreatorName = creator.Username
+
+	var accountUser accountModel.User
+	accountUser, err = accountModel.NewDao().SelectUser(account.ID, user.ID)
+	if err != nil {
+		return err
+	}
+	a.Role = accountUser.GetRole()
+	a.JoinTime = accountUser.CreatedAt.Unix()
+	return nil
+}
+
+// SetDataFromAccount 通过account设置数据，数据中的user来源为account.userId
 func (a *AccountDetail) SetDataFromAccount(account accountModel.Account) error {
 	a.setAccount(account)
 
@@ -148,7 +168,7 @@ type AccountTemplateList struct {
 type AccountMapping struct {
 	Id             uint
 	MainAccount    AccountOne
-	RelatedAccount AccountOne
+	RelatedAccount AccountDetail
 	CreateTime     int64
 	UpdateTime     int64
 }
@@ -169,7 +189,7 @@ func (a *AccountMapping) SetData(data accountModel.Mapping) error {
 	if err != nil {
 		return err
 	}
-	err = a.RelatedAccount.SetData(account)
+	err = a.RelatedAccount.SetDataFromAccount(account)
 	if err != nil {
 		return err
 	}

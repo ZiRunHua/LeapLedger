@@ -135,16 +135,16 @@ func (b *share) DeleteAccountMapping(user userModel.User, mapping accountModel.M
 
 func (b *share) UpdateAccountMapping(
 	user userModel.User, mapping accountModel.Mapping, mappingAccount accountModel.Account, tx *gorm.DB,
-) (err error) {
+) (newMapping accountModel.Mapping, err error) {
 	_, _, err = logServer.RecordAccountLog(
 		&mapping,
 		logModel.BaseAccountLog{UserId: user.ID, AccountId: mapping.MainId, Operation: constant.LogOperationOfUpdate},
 		tx,
 	)
 	if err != nil {
-		return err
+		return
 	}
-	err = accountModel.NewDao(tx).UpdateRelatedAccount(mapping, mappingAccount)
+	newMapping, err = accountModel.NewDao(tx).UpdateRelatedAccount(mapping, mappingAccount)
 	if err != nil {
 		return
 	}

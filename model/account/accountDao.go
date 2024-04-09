@@ -58,8 +58,9 @@ func (a *AccountDao) DeleteMapping(mapping Mapping) error {
 	return a.db.Delete(&mapping).Error
 }
 
-func (a *AccountDao) UpdateRelatedAccount(mapping Mapping, account Account) error {
-	return a.db.Model(&mapping).Update("related_id", account.ID).Error
+func (a *AccountDao) UpdateRelatedAccount(mapping Mapping, account Account) (Mapping, error) {
+	err := a.db.Model(&mapping).Update("related_id", account.ID).Error
+	return mapping, err
 }
 
 func (a *AccountDao) CreateUser(accountId uint, userId uint, permission UserPermission) (User, error) {
@@ -83,7 +84,8 @@ func (a *AccountDao) SelectUser(accountId uint, userId uint) (user User, err err
 
 func (a *AccountDao) ExistUser(accountId uint, userId uint) (exist bool, err error) {
 	err = a.db.Raw(
-		"SELECT EXISTS(SELECT 1 FROM account_user WHERE account_id = ? AND user_id = ?) AS exist", accountId, userId,
+		"SELECT EXISTS(SELECT 1 FROM account_user WHERE account_id = ? AND user_id = ? AND deleted_at is null) AS exist",
+		accountId, userId,
 	).Scan(&exist).Error
 	return
 }
