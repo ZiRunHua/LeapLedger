@@ -3,6 +3,7 @@ package util
 import (
 	"KeepAccount/api/response"
 	accountModel "KeepAccount/model/account"
+	categoryModel "KeepAccount/model/category"
 	transactionModel "KeepAccount/model/transaction"
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
@@ -75,4 +76,24 @@ func (cf *contextFunc) GetAccountUserByParam(ctx *gin.Context) (
 		return
 	}
 	return accountUser, account, true
+}
+
+func (cf *contextFunc) GetCategoryByParam(ctx *gin.Context) (
+	category categoryModel.Category, pass bool,
+) {
+	id, ok := cf.GetUintParamByKey("id", ctx)
+	if false == ok {
+		response.FailToError(ctx, errors.New("error param id"))
+		return
+	}
+	var err error
+	category, err = categoryModel.NewDao().SelectById(id)
+	if err != nil {
+		response.FailToError(ctx, err)
+		return
+	}
+	if pass = CheckFunc.AccountBelong(category.AccountId, ctx); false == pass {
+		return
+	}
+	return category, true
 }
