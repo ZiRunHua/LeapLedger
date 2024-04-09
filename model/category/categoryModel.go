@@ -27,6 +27,7 @@ type Category struct {
 func (c *Category) IsEmpty() bool {
 	return c.ID == 0
 }
+
 func (c *Category) SelectById(id uint) error {
 	return global.GvaDb.First(c, id).Error
 }
@@ -56,6 +57,7 @@ func (c *Category) GetHead(tx *gorm.DB) (*Category, error) {
 	err := db.Order("previous asc,order_updated_at desc").First(&result).Error
 	return result, err
 }
+
 func (c *Category) SetPrevious(previous *Category, tx *gorm.DB) error {
 	updateData := make(map[string]interface{})
 	if previous == nil || previous.IsEmpty() {
@@ -78,4 +80,29 @@ func (c *Category) GetAll(account accountModel.Account, incomeExpense *constant.
 		db.Where("account_id = ? AND income_expense = ?", account.ID, incomeExpense)
 	}
 	return db.Order("income_expense asc,previous asc,order_updated_at desc").Rows()
+}
+
+type Mapping struct {
+	gorm.Model
+	ParentAccountId  uint `gorm:"comment:'父账本ID';index:idx_account_mapping,priority:1"`
+	ChildAccountId   uint `gorm:"comment:'子账本ID';index:idx_account_mapping,priority:2" `
+	ParentCategoryId uint `gorm:"comment:'父收支类型ID';uniqueIndex:idx_mapping,priority:1"`
+	ChildCategoryId  uint `gorm:"comment:'子收支类型ID';uniqueIndex:idx_mapping,priority:2"`
+	commonModel.BaseModel
+}
+
+func (p *Mapping) TableName() string {
+	return "category_mapping"
+}
+
+func init() {
+	tables := []interface{}{
+		Mapping{},
+	}
+	for _, table := range tables {
+		err := global.GvaDb.AutoMigrate(&table)
+		if err != nil {
+			panic(err)
+		}
+	}
 }

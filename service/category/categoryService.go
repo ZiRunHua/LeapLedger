@@ -6,6 +6,7 @@ import (
 	accountModel "KeepAccount/model/account"
 	categoryModel "KeepAccount/model/category"
 	transactionModel "KeepAccount/model/transaction"
+	userModel "KeepAccount/model/user"
 	"github.com/pkg/errors"
 	"gorm.io/gorm"
 	"time"
@@ -197,7 +198,7 @@ func (catSvc *Category) makeSequenceOfFather(
 func (catSvc *Category) Update(
 	category categoryModel.Category, data categoryModel.CategoryUpdateData, tx *gorm.DB,
 ) error {
-	return categoryModel.Dao.NewCategory(tx).Update(category, data)
+	return categoryModel.NewDao(tx).Update(category, data)
 }
 
 func (catSvc *Category) UpdateFather(father categoryModel.Father, name string) error {
@@ -253,4 +254,41 @@ func (catSvc *Category) existTransaction(categoryList ...categoryModel.Category)
 	}
 	var transaction transactionModel.Transaction
 	return transaction.Exits("category_id IN (?)", ids)
+}
+
+func (catSvc *Category) checkMappingParam(parent, child categoryModel.Category, operator userModel.User, tx *gorm.DB) error {
+	if parent.AccountId == child.AccountId {
+		return global.ErrAccountId
+	}
+	if parent.IncomeExpense != child.IncomeExpense {
+		return errors.WithStack(global.ErrInvalidParameter)
+	}
+	accountUser, err := accountModel.NewDao(tx).SelectUser(parent.AccountId, operator.ID)
+	if err != nil {
+		return err
+	}
+	if false == accountUser.HavePermission(accountModel.UserPermissionOwnEditor) {
+		return global.ErrNoPermission
+	}
+	return nil
+}
+
+func (catSvc *Category) MappingCategory(parent, child categoryModel.Category, operator userModel.User, tx *gorm.DB) (mapping categoryModel.Mapping, err error) {
+	err = catSvc.checkMappingParam(parent, child, operator, tx)
+	if err != nil {
+		return
+	}
+	mapping, err = categoryModel.NewDao(tx).CreateMapping(parent, child)
+	return
+}
+
+func (catSvc *Category) DeleteMapping(parent, child categoryModel.Category, operator userModel.User, tx *gorm.DB) error {
+	err := catSvc.checkMappingParam(parent, child, operator, tx)
+	if err != nil {
+		return err
+	}
+	err = tx.Where(
+		"parent_category_id = ? AND child_category_id = ?", parent.ID, child.ID,
+	).Delete(&categoryModel.Mapping{}).Error
+	return err
 }

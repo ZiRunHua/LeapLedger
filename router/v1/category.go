@@ -23,4 +23,9 @@ func (c *CategoryRouter) InitCategoryRouter(Router *gin.RouterGroup) {
 		router.PUT("/father/:id", baseApi.UpdateFather)
 		router.DELETE("/father/:id", baseApi.DeleteFather)
 	}
+	{
+		router.POST("/:id/mapping", baseApi.MappingCategory)
+		router.DELETE("/:id/mapping", baseApi.DeleteCategoryMapping)
+		router.GET("/mapping/tree", baseApi.GetMappingTree)
+	}
 }

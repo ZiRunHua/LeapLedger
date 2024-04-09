@@ -3,6 +3,7 @@ package response
 import (
 	"KeepAccount/global/constant"
 	categoryModel "KeepAccount/model/category"
+	"github.com/pkg/errors"
 )
 
 func CategoryModelToResponse(category *categoryModel.Category) *CategoryOne {
@@ -41,4 +42,28 @@ type FatherOne struct {
 
 type CategoryTree struct {
 	Tree []FatherOne
+}
+
+type CategoryMappingTree struct {
+	Tree []CategoryMappingTreeFather
+}
+
+type CategoryMappingTreeFather struct {
+	FatherId    uint
+	ChildrenIds []uint
+}
+
+func (m *CategoryMappingTreeFather) SetDataFromCategoryMapping(data []categoryModel.Mapping) error {
+	if len(data) == 0 {
+		return errors.New("data len error")
+	}
+	m.FatherId = data[0].ParentCategoryId
+	m.ChildrenIds = make([]uint, len(data), len(data))
+	for i, mapping := range data {
+		if m.FatherId != mapping.ParentCategoryId {
+			return errors.New("err ParentCategoryId")
+		}
+		m.ChildrenIds[i] = mapping.ChildCategoryId
+	}
+	return nil
 }

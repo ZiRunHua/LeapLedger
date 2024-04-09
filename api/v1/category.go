@@ -6,6 +6,7 @@ import (
 	"KeepAccount/global"
 	accountModel "KeepAccount/model/account"
 	categoryModel "KeepAccount/model/category"
+	userModel "KeepAccount/model/user"
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
 	"gorm.io/gorm"
@@ -321,4 +322,111 @@ func (catApi *CategoryApi) GetList(ctx *gin.Context) {
 		)
 	}
 	response.OkWithData(responseTree, ctx)
+}
+
+func (catApi *CategoryApi) MappingCategory(ctx *gin.Context) {
+	// 获取数据
+	var requestData request.CategoryMapping
+	if err := ctx.ShouldBindJSON(&requestData); err != nil {
+		response.FailToParameter(ctx, err)
+		return
+	}
+	parentCategory, pass := contextFunc.GetCategoryByParam(ctx)
+	if false == pass {
+		return
+	}
+	childCategory, err := categoryModel.NewDao().SelectById(requestData.ChildCategoryId)
+	if responseError(err, ctx) {
+		return
+	}
+	// 执行
+	var operator userModel.User
+	operator, err = contextFunc.GetUser(ctx)
+	txFunc := func(tx *gorm.DB) error {
+		_, err = categoryService.MappingCategory(parentCategory, childCategory, operator, tx)
+		return err
+	}
+	err = global.GvaDb.Transaction(txFunc)
+	if errors.Is(err, gorm.ErrDuplicatedKey) {
+	} else if responseError(err, ctx) {
+		return
+	}
+	response.Ok(ctx)
+}
+
+func (catApi *CategoryApi) DeleteCategoryMapping(ctx *gin.Context) {
+	// 获取数据
+	var requestData request.CategoryMapping
+	if err := ctx.ShouldBindJSON(&requestData); err != nil {
+		response.FailToParameter(ctx, err)
+		return
+	}
+	parentCategory, pass := contextFunc.GetCategoryByParam(ctx)
+	if false == pass {
+		return
+	}
+	childCategory, err := categoryModel.NewDao().SelectById(requestData.ChildCategoryId)
+	if responseError(err, ctx) {
+		return
+	}
+	// 执行
+	var operator userModel.User
+	operator, err = contextFunc.GetUser(ctx)
+	txFunc := func(tx *gorm.DB) error {
+		err = categoryService.DeleteMapping(parentCategory, childCategory, operator, tx)
+		return err
+	}
+	err = global.GvaDb.Transaction(txFunc)
+	if responseError(err, ctx) {
+		return
+	}
+	response.Ok(ctx)
+}
+
+func (catApi *CategoryApi) GetMappingTree(ctx *gin.Context) {
+	var requestData request.CategoryGetMappingTree
+	if err := ctx.ShouldBindJSON(&requestData); err != nil {
+		response.FailToParameter(ctx, err)
+		return
+	}
+	parentAccountId, childAccountId := requestData.ParentAccountId, requestData.ChildAccountId
+	if !checkFunc.AccountBelong(parentAccountId, ctx) || !checkFunc.AccountBelong(childAccountId, ctx) {
+		return
+	}
+
+	list, err := categoryModel.NewDao().GetMappingByAccountMappingOrderByChildCategoryWeight(
+		parentAccountId, childAccountId,
+	)
+	if responseError(err, ctx) {
+		return
+	}
+	// 响应
+	var responseData response.CategoryMappingTree
+	responseData.Tree = make([]response.CategoryMappingTreeFather, 0)
+	var lastParentCategoryId uint
+	startIndex := 0
+	for i, mapping := range list {
+		if lastParentCategoryId != mapping.ParentCategoryId {
+			if lastParentCategoryId != 0 {
+				var responseParent response.CategoryMappingTreeFather
+				err = responseParent.SetDataFromCategoryMapping(list[startIndex:i])
+				if responseError(err, ctx) {
+					return
+				}
+				responseData.Tree = append(responseData.Tree, responseParent)
+				startIndex = i
+			}
+			lastParentCategoryId = mapping.ParentCategoryId
+		}
+	}
+
+	if len(list) > 0 {
+		var responseParent response.CategoryMappingTreeFather
+		err = responseParent.SetDataFromCategoryMapping(list[startIndex:])
+		if responseError(err, ctx) {
+			return
+		}
+		responseData.Tree = append(responseData.Tree, responseParent)
+	}
+	response.OkWithData(responseData, ctx)
 }

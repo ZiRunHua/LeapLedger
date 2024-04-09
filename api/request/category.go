@@ -47,3 +47,12 @@ type CategoryGetList struct {
 	AccountId     uint                   `binding:"required"`
 	IncomeExpense constant.IncomeExpense `binding:"required"`
 }
+
+type CategoryMapping struct {
+	ChildCategoryId uint
+}
+
+type CategoryGetMappingTree struct {
+	ParentAccountId uint `binding:"required"`
+	ChildAccountId  uint `binding:"required"`
+}
