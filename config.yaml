@@ -31,3 +31,7 @@ ThirdParty:
   WeCom:
     CorpId: ""
     CorpSecret: ""
+  Ai:
+    Host: 127.0.0.1
+    Port: 5000
+    MinSimilarity: 0.85

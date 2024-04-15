@@ -11,6 +11,7 @@ import (
 )
 
 type Group struct {
+	aiServer
 }
 
 var App = new(Group)

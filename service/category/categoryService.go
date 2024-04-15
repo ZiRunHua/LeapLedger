@@ -335,3 +335,11 @@ func (catSvc *Category) DeleteMapping(parent, child categoryModel.Category, oper
 	).Delete(&categoryModel.Mapping{}).Error
 	return err
 }
+
+func (catSvc *Category) MappingAccountCategoryByAI(mainAccount, mappingAccount accountModel.Account, tx *gorm.DB) error {
+	categoryDao := categoryModel.NewDao(tx)
+	for _, ie := range []constant.IncomeExpense{constant.Income, constant.Expense} {
+		categoryDao.GetListByAccount()
+	}
+	return err
+}

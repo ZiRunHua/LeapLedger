@@ -1,0 +1,26 @@
+version: '3'
+services:
+  keepaccount-server:
+    container_name: keepaccount-server
+    build:
+      context: F:\project\Go_project\github.com\KeepAccount
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"  # 假设 Go 项目监听 8080 端口
+    environment:
+      - CONFIG_FILE_NAME=production_config.yaml  # 设置环境变量
+    networks:
+      - keepaccount-network
+  ai-server:
+    container_name: ai-server
+    build:
+      context: D:\development\project\github\test
+      dockerfile: Dockerfile
+    ports:
+      - "5000:5000"  # 假设 Python 项目监听 5000 端口
+    network_mode: bridge
+    networks:
+      - keepaccount-network
+
+networks:
+  keepaccount-network:

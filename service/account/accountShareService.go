@@ -84,6 +84,7 @@ func (b *share) MappingAccount(
 	user userModel.User,
 	mainAccount accountModel.Account, mappingAccount accountModel.Account, tx *gorm.DB,
 ) (mapping accountModel.Mapping, err error) {
+	// 数据校验
 	_, err = b.CheckAccountPermission(mainAccount, user, accountModel.UserPermissionEditOwn)
 	if err != nil {
 		return
@@ -100,6 +101,7 @@ func (b *share) MappingAccount(
 	if mainAccount.ID == mappingAccount.ID {
 		return mapping, errors.New("数据异常")
 	}
+	// 处理
 	mapping, err = accountModel.NewDao(tx).CreateMapping(mainAccount, mappingAccount)
 	if err != nil {
 		if errors.Is(err, gorm.ErrDuplicatedKey) {

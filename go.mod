@@ -10,7 +10,7 @@ require (
 	github.com/nats-io/nats-server/v2 v2.10.12
 	github.com/nats-io/nats.go v1.33.1
 	github.com/pkg/errors v0.9.1
-	github.com/songzhibin97/gkit v1.2.11
+	github.com/songzhibin97/gkit v1.1.1
 	github.com/xuri/excelize/v2 v2.8.0
 	go.uber.org/zap v1.24.0
 	golang.org/x/crypto v0.21.0
@@ -22,6 +22,7 @@ require (
 
 require (
 	github.com/bytedance/sonic v1.8.7 // indirect
+	github.com/carlmjohnson/requests v0.23.5
 	github.com/cespare/xxhash/v2 v2.1.2 // indirect
 	github.com/chenzhuoyu/base64x v0.0.0-20221115062448-fe3a3abad311 // indirect
 	github.com/dgryski/go-rendezvous v0.0.0-20200823014737-9f7001d12a5f // indirect
