@@ -1,6 +1,7 @@
 package global
 
 import (
+	"fmt"
 	"github.com/pkg/errors"
 )
 
@@ -49,3 +50,15 @@ var ErrSameAsTheOldPassword = errors.New("新旧密码相同")
 
 // 账本
 var ErrAccountType = errors.New("账本类型不允许该操作")
+
+func NewErrThirdpartyApi(name, msg string) error {
+	return &errThirdpartyApi{Name: name, Msg: msg}
+}
+
+type errThirdpartyApi struct {
+	Name, Msg string
+}
+
+func (eta *errThirdpartyApi) Error() string {
+	return fmt.Sprintf("第三方%s接口服务错误:%s", eta.Name, eta.Msg)
+}
