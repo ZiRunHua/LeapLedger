@@ -7,6 +7,8 @@ import (
 	categoryModel "KeepAccount/model/category"
 	transactionModel "KeepAccount/model/transaction"
 	userModel "KeepAccount/model/user"
+	thirdpartyService "KeepAccount/service/thirdparty"
+	"KeepAccount/util/dataType"
 	"github.com/pkg/errors"
 	"gorm.io/gorm"
 	"time"
@@ -337,9 +339,47 @@ func (catSvc *Category) DeleteMapping(parent, child categoryModel.Category, oper
 }
 
 func (catSvc *Category) MappingAccountCategoryByAI(mainAccount, mappingAccount accountModel.Account, tx *gorm.DB) error {
+	var mainCategoryList, mappingCategoryList dataType.Slice[string, categoryModel.Category]
+	var err error
+	var matchingResult map[string]string
 	categoryDao := categoryModel.NewDao(tx)
 	for _, ie := range []constant.IncomeExpense{constant.Income, constant.Expense} {
-		categoryDao.GetListByAccount()
+		//查询交易类型
+		mainCategoryList, err = categoryDao.GetListByAccount(mainAccount, &ie)
+		if err != nil {
+			return err
+		}
+		mappingCategoryList, err = categoryDao.GetUnmappedList(mainAccount, mappingAccount, &ie)
+		if err != nil {
+			return err
+		}
+		if len(mainCategoryList) == 0 || len(mappingCategoryList) == 0 {
+			continue
+		}
+		//转数据格式
+		mainNameList := mainCategoryList.ExtractValues(func(category categoryModel.Category) string {
+			return category.Name
+		})
+		mappingNameList := mainCategoryList.ExtractValues(func(category categoryModel.Category) string {
+			return category.Name
+		})
+		//获得相似度匹配
+		matchingResult, err = thirdpartyService.App.ChineseSimilarityMatching(mappingNameList, mainNameList)
+		if err != nil {
+			return err
+		}
+		mainNameMap := mainCategoryList.ToMap(func(category categoryModel.Category) string {
+			return category.Name
+		})
+		mappingNameMap := mappingCategoryList.ToMap(func(category categoryModel.Category) string {
+			return category.Name
+		})
+		for mappingName, mainName := range matchingResult {
+			_, err = categoryDao.CreateMapping(mainNameMap[mainName], mappingNameMap[mappingName])
+			if err != nil && !errors.Is(err, gorm.ErrDuplicatedKey) {
+				return err
+			}
+		}
 	}
 	return err
 }

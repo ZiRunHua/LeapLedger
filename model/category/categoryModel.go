@@ -36,11 +36,23 @@ func (c *Category) GetAccount() (result accountModel.Account, err error) {
 	return
 }
 
+type Condition struct {
+	account accountModel.Account
+	ie      *constant.IncomeExpense
+}
+
+func (c *Condition) buildWhere(db *gorm.DB) *gorm.DB {
+	if c.ie == nil {
+		return db.Where("account_id = ?", c.account.ID)
+	}
+	return db.Where("account_id = ? AND income_expense = ?", c.account.ID, c.ie)
+}
+
 type Mapping struct {
 	gorm.Model
-	ParentAccountId  uint `gorm:"comment:'父账本ID';index:idx_account_mapping,priority:1"`
-	ChildAccountId   uint `gorm:"comment:'子账本ID';index:idx_account_mapping,priority:2" `
-	ParentCategoryId uint `gorm:"comment:'父收支类型ID';uniqueIndex:idx_mapping,priority:1"`
+	ParentAccountId  uint `gorm:"comment:'父账本ID';uniqueIndex:idx_mapping,priority:1"`
+	ChildAccountId   uint `gorm:"comment:'子账本ID';" `
+	ParentCategoryId uint `gorm:"comment:'父收支类型ID';"`
 	ChildCategoryId  uint `gorm:"comment:'子收支类型ID';uniqueIndex:idx_mapping,priority:2"`
 	commonModel.BaseModel
 }

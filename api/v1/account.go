@@ -629,6 +629,13 @@ func (a *AccountApi) CreateAccountMapping(ctx *gin.Context) {
 	var mapping accountModel.Mapping
 	txFunc := func(tx *gorm.DB) error {
 		mapping, err = accountService.Share.MappingAccount(user, mainAccount, mappingAccount, tx)
+		if err != nil {
+			return err
+		}
+		err = categoryService.MappingAccountCategoryByAI(mainAccount, mappingAccount, tx)
+		if err != nil {
+			return err
+		}
 		return err
 	}
 	err = global.GvaDb.Transaction(txFunc)

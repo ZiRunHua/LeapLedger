@@ -278,7 +278,7 @@ func (catApi *CategoryApi) GetList(ctx *gin.Context) {
 	if false == pass {
 		return
 	}
-	categoryList, err := categoryModel.NewDao().GetListByAccount(account)
+	categoryList, err := categoryModel.NewDao().GetListByAccount(account, requestData.IncomeExpense)
 	if responseError(err, ctx) {
 		return
 	}

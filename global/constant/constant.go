@@ -1,12 +1,20 @@
 package constant
 
+import (
+	"os"
+)
+
 var WORK_PATH string
 
 var LOG_PAYH = WORK_PATH + "/log"
 var DATA_PATH = WORK_PATH + "/data"
 
 func init() {
-	WORK_PATH = "/server/KeepAccount"
+	var err error
+	WORK_PATH, err = os.Getwd()
+	if err != nil {
+		panic(err)
+	}
 	LOG_PAYH = WORK_PATH + "/log"
 	DATA_PATH = WORK_PATH + "/data"
 }

@@ -72,21 +72,26 @@ func (cd *CategoryDao) UpdateFatherChildPrevious(categoryId, newPrevious uint) e
 }
 
 func (cd *CategoryDao) GetListByFather(father *Father) ([]Category, error) {
-	list := []Category{}
+	var list []Category
 	err := cd.setCategoryOrder(cd.db.Where("father_id = ?", father.ID)).Find(&list).Error
 	return list, err
 }
 
-func (cd *CategoryDao) GetListByAccount(account accountModel.Account) ([]Category, error) {
-	list := []Category{}
-	err := cd.db.Where(
-		"account_id = ?", account.ID,
-	).Order("income_expense asc,previous asc,order_updated_at desc").Find(&list).Error
-	return list, err
+func (cd *CategoryDao) GetListByAccount(account accountModel.Account, ie *constant.IncomeExpense) ([]Category, error) {
+	condition := &Condition{account: account, ie: ie}
+	var list []Category
+	return list, condition.buildWhere(cd.db).Order("income_expense asc,previous asc,order_updated_at desc").Find(&list).Error
+}
+
+func (cd *CategoryDao) GetUnmappedList(mainAccount, mappingAccount accountModel.Account, ie *constant.IncomeExpense) (list []Category, err error) {
+	childSelect := cd.db.Model(&Mapping{}).Select("child_category_id")
+	childSelect.Where("parent_account_id = ? AND child_account_id = ?", mainAccount.ID, mappingAccount.ID)
+	err = cd.db.Where("account_id = ? AND income_expense = ? ", mappingAccount.ID, ie).Not("id IN (?)", childSelect).Find(&list).Error
+	return
 }
 
 func (cd *CategoryDao) GetFatherList(account accountModel.Account, incomeExpense *constant.IncomeExpense) ([]Father, error) {
-	db := global.GvaDb.Model(&Father{})
+	db := cd.db
 	if incomeExpense == nil {
 		db.Where("account_id = ?", account.ID)
 	} else {
@@ -97,7 +102,7 @@ func (cd *CategoryDao) GetFatherList(account accountModel.Account, incomeExpense
 }
 
 func (cd *CategoryDao) GetAll(account accountModel.Account, incomeExpense *constant.IncomeExpense) ([]Category, error) {
-	db := global.GvaDb.Model(&Category{})
+	db := cd.db
 	if incomeExpense == nil {
 		db.Where("account_id = ?", account.ID)
 	} else {
