@@ -9,6 +9,7 @@ import (
 	userModel "KeepAccount/model/user"
 	thirdpartyService "KeepAccount/service/thirdparty"
 	"KeepAccount/util/dataType"
+	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
 	"gorm.io/gorm"
 	"time"
@@ -338,7 +339,7 @@ func (catSvc *Category) DeleteMapping(parent, child categoryModel.Category, oper
 	return err
 }
 
-func (catSvc *Category) MappingAccountCategoryByAI(mainAccount, mappingAccount accountModel.Account, tx *gorm.DB) error {
+func (catSvc *Category) MappingAccountCategoryByAI(mainAccount, mappingAccount accountModel.Account, ctx *gin.Context, tx *gorm.DB) error {
 	var mainCategoryList, mappingCategoryList dataType.Slice[string, categoryModel.Category]
 	var err error
 	var matchingResult map[string]string
@@ -364,7 +365,7 @@ func (catSvc *Category) MappingAccountCategoryByAI(mainAccount, mappingAccount a
 			return category.Name
 		})
 		//获得相似度匹配
-		matchingResult, err = thirdpartyService.App.ChineseSimilarityMatching(mappingNameList, mainNameList)
+		matchingResult, err = thirdpartyService.App.ChineseSimilarityMatching(mappingNameList, mainNameList, ctx)
 		if err != nil {
 			return err
 		}

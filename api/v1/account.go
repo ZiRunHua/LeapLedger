@@ -632,7 +632,7 @@ func (a *AccountApi) CreateAccountMapping(ctx *gin.Context) {
 		if err != nil {
 			return err
 		}
-		err = categoryService.MappingAccountCategoryByAI(mainAccount, mappingAccount, tx)
+		err = categoryService.MappingAccountCategoryByAI(mainAccount, mappingAccount, ctx, tx)
 		if err != nil {
 			return err
 		}
