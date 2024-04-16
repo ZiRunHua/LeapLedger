@@ -1,22 +1,12 @@
 package response
 
 import (
+	"KeepAccount/global"
 	"KeepAccount/global/constant"
 	categoryModel "KeepAccount/model/category"
+	"KeepAccount/util/dataType"
 	"github.com/pkg/errors"
 )
-
-func CategoryModelToResponse(category *categoryModel.Category) *CategoryOne {
-	if category == nil {
-		return &CategoryOne{}
-	}
-	return &CategoryOne{
-		Id:            category.ID,
-		Name:          category.Name,
-		Icon:          category.Icon,
-		IncomeExpense: category.IncomeExpense,
-	}
-}
 
 type CategoryOne struct {
 	Id            uint
@@ -33,11 +23,70 @@ func (co *CategoryOne) SetData(category categoryModel.Category) error {
 	return nil
 }
 
+type CategoryDetail struct {
+	Id            uint
+	Name          string
+	Icon          string
+	FatherId      uint
+	FatherName    string
+	IncomeExpense constant.IncomeExpense
+}
+
+func (cd *CategoryDetail) SetData(category categoryModel.Category, father categoryModel.Father) error {
+	cd.Id = category.ID
+	cd.Name = category.Name
+	cd.Icon = category.Icon
+	cd.FatherId = father.ID
+	cd.FatherName = father.Name
+	cd.IncomeExpense = category.IncomeExpense
+	return nil
+}
+
+type CategoryDetailList []CategoryDetail
+
+func (cdl *CategoryDetailList) SetData(categoryList dataType.Slice[uint, categoryModel.Category]) error {
+	*cdl = make(CategoryDetailList, len(categoryList), len(categoryList))
+	if len(categoryList) == 0 {
+		return nil
+	}
+
+	fatherIds := categoryList.ExtractValues(func(category categoryModel.Category) uint { return category.FatherId })
+	var fatherList dataType.Slice[uint, categoryModel.Father]
+	err := global.GvaDb.Where("id IN (?)", fatherIds).Find(&fatherList).Error
+	if err != nil {
+		return err
+	}
+	fatherMap := fatherList.ToMap(func(father categoryModel.Father) uint { return father.ID })
+
+	for i, category := range categoryList {
+		err = (*cdl)[i].SetData(category, fatherMap[category.FatherId])
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 type FatherOne struct {
 	Id            uint
 	Name          string
 	IncomeExpense constant.IncomeExpense
 	Children      []CategoryOne
+}
+
+func (fo *FatherOne) SetData(father categoryModel.Father, categoryList []categoryModel.Category) error {
+	fo.Id = father.ID
+	fo.Name = father.Name
+	fo.IncomeExpense = father.IncomeExpense
+	fo.Children = make([]CategoryOne, len(categoryList), len(categoryList))
+	var err error
+	for i, category := range categoryList {
+		err = fo.Children[i].SetData(category)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 type CategoryTree struct {

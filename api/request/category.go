@@ -44,8 +44,8 @@ type CategoryGetTree struct {
 }
 
 type CategoryGetList struct {
-	AccountId     uint                   `binding:"required"`
-	IncomeExpense constant.IncomeExpense `binding:"required"`
+	AccountId     uint                    `binding:"required"`
+	IncomeExpense *constant.IncomeExpense `binding:"omitempty"`
 }
 
 type CategoryMapping struct {

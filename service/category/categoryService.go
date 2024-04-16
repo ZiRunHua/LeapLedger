@@ -29,7 +29,7 @@ func (catSvc *Category) NewCategoryData(category categoryModel.Category) CreateD
 
 func (catSvc *Category) CreateOne(father categoryModel.Father, data CreateData, tx *gorm.DB) (categoryModel.Category, error) {
 	category := categoryModel.Category{
-		AccountId:      father.AccountID,
+		AccountId:      father.AccountId,
 		FatherId:       father.ID,
 		IncomeExpense:  father.IncomeExpense,
 		Name:           data.Name,
@@ -48,7 +48,7 @@ func (catSvc *Category) CreateList(
 	for _, data := range list {
 		categoryList = append(
 			categoryList, categoryModel.Category{
-				AccountId:      father.AccountID,
+				AccountId:      father.AccountId,
 				FatherId:       father.ID,
 				IncomeExpense:  father.IncomeExpense,
 				Name:           data.Name,
@@ -68,7 +68,7 @@ func (catSvc *Category) CreateOneFather(
 	account accountModel.Account, InEx constant.IncomeExpense, name string, tx *gorm.DB,
 ) (categoryModel.Father, error) {
 	father := categoryModel.Father{
-		AccountID:      account.ID,
+		AccountId:      account.ID,
 		IncomeExpense:  InEx,
 		Name:           name,
 		Previous:       0,
@@ -79,84 +79,132 @@ func (catSvc *Category) CreateOneFather(
 }
 
 func (catSvc *Category) MoveCategory(
-	category categoryModel.Category, previous *categoryModel.Category, father categoryModel.Father, tx *gorm.DB,
+	category categoryModel.Category, previous *categoryModel.Category, father *categoryModel.Father,
+	operator userModel.User, tx *gorm.DB,
 ) error {
-	orlPrevious := category.Previous
-	if previous != nil && false == previous.IsEmpty() {
-		if category.IsEmpty() || previous.AccountId != category.AccountId || previous.IncomeExpense != category.IncomeExpense {
-			return errors.Wrap(global.ErrInvalidParameter, "categoryService.MoveCategory")
-		}
-		if false == father.IsEmpty() && (previous.AccountId != father.AccountID || previous.FatherId != father.ID || previous.IncomeExpense != father.IncomeExpense) {
-			return errors.Wrap(global.ErrInvalidParameter, "categoryService.MoveCategory father")
-		}
+	// 数据校验
+	if previous != nil && (category.ID == previous.ID || previous.AccountId != category.AccountId || previous.IncomeExpense != category.IncomeExpense) {
+		return errors.Wrap(global.ErrInvalidParameter, "categoryService.MoveCategory")
 	}
-	err := category.SetPrevious(previous, tx)
-	if nil != err {
+	if father != nil && (father.AccountId != category.AccountId || father.IncomeExpense != category.IncomeExpense) {
+		return errors.Wrap(global.ErrInvalidParameter, "categoryService.MoveCategory")
+	}
+	if previous != nil && father != nil && previous.FatherId != father.ID || previous == nil && father == nil {
+		return errors.Wrap(global.ErrInvalidParameter, "categoryService.MoveCategory")
+	}
+	accountUser, err := accountModel.NewDao(tx).SelectUser(category.AccountId, operator.ID)
+	if err != nil {
 		return err
+	} else if false == accountUser.HavePermission(accountModel.UserPermissionCreator) {
+		return global.ErrNoPermission
 	}
-	if orlPrevious == 0 {
-		// 0作为遍历的起始位置 不能没有
-		if _, err = category.GetHead(tx); errors.Is(err, gorm.ErrRecordNotFound) {
-			var newHead categoryModel.Category
-			if err = newHead.GetOneByPrevious(orlPrevious, tx); err != nil {
-				return err
-			}
-			if err = newHead.SetPrevious(nil, tx); err != nil {
-				return err
-			}
-		} else if err != nil {
+
+	// 处理
+	categoryDao := categoryModel.NewDao(tx)
+	firstChild, err := categoryDao.SelectFirstChild(category.ID)
+	if err == nil {
+		// 将排头的子更新为当前所有子的父
+		err = tx.Model(&firstChild).Select("previous", "order_updated_at").Updates(category).Error
+		if err != nil {
 			return err
 		}
+		err = categoryDao.UpdateChildPrevious(category.ID, firstChild.ID)
+		if err != nil {
+			return err
+		}
+	} else if false == errors.Is(err, gorm.ErrRecordNotFound) {
+		return err
+	}
+
+	// 最后更新当前交易类型的位置
+	if previous != nil {
+		err = tx.Model(&category).Select("previous", "father_id", "order_updated_at").Updates(
+			categoryModel.Category{
+				Previous:       previous.ID,
+				FatherId:       previous.FatherId,
+				OrderUpdatedAt: time.Now(),
+			},
+		).Error
+	} else {
+		err = tx.Model(&category).Select("previous", "father_id", "order_updated_at").Updates(
+			categoryModel.Category{
+				Previous:       0,
+				FatherId:       father.ID,
+				OrderUpdatedAt: time.Now(),
+			},
+		).Error
+	}
+	if err != nil {
+		return err
 	}
 	return nil
 }
 
 func (catSvc *Category) MoveFather(father categoryModel.Father, previous *categoryModel.Father, tx *gorm.DB) error {
-	if previous != nil && false == previous.IsEmpty() {
-		if previous.AccountID != father.AccountID || previous.IncomeExpense != father.IncomeExpense {
-			panic("Data anomaly")
-		}
+	if previous != nil && (previous.AccountId != father.AccountId || previous.IncomeExpense != father.IncomeExpense || father.ID == previous.ID) {
+		return errors.Wrap(global.ErrInvalidParameter, "categoryService.MoveFather")
 	}
-	return father.SetPrevious(previous, tx)
+
+	categoryDao := categoryModel.NewDao(tx)
+	firstChild, err := categoryDao.SelectFatherFirstChild(father.ID)
+	if err == nil {
+		// 将排头的子更新为当前所有子的父
+		err = tx.Model(&firstChild).Select("previous", "order_updated_at").Updates(father).Error
+		if err != nil {
+			return err
+		}
+		err = categoryDao.UpdateFatherChildPrevious(father.ID, firstChild.ID)
+		if err != nil {
+			return err
+		}
+	} else if false == errors.Is(err, gorm.ErrRecordNotFound) {
+		return err
+	}
+	// 最后更新father的位置
+	var previousId uint
+	if previous != nil {
+		previousId = previous.ID
+	} else {
+		// 未传入previous则移动到头部
+		previousId = 0
+	}
+	return tx.Model(&father).Select("previous", "order_updated_at").Updates(
+		categoryModel.Father{
+			Previous:       previousId,
+			OrderUpdatedAt: time.Now(),
+		},
+	).Error
 }
 
-func (catSvc *Category) GetSequenceCategory(
-	account accountModel.Account, incomeExpense *constant.IncomeExpense,
-) (map[uint]*[]categoryModel.Category, error) {
-	rows, err := new(categoryModel.Category).GetAll(account, incomeExpense)
+// GetSequenceCategoryByFather 返回排序后的category
+func (catSvc *Category) GetSequenceCategoryByFather(father categoryModel.Father) (sequenceCategory []categoryModel.Category, err error) {
+	categoryDao := categoryModel.NewDao()
+	categoryList, err := categoryDao.GetListByFather(&father)
 	if err != nil {
-		return map[uint]*[]categoryModel.Category{}, errors.Wrap(err, "")
+		return sequenceCategory, errors.Wrap(err, "categoryServer.GetSequenceCategory")
 	}
-	var category categoryModel.Category
-	tree := make(map[uint]map[uint][]categoryModel.Category)
-	heads := make(map[uint]uint)
-	for rows.Next() {
-		if err = global.GvaDb.ScanRows(rows, &category); err == nil {
-			if _, ok := tree[category.FatherId]; !ok {
-				tree[category.FatherId] = make(map[uint][]categoryModel.Category)
-			}
-			if _, ok := tree[category.FatherId][category.Previous]; !ok {
-				tree[category.FatherId][category.Previous] = []categoryModel.Category{category}
-			} else {
-				tree[category.FatherId][category.Previous] = append(
-					tree[category.FatherId][category.Previous], category,
-				)
-			}
+	if len(categoryList) == 0 {
+		return []categoryModel.Category{}, nil
+	}
+	tree := make(map[uint][]categoryModel.Category)
+	for _, category := range categoryList {
+		if _, ok := tree[category.Previous]; !ok {
+			tree[category.Previous] = []categoryModel.Category{category}
+		} else {
+			tree[category.Previous] = append(tree[category.Previous], category)
 		}
 	}
-	var result = make(map[uint]*[]categoryModel.Category)
-	for fatherId, fatherTree := range tree {
-		result[fatherId] = &[]categoryModel.Category{}
-		catSvc.makeSequenceOfCategory(result[fatherId], fatherTree, heads[fatherId])
-	}
-	return result, nil
+
+	sequenceCategory = make([]categoryModel.Category, 0, len(categoryList))
+	catSvc.makeSequenceOfCategory(&sequenceCategory, tree, 0)
+	return sequenceCategory, nil
 }
 
 func (catSvc *Category) makeSequenceOfCategory(
-	queue *[]categoryModel.Category, tree map[uint][]categoryModel.Category, treeKey uint,
+	queue *[]categoryModel.Category, tree map[uint][]categoryModel.Category, id uint,
 ) {
-	if _, exist := tree[treeKey]; exist {
-		for _, child := range tree[treeKey] {
+	if categoryList, exist := tree[id]; exist {
+		for _, child := range categoryList {
 			*queue = append(*queue, child)
 			catSvc.makeSequenceOfCategory(queue, tree, child.ID)
 		}
@@ -166,29 +214,24 @@ func (catSvc *Category) makeSequenceOfCategory(
 func (catSvc *Category) GetSequenceFather(
 	account accountModel.Account, incomeExpense *constant.IncomeExpense,
 ) ([]categoryModel.Father, error) {
-	var model categoryModel.Father
-	rows, err := model.GetAll(account, incomeExpense)
+	rows, err := categoryModel.NewDao().GetFatherList(account, incomeExpense)
 	if err != nil {
 		return []categoryModel.Father{}, err
 	}
-	var category categoryModel.Father
-	var tree = make(map[uint][]categoryModel.Father)
-	var head uint = 0
-	for rows.Next() {
-		if err = global.GvaDb.ScanRows(rows, &category); err == nil {
-			tree[category.Previous] = append(tree[category.Previous], category)
-		}
+	var tree = make(map[uint][]categoryModel.Father, len(rows))
+	for _, father := range rows {
+		tree[father.Previous] = append(tree[father.Previous], father)
 	}
 	var result = []categoryModel.Father{}
-	catSvc.makeSequenceOfFather(&result, tree, head)
+	catSvc.makeSequenceOfFather(&result, tree, 0)
 	return result, nil
 }
 
 func (catSvc *Category) makeSequenceOfFather(
 	queue *[]categoryModel.Father, tree map[uint][]categoryModel.Father, treeKey uint,
 ) {
-	if _, exist := tree[treeKey]; exist {
-		for _, child := range tree[treeKey] {
+	if children, exist := tree[treeKey]; exist {
+		for _, child := range children {
 			*queue = append(*queue, child)
 			catSvc.makeSequenceOfFather(queue, tree, child.ID)
 		}

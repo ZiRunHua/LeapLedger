@@ -16,6 +16,7 @@ func (c *CategoryRouter) InitCategoryRouter(Router *gin.RouterGroup) {
 		router.PUT("/:id", baseApi.Update)
 		router.DELETE("/:id", baseApi.Delete)
 		router.GET("/tree", baseApi.GetTree)
+		router.GET("/list", baseApi.GetList)
 	}
 	{
 		router.POST("/father", baseApi.CreateOneFather)
