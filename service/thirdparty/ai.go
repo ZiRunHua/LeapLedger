@@ -10,11 +10,11 @@ const AI_SERVER_NAME = "AI"
 const API_SIMILARITY_MATCHING = "/similarity/matching"
 
 type aiApiResponse struct {
-	code int
-	msg  string
+	Code int
+	Msg  string
 }
 
-func (a *aiApiResponse) isSuccess() bool { return a.code == 200 }
+func (a *aiApiResponse) isSuccess() bool { return a.Code == 200 }
 
 type aiServer struct {
 }
@@ -26,7 +26,7 @@ func (as *aiServer) getBaseUrl() string {
 func (as *aiServer) ChineseSimilarityMatching(SourceData, TargetData []string, ctx *gin.Context) (map[string]string, error) {
 	var response struct {
 		aiApiResponse
-		data []struct {
+		Data []struct {
 			Source, Target string
 			Similarity     float32
 		}
@@ -43,12 +43,12 @@ func (as *aiServer) ChineseSimilarityMatching(SourceData, TargetData []string, c
 		return nil, err
 	}
 	if false == response.isSuccess() {
-		return nil, global.NewErrThirdpartyApi(AI_SERVER_NAME, response.msg)
+		return nil, global.NewErrThirdpartyApi(AI_SERVER_NAME, response.Msg)
 	}
 
 	result := make(map[string]string)
 	minSimilarity := global.Config.ThirdParty.Ai.MinSimilarity
-	for _, item := range response.data {
+	for _, item := range response.Data {
 		if item.Similarity >= minSimilarity {
 			result[item.Source] = item.Target
 		}

@@ -6,7 +6,6 @@ import (
 	categoryModel "KeepAccount/model/category"
 	transactionModel "KeepAccount/model/transaction"
 	"github.com/gin-gonic/gin"
-	"github.com/pkg/errors"
 )
 
 type _getModelByContextFunc interface {
@@ -17,7 +16,6 @@ type _getModelByContextFunc interface {
 func (cf *contextFunc) GetTransByParam(ctx *gin.Context) (result transactionModel.Transaction, pass bool) {
 	id, ok := cf.GetParamId(ctx)
 	if false == ok {
-		response.FailToError(ctx, errors.New("error param id"))
 		return
 	}
 	trans := transactionModel.Transaction{}
@@ -64,7 +62,6 @@ func (cf *contextFunc) GetAccountUserByParam(ctx *gin.Context) (
 ) {
 	id, ok := cf.GetParamId(ctx)
 	if false == ok {
-		response.FailToError(ctx, errors.New("error param id"))
 		return
 	}
 	err := accountUser.SelectById(id)
@@ -83,7 +80,6 @@ func (cf *contextFunc) GetCategoryByParam(ctx *gin.Context) (
 ) {
 	id, ok := cf.GetUintParamByKey("id", ctx)
 	if false == ok {
-		response.FailToError(ctx, errors.New("error param id"))
 		return
 	}
 	var err error
