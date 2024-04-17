@@ -479,39 +479,30 @@ func (a *AccountApi) GetUserInfo(ctx *gin.Context) {
 	for _, infoType := range requestData.Types {
 		switch infoType {
 		case request.TodayTransTotal:
-			group.Go(
-				func() error {
-					result, err := a.getTransTotal(account, &[]uint{accountUser.UserId}, time.Now(), time.Now())
-					todayTotal = &result
-					return err
-				},
-			)
+			result, err := a.getTransTotal(account, &[]uint{accountUser.UserId}, time.Now(), time.Now())
+			todayTotal = &result
+			if responseError(err, ctx) {
+				return
+			}
 
 		case request.CurrentMonthTransTotal:
-			group.Go(
-				func() error {
-					result, err := a.getTransTotal(
-						account, &[]uint{accountUser.UserId}, util.Time.GetFirstSecondOfMonth(time.Now()), time.Now(),
-					)
-					monthTotal = &result
-					return err
-				},
+			result, err := a.getTransTotal(
+				account, &[]uint{accountUser.UserId}, util.Time.GetFirstSecondOfMonth(time.Now()), time.Now(),
 			)
+			monthTotal = &result
+			if responseError(err, ctx) {
+				return
+			}
 		case request.RecentTrans:
-			group.Go(
-				func() error {
-					result, err := a.getTrans(account, &[]uint{accountUser.UserId}, 10, 0)
-					if err != nil {
-						return err
-					}
-					recentTrans = &response.TransactionDetailList{}
-					err = recentTrans.SetData(result)
-					if err != nil {
-						return err
-					}
-					return err
-				},
-			)
+			result, err := a.getTrans(account, &[]uint{accountUser.UserId}, 10, 0)
+			if responseError(err, ctx) {
+				return
+			}
+			recentTrans = &response.TransactionDetailList{}
+			err = recentTrans.SetData(result)
+			if responseError(err, ctx) {
+				return
+			}
 		}
 	}
 	if err := group.Wait(); responseError(err, ctx) {
