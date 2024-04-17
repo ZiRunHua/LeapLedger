@@ -464,9 +464,8 @@ func (a *AccountApi) GetUserList(ctx *gin.Context) {
 }
 
 func (a *AccountApi) GetUserInfo(ctx *gin.Context) {
-	var err error
 	var requestData request.AccountGetUserInfo
-	if err = ctx.ShouldBindJSON(&requestData); err != nil {
+	if err := ctx.ShouldBindJSON(&requestData); err != nil {
 		response.FailToParameter(ctx, err)
 		return
 	}
@@ -515,7 +514,7 @@ func (a *AccountApi) GetUserInfo(ctx *gin.Context) {
 			)
 		}
 	}
-	if err = group.Wait(); responseError(err, ctx) {
+	if err := group.Wait(); responseError(err, ctx) {
 		return
 	}
 	responseData := &response.AccountUserInfo{
