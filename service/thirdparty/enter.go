@@ -14,7 +14,7 @@ type Group struct {
 	aiServer
 }
 
-var App = new(Group)
+var GroupApp = new(Group)
 var log *zap.Logger
 
 // 初始化

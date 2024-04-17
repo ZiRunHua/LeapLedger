@@ -1,6 +1,8 @@
+# 服务初始化的配置文件 执行代码详见 ./initialize/initialize.go
+# This is the service initialization configuration file execution code see ./initialize/initialize.go
 Redis:
   Db: 0
-  # Addr未空则表示不适用redis
+  # 设置Addr开启redis
   Addr: ""
   Password: ""
 
@@ -26,12 +28,14 @@ Captcha:
   EmailCaptcha: 0
   EmailCaptchaTimeOut: 3600
 ThirdParty:
-  # WeCom目前只用于邮件的发生
-  # CorpId和CorpSecret未空则表示未开启服务
+  # WeCom目前只用于发送邮件
   WeCom:
+    # 设置CorpId和CorpSecret开启服务
     CorpId: ""
     CorpSecret: ""
+  # ai服务暂时只有中文相似度比较，用于交易类型的匹配 基于[https://huggingface.co/google-bert/bert-base-chinese]简单实现
   Ai:
-    Host: 127.0.0.1
-    Port: 5000
+    # 设置Host和Port开启服务
+    Host: "" # ai-server
+    Port: "" # 5000
     MinSimilarity: 0.85

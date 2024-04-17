@@ -2,8 +2,8 @@ package thirdpartyService
 
 import (
 	"KeepAccount/global"
+	"context"
 	"github.com/carlmjohnson/requests"
-	"github.com/gin-gonic/gin"
 )
 
 const AI_SERVER_NAME = "AI"
@@ -22,8 +22,13 @@ type aiServer struct {
 func (as *aiServer) getBaseUrl() string {
 	return global.Config.ThirdParty.Ai.GetPortalSite()
 }
-
-func (as *aiServer) ChineseSimilarityMatching(SourceData, TargetData []string, ctx *gin.Context) (map[string]string, error) {
+func (as *aiServer) IsOpen() bool {
+	return global.Config.ThirdParty.Ai.IsOpen()
+}
+func (as *aiServer) ChineseSimilarityMatching(SourceData, TargetData []string, ctx context.Context) (map[string]string, error) {
+	if false == as.IsOpen() {
+		return make(map[string]string), nil
+	}
 	var response struct {
 		aiApiResponse
 		Data []struct {

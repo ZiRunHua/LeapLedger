@@ -46,6 +46,11 @@ func (cd *CategoryDao) Update(category Category, data CategoryUpdateData) error 
 	if err := util.Data.CopyNotEmptyStringOptional(data.Icon, &updateData.Icon); err != nil {
 		return err
 	}
+	if updateData.Name != "" {
+		if err := updateData.CheckName(cd.db); err != nil {
+			return err
+		}
+	}
 	return cd.db.Model(&category).Updates(updateData).Error
 }
 

@@ -51,6 +51,9 @@ var ErrSameAsTheOldPassword = errors.New("新旧密码相同")
 // 账本
 var ErrAccountType = errors.New("账本类型不允许该操作")
 
+// 交易类型
+var ErrCategorySameName = errors.New("类型名称相同")
+
 func NewErrThirdpartyApi(name, msg string) error {
 	return &errThirdpartyApi{Name: name, Msg: msg}
 }

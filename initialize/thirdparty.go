@@ -19,3 +19,6 @@ type _ai struct {
 func (a _ai) GetPortalSite() string {
 	return "http://" + a.Host + ":" + a.Port
 }
+func (a _ai) IsOpen() bool {
+	return a.Host != "" && a.Port != ""
+}

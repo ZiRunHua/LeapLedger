@@ -7,9 +7,8 @@ import (
 	categoryModel "KeepAccount/model/category"
 	transactionModel "KeepAccount/model/transaction"
 	userModel "KeepAccount/model/user"
-	thirdpartyService "KeepAccount/service/thirdparty"
 	"KeepAccount/util/dataType"
-	"github.com/gin-gonic/gin"
+	"context"
 	"github.com/pkg/errors"
 	"gorm.io/gorm"
 	"time"
@@ -30,8 +29,8 @@ func (catSvc *Category) NewCategoryData(category categoryModel.Category) CreateD
 	}
 }
 
-func (catSvc *Category) CreateOne(father categoryModel.Father, data CreateData, tx *gorm.DB) (categoryModel.Category, error) {
-	category := categoryModel.Category{
+func (catSvc *Category) CreateOne(father categoryModel.Father, data CreateData, tx *gorm.DB) (category categoryModel.Category, err error) {
+	category = categoryModel.Category{
 		AccountId:      father.AccountId,
 		FatherId:       father.ID,
 		IncomeExpense:  father.IncomeExpense,
@@ -40,8 +39,14 @@ func (catSvc *Category) CreateOne(father categoryModel.Father, data CreateData, 
 		Previous:       0,
 		OrderUpdatedAt: time.Now(),
 	}
-	err := tx.Create(&category).Error
-	return category, errors.Wrap(err, "category.CreateOne()")
+	if err = category.CheckName(tx); err != nil {
+		return
+	}
+	err = tx.Create(&category).Error
+	if err != nil {
+		return category, errors.Wrap(err, "category.CreateOne()")
+	}
+	return
 }
 
 func (catSvc *Category) CreateList(
@@ -339,7 +344,10 @@ func (catSvc *Category) DeleteMapping(parent, child categoryModel.Category, oper
 	return err
 }
 
-func (catSvc *Category) MappingAccountCategoryByAI(mainAccount, mappingAccount accountModel.Account, ctx *gin.Context, tx *gorm.DB) error {
+func (catSvc *Category) MappingAccountCategoryByAI(mainAccount, mappingAccount accountModel.Account, ctx context.Context, tx *gorm.DB) error {
+	if false == thirdpartyService.IsOpen() {
+		return nil
+	}
 	var mainCategoryList, mappingCategoryList dataType.Slice[string, categoryModel.Category]
 	var err error
 	var matchingResult map[string]string
@@ -365,7 +373,7 @@ func (catSvc *Category) MappingAccountCategoryByAI(mainAccount, mappingAccount a
 			return category.Name
 		})
 		//获得相似度匹配
-		matchingResult, err = thirdpartyService.App.ChineseSimilarityMatching(mappingNameList, mainNameList, ctx)
+		matchingResult, err = thirdpartyService.ChineseSimilarityMatching(mappingNameList, mainNameList, ctx)
 		if err != nil {
 			return err
 		}

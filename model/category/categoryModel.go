@@ -36,6 +36,21 @@ func (c *Category) GetAccount() (result accountModel.Account, err error) {
 	return
 }
 
+func (c *Category) CheckName(db *gorm.DB) error {
+	if c.Name == "" {
+		return global.NewErrDataIsEmpty("交易类型名称")
+	}
+	var exist bool
+	sql := "SELECT EXISTS(SELECT 1 FROM category WHERE account_id = ? AND name = ? AND deleted_at is null) AS exist"
+	err := db.Raw(sql, c.AccountId, c.Name).Scan(&exist).Error
+	if err != nil {
+		return err
+	} else if exist {
+		return global.ErrCategorySameName
+	}
+	return nil
+}
+
 type Condition struct {
 	account accountModel.Account
 	ie      *constant.IncomeExpense
