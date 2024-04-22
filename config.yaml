@@ -36,6 +36,6 @@ ThirdParty:
   # ai服务暂时只有中文相似度比较，用于交易类型的匹配 基于[https://huggingface.co/google-bert/bert-base-chinese]简单实现
   Ai:
     # 设置Host和Port开启服务
-    Host: "" # ai-server
+    Host: "" # leap-ledger-ai-server
     Port: "" # 5000
     MinSimilarity: 0.85

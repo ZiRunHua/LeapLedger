@@ -26,10 +26,10 @@ type AccountUpdateData struct {
 }
 
 func (a *AccountUpdateData) getAccount() (result Account, err error) {
-	if err = util.Data.CopyNotEmptyStringOptional(&result.Name, a.Name); err != nil {
+	if err = util.Data.CopyNotEmptyStringOptional(a.Name, &result.Name); err != nil {
 		return result, err
 	}
-	if err = util.Data.CopyNotEmptyStringOptional(&result.Icon, a.Icon); err != nil {
+	if err = util.Data.CopyNotEmptyStringOptional(a.Icon, &result.Icon); err != nil {
 		return result, err
 	}
 	return

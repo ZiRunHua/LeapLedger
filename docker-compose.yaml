@@ -1,7 +1,7 @@
-version: '3'
 services:
-  keepaccount-server:
-    container_name: keepaccount-server
+  leap-ledger-server:
+    container_name: leap-ledger-server
+    image: registry.cn-hangzhou.aliyuncs.com/xiaozirun/leap-ledger:latest
     build:
       context: F:\project\Go_project\github.com\KeepAccount
       dockerfile: Dockerfile
@@ -10,17 +10,17 @@ services:
     environment:
       - CONFIG_FILE_NAME=production_config.yaml  # 设置环境变量
     networks:
-      - keepaccount-network
-  ai-server:
-    container_name: ai-server
+      - leap-ledger-network
+  leap-ledger-ai-server:
+    container_name: leap-ledger-ai-server
+    image: registry.cn-hangzhou.aliyuncs.com/xiaozirun/leap-ledger-ai:latest
     build:
       context: D:\development\project\github\test
       dockerfile: Dockerfile
     ports:
       - "5000:5000"  # 假设 Python 项目监听 5000 端口
-    network_mode: bridge
     networks:
-      - keepaccount-network
+      - leap-ledger-network
 
 networks:
-  keepaccount-network:
+  leap-ledger-network:

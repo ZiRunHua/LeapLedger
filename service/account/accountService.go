@@ -111,11 +111,6 @@ func (b *base) Update(
 	if err != nil {
 		return err
 	}
-	//删除的可能是当前账本 故需要更新客户端信息
-	err = b.updateUserCurrentAfterDelete(accountUser, tx)
-	if err != nil {
-		return err
-	}
 	return
 }
 

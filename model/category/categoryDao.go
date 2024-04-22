@@ -96,25 +96,15 @@ func (cd *CategoryDao) GetUnmappedList(mainAccount, mappingAccount accountModel.
 }
 
 func (cd *CategoryDao) GetFatherList(account accountModel.Account, incomeExpense *constant.IncomeExpense) ([]Father, error) {
-	db := cd.db
-	if incomeExpense == nil {
-		db.Where("account_id = ?", account.ID)
-	} else {
-		db.Where("account_id = ? AND income_expense = ?", account.ID, incomeExpense)
-	}
+	condition := &Condition{account: account, ie: incomeExpense}
 	var list []Father
-	return list, db.Order("income_expense asc,previous asc,order_updated_at desc").Find(&list).Error
+	return list, condition.buildWhere(cd.db).Order("income_expense asc,previous asc,order_updated_at desc").Find(&list).Error
 }
 
 func (cd *CategoryDao) GetAll(account accountModel.Account, incomeExpense *constant.IncomeExpense) ([]Category, error) {
-	db := cd.db
-	if incomeExpense == nil {
-		db.Where("account_id = ?", account.ID)
-	} else {
-		db.Where("account_id = ? AND income_expense = ?", account.ID, incomeExpense)
-	}
+	condition := &Condition{account: account, ie: incomeExpense}
 	var list []Category
-	return list, cd.setCategoryOrder(db).Find(&list).Error
+	return list, cd.setCategoryOrder(condition.buildWhere(cd.db)).Find(&list).Error
 }
 
 func (cd *CategoryDao) Exist(account accountModel.Account) (bool, error) {
