@@ -18,6 +18,7 @@ func (t *template) GetList() ([]accountModel.Account, error) {
 	err := global.GvaDb.Where("user_id = ?", tempUser.ID).Find(&list).Error
 	return list, err
 }
+
 func (t *template) CreateAccount(
 	user userModel.User, tmplAccount accountModel.Account, tx *gorm.DB,
 ) (account accountModel.Account, err error) {
@@ -48,7 +49,7 @@ func (t *template) CreateCategory(account accountModel.Account, tmplAccount acco
 		return errors.WithStack(errors.New("交易类型已存在"))
 	}
 	var tmplFatherList []categoryModel.Father
-	tmplFatherList, err = categoryModel.Dao.NewFather(tx).GetListByAccount(&tmplAccount)
+	tmplFatherList, err = categoryModel.NewDao(tx).GetFatherList(tmplAccount, nil)
 	if err != nil {
 		return err
 	}
