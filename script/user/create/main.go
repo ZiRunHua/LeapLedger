@@ -8,17 +8,15 @@ import (
 	"encoding/hex"
 	"fmt"
 	"gorm.io/gorm"
-	"strconv"
-	"time"
 )
 
 func main() {
 	create()
 }
 func create() {
-	email := strconv.FormatInt(time.Now().UnixNano()%1e9, 10) + "@gmail.com"
+	email := "share_account_child@gmail.com"
 	password := "1999123456"
-	username := "test" + strconv.FormatInt(time.Now().UnixNano()%1e5, 10)
+	username := "child"
 	bytes := []byte(email + password)
 	hash := sha256.Sum256(bytes)
 	password = hex.EncodeToString(hash[:])

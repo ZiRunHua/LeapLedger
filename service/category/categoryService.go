@@ -60,6 +60,7 @@ func (catSvc *Category) CreateList(
 				FatherId:       father.ID,
 				IncomeExpense:  father.IncomeExpense,
 				Name:           data.Name,
+				Icon:           data.Icon,
 				Previous:       0,
 				OrderUpdatedAt: time.Now(),
 			},

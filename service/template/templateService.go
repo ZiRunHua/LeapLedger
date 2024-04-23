@@ -30,6 +30,10 @@ func (t *template) CreateAccount(
 	if err != nil {
 		return
 	}
+	err = t.CreateCategory(account, tmplAccount, tx)
+	if err != nil {
+		return
+	}
 	return
 }
 
@@ -39,7 +43,7 @@ func (t *template) CreateCategory(account accountModel.Account, tmplAccount acco
 		return err
 	}
 	var existCategory bool
-	existCategory, err = categoryModel.Dao.NewCategory(tx).Exist(account)
+	existCategory, err = categoryModel.NewDao(tx).Exist(account)
 	if existCategory == true {
 		return errors.WithStack(errors.New("交易类型已存在"))
 	}
@@ -64,7 +68,7 @@ func (t *template) CreateFatherCategory(
 		return err
 	}
 
-	tmplCategoryList, err := categoryModel.Dao.NewCategory(tx).GetListByFather(&tmplFather)
+	tmplCategoryList, err := categoryModel.NewDao(tx).GetListByFather(&tmplFather)
 	if err != nil {
 		return err
 	}
