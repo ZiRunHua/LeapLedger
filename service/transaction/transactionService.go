@@ -25,31 +25,140 @@ type UpdateStatisticData struct {
 	Count         int
 }
 
+type CreateOption struct {
+	syncUpdateStatistic bool
+	syncShareAccount    bool
+}
+
+func (txnService *Transaction) NewDefaultCreateConfig() CreateOption {
+	return CreateOption{syncUpdateStatistic: true, syncShareAccount: true}
+}
+
+func (txnService *Transaction) NewCreateConfig() *CreateOption {
+	return &CreateOption{}
+}
+
+func (co *CreateOption) WithSyncUpdateStatistic(val bool) *CreateOption {
+	co.syncUpdateStatistic = val
+	return co
+}
+
+func (co *CreateOption) WithSyncShareAccount(val bool) *CreateOption {
+	co.syncShareAccount = val
+	return co
+}
+
 func (txnService *Transaction) CreateOne(
-	transaction transactionModel.Transaction, accountUser accountModel.User, asyncUpdateStatistic bool, tx *gorm.DB,
+	trans transactionModel.Transaction, accountUser accountModel.User, option CreateOption, tx *gorm.DB,
 ) (transactionModel.Transaction, error) {
-	account, err := transaction.GetAccount()
+	// check
+	err := txnService.checkTransaction(trans, accountUser, tx)
 	if err != nil {
-		return transaction, err
-	} else if account.ID != accountUser.AccountId {
-		return transaction, global.ErrAccountId
+		return trans, errors.WithStack(err)
 	}
-	err = accountUser.CheckTransAddByUserId(accountUser.UserId)
+	err = accountUser.CheckTransAddByUserId(trans.UserId)
 	if err != nil {
-		return transaction, err
+		return trans, errors.WithStack(err)
+	}
+	// handle
+	trans.UserId = accountUser.UserId
+	err = tx.Create(&trans).Error
+	if err != nil {
+		return trans, errors.WithStack(err)
 	}
 
-	transaction.UserId = accountUser.UserId
-	if err = txnService.checkTransaction(transaction); err != nil {
-		return transaction, err
+	if false == option.syncUpdateStatistic {
+		err = txnService.asyncUpdateStatistic(getUpdateStatisticData(trans, true), tx)
+	} else {
+		err = txnService.updateStatistic(getUpdateStatisticData(trans, true), tx)
 	}
-	if err = tx.Create(&transaction).Error; err != nil {
-		return transaction, errors.Wrap(err, "")
+	if err != nil {
+		return trans, err
 	}
-	if asyncUpdateStatistic {
-		return transaction, txnService.asyncUpdateStatistic(getUpdateStatisticData(transaction, true), tx)
+	if false == option.syncShareAccount {
+		err = txnService.SyncShareAccount(trans, tx)
+		if err != nil {
+			return trans, err
+		}
 	}
-	return transaction, txnService.updateStatistic(getUpdateStatisticData(transaction, true), tx)
+	return trans, nil
+}
+
+func (txnService *Transaction) SyncShareAccount(trans transactionModel.Transaction, tx *gorm.DB) error {
+	if err := trans.ForUpdate(tx); err != nil {
+		return err
+	}
+	accountDao, categoryDao := accountModel.NewDao(tx), categoryModel.NewDao(tx)
+	categoryMapping, accountUser, newTrans := categoryModel.Mapping{}, accountModel.User{}, transactionModel.Transaction{}
+	syncData := trans.SyncDataClone()
+
+	syncDataCreateFunc := func(accountId, categoryId uint) error {
+		var err error
+		syncData.AccountId = accountId
+		syncData.CategoryId = categoryId
+		accountUser, err = accountDao.SelectUser(accountId, syncData.UserId)
+		if err != nil {
+			return err
+		}
+		newTrans, err = txnService.CreateOne(syncData, accountUser, txnService.NewDefaultCreateConfig(), tx)
+		if err != nil {
+			return err
+		}
+
+		return nil
+	}
+
+	account, err := accountDao.SelectById(trans.AccountId)
+	if err != nil {
+		return err
+	}
+	switch account.Type {
+	case accountModel.TypeIndependent:
+		// 独立账本向共享同步
+		var accountMappings []accountModel.Mapping
+		accountMappings, err = accountDao.SelectMultipleMapping(*accountModel.NewMappingCondition().WithRelatedId(trans.AccountId))
+		if err != nil {
+			return err
+		}
+
+		for _, accountMapping := range accountMappings {
+			categoryMapping, err = categoryDao.SelectMapping(accountMapping.MainId, trans.CategoryId)
+			if errors.As(err, gorm.ErrRecordNotFound) {
+				continue
+			} else if err != nil {
+				return err
+			}
+			err = syncDataCreateFunc(categoryMapping.ParentAccountId, categoryMapping.ParentCategoryId)
+			if err != nil {
+				return err
+			}
+		}
+	case accountModel.TypeShare:
+		// 共享同步向独立账本
+		var accountMapping accountModel.Mapping
+		accountMapping, err = accountDao.SelectMappingByMainAccountAndRelatedUser(account.ID, trans.UserId)
+		if err != nil {
+			return err
+		}
+
+		categoryMapping, err = categoryDao.SelectMappingByCAccountIdAndPCategoryId(accountMapping.RelatedId, trans.CategoryId)
+		if errors.As(err, gorm.ErrRecordNotFound) {
+			return nil
+		} else if err != nil {
+			return err
+		}
+		err = syncDataCreateFunc(categoryMapping.ChildAccountId, categoryMapping.ChildCategoryId)
+		if err != nil {
+			return err
+		}
+	default:
+		panic("error account.type")
+	}
+	return nil
+}
+
+func (txnService *Transaction) CreateMapping(mainTrans, relatedTrans transactionModel.Transaction) {
+	mapping := transactionModel.Mapping{MainId: mainTrans.ID, RelatedId: relatedTrans.ID}
 }
 
 func getUpdateStatisticData(transaction transactionModel.Transaction, isAdd bool) UpdateStatisticData {
@@ -96,14 +205,16 @@ func (txnService *Transaction) updateStatistic(data UpdateStatisticData, tx *gor
 	return nil
 }
 
-func (txnService *Transaction) checkTransaction(transaction transactionModel.Transaction) error {
-	var category categoryModel.Category
-	err := category.SelectById(transaction.CategoryId)
+func (txnService *Transaction) checkTransaction(trans transactionModel.Transaction, accountUser accountModel.User, tx *gorm.DB) error {
+	category, err := trans.GetCategory(tx)
 	if err != nil {
-		return errors.Wrap(err, "")
+		return err
 	}
-	if category.AccountId != transaction.AccountId || transaction.Amount < 0 {
-		return errors.Wrap(global.ErrInvalidParameter, "")
+	if category.AccountId != trans.AccountId || trans.AccountId != accountUser.AccountId {
+		return global.ErrAccountId
+	}
+	if trans.Amount < 0 {
+		return errors.New("error trans.amount")
 	}
 	return nil
 }
@@ -112,15 +223,13 @@ func (txnService *Transaction) Update(
 	transaction transactionModel.Transaction, accountUser accountModel.User, tx *gorm.DB,
 ) error {
 	// check
-	if transaction.AccountId != accountUser.AccountId {
-		return global.ErrAccountId
-	}
-	err := accountUser.CheckTransEditByUserId(transaction.UserId)
+	err := txnService.checkTransaction(transaction, accountUser, tx)
 	if err != nil {
-		return err
+		return errors.WithStack(err)
 	}
-	if err = txnService.checkTransaction(transaction); err != nil {
-		return err
+	err = accountUser.CheckTransEditByUserId(transaction.UserId)
+	if err != nil {
+		return errors.WithStack(err)
 	}
 	// handle
 	var oldTransaction transactionModel.Transaction

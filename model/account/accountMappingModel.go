@@ -3,6 +3,7 @@ package accountModel
 import (
 	"KeepAccount/global"
 	logModel "KeepAccount/model/log"
+	"gorm.io/gorm"
 	"time"
 )
 
@@ -34,4 +35,33 @@ func (m *Mapping) GetLogDataModel() logModel.AccountLogDataRecordable {
 		RelatedId: m.RelatedId,
 	}
 	return result
+}
+
+type MappingCondition struct {
+	mainId    *uint
+	relatedId *uint
+}
+
+func NewMappingCondition() *MappingCondition {
+	return &MappingCondition{}
+}
+
+func (mc *MappingCondition) addConditionToQuery(db *gorm.DB) *gorm.DB {
+	if mc.mainId != nil {
+		db = db.Where("main_id = ?", mc.mainId)
+	}
+	if mc.relatedId != nil {
+		db = db.Where("related_id = ?", mc.relatedId)
+	}
+	return db
+}
+
+func (mc *MappingCondition) WithMainId(mainId uint) *MappingCondition {
+	mc.mainId = &mainId
+	return mc
+}
+
+func (mc *MappingCondition) WithRelatedId(relatedId uint) *MappingCondition {
+	mc.relatedId = &relatedId
+	return mc
 }

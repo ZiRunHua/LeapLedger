@@ -43,10 +43,9 @@ func (a *AccountDao) SelectMappingByMainAccountAndRelatedUser(mainAccountId, use
 	return
 }
 
-func (a *AccountDao) SelectAllMappingByAccount(account Account) ([]Mapping, error) {
+func (a *AccountDao) SelectMultipleMapping(condition MappingCondition) ([]Mapping, error) {
 	var result []Mapping
-	err := a.db.Model(&Mapping{}).Where("main_id = ?", account.ID).Find(&result).Error
-	return result, err
+	return result, condition.addConditionToQuery(a.db).Find(&result).Error
 }
 
 func (a *AccountDao) CreateMapping(mainAccount Account, mappingAccount Account) (Mapping, error) {

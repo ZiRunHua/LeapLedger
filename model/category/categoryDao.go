@@ -129,6 +129,18 @@ func (cd *CategoryDao) CreateMapping(parent, child Category) (Mapping, error) {
 	return mapping, err
 }
 
+func (cd *CategoryDao) SelectMapping(parentAccountId, childCategoryId uint) (Mapping, error) {
+	var result Mapping
+	err := cd.db.Where("parent_account_id = ? AND child_category_id = ?", parentAccountId, childCategoryId).First(&result).Error
+	return result, err
+}
+
+func (cd *CategoryDao) SelectMappingByCAccountIdAndPCategoryId(childAccountId, parentCategoryId uint) (Mapping, error) {
+	var result Mapping
+	err := cd.db.Where("child_account_id = ? AND parent_category_id = ?", childAccountId, parentCategoryId).First(&result).Error
+	return result, err
+}
+
 func (cd *CategoryDao) GetMappingByAccountMappingOrderByChildCategoryWeight(parentAccountId, childAccountId uint) (
 	[]Mapping, error,
 ) {

@@ -12,6 +12,11 @@ type TransactionCreateOne struct {
 	IncomeExpense constant.IncomeExpense
 	Remark        string
 	TradeTime     uint
+	Option        TransactionOption
+}
+
+type TransactionOption struct {
+	SyncShareAccount bool
 }
 
 type TransactionUpdateOne struct {

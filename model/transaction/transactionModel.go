@@ -9,6 +9,7 @@ import (
 	queryFunc "KeepAccount/model/common/query"
 	userModel "KeepAccount/model/user"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 	"time"
 )
 
@@ -24,8 +25,11 @@ type Transaction struct {
 	commonModel.BaseModel
 }
 
-func (t *Transaction) IsEmpty() bool {
-	return t.ID == 0
+func (t *Transaction) ForUpdate(tx *gorm.DB) error {
+	if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).First(t).Error; err != nil {
+		return err
+	}
+	return nil
 }
 
 func (t *Transaction) SelectById(id uint) error {
@@ -36,8 +40,12 @@ func (t *Transaction) Exits(query interface{}, args ...interface{}) (bool, error
 	return queryFunc.Exist[*Transaction](query, args)
 }
 
-func (t *Transaction) GetCategory() (category categoryModel.Category, err error) {
-	err = global.GvaDb.First(&category, t.CategoryId).Error
+func (t *Transaction) GetCategory(db ...*gorm.DB) (category categoryModel.Category, err error) {
+	if len(db) > 0 {
+		err = db[0].First(&category, t.CategoryId).Error
+	} else {
+		err = global.GvaDb.First(&category, t.CategoryId).Error
+	}
 	return
 }
 
@@ -50,8 +58,28 @@ func (t *Transaction) GetUser(selects ...interface{}) (user userModel.User, err 
 	return
 }
 
-func (t *Transaction) GetAccount() (accountModel.Account, error) {
-	var account accountModel.Account
-	err := global.GvaDb.Model(&account).First(&account, t.AccountId).Error
-	return account, err
+func (t *Transaction) GetAccount(db ...*gorm.DB) (account accountModel.Account, err error) {
+	if len(db) > 0 {
+		err = db[0].First(&account, t.AccountId).Error
+	} else {
+		err = global.GvaDb.First(&account, t.AccountId).Error
+	}
+	return
+}
+
+func (t *Transaction) SyncDataClone() Transaction {
+	return Transaction{
+		UserId:        t.UserId,
+		IncomeExpense: t.IncomeExpense,
+		Amount:        t.Amount,
+		Remark:        t.Remark,
+		TradeTime:     t.TradeTime,
+	}
+}
+
+type Mapping struct {
+	ID        uint `gorm:"primarykey"`
+	MainId    uint `gorm:"not null;uniqueIndex:idx_mapping,priority:1"`
+	RelatedId uint `gorm:"not null;uniqueIndex:idx_mapping,priority:2"`
+	gorm.Model
 }

@@ -553,7 +553,7 @@ func (a *AccountApi) GetAccountMappingList(ctx *gin.Context) {
 	if pass == false {
 		return
 	}
-	mappingList, err := accountModel.NewDao().SelectAllMappingByAccount(account)
+	mappingList, err := accountModel.NewDao().SelectMultipleMapping(*accountModel.NewMappingCondition().WithMainId(account.ID))
 	if responseError(err, ctx) {
 		return
 	}

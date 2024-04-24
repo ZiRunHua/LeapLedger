@@ -53,8 +53,10 @@ func (t *TransactionApi) CreateOne(ctx *gin.Context) {
 				return err
 			}
 			// 新交易非客户端当前使用账本 则异步更新统计数据 以加快接口响应
-			asyncUpdateStatistic := transaction.AccountId != userClient.CurrentAccountId
-			transaction, err = transactionService.CreateOne(transaction, accountUser, asyncUpdateStatistic, tx)
+			createOption := transactionService.NewCreateConfig()
+			createOption.WithSyncUpdateStatistic(transaction.AccountId == userClient.CurrentAccountId)
+			createOption.WithSyncShareAccount(requestData.Option.SyncShareAccount)
+			transaction, err = transactionService.CreateOne(transaction, accountUser, *createOption, tx)
 			return err
 		},
 	)
