@@ -3,6 +3,7 @@ package transactionModel
 import (
 	"KeepAccount/global"
 	"KeepAccount/global/constant"
+	accountModel "KeepAccount/model/account"
 	"github.com/pkg/errors"
 	"gorm.io/gorm"
 )
@@ -77,5 +78,50 @@ func (t *TransactionDao) getAmountCountStatistic(query *gorm.DB, ie constant.Inc
 	result global.AmountCount, err error,
 ) {
 	err = query.Where("income_expense = ? ", ie).Select("COUNT(*) as Count,SUM(amount) as Amount").Scan(&result).Error
+	return
+}
+
+func (t *TransactionDao) SelectMappingByTrans(trans, syncTrans Transaction) (mapping Mapping, err error) {
+	accountType, err := accountModel.NewDao(t.db).GetAccountType(syncTrans.AccountId)
+	if err != nil {
+		return
+	}
+
+	if trans.ID > 0 && syncTrans.ID > 0 {
+		switch accountType {
+		case accountModel.TypeIndependent:
+			err = t.db.Where("main_id = ? AND related_id = ?", syncTrans.ID, trans.ID).First(&mapping).Error
+		case accountModel.TypeShare:
+			err = t.db.Where("main_id = ? AND related_id = ?", trans.ID, syncTrans.ID).First(&mapping).Error
+		default:
+			panic("err account.Type")
+		}
+		return
+	}
+
+	if trans.ID > 0 && syncTrans.AccountId > 0 {
+		switch accountType {
+		case accountModel.TypeIndependent:
+			err = t.db.Where("main_account_id = related_id ? AND  = ?", syncTrans.AccountId, trans.ID).First(&mapping).Error
+		case accountModel.TypeShare:
+			err = t.db.Where("main_id = ? AND related_account_id = ?", trans.ID, syncTrans.AccountId).First(&mapping).Error
+		default:
+			panic("err account.Type")
+		}
+		return
+	}
+
+	if syncTrans.ID > 0 && trans.AccountId > 0 {
+		switch accountType {
+		case accountModel.TypeIndependent:
+			err = t.db.Where("main_id = ? AND related_account_id = ?", syncTrans.ID, trans.AccountId).First(&mapping).Error
+		case accountModel.TypeShare:
+			err = t.db.Where("main_account_id = ? AND related_id = ?", syncTrans.AccountId, syncTrans.ID).First(&mapping).Error
+		default:
+			panic("err account.Type")
+		}
+		return
+	}
+	err = errors.New("TransactionDao.SelectMappingByTrans query mode is not supported")
 	return
 }

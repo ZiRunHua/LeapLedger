@@ -77,9 +77,37 @@ func (t *Transaction) SyncDataClone() Transaction {
 	}
 }
 
+type StatisticData struct {
+	AccountId     uint
+	UserId        uint
+	IncomeExpense constant.IncomeExpense
+	CategoryId    uint
+	TradeTime     time.Time
+	Amount        int
+	Count         int
+}
+
+func (t *Transaction) GetStatisticData(isAdd bool) StatisticData {
+	if isAdd {
+		return StatisticData{
+			AccountId: t.AccountId, UserId: t.UserId, IncomeExpense: t.IncomeExpense,
+			CategoryId: t.CategoryId, TradeTime: t.TradeTime, Amount: t.Amount, Count: 1,
+		}
+	}
+	return StatisticData{
+		AccountId: t.AccountId, UserId: t.UserId, IncomeExpense: t.IncomeExpense,
+		CategoryId: t.CategoryId, TradeTime: t.TradeTime, Amount: -t.Amount, Count: -1,
+	}
+}
+
+// Mapping
+// 一个 MainId 对应多个 RelatedId  因为一笔交易可能同步到多个账本 同时 MainId 和 RelatedId 唯一
+// MainId 和 RelatedAccountId 唯一  因为一笔交易只会被同步一个账本一次
 type Mapping struct {
-	ID        uint `gorm:"primarykey"`
-	MainId    uint `gorm:"not null;uniqueIndex:idx_mapping,priority:1"`
-	RelatedId uint `gorm:"not null;uniqueIndex:idx_mapping,priority:2"`
+	ID               uint `gorm:"primarykey"`
+	MainId           uint `gorm:"not null;uniqueIndex:idx_mapping,priority:1"`
+	MainAccountId    uint `gorm:"not null;"`
+	RelatedId        uint `gorm:"not null;"`
+	RelatedAccountId uint `gorm:"not null;uniqueIndex:idx_mapping,priority:2"`
 	gorm.Model
 }

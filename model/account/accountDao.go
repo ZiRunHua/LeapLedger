@@ -19,7 +19,12 @@ func NewDao(db ...*gorm.DB) *AccountDao {
 }
 
 func (a *AccountDao) SelectById(id uint) (account Account, err error) {
-	err = a.db.Model(&account).First(&account, id).Error
+	err = a.db.First(&account, id).Error
+	return
+}
+
+func (a *AccountDao) GetAccountType(id uint) (accountType Type, err error) {
+	err = a.db.Model(&Account{}).Where("id = ?", id).Scan(&accountType).Error
 	return
 }
 

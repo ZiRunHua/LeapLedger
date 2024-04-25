@@ -42,6 +42,20 @@ const (
 	TypeShare       Type = "share"
 )
 
+func (t Type) IsIndependent() bool { return t == TypeIndependent }
+func (t Type) IsShare() bool       { return t == TypeShare }
+
+func (t Type) Handle(isIndependent, isShare func()) {
+	switch t {
+	case TypeIndependent:
+		isIndependent()
+	case TypeShare:
+		isShare()
+	default:
+		panic("error account.Type")
+	}
+}
+
 func (a *Account) GetUser(selects ...interface{}) (user userModel.User, err error) {
 	err = user.SelectById(a.UserId, selects...)
 	return
