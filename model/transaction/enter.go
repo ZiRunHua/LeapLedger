@@ -14,7 +14,7 @@ var (
 func init() {
 	tables := []interface{}{
 		IncomeCategoryStatistic{}, IncomeAccountStatistic{}, IncomeAccountUserStatistic{}, ExpenseCategoryStatistic{},
-		ExpenseAccountStatistic{}, ExpenseAccountUserStatistic{},
+		ExpenseAccountStatistic{}, ExpenseAccountUserStatistic{}, Mapping{},
 	}
 	for _, table := range tables {
 		err := global.GvaDb.AutoMigrate(&table)

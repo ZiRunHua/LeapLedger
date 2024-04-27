@@ -5,11 +5,13 @@ import (
 	"KeepAccount/api/response"
 	"KeepAccount/global"
 	"KeepAccount/global/constant"
+	"KeepAccount/global/contextKey"
 	accountModel "KeepAccount/model/account"
 	categoryModel "KeepAccount/model/category"
 	transactionModel "KeepAccount/model/transaction"
 	"KeepAccount/util"
 	"KeepAccount/util/dataType"
+	"context"
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 	"time"
@@ -40,6 +42,7 @@ func (t *TransactionApi) CreateOne(ctx *gin.Context) {
 
 	transaction := transactionModel.Transaction{
 		AccountId:     requestData.AccountId,
+		UserId:        contextFunc.GetUserId(ctx),
 		CategoryId:    requestData.CategoryId,
 		IncomeExpense: requestData.IncomeExpense,
 		Amount:        requestData.Amount,
@@ -52,11 +55,10 @@ func (t *TransactionApi) CreateOne(ctx *gin.Context) {
 			if err != nil {
 				return err
 			}
-			// 新交易非客户端当前使用账本 则异步更新统计数据 以加快接口响应
-			createOption := transactionService.NewCreateConfig()
+			createOption := transactionService.NewOption()
 			createOption.WithSyncUpdateStatistic(transaction.AccountId == userClient.CurrentAccountId)
-			createOption.WithSyncShareAccount(requestData.Option.SyncShareAccount)
-			transaction, err = transactionService.CreateOne(transaction, accountUser, *createOption, tx)
+			createOption.WithTransSyncToMappingAccount(requestData.Option.TransSyncToMappingAccount)
+			transaction, err = transactionService.Create(transaction, accountUser, *createOption, context.WithValue(ctx, contextKey.Tx, tx))
 			return err
 		},
 	)
@@ -77,7 +79,7 @@ func (t *TransactionApi) Update(ctx *gin.Context) {
 		response.FailToParameter(ctx, err)
 		return
 	}
-	id, ok := contextFunc.GetParamId(ctx)
+	id, ok := contextFunc.GetUintParamByKey("id", ctx)
 	if false == ok {
 		return
 	}
@@ -85,8 +87,12 @@ func (t *TransactionApi) Update(ctx *gin.Context) {
 	if false == pass {
 		return
 	}
+	oldTrans, err := transactionModel.NewDao().SelectById(id, false)
+	if responseError(err, ctx) {
+		return
+	}
 	transaction := transactionModel.Transaction{
-		UserId:        requestData.UserId,
+		UserId:        oldTrans.UserId,
 		AccountId:     requestData.AccountId,
 		CategoryId:    requestData.CategoryId,
 		IncomeExpense: requestData.IncomeExpense,
@@ -94,10 +100,11 @@ func (t *TransactionApi) Update(ctx *gin.Context) {
 		Remark:        requestData.Remark,
 		TradeTime:     time.Unix(int64(requestData.TradeTime), 0),
 	}
-	transaction.ID = id
-	err := global.GvaDb.Transaction(
+	transaction.ID = oldTrans.ID
+	global.GvaDb.WithContext(ctx)
+	err = global.GvaDb.Transaction(
 		func(tx *gorm.DB) error {
-			return transactionService.Update(transaction, accountUser, tx)
+			return transactionService.Update(transaction, accountUser, transactionService.NewDefaultOption(), context.WithValue(ctx, contextKey.Tx, tx))
 		},
 	)
 	if responseError(err, ctx) {

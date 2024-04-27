@@ -102,7 +102,7 @@ func (t *TransactionDao) SelectMappingByTrans(trans, syncTrans Transaction) (map
 	if trans.ID > 0 && syncTrans.AccountId > 0 {
 		switch accountType {
 		case accountModel.TypeIndependent:
-			err = t.db.Where("main_account_id = related_id ? AND  = ?", syncTrans.AccountId, trans.ID).First(&mapping).Error
+			err = t.db.Where("main_account_id = ? AND related_id = ?", syncTrans.AccountId, trans.ID).First(&mapping).Error
 		case accountModel.TypeShare:
 			err = t.db.Where("main_id = ? AND related_account_id = ?", trans.ID, syncTrans.AccountId).First(&mapping).Error
 		default:

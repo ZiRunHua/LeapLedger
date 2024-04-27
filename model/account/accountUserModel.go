@@ -4,6 +4,7 @@ import (
 	"KeepAccount/global"
 	userModel "KeepAccount/model/user"
 	"errors"
+	"fmt"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )
@@ -38,7 +39,7 @@ const (
 const UserPermissionReader = UserPermissionReadOther + UserPermissionReadOwn
 const UserPermissionOwnEditor = UserPermissionReader + UserPermissionAddOwn + UserPermissionEditOwn + UserPermissionInvite
 const UserPermissionAdministrator = UserPermissionOwnEditor + UserPermissionEditOther
-const UserPermissionCreator = UserPermissionOwnEditor + +UserPermissionEditUser + UserPermissionEditAccount
+const UserPermissionCreator = UserPermissionOwnEditor + UserPermissionEditUser + UserPermissionEditAccount
 
 func (up *UserPermission) ToRole() UserRole {
 	switch *up {
@@ -87,7 +88,10 @@ func (u *User) SelectById(id uint) error {
 }
 
 func (u *User) HavePermission(permission UserPermission) bool {
-	return u.Permission&permission > 0
+	fmt.Println(u.Permission)
+	fmt.Println(permission)
+	fmt.Println(u.Permission & permission)
+	return (u.Permission & permission) > 0
 }
 
 func (u *User) CheckTransEditByUserId(userId uint) error {

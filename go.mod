@@ -20,6 +20,8 @@ require (
 	gorm.io/gorm v1.25.5
 )
 
+require golang.org/x/sync v0.7.0 // indirect
+
 require (
 	github.com/bytedance/sonic v1.8.7 // indirect
 	github.com/carlmjohnson/requests v0.23.5

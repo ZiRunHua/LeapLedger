@@ -135,6 +135,7 @@ func (cd *CategoryDao) SelectMapping(parentAccountId, childCategoryId uint) (Map
 	return result, err
 }
 
+// SelectMappingByCAccountIdAndPCategoryId 通过子账本这父交易类型查询关联交易类型
 func (cd *CategoryDao) SelectMappingByCAccountIdAndPCategoryId(childAccountId, parentCategoryId uint) (Mapping, error) {
 	var result Mapping
 	err := cd.db.Where("child_account_id = ? AND parent_category_id = ?", childAccountId, parentCategoryId).First(&result).Error

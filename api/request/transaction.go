@@ -16,7 +16,7 @@ type TransactionCreateOne struct {
 }
 
 type TransactionOption struct {
-	SyncShareAccount bool
+	TransSyncToMappingAccount bool
 }
 
 type TransactionUpdateOne struct {

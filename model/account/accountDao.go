@@ -24,7 +24,7 @@ func (a *AccountDao) SelectById(id uint) (account Account, err error) {
 }
 
 func (a *AccountDao) GetAccountType(id uint) (accountType Type, err error) {
-	err = a.db.Model(&Account{}).Where("id = ?", id).Scan(&accountType).Error
+	err = a.db.Model(&Account{}).Select("type").Where("id = ?", id).Scan(&accountType).Error
 	return
 }
 

@@ -101,8 +101,8 @@ func (t *Transaction) GetStatisticData(isAdd bool) StatisticData {
 }
 
 // Mapping
-// 一个 MainId 对应多个 RelatedId  因为一笔交易可能同步到多个账本 同时 MainId 和 RelatedId 唯一
-// MainId 和 RelatedAccountId 唯一  因为一笔交易只会被同步一个账本一次
+// MainId - RelatedId unique
+// MainId - RelatedAccountId unique
 type Mapping struct {
 	ID               uint `gorm:"primarykey"`
 	MainId           uint `gorm:"not null;uniqueIndex:idx_mapping,priority:1"`
@@ -110,4 +110,8 @@ type Mapping struct {
 	RelatedId        uint `gorm:"not null;"`
 	RelatedAccountId uint `gorm:"not null;uniqueIndex:idx_mapping,priority:2"`
 	gorm.Model
+}
+
+func (i *Mapping) TableName() string {
+	return "transaction_mapping"
 }

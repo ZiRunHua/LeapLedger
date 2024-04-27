@@ -63,12 +63,16 @@ func (c *Condition) buildWhere(db *gorm.DB) *gorm.DB {
 	return db.Where("account_id = ? AND income_expense = ?", c.account.ID, c.ie)
 }
 
+// Mapping
+// ParentAccountId - ChildCategoryId unique
+// ParentCategoryId - ChildCategoryId  unique
+// ChildAccountId - ParentCategoryId  unique
 type Mapping struct {
 	gorm.Model
-	ParentAccountId  uint `gorm:"comment:'父账本ID';uniqueIndex:idx_mapping,priority:1"`
+	ParentAccountId  uint `gorm:"comment:'父账本ID';uniqueIndex:idx_mapping,priority:2"`
 	ChildAccountId   uint `gorm:"comment:'子账本ID';" `
-	ParentCategoryId uint `gorm:"comment:'父收支类型ID';"`
-	ChildCategoryId  uint `gorm:"comment:'子收支类型ID';uniqueIndex:idx_mapping,priority:2"`
+	ParentCategoryId uint `gorm:"comment:'父收支类型ID';index"`
+	ChildCategoryId  uint `gorm:"comment:'子收支类型ID';uniqueIndex:idx_mapping,priority:1"`
 	commonModel.BaseModel
 }
 
