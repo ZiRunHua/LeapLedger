@@ -3,7 +3,7 @@ package thirdpartyService
 import (
 	"KeepAccount/global"
 	"context"
-	"github.com/carlmjohnson/requests"
+	"github.com/go-resty/resty/v2"
 )
 
 const AI_SERVER_NAME = "AI"
@@ -25,7 +25,9 @@ func (as *aiServer) getBaseUrl() string {
 func (as *aiServer) IsOpen() bool {
 	return global.Config.ThirdParty.Ai.IsOpen()
 }
-func (as *aiServer) ChineseSimilarityMatching(SourceData, TargetData []string, ctx context.Context) (map[string]string, error) {
+func (as *aiServer) ChineseSimilarityMatching(SourceData, TargetData []string, ctx context.Context) (
+	map[string]string, error,
+) {
 	if false == as.IsOpen() {
 		return make(map[string]string), nil
 	}
@@ -36,13 +38,11 @@ func (as *aiServer) ChineseSimilarityMatching(SourceData, TargetData []string, c
 			Similarity     float32
 		}
 	}
-	err := requests.
-		URL(as.getBaseUrl()).Path(API_SIMILARITY_MATCHING).
-		BodyJSON(map[string]interface{}{
+	_, err := resty.New().R().SetContext(ctx).SetBody(
+		map[string]interface{}{
 			"SourceData": SourceData, "TargetData": TargetData,
-		}).
-		ToJSON(&response).
-		Fetch(ctx)
+		},
+	).SetResult(&response).Post(as.getBaseUrl() + API_SIMILARITY_MATCHING)
 
 	if err != nil {
 		return nil, err

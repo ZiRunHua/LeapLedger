@@ -334,7 +334,7 @@ func (txnService *Transaction) CreateMultiple(
 	}
 
 	var categoryIds []uint
-	if err = global.GvaDb.Model(&categoryModel.Category{}).Where("account_id = ?", account.ID).Pluck(
+	if err = tx.Model(&categoryModel.Category{}).Where("account_id = ?", account.ID).Pluck(
 		"id", &categoryIds,
 	).Error; err != nil {
 		return nil, err
@@ -417,10 +417,13 @@ func (txnService *Transaction) addStatisticAfterCreateMultiple(
 			return err
 		}
 		for categoryId, amount := range categoryList {
-			if err = txnService.updateStatistic(transactionModel.StatisticData{
-				AccountId: account.ID, UserId: accountUser.UserId, IncomeExpense: incomeExpense, CategoryId: categoryId,
-				TradeTime: tradeTime, Amount: amount, Count: countList[date][categoryId],
-			}, tx); err != nil {
+			if err = txnService.updateStatistic(
+				transactionModel.StatisticData{
+					AccountId: account.ID, UserId: accountUser.UserId, IncomeExpense: incomeExpense,
+					CategoryId: categoryId,
+					TradeTime:  tradeTime, Amount: amount, Count: countList[date][categoryId],
+				}, tx,
+			); err != nil {
 				return err
 			}
 		}

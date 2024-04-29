@@ -6,6 +6,7 @@ require (
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/gin-gonic/gin v1.9.0
 	github.com/go-redis/redis/v8 v8.11.4
+	github.com/go-resty/resty/v2 v2.11.0
 	github.com/mojocn/base64Captcha v1.3.5
 	github.com/nats-io/nats-server/v2 v2.10.12
 	github.com/nats-io/nats.go v1.33.1
@@ -20,11 +21,10 @@ require (
 	gorm.io/gorm v1.25.5
 )
 
-require golang.org/x/sync v0.7.0 // indirect
+require golang.org/x/sync v0.7.0
 
 require (
 	github.com/bytedance/sonic v1.8.7 // indirect
-	github.com/carlmjohnson/requests v0.23.5
 	github.com/cespare/xxhash/v2 v2.1.2 // indirect
 	github.com/chenzhuoyu/base64x v0.0.0-20221115062448-fe3a3abad311 // indirect
 	github.com/dgryski/go-rendezvous v0.0.0-20200823014737-9f7001d12a5f // indirect
