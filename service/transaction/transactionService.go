@@ -94,7 +94,7 @@ func (txnService *Transaction) Update(
 	if err = oldTrans.ForUpdate(tx); err != nil {
 		return errors.WithStack(err)
 	}
-	err = tx.Select("income_expense,category_id,amount,remark,trade_time").Updates(trans).Error
+	err = tx.Select("income_expense", "category_id", "amount", "remark", "trade_time").Updates(trans).Error
 	if err != nil {
 		return errors.WithStack(err)
 	}
@@ -119,7 +119,7 @@ func (txnService *Transaction) Update(
 }
 
 func (txnService *Transaction) onUpdateSuccess(
-	oldTrans transactionModel.Transaction, trans transactionModel.Transaction, option Option, ctx context.Context,
+	_, trans transactionModel.Transaction, option Option, ctx context.Context,
 ) error {
 	var taskList []func(tx *gorm.DB) error
 	if option.transSyncToMappingAccount {
@@ -298,28 +298,26 @@ func (txnService *Transaction) CreateSyncTrans(trans, syncTrans transactionModel
 		return
 	}
 
-	accountType, err := accountModel.NewDao(tx).GetAccountType(trans.AccountId)
-	if err != nil {
-		return
-	}
-	switch accountType {
-	case accountModel.TypeIndependent:
-		mapping, err = txnService.CreateMapping(trans, newTrans, tx)
-	case accountModel.TypeShare:
-		mapping, err = txnService.CreateMapping(newTrans, trans, tx)
-	default:
-		panic("err account.type")
-	}
+	mapping, err = txnService.CreateMapping(trans, newTrans, tx)
 	if err != nil {
 		return
 	}
 	return
 }
 
-func (txnService *Transaction) CreateMapping(mainTrans, relatedTrans transactionModel.Transaction, tx *gorm.DB) (transactionModel.Mapping, error) {
-	mapping := transactionModel.Mapping{MainId: mainTrans.ID, RelatedId: relatedTrans.ID}
-	err := tx.Create(&mapping).Error
-	return mapping, err
+func (txnService *Transaction) CreateMapping(trans1, trans2 transactionModel.Transaction, tx *gorm.DB) (mapping transactionModel.Mapping, err error) {
+	accountType, err := accountModel.NewDao(tx).GetAccountType(trans1.AccountId)
+	if err != nil {
+		return
+	}
+	switch accountType {
+	case accountModel.TypeIndependent:
+		mapping = transactionModel.Mapping{MainId: trans1.ID, MainAccountId: trans1.AccountId, RelatedId: trans2.ID, RelatedAccountId: trans2.AccountId}
+	case accountModel.TypeShare:
+		mapping = transactionModel.Mapping{MainId: trans2.ID, MainAccountId: trans2.AccountId, RelatedId: trans1.ID, RelatedAccountId: trans1.AccountId}
+	}
+	err = tx.Create(&mapping).Error
+	return
 }
 
 func (txnService *Transaction) CreateMultiple(
@@ -440,8 +438,8 @@ func (txnService *Transaction) NewDefaultOption() Option {
 	return Option{syncUpdateStatistic: false, transSyncToMappingAccount: true}
 }
 
-func (txnService *Transaction) NewOption() *Option {
-	return &Option{}
+func (txnService *Transaction) NewOption() Option {
+	return Option{}
 }
 
 func (co *Option) WithSyncUpdateStatistic(val bool) *Option {

@@ -56,9 +56,9 @@ func (t *TransactionApi) CreateOne(ctx *gin.Context) {
 				return err
 			}
 			createOption := transactionService.NewOption()
-			createOption.WithSyncUpdateStatistic(transaction.AccountId == userClient.CurrentAccountId)
+			createOption.WithSyncUpdateStatistic(false == userClient.IsCurrentAccount(transaction.AccountId))
 			createOption.WithTransSyncToMappingAccount(requestData.Option.TransSyncToMappingAccount)
-			transaction, err = transactionService.Create(transaction, accountUser, *createOption, context.WithValue(ctx, contextKey.Tx, tx))
+			transaction, err = transactionService.Create(transaction, accountUser, createOption, context.WithValue(ctx, contextKey.Tx, tx))
 			return err
 		},
 	)
@@ -104,6 +104,8 @@ func (t *TransactionApi) Update(ctx *gin.Context) {
 	global.GvaDb.WithContext(ctx)
 	err = global.GvaDb.Transaction(
 		func(tx *gorm.DB) error {
+			createOption := transactionService.NewOption()
+			createOption.WithTransSyncToMappingAccount(requestData.Option.TransSyncToMappingAccount)
 			return transactionService.Update(transaction, accountUser, transactionService.NewDefaultOption(), context.WithValue(ctx, contextKey.Tx, tx))
 		},
 	)

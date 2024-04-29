@@ -34,11 +34,15 @@ type UserClientBaseInfo struct {
 	LoginTime             time.Time
 }
 
-func (u *UserClientBaseInfo) GetByUser(user User) error {
+func (uci *UserClientBaseInfo) IsCurrentAccount(accountId uint) bool {
+	return uci.CurrentAccountId == accountId || uci.CurrentShareAccountId == accountId
+}
+
+func (u *UserClientBaseInfo) GetByUser(User) error {
 	panic("implement me")
 }
 
-func (u *UserClientBaseInfo) CheckUserAgent(userAgent string) bool {
+func (u *UserClientBaseInfo) CheckUserAgent(string) bool {
 	panic("implement me")
 }
 
