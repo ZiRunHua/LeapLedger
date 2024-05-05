@@ -20,14 +20,6 @@ func NewDao(db ...*gorm.DB) *CategoryDao {
 	return &CategoryDao{global.GvaDb}
 }
 
-// Deprecated: 改用 categoryModel.NewDao
-func (d *dao) NewCategory(db *gorm.DB) *CategoryDao {
-	if db == nil {
-		db = global.GvaDb
-	}
-	return &CategoryDao{db}
-}
-
 func (cd *CategoryDao) SelectById(id uint) (category Category, err error) {
 	err = cd.db.First(&category, id).Error
 	return

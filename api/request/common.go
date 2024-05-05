@@ -76,3 +76,7 @@ var CurrentMonthTransTotal InfoType = "currentMonthTransTotal"
 
 // 最近交易数据
 var RecentTrans InfoType = "recentTrans"
+
+type AccountId struct {
+	AccountId uint
+}

@@ -124,6 +124,11 @@ func (u *User) GetAccount() (account Account, err error) {
 	err = account.SelectById(u.AccountId)
 	return
 }
+
+func (u *User) GetConfig() (config UserConfig, err error) {
+	return NewDao().SelectUserConfig(u.AccountId, u.UserId)
+}
+
 func (u *User) GetUserInfo() (userModel.UserInfo, error) {
 	return userModel.NewDao().SelectUserInfoById(u.UserId)
 }
@@ -244,4 +249,72 @@ func (u *UserInvitation) Updates(
 		},
 	).Error
 	return err
+}
+
+type UserConfig struct {
+	gorm.Model
+	AccountId  uint      `gorm:"not null;uniqueIndex:idx_mapping,priority:1"`
+	UserId     uint      `gorm:"not null;uniqueIndex:idx_mapping,priority:2"`
+	TransFlags TransFlag `gorm:"type:smallint;unsigned;comment:'交易配置标志'"`
+}
+
+func (uc *UserConfig) TableName() string {
+	return "account_user_config"
+}
+
+type UserConfigFlag uint
+type TransFlag UserConfigFlag
+
+const (
+	Flag_Trans_Sync_Mapping_Account TransFlag = 1 << iota
+)
+const DefaultTransFlags = Flag_Trans_Sync_Mapping_Account
+
+func (uc *UserConfig) GetFlagStatus(flag interface{}) bool {
+	switch f := flag.(type) {
+	case TransFlag:
+		return uc.TransFlags&f > 0
+	default:
+		panic("Unknown [UserConfigFlag] type")
+	}
+}
+
+func (uc *UserConfig) ForUpdate(tx *gorm.DB) error {
+	if err := tx.Model(uc).Clauses(clause.Locking{Strength: "UPDATE"}).First(uc, uc.ID).Error; err != nil {
+		return err
+	}
+	return nil
+}
+
+func (uc *UserConfig) OpenUserConfigFlag(flag interface{}, tx *gorm.DB) error {
+	if true == uc.GetFlagStatus(flag) {
+		return nil
+	}
+	var fileName = getUserConfigFlagName(flag)
+	err := tx.Model(uc).Clauses(clause.Returning{}).Update(fileName, gorm.Expr(fileName+" | ?", flag)).Error
+	if err != nil {
+		return err
+	}
+	return tx.Model(uc).Select(fileName).First(uc).Error
+}
+
+func (uc *UserConfig) CloseUserConfigFlag(flag interface{}, tx *gorm.DB) error {
+	if false == uc.GetFlagStatus(flag) {
+		return nil
+	}
+	var fileName = getUserConfigFlagName(flag)
+	err := tx.Model(uc).Update(fileName, gorm.Expr(fileName+" ^ ?", flag)).Error
+	if err != nil {
+		return err
+	}
+	return tx.Model(uc).Select(fileName).First(uc).Error
+}
+
+func getUserConfigFlagName(flag interface{}) string {
+	switch flag.(type) {
+	case TransFlag:
+		return "trans_flags"
+	default:
+		panic("Unknown [UserConfigFlag] type")
+	}
 }

@@ -63,8 +63,17 @@ func (b *share) CreateUserInvitation(
 
 func (b *share) AddAccountUser(
 	account accountModel.Account, user userModel.User, permission accountModel.UserPermission, tx *gorm.DB,
-) (accountModel.User, error) {
-	return accountModel.NewDao(tx).CreateUser(account.ID, user.ID, permission)
+) (accountUser accountModel.User, err error) {
+	accountDao := accountModel.NewDao(tx)
+	accountUser, err = accountDao.CreateUser(account.ID, user.ID, permission)
+	if err != nil {
+		return
+	}
+	_, err = accountDao.CreateUserConfig(account.ID, user.ID)
+	if err != nil {
+		return
+	}
+	return accountUser, nil
 }
 
 func (b *share) CheckAccountPermission(

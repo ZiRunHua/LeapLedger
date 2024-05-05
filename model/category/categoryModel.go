@@ -18,7 +18,7 @@ type Category struct {
 	Icon           string                 `gorm:"comment:图标;size:64"`
 	Previous       uint                   `gorm:"column:previous;comment:'前一位'"`
 	OrderUpdatedAt time.Time              `gorm:"default:CURRENT_TIMESTAMP;comment:'顺序更新时间'"`
-	CreatedAt      time.Time              `gorm:"default:CURRENT_TIMESTAMP;comment:'创建时间'"`
+	gorm.Model
 	commonModel.BaseModel
 }
 

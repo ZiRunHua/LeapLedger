@@ -515,6 +515,73 @@ func (a *AccountApi) GetUserInfo(ctx *gin.Context) {
 	response.OkWithData(responseData, ctx)
 }
 
+func (a *AccountApi) GetUserConfig(ctx *gin.Context) {
+	var requestData request.AccountId
+	if err := ctx.ShouldBindJSON(&requestData); err != nil {
+		response.FailToParameter(ctx, err)
+		return
+	}
+	_, accountUser, pass := checkFunc.AccountBelongAndGet(requestData.AccountId, ctx)
+	if false == pass {
+		return
+	}
+	config, err := accountUser.GetConfig()
+	if responseError(err, ctx) {
+		return
+	}
+	var responseData response.AccountUserConfig
+	err = responseData.SetData(config)
+	if responseError(err, ctx) {
+		return
+	}
+	response.OkWithData(responseData, ctx)
+}
+
+var AccountConfigFlagMap = map[string]interface{}{"SyncMappingAccount": accountModel.Flag_Trans_Sync_Mapping_Account}
+
+func (a *AccountApi) getUserConfigFlagByCtx(ctx *gin.Context) interface{} {
+	return AccountConfigFlagMap[ctx.Param("type")]
+}
+
+func (a *AccountApi) UpdateUserConfigFlag(ctx *gin.Context) {
+	var requestData request.AccountUserConfigFlagUpdate
+	if err := ctx.ShouldBindJSON(&requestData); err != nil {
+		response.FailToParameter(ctx, err)
+		return
+	}
+	_, accountUser, pass := checkFunc.AccountBelongAndGet(requestData.AccountId, ctx)
+	if false == pass {
+		return
+	}
+	// handle
+	userConfig, err := accountUser.GetConfig()
+	if responseError(err, ctx) {
+		return
+	}
+	err = global.GvaDb.Transaction(func(tx *gorm.DB) error {
+		err = userConfig.ForUpdate(tx)
+		if err != nil {
+			return err
+		}
+		if requestData.Status {
+			err = userConfig.OpenUserConfigFlag(a.getUserConfigFlagByCtx(ctx), tx)
+		} else {
+			err = userConfig.CloseUserConfigFlag(a.getUserConfigFlagByCtx(ctx), tx)
+		}
+		return nil
+	})
+	if responseError(err, ctx) {
+		return
+	}
+	//response
+	var responseData response.AccountUserConfig
+	err = responseData.SetData(userConfig)
+	if responseError(err, ctx) {
+		return
+	}
+	response.OkWithData(responseData, ctx)
+}
+
 func (a *AccountApi) getTransTotal(
 	account accountModel.Account, UserIds *[]uint, start time.Time, end time.Time,
 ) (result global.IncomeExpenseStatistic, err error) {

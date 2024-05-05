@@ -46,6 +46,14 @@ func (b *base) Delete(account accountModel.Account, accountUser accountModel.Use
 	if err != nil {
 		return err
 	}
+	err = tx.Delete(&accountModel.User{}, "account_id = ?", account.ID).Error
+	if err != nil {
+		return err
+	}
+	err = tx.Delete(&accountModel.Mapping{}, "main_id = ? or related_id = ?", account.ID, account.ID).Error
+	if err != nil {
+		return err
+	}
 	//删除的可能是当前账本 故需要更新客户端信息
 	err = b.updateUserCurrentAfterDelete(accountUser, tx)
 	if err != nil {

@@ -53,6 +53,9 @@ type AccountDetail struct {
 func (a *AccountDetail) SetData(accountUser accountModel.User) error {
 	// 账本
 	account, err := accountUser.GetAccount()
+	if err != nil {
+		return err
+	}
 	if account.ID != accountUser.AccountId {
 		return errors.New("accountUser not belong account")
 	}
@@ -267,4 +270,25 @@ type AccountInfo struct {
 	TodayTransTotal        *global.IncomeExpenseStatistic
 	CurrentMonthTransTotal *global.IncomeExpenseStatistic
 	RecentTrans            *TransactionDetailList
+}
+
+type AccountUserConfig struct {
+	Id        uint
+	AccountId uint
+	UserId    uint
+	Trans     struct {
+		SyncMappingAccount bool
+	}
+	CreateTime int64
+	UpdateTime int64
+}
+
+func (auc *AccountUserConfig) SetData(data accountModel.UserConfig) error {
+	auc.Id = data.ID
+	auc.AccountId = data.AccountId
+	auc.UserId = data.UserId
+	auc.CreateTime = data.CreatedAt.Unix()
+	auc.UpdateTime = data.UpdatedAt.Unix()
+	auc.Trans.SyncMappingAccount = data.GetFlagStatus(accountModel.Flag_Trans_Sync_Mapping_Account)
+	return nil
 }

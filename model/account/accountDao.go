@@ -76,6 +76,15 @@ func (a *AccountDao) CreateUser(accountId uint, userId uint, permission UserPerm
 	return data, a.db.Create(&data).Error
 }
 
+func (a *AccountDao) CreateUserConfig(accountId uint, userId uint) (UserConfig, error) {
+	data := UserConfig{
+		AccountId:  accountId,
+		UserId:     userId,
+		TransFlags: DefaultTransFlags,
+	}
+	return data, a.db.Create(&data).Error
+}
+
 func (a *AccountDao) UpdateUser(accountUser User, data UserUpdateData) (User, error) {
 	err := a.db.Model(&accountUser).Update("permission", data.Permission).Error
 	return accountUser, err
@@ -104,6 +113,11 @@ func (a *AccountDao) SelectUserListByUserAndAccountType(userId uint, t Type) (re
 	query := a.db.Where("account_user.user_id = ? AND account.type = ?", userId, t)
 	query = query.Select("account_user.*").Joins("LEFT JOIN account ON account.id = account_user.account_id")
 	err = query.Order("account_user.id ASC").Find(&result).Error
+	return
+}
+
+func (a *AccountDao) SelectUserConfig(accountId uint, userId uint) (userConfig UserConfig, err error) {
+	err = a.db.Where("account_id = ? AND user_id = ?", accountId, userId).First(&userConfig).Error
 	return
 }
 

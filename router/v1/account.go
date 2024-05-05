@@ -37,5 +37,8 @@ func (a *AccountRouter) InitAccountRouter(Router *gin.RouterGroup) {
 		router.DELETE("/mapping/:id", baseApi.DeleteAccountMapping)
 		router.POST("/:id/mapping", baseApi.CreateAccountMapping)
 		router.PUT("/mapping/:id", baseApi.UpdateAccountMapping)
+		//账本用户配置
+		router.GET("/user/config", baseApi.GetUserConfig)
+		router.PUT("/user/config/flag/:type", baseApi.UpdateUserConfigFlag)
 	}
 }

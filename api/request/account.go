@@ -63,3 +63,8 @@ func (a *AccountUpdateUser) GetUpdateData() accountModel.UserUpdateData {
 		Permission: a.Role.ToUserPermission(),
 	}
 }
+
+type AccountUserConfigFlagUpdate struct {
+	AccountId uint
+	Status    bool
+}
