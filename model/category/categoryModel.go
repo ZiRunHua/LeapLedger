@@ -10,14 +10,14 @@ import (
 )
 
 type Category struct {
-	ID             uint                   `gorm:"primary_key;column:id;comment:'主键'" `
-	AccountId      uint                   `gorm:"column:account_id;comment:'账本ID'"`
-	FatherId       uint                   `gorm:"column:father_id;comment:'category_father表ID'" `
-	IncomeExpense  constant.IncomeExpense `gorm:"column:income_expense;comment:'收支类型'"`
-	Name           string                 `gorm:"column:name;size:128;comment:'名称'"`
-	Icon           string                 `gorm:"comment:图标;size:64"`
-	Previous       uint                   `gorm:"column:previous;comment:'前一位'"`
-	OrderUpdatedAt time.Time              `gorm:"default:CURRENT_TIMESTAMP;comment:'顺序更新时间'"`
+	ID             uint                   `gorm:"comment:'主键';primary_key;" `
+	AccountId      uint                   `gorm:"comment:'账本ID';uniqueIndex:unique_name,priority:1"`
+	FatherId       uint                   `gorm:"comment:'category_father表ID'" `
+	IncomeExpense  constant.IncomeExpense `gorm:"comment:'收支类型'"`
+	Name           string                 `gorm:"comment:'名称';size:128;uniqueIndex:unique_name,priority:2"`
+	Icon           string                 `gorm:"comment:'图标';size:64"`
+	Previous       uint                   `gorm:"comment:'前一位'"`
+	OrderUpdatedAt time.Time              `gorm:"comment:'顺序更新时间';default:CURRENT_TIMESTAMP;"`
 	gorm.Model
 	commonModel.BaseModel
 }
@@ -36,17 +36,9 @@ func (c *Category) GetAccount() (result accountModel.Account, err error) {
 	return
 }
 
-func (c *Category) CheckName(db *gorm.DB) error {
+func (c *Category) CheckName(_ *gorm.DB) error {
 	if c.Name == "" {
 		return global.NewErrDataIsEmpty("交易类型名称")
-	}
-	var exist bool
-	sql := "SELECT EXISTS(SELECT 1 FROM category WHERE account_id = ? AND name = ? AND deleted_at is null) AS exist"
-	err := db.Raw(sql, c.AccountId, c.Name).Scan(&exist).Error
-	if err != nil {
-		return err
-	} else if exist {
-		return global.ErrCategorySameName
 	}
 	return nil
 }

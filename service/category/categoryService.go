@@ -3,6 +3,7 @@ package categoryService
 import (
 	"KeepAccount/global"
 	"KeepAccount/global/constant"
+	"KeepAccount/global/contextKey"
 	accountModel "KeepAccount/model/account"
 	categoryModel "KeepAccount/model/category"
 	transactionModel "KeepAccount/model/transaction"
@@ -10,6 +11,7 @@ import (
 	"KeepAccount/util/dataType"
 	"context"
 	"github.com/pkg/errors"
+	"go.uber.org/zap"
 	"gorm.io/gorm"
 	"time"
 )
@@ -29,7 +31,7 @@ func (catSvc *Category) NewCategoryData(category categoryModel.Category) CreateD
 	}
 }
 
-func (catSvc *Category) CreateOne(father categoryModel.Father, data CreateData, tx *gorm.DB) (category categoryModel.Category, err error) {
+func (catSvc *Category) CreateOne(father categoryModel.Father, data CreateData, ctx context.Context) (category categoryModel.Category, err error) {
 	category = categoryModel.Category{
 		AccountId:      father.AccountId,
 		FatherId:       father.ID,
@@ -39,14 +41,64 @@ func (catSvc *Category) CreateOne(father categoryModel.Father, data CreateData, 
 		Previous:       0,
 		OrderUpdatedAt: time.Now(),
 	}
+	tx := ctx.Value(contextKey.Tx).(*gorm.DB)
 	if err = category.CheckName(tx); err != nil {
 		return
 	}
 	err = tx.Create(&category).Error
-	if err != nil {
+	if errors.Is(err, gorm.ErrDuplicatedKey) {
+		return category, global.ErrCategorySameName
+	} else if err != nil {
 		return category, errors.Wrap(err, "category.CreateOne()")
 	}
+	// other
+	otherErr := tx.Transaction(func(tx *gorm.DB) error {
+		return catSvc.UpdateCategoryMapping(category, context.WithValue(ctx, contextKey.Tx, tx))
+	})
+	if otherErr != nil {
+		errorLog.Error("UpdateCategoryMapping", zap.Error(otherErr))
+	}
 	return
+}
+
+func (catSvc *Category) UpdateCategoryMapping(category categoryModel.Category, ctx context.Context) error {
+	tx := ctx.Value(contextKey.Tx).(*gorm.DB)
+	accountDao, categoryDao := accountModel.NewDao(tx), categoryModel.NewDao(tx)
+	accountMapping, err := accountDao.SelectMultipleMapping(*accountModel.NewMappingCondition().WithRelatedId(category.AccountId))
+	if err != nil {
+		return err
+	}
+	var mainAccount accountModel.Account
+	for _, mapping := range accountMapping {
+		mainAccount, err = accountDao.SelectById(mapping.MainId)
+		if err != nil {
+			return err
+		}
+		var mainCategoryList dataType.Slice[string, categoryModel.Category]
+		mainCategoryList, err = categoryDao.GetListByAccount(mainAccount, &category.IncomeExpense)
+		if err != nil {
+			return err
+		}
+		mainNameList := mainCategoryList.ExtractValues(func(category categoryModel.Category) string {
+			return category.Name
+		})
+		// 匹配交易类型
+		var target string
+		target, err = aiService.ChineseSimilarityMatching(category.Name, mainNameList, ctx)
+		if err != nil {
+			return err
+		}
+		for _, mainCategory := range mainCategoryList {
+			if target == mainCategory.Name {
+				_, err = categoryDao.CreateMapping(mainCategory, category)
+				if err != nil && !errors.Is(err, gorm.ErrDuplicatedKey) {
+					return err
+				}
+				break
+			}
+		}
+	}
+	return nil
 }
 
 func (catSvc *Category) CreateList(
@@ -346,7 +398,7 @@ func (catSvc *Category) DeleteMapping(parent, child categoryModel.Category, oper
 }
 
 func (catSvc *Category) MappingAccountCategoryByAI(mainAccount, mappingAccount accountModel.Account, ctx context.Context, tx *gorm.DB) error {
-	if false == thirdpartyService.IsOpen() {
+	if false == aiService.IsOpen() {
 		return nil
 	}
 	var mainCategoryList, mappingCategoryList dataType.Slice[string, categoryModel.Category]
@@ -374,7 +426,7 @@ func (catSvc *Category) MappingAccountCategoryByAI(mainAccount, mappingAccount a
 			return category.Name
 		})
 		//获得相似度匹配
-		matchingResult, err = thirdpartyService.ChineseSimilarityMatching(mappingNameList, mainNameList, ctx)
+		matchingResult, err = aiService.BatchChineseSimilarityMatching(mappingNameList, mainNameList, ctx)
 		if err != nil {
 			return err
 		}

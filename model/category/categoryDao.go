@@ -43,7 +43,11 @@ func (cd *CategoryDao) Update(category Category, data CategoryUpdateData) error 
 			return err
 		}
 	}
-	return cd.db.Model(&category).Updates(updateData).Error
+	err := cd.db.Model(&category).Updates(updateData).Error
+	if errors.Is(err, gorm.ErrDuplicatedKey) {
+		return global.ErrCategorySameName
+	}
+	return err
 }
 
 func (cd *CategoryDao) SelectFirstChild(categoryId uint) (Category, error) {
@@ -134,7 +138,7 @@ func (cd *CategoryDao) SelectMappingByCAccountIdAndPCategoryId(childAccountId, p
 	return result, err
 }
 
-func (cd *CategoryDao) GetMappingByAccountMappingOrderByChildCategoryWeight(parentAccountId, childAccountId uint) (
+func (cd *CategoryDao) GetMappingByAccountMappingOrderByParentCategory(parentAccountId, childAccountId uint) (
 	[]Mapping, error,
 ) {
 	query := cd.db.Where(
@@ -143,7 +147,7 @@ func (cd *CategoryDao) GetMappingByAccountMappingOrderByChildCategoryWeight(pare
 	)
 	query = query.Joins("LEFT JOIN category ON category_mapping.child_category_id = category.id")
 	var list []Mapping
-	err := cd.setCategoryOrder(query).Select("category_mapping.*").Find(&list).Error
+	err := query.Order("category_mapping.parent_category_id asc").Select("category_mapping.*").Find(&list).Error
 	return list, err
 }
 

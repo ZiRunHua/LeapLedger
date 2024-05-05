@@ -9,38 +9,66 @@ import (
 const AI_SERVER_NAME = "AI"
 const API_SIMILARITY_MATCHING = "/similarity/matching"
 
-type aiApiResponse struct {
-	Code int
-	Msg  string
-}
-
-func (a *aiApiResponse) isSuccess() bool { return a.Code == 200 }
-
-type aiServer struct {
-}
+type aiServer struct{}
 
 func (as *aiServer) getBaseUrl() string {
 	return global.Config.ThirdParty.Ai.GetPortalSite()
 }
+
 func (as *aiServer) IsOpen() bool {
 	return global.Config.ThirdParty.Ai.IsOpen()
 }
-func (as *aiServer) ChineseSimilarityMatching(SourceData, TargetData []string, ctx context.Context) (
+
+func (as *aiServer) ChineseSimilarityMatching(sourceStr string, targetList []string, ctx context.Context) (
+	target string, err error,
+) {
+	if false == as.IsOpen() {
+		return
+	}
+	responseData, err := as.requestChineseSimilarity([]string{sourceStr}, targetList, ctx)
+	if err != nil {
+		return
+	}
+	minSimilarity := global.Config.ThirdParty.Ai.MinSimilarity
+	if len(responseData) > 0 && responseData[0].Similarity >= minSimilarity {
+		return responseData[0].Target, nil
+	}
+	return
+}
+
+func (as *aiServer) BatchChineseSimilarityMatching(sourceList, targetList []string, ctx context.Context) (
 	map[string]string, error,
 ) {
 	if false == as.IsOpen() {
 		return make(map[string]string), nil
 	}
+	responseData, err := as.requestChineseSimilarity(sourceList, targetList, ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	minSimilarity, result := global.Config.ThirdParty.Ai.MinSimilarity, make(map[string]string)
+	for _, item := range responseData {
+		if item.Similarity >= minSimilarity {
+			result[item.Source] = item.Target
+		}
+	}
+	return result, nil
+}
+
+type chineseSimilarityResponse []struct {
+	Source, Target string
+	Similarity     float32
+}
+
+func (as *aiServer) requestChineseSimilarity(SourceList, TargetList []string, ctx context.Context) (chineseSimilarityResponse, error) {
 	var response struct {
 		aiApiResponse
-		Data []struct {
-			Source, Target string
-			Similarity     float32
-		}
+		Data chineseSimilarityResponse
 	}
 	_, err := resty.New().R().SetContext(ctx).SetBody(
 		map[string]interface{}{
-			"SourceData": SourceData, "TargetData": TargetData,
+			"SourceData": SourceList, "TargetData": TargetList,
 		},
 	).SetResult(&response).Post(as.getBaseUrl() + API_SIMILARITY_MATCHING)
 
@@ -50,13 +78,12 @@ func (as *aiServer) ChineseSimilarityMatching(SourceData, TargetData []string, c
 	if false == response.isSuccess() {
 		return nil, global.NewErrThirdpartyApi(AI_SERVER_NAME, response.Msg)
 	}
-
-	result := make(map[string]string)
-	minSimilarity := global.Config.ThirdParty.Ai.MinSimilarity
-	for _, item := range response.Data {
-		if item.Similarity >= minSimilarity {
-			result[item.Source] = item.Target
-		}
-	}
-	return result, nil
+	return response.Data, nil
 }
+
+type aiApiResponse struct {
+	Code int
+	Msg  string
+}
+
+func (a *aiApiResponse) isSuccess() bool { return a.Code == 200 }

@@ -4,9 +4,11 @@ import (
 	"KeepAccount/api/request"
 	"KeepAccount/api/response"
 	"KeepAccount/global"
+	"KeepAccount/global/contextKey"
 	accountModel "KeepAccount/model/account"
 	categoryModel "KeepAccount/model/category"
 	userModel "KeepAccount/model/user"
+	"context"
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
 	"gorm.io/gorm"
@@ -36,7 +38,7 @@ func (catApi *CategoryApi) CreateOne(ctx *gin.Context) {
 			category, err = categoryService.CreateOne(
 				father,
 				categoryService.NewCategoryData(categoryModel.Category{Name: requestData.Name, Icon: requestData.Icon}),
-				tx,
+				context.WithValue(ctx, contextKey.Tx, tx),
 			)
 			return err
 		},
@@ -361,7 +363,7 @@ func (catApi *CategoryApi) GetMappingTree(ctx *gin.Context) {
 		return
 	}
 
-	list, err := categoryModel.NewDao().GetMappingByAccountMappingOrderByChildCategoryWeight(
+	list, err := categoryModel.NewDao().GetMappingByAccountMappingOrderByParentCategory(
 		parentAccountId, childAccountId,
 	)
 	if responseError(err, ctx) {
