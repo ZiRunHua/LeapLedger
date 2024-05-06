@@ -51,13 +51,9 @@ func (t *TransactionApi) CreateOne(ctx *gin.Context) {
 	}
 	err := global.GvaDb.Transaction(
 		func(tx *gorm.DB) error {
-			userClient, err := contextFunc.GetUserCurrentClientInfo(ctx)
-			if err != nil {
-				return err
-			}
 			createOption := transactionService.NewOption()
-			createOption.WithSyncUpdateStatistic(false == userClient.IsCurrentAccount(transaction.AccountId))
 			createOption.WithTransSyncToMappingAccount(requestData.Option.TransSyncToMappingAccount)
+			var err error
 			transaction, err = transactionService.Create(transaction, accountUser, createOption, context.WithValue(ctx, contextKey.Tx, tx))
 			return err
 		},

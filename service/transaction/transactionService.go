@@ -445,14 +445,14 @@ func (txnService *Transaction) NewOption() Option {
 	return Option{}
 }
 
-func (co *Option) WithSyncUpdateStatistic(val bool) *Option {
-	co.syncUpdateStatistic = val
-	return co
+func (o *Option) WithSyncUpdateStatistic(val bool) *Option {
+	o.syncUpdateStatistic = val
+	return o
 }
 
-func (co *Option) WithTransSyncToMappingAccount(val bool) *Option {
-	co.transSyncToMappingAccount = val
-	return co
+func (o *Option) WithTransSyncToMappingAccount(val bool) *Option {
+	o.transSyncToMappingAccount = val
+	return o
 }
 
 func handelTaskList(taskList []func(tx *gorm.DB) error, ctx context.Context) error {
