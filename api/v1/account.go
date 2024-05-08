@@ -5,10 +5,12 @@ import (
 	"KeepAccount/api/response"
 	"KeepAccount/global"
 	"KeepAccount/global/constant"
+	"KeepAccount/global/contextKey"
 	accountModel "KeepAccount/model/account"
 	transactionModel "KeepAccount/model/transaction"
 	userModel "KeepAccount/model/user"
 	"KeepAccount/util"
+	"context"
 	"errors"
 	"github.com/gin-gonic/gin"
 	"github.com/songzhibin97/gkit/egroup"
@@ -187,7 +189,7 @@ func (a *AccountApi) CreateOneByTemplate(ctx *gin.Context) {
 	var account accountModel.Account
 	err = global.GvaDb.Transaction(
 		func(tx *gorm.DB) error {
-			account, err = templateService.CreateAccount(user, tmpAccount, tx)
+			account, err = templateService.CreateAccount(user, tmpAccount, context.WithValue(ctx, contextKey.Tx, tx))
 			return err
 		},
 	)
@@ -243,7 +245,7 @@ func (a *AccountApi) InitTransCategoryByTemplate(ctx *gin.Context) {
 	}
 
 	txFunc := func(tx *gorm.DB) error {
-		err = templateService.CreateCategory(account, template, tx)
+		err = templateService.CreateCategory(account, template, context.WithValue(ctx, contextKey.Tx, tx))
 		return err
 	}
 	err = global.GvaDb.Transaction(txFunc)

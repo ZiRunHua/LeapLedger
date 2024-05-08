@@ -2,11 +2,13 @@ package templateService
 
 import (
 	"KeepAccount/global"
+	"KeepAccount/global/contextKey"
 	accountModel "KeepAccount/model/account"
 	categoryModel "KeepAccount/model/category"
+	productModel "KeepAccount/model/product"
 	userModel "KeepAccount/model/user"
 	accountService "KeepAccount/service/account"
-	categoryService "KeepAccount/service/category"
+	"context"
 	"github.com/pkg/errors"
 	"gorm.io/gorm"
 )
@@ -20,8 +22,9 @@ func (t *template) GetList() ([]accountModel.Account, error) {
 }
 
 func (t *template) CreateAccount(
-	user userModel.User, tmplAccount accountModel.Account, tx *gorm.DB,
+	user userModel.User, tmplAccount accountModel.Account, ctx context.Context,
 ) (account accountModel.Account, err error) {
+	tx := ctx.Value(contextKey.Tx).(*gorm.DB)
 	if tmplAccount.UserId != tempUser.ID {
 		return account, ErrNotBelongTemplate
 	}
@@ -31,14 +34,15 @@ func (t *template) CreateAccount(
 	if err != nil {
 		return
 	}
-	err = t.CreateCategory(account, tmplAccount, tx)
+	err = t.CreateCategory(account, tmplAccount, ctx)
 	if err != nil {
 		return
 	}
 	return
 }
 
-func (t *template) CreateCategory(account accountModel.Account, tmplAccount accountModel.Account, tx *gorm.DB) error {
+func (t *template) CreateCategory(account accountModel.Account, tmplAccount accountModel.Account, ctx context.Context) error {
+	tx := ctx.Value(contextKey.Tx).(*gorm.DB)
 	var err error
 	if err = account.ForUpdate(tx); err != nil {
 		return err
@@ -54,7 +58,7 @@ func (t *template) CreateCategory(account accountModel.Account, tmplAccount acco
 		return err
 	}
 	for _, tmplFather := range tmplFatherList {
-		if err = t.CreateFatherCategory(account, tmplFather, tx); err != nil {
+		if err = t.CreateFatherCategory(account, tmplFather, ctx); err != nil {
 			return err
 		}
 	}
@@ -62,9 +66,10 @@ func (t *template) CreateCategory(account accountModel.Account, tmplAccount acco
 }
 
 func (t *template) CreateFatherCategory(
-	account accountModel.Account, tmplFather categoryModel.Father, tx *gorm.DB,
+	account accountModel.Account, tmplFather categoryModel.Father, ctx context.Context,
 ) error {
-	father, err := categoryService.GroupApp.CreateOneFather(account, tmplFather.IncomeExpense, tmplFather.Name, tx)
+	tx := ctx.Value(contextKey.Tx).(*gorm.DB)
+	father, err := categoryService.CreateOneFather(account, tmplFather.IncomeExpense, tmplFather.Name, tx)
 	if err != nil {
 		return err
 	}
@@ -74,12 +79,31 @@ func (t *template) CreateFatherCategory(
 		return err
 	}
 
-	categoryDataList := []categoryService.CreateData{}
+	var category categoryModel.Category
+	var mappingList []productModel.TransactionCategoryMapping
+	productDao := productModel.NewDao(tx)
 	for _, tmplCategory := range tmplCategoryList {
-		categoryDataList = append(categoryDataList, categoryService.GroupApp.NewCategoryData(tmplCategory))
+		category, err = categoryService.CreateOne(father, categoryService.NewCategoryData(tmplCategory), ctx)
+		if err != nil {
+			return err
+		}
+		mappingList, err = productDao.SelectAllCategoryMappingByCategoryId(tmplCategory.ID)
+		if err != nil {
+			return err
+		}
+		for _, tmpMapping := range mappingList {
+			mapping := productModel.TransactionCategoryMapping{
+				AccountID:  category.AccountId,
+				CategoryID: category.ID,
+				PtcID:      tmpMapping.PtcID,
+				ProductKey: tmpMapping.ProductKey,
+			}
+			err = tx.Create(mapping).Error
+			if err != nil {
+				return err
+			}
+		}
 	}
-	if _, err = categoryService.GroupApp.CreateList(father, categoryDataList, tx); err != nil {
-		return err
-	}
+
 	return nil
 }

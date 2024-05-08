@@ -3,6 +3,7 @@ package templateService
 import (
 	"KeepAccount/model/common/query"
 	userModel "KeepAccount/model/user"
+	_categoryService "KeepAccount/service/category"
 	"fmt"
 )
 
@@ -26,3 +27,5 @@ func init() {
 		panic(err)
 	}
 }
+
+var categoryService = _categoryService.GroupApp

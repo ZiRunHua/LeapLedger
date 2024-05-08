@@ -104,19 +104,18 @@ func (catSvc *Category) UpdateCategoryMapping(category categoryModel.Category, c
 func (catSvc *Category) CreateList(
 	father categoryModel.Father, list []CreateData, tx *gorm.DB,
 ) ([]categoryModel.Category, error) {
-	categoryList := []categoryModel.Category{}
-	for _, data := range list {
-		categoryList = append(
-			categoryList, categoryModel.Category{
-				AccountId:      father.AccountId,
-				FatherId:       father.ID,
-				IncomeExpense:  father.IncomeExpense,
-				Name:           data.Name,
-				Icon:           data.Icon,
-				Previous:       0,
-				OrderUpdatedAt: time.Now(),
-			},
-		)
+	categoryList := make([]categoryModel.Category, len(list), len(list))
+	for i, data := range list {
+		categoryList[i] = categoryModel.Category{
+			AccountId:      father.AccountId,
+			FatherId:       father.ID,
+			IncomeExpense:  father.IncomeExpense,
+			Name:           data.Name,
+			Icon:           data.Icon,
+			Previous:       0,
+			OrderUpdatedAt: time.Now(),
+		}
+
 	}
 	var err error
 	if len(categoryList) > 0 {
