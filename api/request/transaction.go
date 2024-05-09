@@ -12,11 +12,6 @@ type TransactionCreateOne struct {
 	IncomeExpense constant.IncomeExpense
 	Remark        string
 	TradeTime     uint
-	Option        TransactionOption
-}
-
-type TransactionOption struct {
-	TransSyncToMappingAccount bool
 }
 
 type TransactionUpdateOne struct {
@@ -27,7 +22,6 @@ type TransactionUpdateOne struct {
 	IncomeExpense constant.IncomeExpense
 	Remark        string
 	TradeTime     uint
-	Option        TransactionOption
 }
 
 type TransactionQueryCondition struct {
