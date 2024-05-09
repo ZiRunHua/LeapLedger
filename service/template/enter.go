@@ -4,7 +4,6 @@ import (
 	"KeepAccount/model/common/query"
 	userModel "KeepAccount/model/user"
 	_categoryService "KeepAccount/service/category"
-	"fmt"
 )
 
 var GroupApp = &Group{}
@@ -23,7 +22,6 @@ func init() {
 	var err error
 	tempUser, err = query.FirstByPrimaryKey[*userModel.User](templateUserId)
 	if err != nil {
-		fmt.Println("查询模板用户失败")
 		panic(err)
 	}
 }

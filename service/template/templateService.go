@@ -98,7 +98,7 @@ func (t *template) CreateFatherCategory(
 				PtcID:      tmpMapping.PtcID,
 				ProductKey: tmpMapping.ProductKey,
 			}
-			err = tx.Create(mapping).Error
+			err = tx.Create(&mapping).Error
 			if err != nil {
 				return err
 			}

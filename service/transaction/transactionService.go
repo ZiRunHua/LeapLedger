@@ -229,7 +229,7 @@ func (txnService *Transaction) SyncToShareAccount(indAccountTrans transactionMod
 
 	for _, accountMapping := range accountMappings {
 		categoryMapping, err = categoryDao.SelectMapping(accountMapping.MainId, indAccountTrans.CategoryId)
-		if errors.As(err, gorm.ErrRecordNotFound) {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
 			continue
 		} else if err != nil {
 			return err

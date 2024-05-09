@@ -4,7 +4,6 @@ import (
 	"KeepAccount/global/constant"
 	"KeepAccount/service/thirdparty/email"
 	_log "KeepAccount/util/log"
-	"fmt"
 	"go.uber.org/zap"
 	"reflect"
 	"time"
@@ -54,7 +53,6 @@ type task struct {
 
 func (t *task) handleError(err error) {
 	if err != nil {
-		fmt.Println(err)
 		log.Error(reflect.TypeOf(*t).Name(), zap.Error(err))
 	}
 	t.err = err

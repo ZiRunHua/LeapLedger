@@ -4,7 +4,6 @@ import (
 	"KeepAccount/global"
 	userModel "KeepAccount/model/user"
 	"errors"
-	"fmt"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )
@@ -88,9 +87,6 @@ func (u *User) SelectById(id uint) error {
 }
 
 func (u *User) HavePermission(permission UserPermission) bool {
-	fmt.Println(u.Permission)
-	fmt.Println(permission)
-	fmt.Println(u.Permission & permission)
 	return (u.Permission & permission) > 0
 }
 
