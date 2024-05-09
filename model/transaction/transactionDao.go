@@ -39,7 +39,7 @@ func (t *TransactionDao) GetListByCondition(condition Condition, limit int, offs
 func (t *TransactionDao) GetIeStatisticByCondition(
 	ie *constant.IncomeExpense, condition StatisticCondition, extCond *ExtensionCondition,
 ) (result global.IncomeExpenseStatistic, err error) {
-	if extCond.IsConditionSet() {
+	if extCond.IsSet() {
 		// 走transaction表查询
 		query := condition.addConditionToQuery(t.db)
 		query = extCond.addConditionToQuery(query)
@@ -58,14 +58,12 @@ func (t *TransactionDao) getIncomeExpenseStatisticByWhere(ie *constant.IncomeExp
 	result global.IncomeExpenseStatistic, err error,
 ) {
 	if ie.QueryIncome() {
-		//查询收入
 		result.Income, err = t.getAmountCountStatistic(query, constant.Income)
 		if err != nil {
 			return
 		}
 	}
 	if ie.QueryExpense() {
-		//查询支出
 		result.Expense, err = t.getAmountCountStatistic(query, constant.Expense)
 		if err != nil {
 			return

@@ -99,7 +99,7 @@ type ExtensionCondition struct {
 	MiniAmount, MaxAmount *int
 }
 
-func (ec *ExtensionCondition) IsConditionSet() bool {
+func (ec *ExtensionCondition) IsSet() bool {
 	return ec != nil && (ec.MiniAmount != nil || ec.MaxAmount != nil)
 }
 

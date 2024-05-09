@@ -51,10 +51,12 @@ func (t *TransactionApi) CreateOne(ctx *gin.Context) {
 	}
 	err := global.GvaDb.Transaction(
 		func(tx *gorm.DB) error {
-			createOption := transactionService.NewOption()
-			createOption.WithTransSyncToMappingAccount(requestData.Option.TransSyncToMappingAccount)
-			var err error
-			transaction, err = transactionService.Create(transaction, accountUser, createOption, context.WithValue(ctx, contextKey.Tx, tx))
+			txCtx := context.WithValue(ctx, contextKey.Tx, tx)
+			createOption, err := transactionService.NewOptionFormConfig(transaction, txCtx)
+			if err != nil {
+				return err
+			}
+			transaction, err = transactionService.Create(transaction, accountUser, createOption, txCtx)
 			return err
 		},
 	)
@@ -100,9 +102,12 @@ func (t *TransactionApi) Update(ctx *gin.Context) {
 	global.GvaDb.WithContext(ctx)
 	err = global.GvaDb.Transaction(
 		func(tx *gorm.DB) error {
-			createOption := transactionService.NewOption()
-			createOption.WithTransSyncToMappingAccount(requestData.Option.TransSyncToMappingAccount)
-			return transactionService.Update(transaction, accountUser, transactionService.NewDefaultOption(), context.WithValue(ctx, contextKey.Tx, tx))
+			txCtx := context.WithValue(ctx, contextKey.Tx, tx)
+			createOption, err := transactionService.NewOptionFormConfig(transaction, txCtx)
+			if err != nil {
+				return err
+			}
+			return transactionService.Update(transaction, accountUser, createOption, txCtx)
 		},
 	)
 	if responseError(err, ctx) {

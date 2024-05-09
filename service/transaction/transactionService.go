@@ -236,7 +236,8 @@ func (txnService *Transaction) SyncToShareAccount(indAccountTrans transactionMod
 				return err
 			}
 			option := txnService.NewDefaultOption()
-			err = txnService.Update(syncTrans, accountUser, *option.WithTransSyncToMappingAccount(false), context.WithValue(ctx, contextKey.Tx, tx))
+			option.WithTransSyncToMappingAccount(false)
+			err = txnService.Update(syncTrans, accountUser, option, context.WithValue(ctx, contextKey.Tx, tx))
 		} else if errors.Is(err, gorm.ErrRecordNotFound) {
 			_, err = txnService.CreateSyncTrans(indAccountTrans, syncTrans, ctx)
 		}
@@ -276,7 +277,8 @@ func (txnService *Transaction) SyncToIndependentAccount(shareAccountTrans transa
 			return err
 		}
 		option := txnService.NewDefaultOption()
-		err = txnService.Update(syncTrans, accountUser, *option.WithTransSyncToMappingAccount(false), ctx)
+		option.WithTransSyncToMappingAccount(false)
+		err = txnService.Update(syncTrans, accountUser, option, ctx)
 	} else if errors.Is(err, gorm.ErrRecordNotFound) {
 		_, err = txnService.CreateSyncTrans(shareAccountTrans, syncTrans, ctx)
 	}
@@ -293,7 +295,8 @@ func (txnService *Transaction) CreateSyncTrans(trans, syncTrans transactionModel
 		return
 	}
 	option := txnService.NewDefaultOption()
-	newTrans, err := txnService.Create(syncTrans, accountUser, *option.WithTransSyncToMappingAccount(false), ctx)
+	option.WithTransSyncToMappingAccount(false)
+	newTrans, err := txnService.Create(syncTrans, accountUser, option, ctx)
 	if err != nil {
 		return
 	}
@@ -443,6 +446,21 @@ func (txnService *Transaction) NewDefaultOption() Option {
 
 func (txnService *Transaction) NewOption() Option {
 	return Option{}
+}
+
+func (txnService *Transaction) NewOptionFormConfig(trans transactionModel.Transaction, ctx context.Context) (option Option, err error) {
+	userConfig, err := accountModel.NewDao(ctx.Value(contextKey.Tx).(*gorm.DB)).SelectUserConfig(trans.AccountId, trans.UserId)
+	if err != nil {
+		return
+	}
+	option = txnService.NewDefaultOption()
+	option.transSyncToMappingAccount = userConfig.GetFlagStatus(accountModel.Flag_Trans_Sync_Mapping_Account)
+	return
+}
+
+func (o *Option) InitFromConfig(val bool) *Option {
+	o.syncUpdateStatistic = val
+	return o
 }
 
 func (o *Option) WithSyncUpdateStatistic(val bool) *Option {
