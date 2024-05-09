@@ -50,9 +50,10 @@ func (txnService *Transaction) Create(
 }
 
 func (txnService *Transaction) onCreateSuccess(trans transactionModel.Transaction, option Option, ctx context.Context) error {
-	var taskList []func(tx *gorm.DB) error
+	var taskList []TransTask
 	if option.transSyncToMappingAccount {
-		taskList = append(taskList, func(tx *gorm.DB) error {
+		taskList = append(taskList, func(trans transactionModel.Transaction, ctx context.Context) error {
+			tx := ctx.Value(contextKey.Tx).(*gorm.DB)
 			accountType, err := accountModel.NewDao(tx).GetAccountType(trans.AccountId)
 			if err != nil {
 				return errors.WithMessage(err, "同步交易失败")
@@ -68,7 +69,11 @@ func (txnService *Transaction) onCreateSuccess(trans transactionModel.Transactio
 			return nil
 		})
 	}
-	err := handelTaskList(taskList, ctx)
+
+	tx := ctx.Value(contextKey.Tx).(*gorm.DB)
+	err := tx.Transaction(func(tx *gorm.DB) error {
+		return handelTransTasks(taskList, trans, ctx)
+	})
 	if err != nil {
 		errorLog.Error("onCreateSuccess", zap.Error(err))
 	}
@@ -121,9 +126,10 @@ func (txnService *Transaction) Update(
 func (txnService *Transaction) onUpdateSuccess(
 	_, trans transactionModel.Transaction, option Option, ctx context.Context,
 ) error {
-	var taskList []func(tx *gorm.DB) error
+	var taskList []TransTask
 	if option.transSyncToMappingAccount {
-		taskList = append(taskList, func(tx *gorm.DB) error {
+		taskList = append(taskList, func(trans transactionModel.Transaction, ctx context.Context) error {
+			tx := ctx.Value(contextKey.Tx).(*gorm.DB)
 			accountType, err := accountModel.NewDao(tx).GetAccountType(trans.AccountId)
 			if err != nil {
 				return err
@@ -135,7 +141,11 @@ func (txnService *Transaction) onUpdateSuccess(
 			}
 		})
 	}
-	err := handelTaskList(taskList, ctx)
+
+	tx := ctx.Value(contextKey.Tx).(*gorm.DB)
+	err := tx.Transaction(func(tx *gorm.DB) error {
+		return handelTransTasks(taskList, trans, ctx)
+	})
 	if err != nil {
 		errorLog.Error("onUpdateSuccess", zap.Error(err))
 	}
@@ -473,20 +483,27 @@ func (o *Option) WithTransSyncToMappingAccount(val bool) *Option {
 	return o
 }
 
-func handelTaskList(taskList []func(tx *gorm.DB) error, ctx context.Context) error {
+type TransTask func(trans transactionModel.Transaction, ctx context.Context) error
+
+func (t *TransTask) do(trans transactionModel.Transaction, ctx context.Context) error {
+	return (*t)(trans, ctx)
+}
+
+func handelTransTasks(taskList []TransTask, trans transactionModel.Transaction, ctx context.Context) error {
 	if len(taskList) > 2 {
-		errGroup, errGroupCtx := errgroup.WithContext(ctx)
-		for i := range taskList {
-			tx, task := errGroupCtx.Value(contextKey.Tx).(*gorm.DB), taskList[i]
-			errGroup.Go(func() error { return tx.Transaction(task) })
+		errGroup, _ := errgroup.WithContext(ctx)
+		handFunc := func(task TransTask, trans transactionModel.Transaction, ctx context.Context) {
+			errGroup.Go(func() error { return task(trans, ctx) })
+		}
+		for _, task := range taskList {
+			handFunc(task, trans, ctx)
 		}
 		if err := errGroup.Wait(); err != nil {
 			return err
 		}
 	} else {
-		tx := ctx.Value(contextKey.Tx).(*gorm.DB)
 		for _, task := range taskList {
-			err := tx.Transaction(task)
+			err := task(trans, ctx)
 			if err != nil {
 				return err
 			}

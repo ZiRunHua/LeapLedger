@@ -19,8 +19,7 @@ const (
 	_Claims = "_claims_"
 )
 
-type contextFunc struct {
-}
+type contextFunc struct{}
 
 func (cf *contextFunc) SetUserId(id uint, ctx *gin.Context) {
 	ctx.Set(_UserId, id)

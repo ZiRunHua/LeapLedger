@@ -11,8 +11,7 @@ import (
 	"gorm.io/gorm"
 )
 
-type checkFunc struct {
-}
+type checkFunc struct{}
 
 var CheckFunc = new(checkFunc)
 

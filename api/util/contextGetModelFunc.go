@@ -8,11 +8,6 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-type _getModelByContextFunc interface {
-	// 获取交易从urlParam
-	GetTransByParam(ctx *gin.Context) (*transactionModel.Transaction, bool)
-}
-
 func (cf *contextFunc) GetTransByParam(ctx *gin.Context) (result transactionModel.Transaction, pass bool) {
 	id, ok := cf.GetParamId(ctx)
 	if false == ok {
