@@ -27,6 +27,10 @@ Captcha:
   OpenCaptchaTimeout: 3600
   EmailCaptcha: 0
   EmailCaptchaTimeOut: 3600
+
+Nats:
+  ServerUrl: nats://127.0.0.1:4222
+
 ThirdParty:
   # WeCom目前只用于发送邮件
   WeCom:

@@ -1,26 +1,28 @@
+version: '3'
 services:
   leap-ledger-server:
     container_name: leap-ledger-server
     image: registry.cn-hangzhou.aliyuncs.com/xiaozirun/leap-ledger:latest
     build:
-      context: F:\project\Go_project\github.com\KeepAccount
+      context: F:\GO_project\KeepAccount
       dockerfile: Dockerfile
     ports:
-      - "8080:8080"  # 假设 Go 项目监听 8080 端口
+      - "8080:8080"
+      - "4222:4222"
     environment:
-      - CONFIG_FILE_NAME=production_config.yaml  # 设置环境变量
+      - CONFIG_FILE_NAME=production_config.yaml
     networks:
       - leap-ledger-network
-  leap-ledger-ai-server:
-    container_name: leap-ledger-ai-server
-    image: registry.cn-hangzhou.aliyuncs.com/xiaozirun/leap-ledger-ai:latest
-    build:
-      context: D:\development\project\github\test
-      dockerfile: Dockerfile
-    ports:
-      - "5000:5000"  # 假设 Python 项目监听 5000 端口
-    networks:
-      - leap-ledger-network
+#  leap-ledger-ai-server:
+#    container_name: leap-ledger-ai-server
+#    image: registry.cn-hangzhou.aliyuncs.com/xiaozirun/leap-ledger-ai:latest
+#    build:
+#      context: D:\development\project\github\test
+#      dockerfile: Dockerfile
+#    ports:
+#      - "5000:5000"
+#    networks:
+#      - leap-ledger-network
 
 networks:
   leap-ledger-network:

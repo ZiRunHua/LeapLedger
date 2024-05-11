@@ -1,26 +1,22 @@
 package initialize
 
 import (
-	"github.com/nats-io/nats-server/v2/server"
 	"github.com/nats-io/nats.go"
 )
 
 type _nats struct {
+	ServerUrl string
 }
 
-var Nast *nats.Conn
+var Nats *nats.Conn
 
 type NastConn[T struct{}] struct {
 	nats *nats.Conn
 }
 
-func (m *_nats) do() error {
-	opts := &server.Options{
-		Port: 4222,
-	}
-	nastServer, err := server.NewServer(opts)
-	nastServer.Start()
-	Nast, err = nats.Connect(nats.DefaultURL)
+func (n *_nats) do() error {
+	var err error
+	Nats, err = nats.Connect(n.ServerUrl)
 	if err != nil {
 		return err
 	}

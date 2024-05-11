@@ -451,7 +451,7 @@ type Option struct {
 }
 
 func (txnService *Transaction) NewDefaultOption() Option {
-	return Option{syncUpdateStatistic: false, transSyncToMappingAccount: true}
+	return Option{syncUpdateStatistic: true, transSyncToMappingAccount: true}
 }
 
 func (txnService *Transaction) NewOption() Option {

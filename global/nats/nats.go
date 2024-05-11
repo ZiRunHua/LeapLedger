@@ -11,7 +11,7 @@ import (
 	"gorm.io/gorm"
 )
 
-var natsConn = initialize.Nast
+var natsConn = initialize.Nats
 var natsLog *zap.Logger
 
 const TaskStatisticUpdate = "statisticUpdate"

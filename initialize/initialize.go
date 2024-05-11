@@ -38,19 +38,19 @@ func init() {
 		ThirdParty: _thirdParty{WeCom: _weCom{}},
 	}
 	if err = initConfig(); err != nil {
-		print("配置初始化失败 err: %v", err)
+		panic(err)
 	}
 	if err = Config.Logger.do(); err != nil {
-		print("初始化logger错误 err: %v", err)
+		panic(err)
 	}
 	if err = Config.Mysql.do(); err != nil {
-		print("初始化Mysql错误 err: %v", err)
+		panic(err)
 	}
 	if err = Config.Redis.do(); err != nil {
-		print("初始化Redis错误 err: %v", err)
+		print("初始化Redis错误 err: %s", err)
 	}
 	if err = Config.Nats.do(); err != nil {
-		print("初始化nast错误 err: %v", err)
+		panic(err)
 	}
 }
 
