@@ -1,6 +1,7 @@
 package initialize
 
 import (
+	"KeepAccount/global/constant"
 	"KeepAccount/util"
 	"go.uber.org/zap"
 	"gopkg.in/yaml.v3"
@@ -9,13 +10,14 @@ import (
 )
 
 type _config struct {
-	Redis      _redis      `yaml:"Redis"`
-	Mysql      _mysql      `yaml:"Mysql"`
-	Nats       _nats       `yaml:"Nats"`
-	Logger     _logger     `yaml:"Logger"`
-	System     _system     `yaml:"System"`
-	Captcha    _captcha    `yaml:"Captcha"`
-	ThirdParty _thirdParty `yaml:"ThirdParty"`
+	Mode       constant.ServerMode `yaml:"Mode"`
+	Redis      _redis              `yaml:"Redis"`
+	Mysql      _mysql              `yaml:"Mysql"`
+	Nats       _nats               `yaml:"Nats"`
+	Logger     _logger             `yaml:"Logger"`
+	System     _system             `yaml:"System"`
+	Captcha    _captcha            `yaml:"Captcha"`
+	ThirdParty _thirdParty         `yaml:"ThirdParty"`
 }
 
 var (
@@ -26,10 +28,6 @@ var (
 	ErrorLogger   *zap.Logger
 	PanicLogger   *zap.Logger
 )
-
-type initializer interface {
-	do() error
-}
 
 func init() {
 	var err error
@@ -49,7 +47,7 @@ func init() {
 	if err = Config.Redis.do(); err != nil {
 		print("初始化Redis错误 err: %s", err)
 	}
-	if err = Config.Nats.do(); err != nil {
+	if err = Config.Nats.do(Config.Mode); err != nil {
 		panic(err)
 	}
 }

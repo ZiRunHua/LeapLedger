@@ -4,6 +4,10 @@ import (
 	"os"
 )
 
+type ServerMode string
+
+var Debug, Production ServerMode = "dev", "production"
+
 var WORK_PATH string
 
 var LOG_PAYH = WORK_PATH + "/log"

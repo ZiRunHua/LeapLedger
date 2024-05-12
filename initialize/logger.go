@@ -17,6 +17,7 @@ const (
 	_requestLogPath = "log/request.log"
 	_errorLogPath   = "log/error.log"
 	_panicLogPath   = "log/panic.log"
+	_natsLogPath    = "log/nats.log"
 )
 
 func (l *_logger) do() error {

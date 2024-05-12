@@ -6,14 +6,6 @@ ENV GO111MODULE=on
 ENV GOPROXY=https://goproxy.io,direct
 ENV TZ=Asia/Shanghai
 
-# 安装curl
-RUN apk add --no-cache curl
-
-## 下载并安装NATS服务器
-#RUN curl -sSL https://binaries.nats.dev/nats-io/nats-server/v2@latest -o /usr/local/bin/nats-server \
-#    && chmod +x /usr/local/bin/nats-server
-## 指定容器启动命令
-#CMD ["./nats-server"]
 # 设置工作目录
 WORKDIR /go/LeapLedger
 
@@ -31,5 +23,5 @@ RUN go build -o leapledger
 # 声明服务端口
 EXPOSE 8080
 
-# 指定容器启动命令
 CMD ["./leapledger"]
+

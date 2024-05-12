@@ -4,13 +4,14 @@ services:
     container_name: leap-ledger-server
     image: registry.cn-hangzhou.aliyuncs.com/xiaozirun/leap-ledger:latest
     build:
-      context: F:\GO_project\KeepAccount
+      context: F:\project\Go_project\github.com\KeepAccount
       dockerfile: Dockerfile
     ports:
       - "8080:8080"
-      - "4222:4222"
     environment:
       - CONFIG_FILE_NAME=production_config.yaml
+    volumes:
+      - ./log:/go/LeapLedger/log
     networks:
       - leap-ledger-network
 #  leap-ledger-ai-server:

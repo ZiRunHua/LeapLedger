@@ -1,5 +1,7 @@
 # 服务初始化的配置文件 执行代码详见 ./initialize/initialize.go
 # This is the service initialization configuration file execution code see ./initialize/initialize.go
+Mode: Debug
+
 Redis:
   Db: 0
   # 设置Addr开启redis
