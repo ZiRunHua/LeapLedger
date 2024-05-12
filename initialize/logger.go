@@ -32,6 +32,9 @@ func (l *_logger) do() error {
 	if PanicLogger, err = l.initLogger(_panicLogPath); err != nil {
 		return err
 	}
+	if natsLogger, err = l.initLogger(_natsLogPath); err != nil {
+		return err
+	}
 	return nil
 }
 
