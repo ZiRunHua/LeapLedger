@@ -18,7 +18,12 @@ type NastConn[T struct{}] struct {
 
 func (n *_nats) do(mode constant.ServerMode) error {
 	if mode == constant.Debug {
-		opts := &server.Options{LogFile: _natsLogPath, Debug: true, JetStream: true}
+		opts := &server.Options{
+			Debug:     true,
+			JetStream: true,
+			Trace:     true,
+			Logtime:   true,
+			LogFile:   _natsLogPath}
 		nastServer, err := server.NewServer(opts)
 		if err != nil {
 			return err

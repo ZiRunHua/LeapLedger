@@ -6,7 +6,7 @@ import (
 
 type ServerMode string
 
-var Debug, Production ServerMode = "dev", "production"
+var Debug, Production ServerMode = "debug", "production"
 
 var WORK_PATH string
 

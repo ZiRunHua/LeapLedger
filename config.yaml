@@ -1,6 +1,6 @@
 # 服务初始化的配置文件 执行代码详见 ./initialize/initialize.go
 # This is the service initialization configuration file execution code see ./initialize/initialize.go
-Mode: Debug
+Mode: debug
 
 Redis:
   Db: 0
@@ -9,7 +9,6 @@ Redis:
   Password: ""
 
 System:
-  Env: public
   Addr: 8080
   RouterPrefix: ""
 
