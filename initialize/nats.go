@@ -20,7 +20,6 @@ type NastConn[T struct{}] struct {
 func (n *_nats) do(mode constant.ServerMode) error {
 	if mode == constant.Debug {
 		opts := &server.Options{
-			Debug:     true,
 			JetStream: true,
 			Trace:     true,
 			Logtime:   true,
@@ -29,7 +28,7 @@ func (n *_nats) do(mode constant.ServerMode) error {
 		if err != nil {
 			return err
 		}
-		nastServer.SetLoggerV2(_natsLogger.NewFileLogger(_natsLogPath, true, true, true, true, _natsLogger.LogUTC(false)), true, true, false)
+		nastServer.SetLoggerV2(_natsLogger.NewFileLogger(_natsLogPath, true, false, true, true, _natsLogger.LogUTC(false)), false, true, false)
 		nastServer.Start()
 		n.ServerUrl = nats.DefaultURL
 	}

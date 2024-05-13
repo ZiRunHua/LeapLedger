@@ -49,17 +49,14 @@ func (t *TransactionApi) CreateOne(ctx *gin.Context) {
 		Remark:        requestData.Remark,
 		TradeTime:     time.Unix(int64(requestData.TradeTime), 0),
 	}
-	err := global.GvaDb.Transaction(
-		func(tx *gorm.DB) error {
-			txCtx := context.WithValue(ctx, contextKey.Tx, tx)
-			createOption, err := transactionService.NewOptionFormConfig(transaction, txCtx)
-			if err != nil {
-				return err
-			}
-			transaction, err = transactionService.Create(transaction, accountUser, createOption, txCtx)
-			return err
-		},
-	)
+
+	txCtx := context.WithValue(ctx, contextKey.Tx, global.GvaDb)
+	createOption, err := transactionService.NewOptionFormConfig(transaction, txCtx)
+	if responseError(err, ctx) {
+		return
+	}
+	createOption.WithSyncUpdateStatistic(false)
+	transaction, err = transactionService.Create(transaction, accountUser, createOption, txCtx)
 	if responseError(err, ctx) {
 		return
 	}
@@ -99,17 +96,14 @@ func (t *TransactionApi) Update(ctx *gin.Context) {
 		TradeTime:     time.Unix(int64(requestData.TradeTime), 0),
 	}
 	transaction.ID = oldTrans.ID
-	global.GvaDb.WithContext(ctx)
-	err = global.GvaDb.Transaction(
-		func(tx *gorm.DB) error {
-			txCtx := context.WithValue(ctx, contextKey.Tx, tx)
-			createOption, err := transactionService.NewOptionFormConfig(transaction, txCtx)
-			if err != nil {
-				return err
-			}
-			return transactionService.Update(transaction, accountUser, createOption, txCtx)
-		},
-	)
+
+	txCtx := context.WithValue(ctx, contextKey.Tx, global.GvaDb)
+	option, err := transactionService.NewOptionFormConfig(transaction, txCtx)
+	if responseError(err, ctx) {
+		return
+	}
+	option.WithSyncUpdateStatistic(true)
+	err = transactionService.Update(transaction, accountUser, option, txCtx)
 	if responseError(err, ctx) {
 		return
 	}

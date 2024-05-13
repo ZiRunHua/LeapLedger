@@ -15,6 +15,7 @@ var natsConn = initialize.Nats
 var natsLog *zap.Logger
 
 const TaskStatisticUpdate = "statisticUpdate"
+const TaskTransactionSync = "transactionSync"
 
 func init() {
 	var err error

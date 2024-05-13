@@ -4,7 +4,6 @@ import (
 	"KeepAccount/global"
 	"KeepAccount/global/constant"
 	"KeepAccount/global/contextKey"
-	"KeepAccount/global/nats"
 	accountModel "KeepAccount/model/account"
 	categoryModel "KeepAccount/model/category"
 	transactionModel "KeepAccount/model/transaction"
@@ -22,27 +21,29 @@ func (txnService *Transaction) Create(
 	trans transactionModel.Transaction, accountUser accountModel.User, option Option, ctx context.Context,
 ) (transactionModel.Transaction, error) {
 	tx := ctx.Value(contextKey.Tx).(*gorm.DB)
-	// check
-	err := txnService.checkTransaction(trans, accountUser, tx)
-	if err != nil {
-		return trans, errors.WithStack(err)
-	}
-	err = accountUser.CheckTransAddByUserId(trans.UserId)
-	if err != nil {
-		return trans, errors.WithStack(err)
-	}
-	// handle
-	trans.UserId = accountUser.UserId
-	err = tx.Create(&trans).Error
-	if err != nil {
-		return trans, errors.WithStack(err)
-	}
-	// other
-	if false == option.syncUpdateStatistic {
-		err = txnService.asyncUpdateStatistic(trans.GetStatisticData(true), tx)
-	} else {
-		err = txnService.updateStatistic(trans.GetStatisticData(true), tx)
-	}
+	err := tx.Transaction(func(tx *gorm.DB) error {
+		// check
+		err := txnService.checkTransaction(trans, accountUser, tx)
+		if err != nil {
+			return errors.WithStack(err)
+		}
+		err = accountUser.CheckTransAddByUserId(trans.UserId)
+		if err != nil {
+			return errors.WithStack(err)
+		}
+		// handle
+		trans.UserId = accountUser.UserId
+		err = tx.Create(&trans).Error
+		if err != nil {
+			return errors.WithStack(err)
+		}
+		// other
+		if option.syncUpdateStatistic {
+			err = txnService.updateStatistic(trans.GetStatisticData(true), tx)
+		}
+		return nil
+	})
+
 	if err != nil {
 		return trans, err
 	}
@@ -50,33 +51,22 @@ func (txnService *Transaction) Create(
 }
 
 func (txnService *Transaction) onCreateSuccess(trans transactionModel.Transaction, option Option, ctx context.Context) error {
-	var taskList []TransTask
+	var err error
+
 	if option.transSyncToMappingAccount {
-		taskList = append(taskList, func(trans transactionModel.Transaction, ctx context.Context) error {
-			tx := ctx.Value(contextKey.Tx).(*gorm.DB)
-			accountType, err := accountModel.NewDao(tx).GetAccountType(trans.AccountId)
-			if err != nil {
-				return errors.WithMessage(err, "同步交易失败")
-			}
-			if accountType == accountModel.TypeIndependent {
-				err = txnService.SyncToShareAccount(trans, context.WithValue(ctx, contextKey.Tx, tx))
-			} else {
-				err = txnService.SyncToIndependentAccount(trans, context.WithValue(ctx, contextKey.Tx, tx))
-			}
-			if err != nil {
-				return errors.WithMessage(err, "同步交易失败")
-			}
-			return nil
-		})
+		err = task.syncToMappingAccount(trans, ctx)
+		if err != nil {
+			errorLog.Error("onCreateSuccess=>syncToMappingAccount", zap.Error(err))
+		}
 	}
 
-	tx := ctx.Value(contextKey.Tx).(*gorm.DB)
-	err := tx.Transaction(func(tx *gorm.DB) error {
-		return handelTransTasks(taskList, trans, ctx)
-	})
-	if err != nil {
-		errorLog.Error("onCreateSuccess", zap.Error(err))
+	if false == option.syncUpdateStatistic {
+		err = task.updateStatistic(trans.GetStatisticData(true), ctx.Value(contextKey.Tx).(*gorm.DB))
+		if err != nil {
+			errorLog.Error("onCreateSuccess=>updateStatistic", zap.Error(err))
+		}
 	}
+
 	return nil
 }
 
@@ -85,69 +75,59 @@ func (txnService *Transaction) Update(
 	trans transactionModel.Transaction, accountUser accountModel.User, option Option, ctx context.Context,
 ) error {
 	tx := ctx.Value(contextKey.Tx).(*gorm.DB)
-	// check
-	err := txnService.checkTransaction(trans, accountUser, tx)
+	var oldTrans transactionModel.Transaction
+	err := tx.Transaction(func(tx *gorm.DB) error {
+		// check
+		err := txnService.checkTransaction(trans, accountUser, tx)
+		if err != nil {
+			return errors.WithStack(err)
+		}
+		err = accountUser.CheckTransEditByUserId(trans.UserId)
+		if err != nil {
+			return errors.WithStack(err)
+		}
+		// handle
+		oldTrans = trans
+		if err = oldTrans.ForUpdate(tx); err != nil {
+			return errors.WithStack(err)
+		}
+		err = tx.Select("income_expense", "category_id", "amount", "remark", "trade_time").Updates(trans).Error
+		if err != nil {
+			return errors.WithStack(err)
+		}
+		// other
+		if option.syncUpdateStatistic {
+			if err = txnService.updateStatistic(oldTrans.GetStatisticData(false), tx); err != nil {
+				return err
+			}
+			if err = txnService.updateStatistic(trans.GetStatisticData(true), tx); err != nil {
+				return err
+			}
+		}
+		return nil
+	})
 	if err != nil {
-		return errors.WithStack(err)
+		return err
 	}
-	err = accountUser.CheckTransEditByUserId(trans.UserId)
-	if err != nil {
-		return errors.WithStack(err)
-	}
-	// handle
-	oldTrans := trans
-	if err = oldTrans.ForUpdate(tx); err != nil {
-		return errors.WithStack(err)
-	}
-	err = tx.Select("income_expense", "category_id", "amount", "remark", "trade_time").Updates(trans).Error
-	if err != nil {
-		return errors.WithStack(err)
-	}
-	// other
-	if option.syncUpdateStatistic {
-		if err = txnService.asyncUpdateStatistic(oldTrans.GetStatisticData(false), tx); err != nil {
-			return err
-		}
-		if err = txnService.asyncUpdateStatistic(trans.GetStatisticData(true), tx); err != nil {
-			return err
-		}
-	} else {
-		if err = txnService.updateStatistic(oldTrans.GetStatisticData(false), tx); err != nil {
-			return err
-		}
-		if err = txnService.updateStatistic(trans.GetStatisticData(true), tx); err != nil {
-			return err
-		}
-	}
-
 	return txnService.onUpdateSuccess(oldTrans, trans, option, ctx)
 }
 
 func (txnService *Transaction) onUpdateSuccess(
 	_, trans transactionModel.Transaction, option Option, ctx context.Context,
 ) error {
-	var taskList []TransTask
+	var err error
 	if option.transSyncToMappingAccount {
-		taskList = append(taskList, func(trans transactionModel.Transaction, ctx context.Context) error {
-			tx := ctx.Value(contextKey.Tx).(*gorm.DB)
-			accountType, err := accountModel.NewDao(tx).GetAccountType(trans.AccountId)
-			if err != nil {
-				return err
-			}
-			if accountType == accountModel.TypeIndependent {
-				return txnService.SyncToShareAccount(trans, context.WithValue(ctx, contextKey.Tx, tx))
-			} else {
-				return txnService.SyncToIndependentAccount(trans, context.WithValue(ctx, contextKey.Tx, tx))
-			}
-		})
+		err = task.syncToMappingAccount(trans, ctx)
+		if err != nil {
+			errorLog.Error("onUpdateSuccess=>syncToMappingAccount", zap.Error(err))
+		}
 	}
 
-	tx := ctx.Value(contextKey.Tx).(*gorm.DB)
-	err := tx.Transaction(func(tx *gorm.DB) error {
-		return handelTransTasks(taskList, trans, ctx)
-	})
-	if err != nil {
-		errorLog.Error("onUpdateSuccess", zap.Error(err))
+	if false == option.syncUpdateStatistic {
+		err = task.updateStatistic(trans.GetStatisticData(true), ctx.Value(contextKey.Tx).(*gorm.DB))
+		if err != nil {
+			errorLog.Error("onUpdateSuccess=>updateStatistic", zap.Error(err))
+		}
 	}
 	return nil
 }
@@ -168,7 +148,7 @@ func (txnService *Transaction) Delete(
 
 func (txnService *Transaction) updateStatisticAfterDelete(txn transactionModel.Transaction, tx *gorm.DB) error {
 	updateStatisticData := txn.GetStatisticData(false)
-	return txnService.asyncUpdateStatistic(updateStatisticData, tx)
+	return task.updateStatistic(updateStatisticData, tx)
 }
 
 func (txnService *Transaction) checkTransaction(trans transactionModel.Transaction, accountUser accountModel.User, tx *gorm.DB) error {
@@ -205,15 +185,21 @@ func (txnService *Transaction) updateStatistic(data transactionModel.StatisticDa
 	return nil
 }
 
-func (txnService *Transaction) asyncUpdateStatistic(data transactionModel.StatisticData, tx *gorm.DB) error {
-	if nats.Publish[transactionModel.StatisticData](nats.TaskStatisticUpdate, data) {
-		return nil
+func (txnService *Transaction) SyncToMappingAccount(trans transactionModel.Transaction, ctx context.Context) error {
+	tx := ctx.Value(contextKey.Tx).(*gorm.DB)
+	accountType, err := accountModel.NewDao(tx).GetAccountType(trans.AccountId)
+	if err != nil {
+		return errors.WithMessage(err, "同步交易失败")
 	}
-	// 添加异步失败直接执行
-	return txnService.updateStatistic(data, tx)
+	if accountType == accountModel.TypeIndependent {
+		err = txnService.syncToShareAccount(trans, ctx)
+	} else {
+		err = txnService.syncToIndependentAccount(trans, ctx)
+	}
+	return err
 }
 
-func (txnService *Transaction) SyncToShareAccount(indAccountTrans transactionModel.Transaction, ctx context.Context) error {
+func (txnService *Transaction) syncToShareAccount(indAccountTrans transactionModel.Transaction, ctx context.Context) error {
 	tx := ctx.Value(contextKey.Tx).(*gorm.DB)
 	if err := indAccountTrans.ForUpdate(tx); err != nil {
 		return err
@@ -258,7 +244,7 @@ func (txnService *Transaction) SyncToShareAccount(indAccountTrans transactionMod
 	return nil
 }
 
-func (txnService *Transaction) SyncToIndependentAccount(shareAccountTrans transactionModel.Transaction, ctx context.Context) error {
+func (txnService *Transaction) syncToIndependentAccount(shareAccountTrans transactionModel.Transaction, ctx context.Context) error {
 	tx := ctx.Value(contextKey.Tx).(*gorm.DB)
 	if err := shareAccountTrans.ForUpdate(tx); err != nil {
 		return err
@@ -451,7 +437,7 @@ type Option struct {
 }
 
 func (txnService *Transaction) NewDefaultOption() Option {
-	return Option{syncUpdateStatistic: false, transSyncToMappingAccount: true}
+	return Option{syncUpdateStatistic: true, transSyncToMappingAccount: true}
 }
 
 func (txnService *Transaction) NewOption() Option {
@@ -468,11 +454,6 @@ func (txnService *Transaction) NewOptionFormConfig(trans transactionModel.Transa
 	return
 }
 
-func (o *Option) InitFromConfig(val bool) *Option {
-	o.syncUpdateStatistic = val
-	return o
-}
-
 func (o *Option) WithSyncUpdateStatistic(val bool) *Option {
 	o.syncUpdateStatistic = val
 	return o
@@ -484,10 +465,6 @@ func (o *Option) WithTransSyncToMappingAccount(val bool) *Option {
 }
 
 type TransTask func(trans transactionModel.Transaction, ctx context.Context) error
-
-func (t *TransTask) do(trans transactionModel.Transaction, ctx context.Context) error {
-	return (*t)(trans, ctx)
-}
 
 func handelTransTasks(taskList []TransTask, trans transactionModel.Transaction, ctx context.Context) error {
 	if len(taskList) > 2 {

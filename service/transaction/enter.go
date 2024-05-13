@@ -11,7 +11,10 @@ type Group struct {
 }
 
 var GroupApp = new(Group)
+
 var errorLog *zap.Logger
+var task = &_task{}
+var server = &Transaction{}
 
 // 初始化
 func init() {
