@@ -4,7 +4,6 @@ import (
 	"KeepAccount/global"
 	"KeepAccount/global/constant"
 	"KeepAccount/initialize"
-	"KeepAccount/util/log"
 	"encoding/json"
 	"github.com/nats-io/nats.go"
 	"go.uber.org/zap"
@@ -12,18 +11,13 @@ import (
 )
 
 var natsConn = initialize.Nats
-var natsLog *zap.Logger
+var config = initialize.Config.Nats
+var natsLogger = initialize.NatsLogger
 
-const TaskStatisticUpdate = "statisticUpdate"
-const TaskTransactionSync = "transactionSync"
+const TaskStatisticUpdate constant.Subject = "statisticUpdate"
+const TaskTransactionSync constant.Subject = "transactionSync"
 
-func init() {
-	var err error
-	if natsLog, err = log.GetNewZapLogger(constant.LOG_PAYH + "/nats.log"); err != nil {
-		panic(err)
-	}
-}
-func TransSubscribe[Data any](subj string, handleFunc func(*gorm.DB, Data) error) {
+func TransSubscribe[Data any](subj constant.Subject, handleFunc func(*gorm.DB, Data) error) {
 	Subscribe[Data](
 		subj, func(data Data) error {
 			return global.GvaDb.Transaction(
@@ -35,36 +29,44 @@ func TransSubscribe[Data any](subj string, handleFunc func(*gorm.DB, Data) error
 	)
 }
 
-func Subscribe[T any](subj string, handleFunc func(T) error) {
+func Subscribe[T any](subj constant.Subject, handleFunc func(T) error) {
 	if natsConn == nil {
 		return
 	}
-	_, _ = natsConn.Subscribe(
-		subj, func(msg *nats.Msg) {
+
+	if !config.CanSubscribe(subj) {
+		return
+	}
+
+	_, err := natsConn.Subscribe(
+		string(subj), func(msg *nats.Msg) {
 			var t T
 			if err := json.Unmarshal(msg.Data, &t); err != nil {
-				natsLog.Error(msg.Subject, zap.Error(err))
+				natsLogger.Error(msg.Subject, zap.Error(err))
 				return
 			}
 			err := handleFunc(t)
 			if err != nil {
-				natsLog.Error(msg.Subject, zap.Error(err))
+				natsLogger.Error(msg.Subject, zap.Error(err))
 			}
 		},
 	)
+	if err != nil {
+		natsLogger.Error(string(subj), zap.Error(err))
+	}
 }
 
-func Publish[Data any](subj string, data Data) (isSuccess bool) {
+func Publish[Data any](subj constant.Subject, data Data) (isSuccess bool) {
 	if natsConn == nil {
 		return false
 	}
 	str, err := json.Marshal(&data)
 	if err != nil {
-		natsLog.Error(subj, zap.Error(err))
+		natsLogger.Error(string(subj), zap.Error(err))
 		return
 	}
-	if err = natsConn.Publish(subj, str); err != nil {
-		natsLog.Error(subj, zap.Error(err))
+	if err = natsConn.Publish(string(subj), str); err != nil {
+		natsLogger.Error(string(subj), zap.Error(err))
 		return
 	}
 	return true

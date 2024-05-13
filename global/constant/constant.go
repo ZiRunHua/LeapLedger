@@ -89,3 +89,7 @@ const (
 	LogOperationOfUpdate LogOperation = "update"
 	LogOperationOfDelete LogOperation = "delete"
 )
+
+//nats
+
+type Subject string

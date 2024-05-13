@@ -14,10 +14,11 @@ type _logger struct {
 }
 
 const (
-	_requestLogPath = "log/request.log"
-	_errorLogPath   = "log/error.log"
-	_panicLogPath   = "log/panic.log"
-	_natsLogPath    = "log/nats.log"
+	_requestLogPath    = "log/request.log"
+	_errorLogPath      = "log/error.log"
+	_panicLogPath      = "log/panic.log"
+	_natsLogPath       = "log/nats.log"
+	_natsServerLogPath = "log/natsServer.log"
 )
 
 func (l *_logger) do() error {
@@ -32,7 +33,7 @@ func (l *_logger) do() error {
 	if PanicLogger, err = l.initLogger(_panicLogPath); err != nil {
 		return err
 	}
-	if natsLogger, err = l.initLogger(_natsLogPath); err != nil {
+	if NatsLogger, err = l.initLogger(_natsLogPath); err != nil {
 		return err
 	}
 	return nil

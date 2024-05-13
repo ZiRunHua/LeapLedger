@@ -27,7 +27,7 @@ var (
 	RequestLogger *zap.Logger
 	ErrorLogger   *zap.Logger
 	PanicLogger   *zap.Logger
-	natsLogger    *zap.Logger
+	NatsLogger    *zap.Logger
 )
 
 func init() {
