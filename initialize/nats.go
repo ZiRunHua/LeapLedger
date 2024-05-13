@@ -29,7 +29,7 @@ func (n *_nats) do(mode constant.ServerMode) error {
 		if err != nil {
 			return err
 		}
-		nastServer.SetLoggerV2(_natsLogger.NewFileLogger(_natsLogPath, true, true, true, true, _natsLogger.LogUTC(opts.LogtimeUTC)), true, true, true)
+		nastServer.SetLoggerV2(_natsLogger.NewFileLogger(_natsLogPath, true, true, true, true, _natsLogger.LogUTC(false)), true, true, false)
 		nastServer.Start()
 		n.ServerUrl = nats.DefaultURL
 	}
