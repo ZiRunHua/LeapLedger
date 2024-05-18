@@ -35,6 +35,7 @@ func (p *ProductApi) GetList(ctx *gin.Context) {
 			responseData.List, response.ProductGetOne{Name: product.Name, UniqueKey: string(product.Key)},
 		)
 	}
+	ctx.Header("Cache-Control", "max-age=604800")
 	response.OkWithData(responseData, ctx)
 }
 
@@ -64,6 +65,7 @@ func (p *ProductApi) GetTransactionCategory(ctx *gin.Context) {
 			},
 		)
 	}
+	ctx.Header("Cache-Control", "max-age=604800")
 	response.OkWithData(responseData, ctx)
 }
 
