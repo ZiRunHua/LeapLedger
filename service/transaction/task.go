@@ -25,7 +25,7 @@ func init() {
 }
 
 func (t *_task) updateStatistic(data transactionModel.StatisticData, tx *gorm.DB) error {
-	isSuccess := nats.Publish[transactionModel.StatisticData](nats.TaskTransactionSync, data)
+	isSuccess := nats.Publish[transactionModel.StatisticData](nats.TaskStatisticUpdate, data)
 	if false == isSuccess {
 		return server.updateStatistic(data, tx)
 	}
@@ -38,8 +38,4 @@ func (t *_task) syncToMappingAccount(trans transactionModel.Transaction, ctx con
 		return server.SyncToMappingAccount(trans, ctx)
 	}
 	return nil
-}
-
-type updateStatisticTask struct {
-	data transactionModel.StatisticData
 }
