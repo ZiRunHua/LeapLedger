@@ -6,19 +6,14 @@ import (
 )
 
 var (
-	ErrNotInTransaction = errors.New("run error:not in transaction")
-)
+	ErrInvalidParameter = errors.New("invalid parameter")
+	ErrNoPermission     = errors.New("无权限")
 
-var (
-	ErrNotBelongCurrentUser = errors.New("not belong current user")
-	ErrInvalidRequest       = errors.New("invalid request")
-	ErrInvalidParameter     = errors.New("invalid parameter")
-	ErrNoPermission         = errors.New("无权限")
+	ErrFrequentOperation = errors.New("操作太频繁，稍后再试")
 )
 
 // 数据校验
 var (
-	ErrDataIsEmpty        = NewErrDataIsEmpty("")
 	ErrTimeFrameIsTooLong = errors.New("时间范围过长")
 
 	ErrAccountId = errors.New("error accountId")

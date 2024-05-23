@@ -162,6 +162,13 @@ func (u *UserInvitation) ForUpdate(tx *gorm.DB) error {
 	return nil
 }
 
+func (u *UserInvitation) ForShare(tx *gorm.DB) error {
+	if err := tx.Model(u).Clauses(clause.Locking{Strength: "SHARE"}).First(u, u.ID).Error; err != nil {
+		return err
+	}
+	return nil
+}
+
 func (u *UserInvitation) GetAccount() (Account, error) {
 	return NewDao().SelectById(u.AccountId)
 }
@@ -179,7 +186,7 @@ func (u *UserInvitation) GetRole() UserRole {
 }
 
 func (u *UserInvitation) Accept(tx *gorm.DB) (user User, err error) {
-	err = u.ForUpdate(tx)
+	err = u.ForShare(tx)
 	if err != nil {
 		return
 	}
@@ -203,7 +210,7 @@ func (u *UserInvitation) Accept(tx *gorm.DB) (user User, err error) {
 }
 
 func (u *UserInvitation) Refuse(tx *gorm.DB) (err error) {
-	err = u.ForUpdate(tx)
+	err = u.ForShare(tx)
 	if err != nil {
 		return
 	}
@@ -277,6 +284,13 @@ func (uc *UserConfig) GetFlagStatus(flag interface{}) bool {
 
 func (uc *UserConfig) ForUpdate(tx *gorm.DB) error {
 	if err := tx.Model(uc).Clauses(clause.Locking{Strength: "UPDATE"}).First(uc, uc.ID).Error; err != nil {
+		return err
+	}
+	return nil
+}
+
+func (uc *UserConfig) ForShare(tx *gorm.DB) error {
+	if err := tx.Model(uc).Clauses(clause.Locking{Strength: "SHARE"}).First(uc, uc.ID).Error; err != nil {
 		return err
 	}
 	return nil

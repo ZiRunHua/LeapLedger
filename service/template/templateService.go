@@ -44,7 +44,7 @@ func (t *template) CreateAccount(
 func (t *template) CreateCategory(account accountModel.Account, tmplAccount accountModel.Account, ctx context.Context) error {
 	tx := ctx.Value(contextKey.Tx).(*gorm.DB)
 	var err error
-	if err = account.ForUpdate(tx); err != nil {
+	if err = account.ForShare(tx); err != nil {
 		return err
 	}
 	var existCategory bool

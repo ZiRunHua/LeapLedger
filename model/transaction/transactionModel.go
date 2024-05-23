@@ -32,6 +32,13 @@ func (t *Transaction) ForUpdate(tx *gorm.DB) error {
 	return nil
 }
 
+func (t *Transaction) ForShare(tx *gorm.DB) error {
+	if err := tx.Clauses(clause.Locking{Strength: "SHARE"}).First(t).Error; err != nil {
+		return err
+	}
+	return nil
+}
+
 func (t *Transaction) SelectById(id uint) error {
 	return global.GvaDb.First(t, id).Error
 }
@@ -109,9 +116,24 @@ type Mapping struct {
 	MainAccountId    uint `gorm:"not null;"`
 	RelatedId        uint `gorm:"not null;"`
 	RelatedAccountId uint `gorm:"not null;uniqueIndex:idx_mapping,priority:2"`
+	// 上次引起同步的交易更新时间，用来避免错误重试导致旧同步覆盖新同步
+	LastSyncedTransUpdateTime time.Time `gorm:"not null;comment:'上次引起同步的交易更新时间'"`
 	gorm.Model
 }
 
-func (i *Mapping) TableName() string {
-	return "transaction_mapping"
+func (m *Mapping) TableName() string { return "transaction_mapping" }
+
+func (m *Mapping) ForShare(tx *gorm.DB) error {
+	if err := tx.Clauses(clause.Locking{Strength: "SHARE"}).First(m).Error; err != nil {
+		return err
+	}
+	return nil
+}
+
+func (m *Mapping) CanSyncTrans(transaction Transaction) bool {
+	return transaction.UpdatedAt.After(m.LastSyncedTransUpdateTime)
+}
+
+func (m *Mapping) OnSyncSuccess(db *gorm.DB, transaction Transaction) error {
+	return db.Model(m).Update("last_synced_trans_update_time", transaction.UpdatedAt).Error
 }

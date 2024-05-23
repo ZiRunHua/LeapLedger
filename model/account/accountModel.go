@@ -68,6 +68,13 @@ func (a *Account) ForUpdate(tx *gorm.DB) error {
 	return nil
 }
 
+func (a *Account) ForShare(tx *gorm.DB) error {
+	if err := tx.Model(a).Clauses(clause.Locking{Strength: "SHARE"}).First(&a).Error; err != nil {
+		return err
+	}
+	return nil
+}
+
 func (a *Account) IsEmpty() bool {
 	return a.ID == 0
 }

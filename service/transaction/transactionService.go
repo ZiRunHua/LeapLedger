@@ -88,8 +88,11 @@ func (txnService *Transaction) Update(
 		}
 		// handle
 		oldTrans = trans
-		if err = oldTrans.ForUpdate(tx); err != nil {
+		if err = oldTrans.ForShare(tx); err != nil {
 			return errors.WithStack(err)
+		}
+		if time.Now().After(trans.UpdatedAt.Add(time.Second * 3)) {
+			return errors.WithStack(global.ErrFrequentOperation)
 		}
 		err = tx.Select("income_expense", "category_id", "amount", "remark", "trade_time").Updates(trans).Error
 		if err != nil {
@@ -201,9 +204,6 @@ func (txnService *Transaction) SyncToMappingAccount(trans transactionModel.Trans
 
 func (txnService *Transaction) syncToShareAccount(indAccountTrans transactionModel.Transaction, ctx context.Context) error {
 	tx := ctx.Value(contextKey.Tx).(*gorm.DB)
-	if err := indAccountTrans.ForUpdate(tx); err != nil {
-		return err
-	}
 	accountDao, categoryDao := accountModel.NewDao(tx), categoryModel.NewDao(tx)
 
 	accountMappings, err := accountDao.SelectMultipleMapping(*accountModel.NewMappingCondition().WithRelatedId(indAccountTrans.AccountId))
@@ -225,6 +225,14 @@ func (txnService *Transaction) syncToShareAccount(indAccountTrans transactionMod
 		syncTrans.CategoryId = categoryMapping.ParentCategoryId
 		transMapping, err = transactionModel.NewDao(tx).SelectMappingByTrans(indAccountTrans, syncTrans)
 		if err == nil {
+			err = transMapping.ForShare(tx)
+			if err != nil {
+				return err
+			}
+			if false == transMapping.CanSyncTrans(indAccountTrans) {
+				return nil
+			}
+
 			syncTrans.ID = transMapping.RelatedId
 			var accountUser accountModel.User
 			accountUser, err = accountDao.SelectUser(syncTrans.AccountId, syncTrans.UserId)
@@ -234,10 +242,19 @@ func (txnService *Transaction) syncToShareAccount(indAccountTrans transactionMod
 			option := txnService.NewDefaultOption()
 			option.WithTransSyncToMappingAccount(false)
 			err = txnService.Update(syncTrans, accountUser, option, context.WithValue(ctx, contextKey.Tx, tx))
+			if err != nil {
+				return err
+			}
+			err = transMapping.OnSyncSuccess(tx, indAccountTrans)
+			if err != nil {
+				return err
+			}
 		} else if errors.Is(err, gorm.ErrRecordNotFound) {
 			_, err = txnService.CreateSyncTrans(indAccountTrans, syncTrans, ctx)
-		}
-		if err != nil && false == errors.Is(err, gorm.ErrDuplicatedKey) {
+			if err != nil && false == errors.Is(err, gorm.ErrDuplicatedKey) {
+				return err
+			}
+		} else {
 			return err
 		}
 	}
@@ -246,9 +263,6 @@ func (txnService *Transaction) syncToShareAccount(indAccountTrans transactionMod
 
 func (txnService *Transaction) syncToIndependentAccount(shareAccountTrans transactionModel.Transaction, ctx context.Context) error {
 	tx := ctx.Value(contextKey.Tx).(*gorm.DB)
-	if err := shareAccountTrans.ForUpdate(tx); err != nil {
-		return err
-	}
 	var err error
 	accountMapping, err := accountModel.NewDao(tx).SelectMappingByMainAccountAndRelatedUser(shareAccountTrans.AccountId, shareAccountTrans.UserId)
 	if err != nil {
@@ -266,6 +280,14 @@ func (txnService *Transaction) syncToIndependentAccount(shareAccountTrans transa
 	syncTrans.CategoryId = categoryMapping.ChildCategoryId
 	transMapping, err := transactionModel.NewDao(tx).SelectMappingByTrans(shareAccountTrans, syncTrans)
 	if err == nil {
+		err = transMapping.ForShare(tx)
+		if err != nil {
+			return err
+		}
+		if false == transMapping.CanSyncTrans(shareAccountTrans) {
+			return nil
+		}
+
 		syncTrans.ID = transMapping.MainId
 		var accountUser accountModel.User
 		accountUser, err = accountModel.NewDao(tx).SelectUser(syncTrans.AccountId, syncTrans.UserId)
@@ -275,12 +297,22 @@ func (txnService *Transaction) syncToIndependentAccount(shareAccountTrans transa
 		option := txnService.NewDefaultOption()
 		option.WithTransSyncToMappingAccount(false)
 		err = txnService.Update(syncTrans, accountUser, option, ctx)
+		if err != nil {
+			return err
+		}
+		err = transMapping.OnSyncSuccess(tx, shareAccountTrans)
+		if err != nil {
+			return err
+		}
 	} else if errors.Is(err, gorm.ErrRecordNotFound) {
 		_, err = txnService.CreateSyncTrans(shareAccountTrans, syncTrans, ctx)
-	}
-	if err != nil {
+		if err != nil && false == errors.Is(err, gorm.ErrDuplicatedKey) {
+			return err
+		}
+	} else {
 		return err
 	}
+
 	return nil
 }
 
@@ -309,11 +341,19 @@ func (txnService *Transaction) CreateMapping(trans1, trans2 transactionModel.Tra
 	if err != nil {
 		return
 	}
+	var mainTrans, relatedTrans transactionModel.Transaction
 	switch accountType {
 	case accountModel.TypeIndependent:
-		mapping = transactionModel.Mapping{MainId: trans1.ID, MainAccountId: trans1.AccountId, RelatedId: trans2.ID, RelatedAccountId: trans2.AccountId}
+		mainTrans, relatedTrans = trans1, trans2
 	case accountModel.TypeShare:
-		mapping = transactionModel.Mapping{MainId: trans2.ID, MainAccountId: trans2.AccountId, RelatedId: trans1.ID, RelatedAccountId: trans1.AccountId}
+		mainTrans, relatedTrans = trans2, trans1
+	}
+	mapping = transactionModel.Mapping{
+		MainId:                    mainTrans.ID,
+		MainAccountId:             mainTrans.AccountId,
+		RelatedId:                 relatedTrans.ID,
+		RelatedAccountId:          relatedTrans.AccountId,
+		LastSyncedTransUpdateTime: mainTrans.UpdatedAt,
 	}
 	err = tx.Create(&mapping).Error
 	return

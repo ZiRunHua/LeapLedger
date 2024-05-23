@@ -44,7 +44,7 @@ func (b *share) CreateUserInvitation(
 		if err != nil {
 			return
 		}
-		if err = invitation.ForUpdate(tx); err != nil {
+		if err = invitation.ForShare(tx); err != nil {
 			return
 		}
 		if invitation.Status != accountModel.UserInvitationStatsOfWaiting {
@@ -93,7 +93,7 @@ func (b *share) MappingAccount(
 	user userModel.User,
 	mainAccount accountModel.Account, mappingAccount accountModel.Account, tx *gorm.DB,
 ) (mapping accountModel.Mapping, err error) {
-	// 数据校验
+	// check
 	_, err = b.CheckAccountPermission(mainAccount, user, accountModel.UserPermissionEditOwn)
 	if err != nil {
 		return
@@ -101,7 +101,7 @@ func (b *share) MappingAccount(
 	if user.ID != mappingAccount.UserId {
 		return mapping, global.ErrNoPermission
 	}
-	if err = mainAccount.ForUpdate(tx); err != nil {
+	if err = mainAccount.ForShare(tx); err != nil {
 		return
 	}
 	if mainAccount.Type != accountModel.TypeShare {
@@ -110,7 +110,7 @@ func (b *share) MappingAccount(
 	if mainAccount.ID == mappingAccount.ID {
 		return mapping, errors.New("数据异常")
 	}
-	// 处理
+	// handle
 	mapping, err = accountModel.NewDao(tx).CreateMapping(mainAccount, mappingAccount)
 	if err != nil {
 		if errors.Is(err, gorm.ErrDuplicatedKey) {

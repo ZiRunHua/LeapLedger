@@ -561,7 +561,7 @@ func (a *AccountApi) UpdateUserConfigFlag(ctx *gin.Context) {
 		return
 	}
 	err = global.GvaDb.Transaction(func(tx *gorm.DB) error {
-		err = userConfig.ForUpdate(tx)
+		err = userConfig.ForShare(tx)
 		if err != nil {
 			return err
 		}

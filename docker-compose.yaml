@@ -4,7 +4,7 @@ services:
     container_name: leap-ledger-server
     image: registry.cn-hangzhou.aliyuncs.com/xiaozirun/leap-ledger:latest
     build:
-      context: F:\project\Go_project\github.com\KeepAccount
+      context: F:\GO_project\KeepAccount
       dockerfile: Dockerfile
     ports:
       - "8080:8080"
