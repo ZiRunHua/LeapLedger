@@ -4,6 +4,7 @@ import (
 	"KeepAccount/global"
 	"KeepAccount/global/constant"
 	accountModel "KeepAccount/model/account"
+	"errors"
 	"gorm.io/gorm"
 	"time"
 )
@@ -86,7 +87,7 @@ func (s *StatisticDao) GetIeStatisticByCondition(ie *constant.IncomeExpense, con
 	result global.IncomeExpenseStatistic, err error,
 ) {
 	if false == condition.CheckAvailability() {
-		return
+		return result, errors.New("查询条件错误")
 	}
 	query := condition.addConditionToQuery(s.db)
 	if ie.QueryIncome() {
