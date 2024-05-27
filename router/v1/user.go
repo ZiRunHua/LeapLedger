@@ -11,6 +11,8 @@ func (s *PublicRouter) InitUserRouter(Router *gin.RouterGroup) {
 	router := Router.Group("user")
 	baseApi := v1.ApiGroupApp.UserApi
 	{
+		router.POST("/token/refresh", baseApi.RefreshToken)
+
 		router.GET("/search", baseApi.SearchUser)
 		router.POST("/current/captcha/email/send", baseApi.SendCaptchaEmail)
 		router.PUT("/client/current/account", baseApi.SetCurrentAccount)

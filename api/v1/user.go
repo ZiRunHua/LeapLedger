@@ -91,12 +91,14 @@ func (p *PublicApi) Login(ctx *gin.Context) {
 	responseData := response.Login{}
 	transactionFunc := func(tx *gorm.DB) error {
 		var clientBaseInfo userModel.UserClientBaseInfo
-		user, clientBaseInfo, responseData.Token, err = userService.Base.Login(
+		var customClaims util.CustomClaims
+		user, clientBaseInfo, responseData.Token, customClaims, err = userService.Base.Login(
 			requestData.Email, requestData.Password, client, tx,
 		)
 		if err != nil {
 			return err
 		}
+		responseData.TokenExpirationTime = customClaims.ExpiresAt
 		err = responseData.User.SetData(user)
 		if err != nil {
 			return err
@@ -156,6 +158,7 @@ func (p *PublicApi) Register(ctx *gin.Context) {
 	data := userModel.AddData{Username: requestData.Username, Password: requestData.Password, Email: requestData.Email}
 	var user userModel.User
 	var token string
+	var customClaims util.CustomClaims
 	err = global.GvaDb.Transaction(
 		func(tx *gorm.DB) error {
 			user, err = userService.Base.Register(data, tx)
@@ -163,7 +166,7 @@ func (p *PublicApi) Register(ctx *gin.Context) {
 				return err
 			}
 			//注册成功 获取token
-			customClaims := commonService.MakeCustomClaims(user.ID)
+			customClaims = commonService.MakeCustomClaims(user.ID)
 			token, err = commonService.GenerateJWT(customClaims)
 			if err != nil {
 				return err
@@ -177,7 +180,7 @@ func (p *PublicApi) Register(ctx *gin.Context) {
 	// 发送不成功不影响主流程
 	_ = thirdpartyService.SendNotificationEmail(constant.NotificationOfRegistrationSuccess, &user)
 
-	responseData := response.Register{Token: token}
+	responseData := response.Register{Token: token, TokenExpirationTime: customClaims.ExpiresAt}
 	err = responseData.User.SetData(user)
 	if responseError(err, ctx) {
 		return
@@ -211,6 +214,30 @@ func (p *PublicApi) UpdatePassword(ctx *gin.Context) {
 		return
 	}
 	response.Ok(ctx)
+}
+
+func (p *UserApi) RefreshToken(ctx *gin.Context) {
+	token := contextFunc.GetToken(ctx)
+	if token == "" {
+		response.TokenExpired(ctx)
+		return
+	}
+	claims, err := util.NewJWT().ParseToken(token)
+	if err != nil {
+		if err == util.TokenExpired {
+			response.TokenExpired(ctx)
+			return
+		}
+		response.FailToError(ctx, err)
+		return
+	}
+	var newClaims util.CustomClaims
+	token, newClaims, err = commonService.RefreshJWT(*claims)
+	if responseError(err, ctx) {
+		return
+	}
+	responseData := response.Token{Token: token, TokenExpirationTime: newClaims.ExpiresAt}
+	response.OkWithData(responseData, ctx)
 }
 
 func (u *UserApi) UpdatePassword(ctx *gin.Context) {

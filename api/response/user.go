@@ -8,14 +8,16 @@ import (
 
 type Login struct {
 	Token               string
+	TokenExpirationTime int64
 	CurrentAccount      AccountDetail
 	CurrentShareAccount AccountDetail
 	User                UserOne
 }
 
 type Register struct {
-	User  UserOne
-	Token string
+	User                UserOne
+	Token               string
+	TokenExpirationTime int64
 }
 
 type UserOne struct {

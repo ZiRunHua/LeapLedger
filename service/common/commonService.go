@@ -42,9 +42,12 @@ func interfaceToInt(v interface{}) (i int) {
 	}
 	return
 }
+
+const ExpiresAt time.Duration = 90 * 24 * time.Hour
+
 func (cm *common) MakeCustomClaims(userId uint) util.CustomClaims {
 	// 设置过期时间
-	expirationTime := time.Now().Add(24 * time.Hour)
+	expirationTime := time.Now().Add(ExpiresAt)
 	return util.CustomClaims{
 		UserId:    userId,
 		ExpiresAt: expirationTime.Unix(),
@@ -60,6 +63,15 @@ func (cm *common) GenerateJWT(custom util.CustomClaims) (string, error) {
 		return "", errors.Wrap(err, "jwt.CreateToken")
 	}
 	return token, err
+}
+
+func (cm *common) RefreshJWT(custom util.CustomClaims) (token string, newCustom util.CustomClaims, err error) {
+	newCustom = custom
+	if newCustom.ExpiresAt <= time.Now().Add(ExpiresAt/3).Unix() {
+		newCustom.ExpiresAt = time.Now().Add(ExpiresAt).Unix()
+	}
+	token, err = cm.GenerateJWT(newCustom)
+	return
 }
 
 // 设置邮件验证码缓存 如果该缓存已存在未过期 则返回ErrOperationTooFrequent 以此避免重复发送和频繁操作

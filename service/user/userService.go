@@ -7,6 +7,7 @@ import (
 	"KeepAccount/model/common/query"
 	userModel "KeepAccount/model/user"
 	commonService "KeepAccount/service/common"
+	"KeepAccount/util"
 	"github.com/pkg/errors"
 	"gorm.io/gorm"
 	"time"
@@ -15,7 +16,7 @@ import (
 type User struct{}
 
 func (userSvc *User) Login(email string, password string, clientType constant.Client, tx *gorm.DB) (
-	user userModel.User, clientBaseInfo userModel.UserClientBaseInfo, token string, err error,
+	user userModel.User, clientBaseInfo userModel.UserClientBaseInfo, token string, customClaims util.CustomClaims, err error,
 ) {
 	password = commonService.Common.HashPassword(email, password)
 	err = global.GvaDb.Where("email = ? And password = ?", email, password).First(&user).Error
@@ -26,7 +27,7 @@ func (userSvc *User) Login(email string, password string, clientType constant.Cl
 	if err != nil {
 		return
 	}
-	customClaims := commonService.Common.MakeCustomClaims(clientBaseInfo.UserId)
+	customClaims = commonService.Common.MakeCustomClaims(clientBaseInfo.UserId)
 	token, err = commonService.Common.GenerateJWT(customClaims)
 	if err != nil {
 		return

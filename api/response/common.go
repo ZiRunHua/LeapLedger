@@ -17,7 +17,8 @@ type CreateResponse struct {
 }
 
 type Token struct {
-	Token string
+	Token               string
+	TokenExpirationTime int64
 }
 type TwoLevelTree struct {
 	Tree []Father
