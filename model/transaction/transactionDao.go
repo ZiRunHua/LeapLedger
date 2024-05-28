@@ -123,3 +123,10 @@ func (t *TransactionDao) SelectMappingByTrans(trans, syncTrans Transaction) (map
 	err = errors.New("TransactionDao.SelectMappingByTrans query mode is not supported")
 	return
 }
+
+func (t *TransactionDao) GetAmountRank(accountId uint, ie constant.IncomeExpense, timeCond TimeCondition) (result []Transaction, err error) {
+	limit := 10
+	query := timeCond.addConditionToQuery(t.db)
+	query = query.Where("account_id = ?", accountId).Where("income_expense = ?", ie)
+	return result, query.Limit(limit).Order("amount DESC").Find(&result).Error
+}

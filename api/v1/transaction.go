@@ -309,7 +309,7 @@ func (t *TransactionApi) GetCategoryAmountRank(ctx *gin.Context) {
 	if pass == false {
 		return
 	}
-	// 处理查询
+	// fetch ranking List
 	var startTime, endTime = requestData.FormatDayTime()
 	condition := transactionModel.CategoryAmountRankCondition{
 		Account:   account,
@@ -330,7 +330,7 @@ func (t *TransactionApi) GetCategoryAmountRank(ctx *gin.Context) {
 			return rank.CategoryId
 		},
 	)
-	// 获取category
+	// fetch category
 	var categoryList dataType.Slice[uint, categoryModel.Category]
 	err = global.GvaDb.Where("id IN (?)", categoryIds).Find(&categoryList).Error
 	if responseError(err, ctx) {
@@ -341,8 +341,8 @@ func (t *TransactionApi) GetCategoryAmountRank(ctx *gin.Context) {
 			return category.ID
 		},
 	)
-	// 处理响应
-	responseData := make([]response.TransactionCategoryAmountRank, len(rankingList), requestData.Limit)
+	// response
+	responseData := make([]response.TransactionCategoryAmountRank, len(rankingList), len(rankingList))
 	for i, rank := range rankingList {
 		responseData[i].Amount = rank.Amount
 		responseData[i].Count = rank.Count
@@ -352,9 +352,9 @@ func (t *TransactionApi) GetCategoryAmountRank(ctx *gin.Context) {
 		}
 	}
 	//数量不足时补足响应数量
-	if len(rankingList) < requestData.Limit {
+	if requestData.Limit != nil && len(rankingList) < *requestData.Limit {
 		categoryList = []categoryModel.Category{}
-		limit := requestData.Limit - len(rankingList)
+		limit := *requestData.Limit - len(rankingList)
 		db := global.GvaDb.Where("account_id = ?", account.ID)
 		db = db.Where("income_expense = ?", requestData.IncomeExpense)
 		err = db.Where("id NOT IN (?)", categoryIds).Limit(limit).Find(&categoryList).Error
@@ -371,4 +371,30 @@ func (t *TransactionApi) GetCategoryAmountRank(ctx *gin.Context) {
 		}
 	}
 	response.OkWithData(response.List[response.TransactionCategoryAmountRank]{List: responseData}, ctx)
+}
+
+func (t *TransactionApi) GetAmountRank(ctx *gin.Context) {
+	var requestData request.TransactionAmountRank
+	if err := ctx.ShouldBindJSON(&requestData); err != nil {
+		response.FailToParameter(ctx, err)
+		return
+	}
+	if err := requestData.CheckTimeFrame(); err != nil {
+		response.FailToParameter(ctx, err)
+		return
+	}
+	//fetch
+	timeCond := transactionModel.NewTimeCondition()
+	timeCond.SetTradeTimes(requestData.GetStartTime(), requestData.GetEndTime())
+	rankingList, err := transactionModel.NewDao().GetAmountRank(requestData.AccountId, requestData.IncomeExpense, *timeCond)
+	if responseError(err, ctx) {
+		return
+	}
+	//response
+	var responseList response.TransactionDetailList
+	err = responseList.SetData(rankingList)
+	if responseError(err, ctx) {
+		return
+	}
+	response.OkWithData(response.List[response.TransactionDetail]{List: responseList}, ctx)
 }

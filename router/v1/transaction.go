@@ -20,5 +20,6 @@ func (c *TransactionRouter) InitTransactionRouter(Router *gin.RouterGroup) {
 		router.GET("/month/statistic", baseApi.GetMonthStatistic)
 		router.GET("/day/statistic", baseApi.GetDayStatistic)
 		router.GET("/category/amount/rank", baseApi.GetCategoryAmountRank)
+		router.GET("/amount/rank", baseApi.GetAmountRank)
 	}
 }

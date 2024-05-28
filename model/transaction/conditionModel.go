@@ -78,10 +78,19 @@ func (tc *Condition) addConditionToQuery(db *gorm.DB) *gorm.DB {
 	return query
 }
 
-// TimeCondition 交易表时间条件条件
+// TimeCondition 交易表时间查询条件
 type TimeCondition struct {
 	TradeStartTime *time.Time
 	TradeEndTime   *time.Time
+}
+
+func NewTimeCondition() *TimeCondition {
+	return &TimeCondition{}
+}
+
+func (tc *TimeCondition) SetTradeTimes(startTime, endTime time.Time) {
+	tc.TradeStartTime = &startTime
+	tc.TradeEndTime = &endTime
 }
 
 func (tc *TimeCondition) addConditionToQuery(query *gorm.DB) *gorm.DB {

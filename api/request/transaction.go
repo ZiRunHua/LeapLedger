@@ -91,6 +91,11 @@ type TransactionDayStatistic struct {
 type TransactionCategoryAmountRank struct {
 	AccountId     uint                   `binding:"required"`
 	IncomeExpense constant.IncomeExpense `binding:"required,oneof=income expense"`
-	Limit         int                    `binding:"required"`
+	Limit         *int                   `binding:"omitempty"`
+	TimeFrame
+}
+type TransactionAmountRank struct {
+	AccountId     uint                   `binding:"required"`
+	IncomeExpense constant.IncomeExpense `binding:"required,oneof=income expense"`
 	TimeFrame
 }

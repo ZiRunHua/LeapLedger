@@ -72,13 +72,16 @@ type CategoryAmountRank struct {
 }
 
 func (s *StatisticDao) GetCategoryAmountRank(
-	ie constant.IncomeExpense, condition CategoryAmountRankCondition, limit int,
+	ie constant.IncomeExpense, condition CategoryAmountRankCondition, limit *int,
 ) (result []CategoryAmountRank, err error) {
 	query := s.db.Where("account_id = ?", condition.Account.ID)
 	query = query.Where("date BETWEEN ? AND ?", condition.StartTime, condition.EndTime)
 
 	query = query.Select("SUM(amount) as Amount,SUM(count) as Count,category_id").Group("category_id")
-	err = s.query(ie, query).Order("Amount desc").Limit(limit).Find(&result).Error
+	if limit != nil {
+		query = query.Limit(*limit)
+	}
+	err = s.query(ie, query).Order("Amount desc").Find(&result).Error
 	return result, err
 }
 
