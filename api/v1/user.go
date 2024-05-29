@@ -216,7 +216,7 @@ func (p *PublicApi) UpdatePassword(ctx *gin.Context) {
 	response.Ok(ctx)
 }
 
-func (p *UserApi) RefreshToken(ctx *gin.Context) {
+func (u *UserApi) RefreshToken(ctx *gin.Context) {
 	token := contextFunc.GetToken(ctx)
 	if token == "" {
 		response.TokenExpired(ctx)
