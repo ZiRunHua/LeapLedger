@@ -18,9 +18,8 @@ func (t *_time) GetLastMonthMidnight() time.Time {
 
 func (t *_time) SplitMonths(startDate, endDate time.Time) [][2]time.Time {
 	var months [][2]time.Time
-
 	current := startDate
-	for current.Equal(endDate) {
+	for !current.Equal(endDate) {
 		current = t.GetLastSecondOfMonth(startDate)
 		if current.After(endDate) {
 			current = endDate
@@ -28,7 +27,6 @@ func (t *_time) SplitMonths(startDate, endDate time.Time) [][2]time.Time {
 		months = append(months, [2]time.Time{startDate, current})
 		startDate = current.Add(time.Second)
 	}
-
 	return months
 }
 
