@@ -4,8 +4,10 @@ import (
 	"KeepAccount/api/response"
 	apiUtil "KeepAccount/api/util"
 	"KeepAccount/global"
+	"KeepAccount/global/constant"
 	"KeepAccount/util"
 	"bytes"
+	"errors"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 	"io"
@@ -28,12 +30,15 @@ func (m *_middleware) JWTAuth() gin.HandlerFunc {
 		// parseToken 解析token包含的信息
 		claims, err := jwt.ParseToken(token)
 		if err != nil {
-			if err == util.TokenExpired {
-				response.TokenExpired(ctx)
+			if errors.Is(err, util.TokenExpired) {
+				if global.Config.Mode != constant.Debug {
+					response.TokenExpired(ctx)
+					return
+				}
+			} else {
+				response.FailToError(ctx, err)
 				return
 			}
-			response.FailToError(ctx, err)
-			return
 		}
 		apiUtil.ContextFunc.SetUserId(claims.UserId, ctx)
 		apiUtil.ContextFunc.SetClaims(claims, ctx)

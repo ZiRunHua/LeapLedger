@@ -2,6 +2,7 @@ package router
 
 import (
 	"KeepAccount/global"
+	"KeepAccount/global/constant"
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"net/http"
@@ -11,7 +12,6 @@ import (
 func Init() *gin.Engine {
 	engine := gin.New()
 	engine.Use(
-		middleware.RequestLogger(global.RequestLogger),
 		gin.LoggerWithConfig(
 			gin.LoggerConfig{
 				Formatter: func(params gin.LogFormatterParams) string {
@@ -30,6 +30,9 @@ func Init() *gin.Engine {
 		),
 		gin.CustomRecovery(middleware.Recovery),
 	)
+	if global.Config.Mode == constant.Debug {
+		engine.Use(middleware.RequestLogger(global.RequestLogger))
+	}
 
 	APIv1Router := RouterGroupApp.APIv1
 	//公共
