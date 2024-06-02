@@ -212,14 +212,15 @@ func (t *TransactionApi) GetMonthStatistic(ctx *gin.Context) {
 		return
 	}
 	// 设置查询条件
-	condition, extCond := requestData.GetStatisticCondition(), requestData.GetExtensionCondition()
-	months := util.Time.SplitMonths(condition.StartTime, condition.EndTime)
+	requestCondition, extCond := requestData.GetStatisticCondition(), requestData.GetExtensionCondition()
+	condition := requestCondition
+	months := util.Time.SplitMonths(requestCondition.StartTime, requestCondition.EndTime)
 	// 查询并处理响应
 	responseList := make([]response.TransactionStatistic, len(months), len(months))
 	dao := transactionModel.NewDao()
-	for i := 0; i < len(months); i++ {
-		condition.StartTime = months[len(months)-i-1]
-		condition.EndTime = util.Time.GetLastSecondOfMonth(condition.StartTime)
+	for i := len(months) - 1; i >= 0; i-- {
+		condition.StartTime = months[i][0]
+		condition.EndTime = months[i][1]
 
 		monthStatistic, err := dao.GetIeStatisticByCondition(requestData.IncomeExpense, condition, &extCond)
 		if responseError(err, ctx) {
