@@ -12,4 +12,6 @@ local_test
 
 *.log
 
+mysql_data
+
 production_config.yaml

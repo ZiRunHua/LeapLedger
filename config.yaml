@@ -13,12 +13,12 @@ System:
   RouterPrefix: ""
 
 Mysql:
-  Path: "202.23.32.1"
+  Path: "leap-ledger-mysql"
   Port: "3306"
   Config: "parseTime=True&loc=Local"
-  DbName: "keep_account"
+  DbName: "leap_ledger"
   Username: "root"
-  Password: "123456"
+  Password: ""
 
 Nats:
   ServerUrl: nats://127.0.0.1:4222

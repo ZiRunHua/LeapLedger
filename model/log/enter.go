@@ -7,22 +7,12 @@ import (
 )
 
 func init() {
-	tables := []interface{}{&AccountLogMapping{}, &AccountMappingLog{}}
-	var err error
-	for _, table := range tables {
-		err = global.GvaDb.AutoMigrate(table)
-		if err != nil {
-			panic(err)
-		}
+	tables := []interface{}{&AccountLogMapping{}}
+	err := global.GvaDb.AutoMigrate(tables...)
+	if err != nil {
+		panic(err)
 	}
 }
-
-type dao struct {
-}
-
-var (
-	Dao = &dao{}
-)
 
 /*账本*/
 type AccountLog[T AccountLogDataRecordable] struct {

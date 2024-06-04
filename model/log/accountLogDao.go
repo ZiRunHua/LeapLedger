@@ -5,18 +5,18 @@ import (
 	"gorm.io/gorm"
 )
 
-type accountLogDao struct {
+type AccountLogDao struct {
 	db *gorm.DB
 }
 
-func (d *dao) NewAccountDao(db *gorm.DB) *accountLogDao {
-	if db == nil {
-		db = global.GvaDb
+func NewDao(db ...*gorm.DB) *AccountLogDao {
+	if len(db) > 0 {
+		return &AccountLogDao{db: db[0]}
 	}
-	return &accountLogDao{db}
+	return &AccountLogDao{global.GvaDb}
 }
 
-func (d *accountLogDao) RecordAccountLogMapping(logModel AccountLogger) (AccountLogMapping, error) {
+func (d *AccountLogDao) RecordAccountLogMapping(logModel AccountLogger) (AccountLogMapping, error) {
 	log := AccountLogMapping{
 		AccountId: logModel.GetAccountId(),
 		LogTable:  logModel.TableName(),

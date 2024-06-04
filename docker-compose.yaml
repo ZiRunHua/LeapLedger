@@ -4,7 +4,7 @@ services:
     container_name: leap-ledger-server
     image: registry.cn-hangzhou.aliyuncs.com/xiaozirun/leap-ledger:latest
     build:
-      context: F:\GO_project\KeepAccount
+      context: F:\project\Go_project\github.com\KeepAccount
       dockerfile: Dockerfile
     ports:
       - "8080:8080"
@@ -24,6 +24,17 @@ services:
 #      - "5000:5000"
 #    networks:
 #      - leap-ledger-network
-
+  mysql:
+    container_name: leap-ledger-mysql
+    image: mysql:8.0
+    environment:
+      MYSQL_ALLOW_EMPTY_PASSWORD: "yes"
+      MYSQL_DATABASE: leap_ledger
+    ports:
+      - "3306:3306"
+    volumes:
+      - ./mysql_data:/var/lib/mysql
+    networks:
+      - leap-ledger-network
 networks:
   leap-ledger-network:

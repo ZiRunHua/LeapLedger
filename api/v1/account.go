@@ -686,18 +686,16 @@ func (a *AccountApi) CreateAccountMapping(ctx *gin.Context) {
 	}
 	// 处理
 	var mapping accountModel.Mapping
-	txFunc := func(tx *gorm.DB) error {
+	err = global.GvaDb.Transaction(func(tx *gorm.DB) error {
 		mapping, err = accountService.Share.MappingAccount(user, mainAccount, mappingAccount, tx)
-		if err != nil {
-			return err
-		}
-		err = categoryService.MappingAccountCategoryByAI(mainAccount, mappingAccount, ctx, tx)
-		if err != nil {
-			return err
-		}
 		return err
+	})
+	if responseError(err, ctx) {
+		return
 	}
-	err = global.GvaDb.Transaction(txFunc)
+	err = global.GvaDb.Transaction(func(tx *gorm.DB) error {
+		return categoryService.MappingAccountCategoryByAI(mainAccount, mappingAccount, ctx, tx)
+	})
 	if responseError(err, ctx) {
 		return
 	}

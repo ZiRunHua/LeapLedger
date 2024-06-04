@@ -2,15 +2,15 @@ package userModel
 
 import "KeepAccount/global"
 
-type dao struct {
-}
-
 func init() {
-	tables := []interface{}{TransactionShareConfig{}, Friend{}, FriendInvitation{}}
-	for _, table := range tables {
-		err := global.GvaDb.AutoMigrate(&table)
-		if err != nil {
-			panic(err)
-		}
+	tables := []interface{}{
+		&User{}, &UserClientWeb{}, &UserClientAndroid{}, &UserClientIos{},
+		&Friend{}, &FriendInvitation{},
+		&TransactionShareConfig{},
+		&Log{},
+	}
+	err := global.GvaDb.AutoMigrate(tables...)
+	if err != nil {
+		panic(err)
 	}
 }
