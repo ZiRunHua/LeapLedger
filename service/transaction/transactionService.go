@@ -91,7 +91,7 @@ func (txnService *Transaction) Update(
 		if err = oldTrans.ForShare(tx); err != nil {
 			return errors.WithStack(err)
 		}
-		if time.Now().After(trans.UpdatedAt.Add(time.Second * 3)) {
+		if oldTrans.UpdatedAt.Add(time.Second * 3).After(time.Now()) {
 			return errors.WithStack(global.ErrFrequentOperation)
 		}
 		err = tx.Select("income_expense", "category_id", "amount", "remark", "trade_time").Updates(trans).Error
@@ -164,6 +164,9 @@ func (txnService *Transaction) checkTransaction(trans transactionModel.Transacti
 	}
 	if trans.Amount < 0 {
 		return errors.New("error trans.amount")
+	}
+	if trans.IncomeExpense != category.IncomeExpense {
+		return errors.New("error trans.IncomeExpense")
 	}
 	return nil
 }

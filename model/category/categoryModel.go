@@ -12,12 +12,12 @@ import (
 type Category struct {
 	ID             uint                   `gorm:"comment:'主键';primary_key;" `
 	AccountId      uint                   `gorm:"comment:'账本ID';uniqueIndex:unique_name,priority:1"`
-	FatherId       uint                   `gorm:"comment:'category_father表ID'" `
+	FatherId       uint                   `gorm:"comment:'category_father表ID';index" `
 	IncomeExpense  constant.IncomeExpense `gorm:"comment:'收支类型'"`
 	Name           string                 `gorm:"comment:'名称';size:128;uniqueIndex:unique_name,priority:2"`
 	Icon           string                 `gorm:"comment:'图标';size:64"`
 	Previous       uint                   `gorm:"comment:'前一位'"`
-	OrderUpdatedAt time.Time              `gorm:"comment:'顺序更新时间';default:CURRENT_TIMESTAMP;"`
+	OrderUpdatedAt time.Time              `gorm:"comment:'顺序更新时间';not null;default:CURRENT_TIMESTAMP(3);"`
 	gorm.Model
 	commonModel.BaseModel
 }

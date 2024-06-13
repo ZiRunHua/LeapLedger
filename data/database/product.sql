@@ -1,0 +1,63 @@
+REPLACE INTO `product` (`key`, `name`, `hide`, `weight`)
+VALUES ('AliPay', '支付宝', 0, 0),
+       ('WeChatPay', '微信支付', 0, 0);
+
+REPLACE INTO `product_bill` (`product_key`, `encoding`, `start_row`, `date_format`)
+VALUES ('AliPay', 'GBK', 23, '2006-01-02 15:04:05'),
+       ('WeChatPay', 'UTF-8', 17, '2006-01-02 15:04:05');
+
+REPLACE INTO `product_bill_header` (`name`, `type`, `product_key`)
+VALUES ('交易时间', 'trans_time', 'AliPay'),
+       ('交易分类', 'trans_category', 'AliPay'),
+       ('商品说明', 'remark', 'AliPay'),
+       ('收/支', 'income_expense', 'AliPay'),
+       ('金额', 'amount', 'AliPay'),
+       ('交易订单号', 'order_number', 'AliPay'),
+       ('交易状态', 'trans_status', 'AliPay'),
+       ('交易时间', 'trans_time', 'WeChatPay'),
+       ('交易类型', 'trans_category', 'WeChatPay'),
+       ('商品', 'remark', 'WeChatPay'),
+       ('收/支', 'income_expense', 'WeChatPay'),
+       ('金额(元)', 'amount', 'WeChatPay'),
+       ('交易单号', 'order_number', 'WeChatPay'),
+       ('当前状态', 'trans_status', 'WeChatPay');
+
+REPLACE INTO `product_transaction_category` (`id`, `product_key`, `income_expense`, `name`)
+VALUES (1, 'AliPay', 'expense', '餐饮美食'),
+       (2, 'AliPay', 'expense', '服饰装扮'),
+       (3, 'AliPay', 'expense', '日用百货'),
+       (4, 'AliPay', 'expense', '家居家装'),
+       (5, 'AliPay', 'expense', '数码电器'),
+       (6, 'AliPay', 'expense', '运动户外'),
+       (7, 'AliPay', 'expense', '美容美发'),
+       (8, 'AliPay', 'expense', '母婴亲子'),
+       (9, 'AliPay', 'expense', '宠物'),
+       (10, 'AliPay', 'expense', '交通出行'),
+       (11, 'AliPay', 'expense', '爱车养车'),
+       (12, 'AliPay', 'expense', '住房物业'),
+       (13, 'AliPay', 'expense', '酒店旅游'),
+       (14, 'AliPay', 'expense', '文化休闲'),
+       (15, 'AliPay', 'expense', '教育培训'),
+       (16, 'AliPay', 'expense', '医疗健康'),
+       (17, 'AliPay', 'expense', '生活服务'),
+       (18, 'AliPay', 'expense', '公共服务'),
+       (19, 'AliPay', 'expense', '商业服务'),
+       (20, 'AliPay', 'expense', '公益捐赠'),
+       (21, 'AliPay', 'expense', '互助保障'),
+       (22, 'AliPay', 'expense', '投资理财'),
+       (23, 'AliPay', 'expense', '保险'),
+       (24, 'AliPay', 'expense', '信用借还'),
+       (25, 'AliPay', 'expense', '充值缴费'),
+       (26, 'AliPay', 'expense', '转账红包'),
+       (27, 'AliPay', 'expense', '亲友代付'),
+       (28, 'AliPay', 'expense', '账户存取'),
+       (29, 'AliPay', 'expense', '退款'),
+       (30, 'AliPay', 'expense', '其他'),
+       (31, 'AliPay', 'income', '收入'),
+       (32, 'AliPay', 'income', '转账红包'),
+       (33, 'AliPay', 'income', '账户存取'),
+       (34, 'AliPay', 'income', '退款'),
+       (35, 'AliPay', 'income', '其他'),
+       (36, 'WeChatPay', 'expense', '商户消费'),
+       (37, 'WeChatPay', 'expense', '扫二维码付款'),
+       (38, 'WeChatPay', 'income', '二维码收款');

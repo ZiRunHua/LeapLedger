@@ -3,7 +3,9 @@ package initialize
 import (
 	"KeepAccount/global/constant"
 	"KeepAccount/util"
+	"context"
 	"go.uber.org/zap"
+	"golang.org/x/sync/errgroup"
 	"gopkg.in/yaml.v3"
 	"gorm.io/gorm"
 	"os"
@@ -36,19 +38,16 @@ func init() {
 		Redis: _redis{}, Mysql: _mysql{}, Logger: _logger{}, System: _system{}, Captcha: _captcha{}, Nats: _nats{},
 		ThirdParty: _thirdParty{WeCom: _weCom{}},
 	}
+
 	if err = initConfig(); err != nil {
 		panic(err)
 	}
-	if err = Config.Logger.do(); err != nil {
-		panic(err)
-	}
-	if err = Config.Mysql.do(); err != nil {
-		panic(err)
-	}
-	if err = Config.Redis.do(); err != nil {
-		print("初始化Redis错误 err: %s", err)
-	}
-	if err = Config.Nats.do(Config.Mode); err != nil {
+	group, _ := errgroup.WithContext(context.TODO())
+	group.Go(Config.Logger.do)
+	group.Go(Config.Mysql.do)
+	group.Go(Config.Redis.do)
+	group.Go(func() error { return Config.Nats.do(Config.Mode) })
+	if err = group.Wait(); err != nil {
 		panic(err)
 	}
 }

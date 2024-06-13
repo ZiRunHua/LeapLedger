@@ -2,16 +2,21 @@ package transactionModel
 
 import (
 	"KeepAccount/global"
+	"KeepAccount/util/gormFunc"
 )
 
-func init() {
+func CurrentInit() error {
 	tables := []interface{}{
-		&Transaction{}, &Mapping{},
-		&ExpenseAccountStatistic{}, &ExpenseAccountUserStatistic{}, &ExpenseCategoryStatistic{},
-		&IncomeAccountStatistic{}, &IncomeAccountUserStatistic{}, &IncomeCategoryStatistic{},
+		Transaction{}, Mapping{},
+		ExpenseAccountStatistic{}, ExpenseAccountUserStatistic{}, ExpenseCategoryStatistic{},
+		IncomeAccountStatistic{}, IncomeAccountUserStatistic{}, IncomeCategoryStatistic{},
 	}
 	err := global.GvaDb.AutoMigrate(tables...)
 	if err != nil {
-		panic(err)
+		return err
 	}
+	for _, table := range tables {
+		_ = gormFunc.AlterIdToHeader(table, global.GvaDb)
+	}
+	return nil
 }

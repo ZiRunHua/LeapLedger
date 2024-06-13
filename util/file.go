@@ -6,10 +6,12 @@ import (
 	"github.com/xuri/excelize/v2"
 	"golang.org/x/text/encoding/simplifiedchinese"
 	"golang.org/x/text/transform"
+	"gorm.io/gorm"
 	"io"
 	"mime/multipart"
 	"os"
 	"path"
+	"strings"
 )
 
 type file struct{}
@@ -143,4 +145,22 @@ func (f *file) IteratorsHandleEXCELReader(reader io.Reader, handleFunc RowHandle
 		}
 	}
 	return rows.Close()
+}
+
+func (f *file) ExecSqlFile(reader io.Reader, db *gorm.DB) error {
+	sqlBytes, err := io.ReadAll(reader)
+	if err != nil {
+		return err
+	}
+
+	sqlStatements := strings.Split(string(sqlBytes), ";")
+	for _, stmt := range sqlStatements {
+		trimmedStmt := strings.TrimSpace(stmt)
+		if len(trimmedStmt) > 0 {
+			if err = db.Exec(trimmedStmt).Error; err != nil {
+				return err
+			}
+		}
+	}
+	return nil
 }

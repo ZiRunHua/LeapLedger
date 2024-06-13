@@ -63,8 +63,8 @@ func (t *TransactionQueryCondition) GetStatisticCondition() transactionModel.Sta
 
 func (t *TransactionQueryCondition) GetExtensionCondition() transactionModel.ExtensionCondition {
 	return transactionModel.ExtensionCondition{
-		MiniAmount: t.MinimumAmount,
-		MaxAmount:  t.MaximumAmount,
+		MinAmount: t.MinimumAmount,
+		MaxAmount: t.MaximumAmount,
 	}
 }
 

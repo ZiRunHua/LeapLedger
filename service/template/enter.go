@@ -1,7 +1,6 @@
 package templateService
 
 import (
-	"KeepAccount/model/common/query"
 	userModel "KeepAccount/model/user"
 	_categoryService "KeepAccount/service/category"
 )
@@ -12,18 +11,21 @@ type Group struct {
 	Template template
 }
 
-const templateUserId = 1
+var TmplUserId uint = 1
 
-var (
-	tempUser = &userModel.User{}
+const (
+	TmplUserEmail    = "template@gmail.com"
+	TmplUserPassword = "1999123456"
+	TmplUserName     = "template"
 )
 
-func init() {
-	var err error
-	tempUser, err = query.FirstByPrimaryKey[*userModel.User](templateUserId)
-	if err != nil {
-		panic(err)
-	}
+var (
+	tmplUser userModel.User
+)
+
+func SetTmplUser(user userModel.User) {
+	tmplUser = user
+	TmplUserId = user.ID
 }
 
 var categoryService = _categoryService.GroupApp

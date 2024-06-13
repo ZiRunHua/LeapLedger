@@ -13,7 +13,7 @@ type statisticModel interface {
 }
 
 type Statistic struct {
-	Date   time.Time `gorm:"column:date;primaryKey;type:date"`
+	Date   time.Time `gorm:"primaryKey;type:date"`
 	Amount int
 	Count  int
 	commonModel.BaseModel

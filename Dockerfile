@@ -1,4 +1,3 @@
-# 使用官方的Go镜像作为基础镜像
 FROM golang:1.20-alpine
 
 # 设置环境变量

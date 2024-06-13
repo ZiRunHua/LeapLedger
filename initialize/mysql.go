@@ -22,12 +22,13 @@ func (m *_mysql) Dsn() string {
 }
 
 func (m *_mysql) do() error {
+	var err error
 	mysqlConfig := mysql.Config{
 		DSN:                       m.Dsn(), // DSN data source name
 		DefaultStringSize:         191,     // string 类型字段的默认长度
 		SkipInitializeWithVersion: false,   //
 	}
-	db, err := gorm.Open(mysql.New(mysqlConfig), m.GormConfig())
+	db, err := m.connect(mysqlConfig, 0)
 	if err != nil {
 		return err
 	}
@@ -39,6 +40,17 @@ func (m *_mysql) do() error {
 	db.InstanceSet("gorm:queryFields", "SET TRANSACTION ISOLATION LEVEL READ COMMITTED;")
 	Db = db
 	return nil
+}
+
+func (m *_mysql) connect(mysqlConfig mysql.Config, retryTimes int) (db *gorm.DB, err error) {
+	defer func() {
+		if err != nil && retryTimes < 3 {
+			time.Sleep(time.Second * 3)
+			db, err = m.connect(mysqlConfig, retryTimes+1)
+		}
+	}()
+	db, err = gorm.Open(mysql.New(mysqlConfig), m.GormConfig())
+	return
 }
 
 func (m *_mysql) GormConfig() *gorm.Config {

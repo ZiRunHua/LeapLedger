@@ -15,9 +15,9 @@ import (
 
 type Transaction struct {
 	gorm.Model
-	UserId        uint `gorm:"column:user_id"`
-	AccountId     uint `gorm:"column:account_id"`
-	CategoryId    uint `gorm:"column:category_id"`
+	UserId        uint
+	AccountId     uint
+	CategoryId    uint
 	IncomeExpense constant.IncomeExpense
 	Amount        int
 	Remark        string

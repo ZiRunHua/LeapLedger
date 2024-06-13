@@ -37,7 +37,7 @@ func (catApi *CategoryApi) CreateOne(ctx *gin.Context) {
 		func(tx *gorm.DB) error {
 			category, err = categoryService.CreateOne(
 				father,
-				categoryService.NewCategoryData(categoryModel.Category{Name: requestData.Name, Icon: requestData.Icon}),
+				categoryService.NewCategoryData(requestData.Name, requestData.Icon),
 				context.WithValue(ctx, contextKey.Tx, tx),
 			)
 			return err

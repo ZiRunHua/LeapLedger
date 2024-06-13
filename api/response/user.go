@@ -4,6 +4,8 @@ import (
 	accountModel "KeepAccount/model/account"
 	userModel "KeepAccount/model/user"
 	"KeepAccount/util"
+	"errors"
+	"gorm.io/gorm"
 )
 
 type Login struct {
@@ -12,6 +14,36 @@ type Login struct {
 	CurrentAccount      AccountDetail
 	CurrentShareAccount AccountDetail
 	User                UserOne
+}
+
+func (l *Login) SetDataFormClientInto(data userModel.UserClientBaseInfo) error {
+	var err error
+	accountDao := accountModel.NewDao()
+	// 当前客户端操作账本
+	if data.CurrentAccountId != 0 {
+		var account accountModel.Account
+		account, err = accountDao.SelectById(data.CurrentAccountId)
+		if err != nil {
+			return err
+		}
+		err = l.CurrentAccount.SetDataFromAccount(account)
+		if err != nil {
+			return err
+		}
+	}
+	// 当前客户端操作共享账本
+	if data.CurrentShareAccountId != 0 {
+		var accountUser accountModel.User
+		accountUser, err = accountDao.SelectUser(data.CurrentShareAccountId, data.UserId)
+		if err != nil && false == errors.Is(err, gorm.ErrRecordNotFound) {
+			return err
+		}
+		err = l.CurrentShareAccount.SetData(accountUser)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 type Register struct {

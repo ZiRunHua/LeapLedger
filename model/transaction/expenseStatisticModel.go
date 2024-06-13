@@ -8,7 +8,7 @@ import (
 
 type ExpenseAccountStatistic struct {
 	Statistic
-	AccountId uint `gorm:"column:account_id;primaryKey"`
+	AccountId uint `gorm:"primaryKey"`
 }
 
 func (i *ExpenseAccountStatistic) TableName() string {
@@ -39,8 +39,8 @@ func (e *ExpenseAccountStatistic) Accumulate(
 
 type ExpenseAccountUserStatistic struct {
 	Statistic
-	AccountId uint `gorm:"column:account_id;primaryKey"`
-	UserId    uint `gorm:"column:user_id;primaryKey"`
+	AccountId uint `gorm:"primaryKey"`
+	UserId    uint `gorm:"primaryKey"`
 }
 
 func (i *ExpenseAccountUserStatistic) TableName() string {
@@ -74,8 +74,8 @@ func (e *ExpenseAccountUserStatistic) Accumulate(
 
 type ExpenseCategoryStatistic struct {
 	Statistic
-	CategoryId uint `gorm:"column:category_id;primaryKey"`
-	AccountId  uint `gorm:"column:account_id"` //冗余字段
+	CategoryId uint `gorm:"primaryKey"`
+	AccountId  uint //冗余字段
 }
 
 func (e *ExpenseCategoryStatistic) TableName() string {

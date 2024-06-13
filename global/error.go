@@ -9,7 +9,8 @@ var (
 	ErrInvalidParameter = errors.New("invalid parameter")
 	ErrNoPermission     = errors.New("无权限")
 
-	ErrFrequentOperation = errors.New("操作太频繁，稍后再试")
+	ErrFrequentOperation  = errors.New("操作太频繁，稍后再试")
+	ErrDeviceNotSupported = errors.New("当前设备不支持")
 )
 
 // 数据校验

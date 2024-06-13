@@ -14,8 +14,8 @@ type Account struct {
 	gorm.Model
 	UserId uint   `gorm:"comment:用户id;not null"`
 	Type   Type   `gorm:"default:independent;not null"`
-	Name   string `gorm:"comment:名称;size:128"`
-	Icon   string `gorm:"comment:图标;size:64"`
+	Name   string `gorm:"comment:名称;not null;size:128"`
+	Icon   string `gorm:"comment:图标;not null;default:'payment';size:64"`
 	commonModel.BaseModel
 }
 

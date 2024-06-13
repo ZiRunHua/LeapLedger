@@ -81,9 +81,10 @@ func (b *base) updateUserCurrentAfterDelete(
 
 	var list []userModel.UserClientBaseInfo
 	for _, client := range constant.ClientList {
-		list, err = userModel.NewDao().SelectClientInfoByUserAndAccount(
+		list, err = userModel.NewDao(tx).SelectClientInfoByUserAndAccount(
 			client, accountUser.UserId, accountUser.AccountId,
 		)
+
 		if err != nil {
 			return err
 		}
@@ -96,7 +97,7 @@ func (b *base) updateUserCurrentAfterDelete(
 				updates["current_Account_id"] = newCurrentAccount.ID
 			}
 			if len(updates) > 0 {
-				err = tx.Where("user_id = ?", info.UserId).Updates(updates).Error
+				err = tx.Model(userModel.GetUserClientModel(client)).Where("user_id = ?", info.UserId).Updates(updates).Error
 				if err != nil {
 					return err
 				}

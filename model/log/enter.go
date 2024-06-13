@@ -3,15 +3,22 @@ package logModel
 import (
 	"KeepAccount/global"
 	"KeepAccount/global/constant"
+	"KeepAccount/util/gormFunc"
 	"gorm.io/gorm"
 )
 
-func init() {
-	tables := []interface{}{&AccountLogMapping{}}
+func CurrentInit() error {
+	tables := []interface{}{
+		AccountMappingLog{}, AccountLogMapping{},
+	}
 	err := global.GvaDb.AutoMigrate(tables...)
 	if err != nil {
-		panic(err)
+		return err
 	}
+	for _, table := range tables {
+		_ = gormFunc.AlterIdToHeader(table, global.GvaDb)
+	}
+	return nil
 }
 
 /*账本*/

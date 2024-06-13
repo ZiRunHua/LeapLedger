@@ -8,9 +8,9 @@ import (
 )
 
 type TransactionCategoryMapping struct {
-	AccountID  uint
-	CategoryID uint
-	PtcID      uint
+	AccountId  uint `gorm:"uniqueIndex:account_ptc_mapping,priority:1"`
+	CategoryId uint `gorm:"uniqueIndex:category_ptc_mapping,priority:1"`
+	PtcId      uint `gorm:"uniqueIndex:account_ptc_mapping,priority:2;uniqueIndex:category_ptc_mapping,priority:2"`
 	ProductKey string
 	CreatedAt  time.Time
 	UpdatedAt  time.Time
@@ -22,7 +22,7 @@ func (tcm *TransactionCategoryMapping) TableName() string {
 }
 
 func (tcm *TransactionCategoryMapping) IsEmpty() bool {
-	return tcm == nil || tcm.AccountID == 0
+	return tcm == nil || tcm.AccountId == 0
 }
 
 func (tcm *TransactionCategoryMapping) GetPtcIdMapping(
@@ -37,7 +37,7 @@ func (tcm *TransactionCategoryMapping) GetPtcIdMapping(
 	row, result := TransactionCategoryMapping{}, map[uint]TransactionCategoryMapping{}
 	for rows.Next() {
 		db.ScanRows(rows, &row)
-		result[row.PtcID] = row
+		result[row.PtcId] = row
 	}
 	return
 }

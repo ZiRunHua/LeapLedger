@@ -24,11 +24,8 @@ type CreateData struct {
 	Icon string
 }
 
-func (catSvc *Category) NewCategoryData(category categoryModel.Category) CreateData {
-	return CreateData{
-		Name: category.Name,
-		Icon: category.Icon,
-	}
+func (catSvc *Category) NewCategoryData(name, icon string) CreateData {
+	return CreateData{Name: name, Icon: icon}
 }
 
 func (catSvc *Category) CreateOne(father categoryModel.Father, data CreateData, ctx context.Context) (category categoryModel.Category, err error) {
@@ -47,7 +44,18 @@ func (catSvc *Category) CreateOne(father categoryModel.Father, data CreateData, 
 	}
 	err = tx.Create(&category).Error
 	if errors.Is(err, gorm.ErrDuplicatedKey) {
-		return category, global.ErrCategorySameName
+		//存在重复名称 则尝试恢复已软删除的交易类型
+		err = tx.Where("account_id = ? AND name = ? AND deleted_at IS NOT NULL", category.AccountId, category.Name).First(&category).Error
+		if err == nil {
+			err = tx.Model(&category).Update("deleted_at", nil).Error
+			if err != nil {
+				return
+			}
+		} else if errors.Is(err, gorm.ErrRecordNotFound) {
+			return category, global.ErrCategorySameName
+		} else {
+			return
+		}
 	} else if err != nil {
 		return category, errors.Wrap(err, "category.CreateOne()")
 	}
@@ -62,6 +70,9 @@ func (catSvc *Category) CreateOne(father categoryModel.Father, data CreateData, 
 }
 
 func (catSvc *Category) UpdateCategoryMapping(category categoryModel.Category, ctx context.Context) error {
+	if !aiService.IsOpen() {
+		return nil
+	}
 	tx := ctx.Value(contextKey.Tx).(*gorm.DB)
 	accountDao, categoryDao := accountModel.NewDao(tx), categoryModel.NewDao(tx)
 	accountMapping, err := accountDao.SelectMultipleMapping(*accountModel.NewMappingCondition().WithRelatedId(category.AccountId))

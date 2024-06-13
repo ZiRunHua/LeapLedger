@@ -6,14 +6,12 @@ import (
 )
 
 type Product struct {
-	Key    KeyValue `gorm:"primary_key;column:key"`
-	Name   string   `gorm:"column:name;comment:'名称'"`
-	Hide   uint8    `gorm:"column:hide;default:0;comment:'隐藏标识'"`
-	Weight int      `gorm:"column:weight;comment:'权重'"`
+	Key    KeyValue `gorm:"primary_key"`
+	Name   string   `gorm:"comment:'名称'"`
+	Hide   uint8    `gorm:"default:0;comment:'隐藏标识'"`
+	Weight int      `gorm:"default:0;comment:'权重'"`
 	commonModel.BaseModel
 }
-
-const index = "key"
 
 type KeyValue string
 

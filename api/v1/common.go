@@ -19,7 +19,7 @@ func (p *PublicApi) Captcha(c *gin.Context) {
 		80,
 	)
 	cp := base64Captcha.NewCaptcha(driver, captchaStore)
-	id, b64s, err := cp.Generate()
+	id, b64s, _, err := cp.Generate()
 	if err != nil {
 		response.FailWithMessage("验证码获取失败", c)
 		return

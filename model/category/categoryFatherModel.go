@@ -8,11 +8,11 @@ import (
 )
 
 type Father struct {
-	ID             uint                   `gorm:"primary_key;column:id;comment:'主键';default:0"`
-	AccountId      uint                   `gorm:"column:account_id;index;comment:'账本ID'"`
-	IncomeExpense  constant.IncomeExpense `gorm:"column:income_expense;comment:'收支类型'"`
-	Name           string                 `gorm:"column:name;size:128;comment:'名称'"`
-	Previous       uint                   `gorm:"column:previous;comment:'前一位'"`
+	ID             uint                   `gorm:"primary_key"`
+	AccountId      uint                   `gorm:"index;comment:'账本ID'"`
+	IncomeExpense  constant.IncomeExpense `gorm:"comment:'收支类型'"`
+	Name           string                 `gorm:"size:128;comment:'名称'"`
+	Previous       uint                   `gorm:"comment:'前一位'"`
 	OrderUpdatedAt time.Time
 	CreatedAt      time.Time
 	commonModel.BaseModel

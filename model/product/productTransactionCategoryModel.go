@@ -8,10 +8,10 @@ import (
 )
 
 type TransactionCategory struct {
-	ID            uint                   `gorm:"primary_key;column:id"`
-	ProductKey    string                 `gorm:"column:product_key"`
-	IncomeExpense constant.IncomeExpense `gorm:"column:income_expense;size:8;comment:'收支类型'"`
-	Name          string                 `gorm:"column:name;size:64"`
+	ID            uint                   `gorm:"primary_key"`
+	ProductKey    string                 `gorm:"uniqueIndex:unique_name,priority:1"`
+	IncomeExpense constant.IncomeExpense `gorm:"size:8;comment:'收支类型';uniqueIndex:unique_name,priority:2"`
+	Name          string                 `gorm:"size:64;uniqueIndex:unique_name,priority:3"`
 	commonModel.BaseModel
 }
 

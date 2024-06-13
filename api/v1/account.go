@@ -496,7 +496,7 @@ func (a *AccountApi) GetUserInfo(ctx *gin.Context) {
 				return
 			}
 		case request.RecentTrans:
-			result, err := a.getTrans(account, &[]uint{accountUser.UserId}, 10, 0)
+			result, err := a.getTrans(account, &[]uint{accountUser.UserId}, 5, 0)
 			if responseError(err, ctx) {
 				return
 			}

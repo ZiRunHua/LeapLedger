@@ -20,9 +20,9 @@ func (proService *Product) MappingTransactionCategory(
 		return nil, errors.Wrap(global.ErrInvalidParameter, "")
 	}
 	mapping := &productModel.TransactionCategoryMapping{
-		AccountID:  category.AccountId,
-		CategoryID: category.ID,
-		PtcID:      productTransCat.ID,
+		AccountId:  category.AccountId,
+		CategoryId: category.ID,
+		PtcId:      productTransCat.ID,
 		ProductKey: productTransCat.ProductKey,
 	}
 	err := global.GvaDb.Model(mapping).Create(mapping).Error

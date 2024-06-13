@@ -14,6 +14,10 @@ var natsConn = initialize.Nats
 var config = initialize.Config.Nats
 var natsLogger = initialize.NatsLogger
 
+// user task
+const TaskCreateTourist constant.Subject = "createTourist"
+
+// transaction task
 const TaskStatisticUpdate constant.Subject = "statisticUpdate"
 const TaskTransactionSync constant.Subject = "transactionSync"
 

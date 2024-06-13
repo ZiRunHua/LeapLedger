@@ -4,15 +4,15 @@ import (
 	"KeepAccount/global"
 	"KeepAccount/global/constant"
 	commonModel "KeepAccount/model/common"
-	"crypto/sha1"
-	"encoding/hex"
+	"errors"
 	"gorm.io/gorm"
+	"strconv"
 )
 
 type User struct {
 	Username string `gorm:"type:varchar(128);comment:'用户名'"`
-	Password string `gorm:"type:varchar(64);comment:'密码'"`
-	Email    string `gorm:"type:varchar(64);comment:'邮箱'"`
+	Password string `gorm:"type:char(64);comment:'密码'"`
+	Email    string `gorm:"type:varchar(64);comment:'邮箱';unique"`
 	gorm.Model
 	commonModel.BaseModel
 }
@@ -21,18 +21,6 @@ type UserInfo struct {
 	ID       uint
 	Username string
 	Email    string
-}
-
-type userDataRetriever interface {
-	UserInfo | User
-}
-
-func (u *User) TableName() string {
-	return "user"
-}
-
-func (u *User) IsEmpty() bool {
-	return u.ID == 0
 }
 
 func (u *User) SelectById(id uint, selects ...interface{}) error {
@@ -46,9 +34,6 @@ func (u *User) SelectById(id uint, selects ...interface{}) error {
 func (u *User) GetUserClient(client constant.Client) (clientInfo UserClientBaseInfo, err error) {
 	var clientModel Client
 	clientModel = GetUserClientModel(client)
-	if err != nil {
-		return
-	}
 	err = clientModel.GetByUser(*u)
 	if err != nil {
 		return
@@ -57,19 +42,35 @@ func (u *User) GetUserClient(client constant.Client) (clientInfo UserClientBaseI
 	return
 }
 
+func (u *User) ModifyAsTourist(db *gorm.DB) error {
+	return db.Model(u).Updates(map[string]interface{}{
+		"username": "游玩家",
+		"email":    "player" + strconv.Itoa(int(u.ID)),
+	}).Error
+}
+
 func (u *User) GetTransactionShareConfig() (TransactionShareConfig, error) {
 	data := TransactionShareConfig{}
 	return data, data.SelectByUserId(u.ID)
 }
 
-func (u *User) hashPassword() error {
-	data := []byte(u.Username + u.Password)
-	h := sha1.Sum(data)
-	u.Password = hex.EncodeToString(h[:])
-	return nil
+type Tour struct {
+	UserId uint `gorm:"primary"`
+	Status bool
+	gorm.Model
+	commonModel.BaseModel
 }
 
-func (u *User) updatePassword(newPassword string) {
-	u.Password = newPassword
-	u.hashPassword()
+func (u *Tour) TableName() string {
+	return "user_tour"
+}
+func (t *Tour) GetUser(db *gorm.DB) (user User, err error) {
+	err = db.First(&user, t.UserId).Error
+	return user, err
+}
+func (t *Tour) Use(db *gorm.DB) error {
+	if t.Status == true {
+		return errors.New("tourist used")
+	}
+	return db.Model(t).Update("status", true).Error
 }

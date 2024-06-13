@@ -53,12 +53,14 @@ type UserClientWeb struct {
 }
 type UserClientAndroid struct {
 	UserClientBaseInfo
-	Version string
+	Version      string
+	DeviceNumber string `gorm:"uniqueIndex;default:null;"`
 	commonModel.BaseModel
 }
 type UserClientIos struct {
 	UserClientBaseInfo
-	Version string
+	Version      string
+	DeviceNumber string `gorm:"uniqueIndex;default:null;"`
 	commonModel.BaseModel
 }
 

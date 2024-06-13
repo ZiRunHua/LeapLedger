@@ -3,6 +3,7 @@ package userService
 import (
 	"KeepAccount/global"
 	"KeepAccount/global/constant"
+	"KeepAccount/global/nats"
 	accountModel "KeepAccount/model/account"
 	"KeepAccount/model/common/query"
 	userModel "KeepAccount/model/user"
@@ -53,7 +54,18 @@ func (userSvc *User) updateDataAfterLogin(user userModel.User, clientType consta
 	return nil
 }
 
-func (userSvc *User) Register(addData userModel.AddData, tx *gorm.DB) (user userModel.User, err error) {
+type RegisterOption struct {
+	Tour bool
+}
+
+func (ro *RegisterOption) WithTour(Tour bool) *RegisterOption {
+	ro.Tour = Tour
+	return ro
+}
+
+func (userSvc *User) NewRegisterOption() *RegisterOption { return &RegisterOption{} }
+
+func (userSvc *User) Register(addData userModel.AddData, tx *gorm.DB, option ...RegisterOption) (user userModel.User, err error) {
 	addData.Password = commonService.Common.HashPassword(addData.Email, addData.Password)
 	exist, err := query.Exist[*userModel.User]("email = ?", addData.Email)
 	if err != nil {
@@ -75,8 +87,22 @@ func (userSvc *User) Register(addData userModel.AddData, tx *gorm.DB) (user user
 		}
 	}
 	_, err = userSvc.RecordAction(user, constant.Register, tx)
+
 	if err != nil {
 		return
+	}
+	if len(option) == 0 {
+		return
+	}
+	if option[0].Tour {
+		_, err = userDao.CreateTour(user)
+		if err != nil {
+			return
+		}
+		err = user.ModifyAsTourist(tx)
+		if err != nil {
+			return
+		}
 	}
 	return
 }
@@ -156,4 +182,60 @@ func (userSvc *User) RecordActionAndRemark(
 		return nil, err
 	}
 	return log, err
+}
+
+func (userSvc *User) EnableTourist(
+	deviceNumber string, client constant.Client, tx *gorm.DB,
+) (user userModel.User, err error) {
+	if client != constant.Android && client != constant.Ios {
+		return user, global.ErrDeviceNotSupported
+	}
+	userDao := userModel.NewDao(tx)
+	userInfo, err := userDao.SelectByDeviceNumber(client, deviceNumber)
+	if err == nil {
+		// 设备号已存
+		user, err = userDao.SelectById(userInfo.UserId)
+		if err != nil {
+			return
+		}
+		return
+	} else if false == errors.Is(err, gorm.ErrRecordNotFound) {
+		return
+	}
+
+	userTour, err := userDao.SelectByUnusedTour()
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			err = errors.New("访问游客过多稍后再试")
+			return
+		}
+		return
+	}
+	user, err = userTour.GetUser(tx)
+	if err != nil {
+		return
+	}
+	err = tx.Model(userModel.GetUserClientModel(client)).Where("user_id = ?", user.ID).Update("device_number", deviceNumber).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrDuplicatedKey) {
+			err = global.ErrOperationTooFrequent
+		}
+		return
+	}
+	err = userTour.Use(tx)
+	if err != nil {
+		return
+	}
+	user, err = userTour.GetUser(tx)
+	if err != nil {
+		return
+	}
+	nats.Publish[any](nats.TaskCreateTourist, struct{}{})
+	return
+}
+
+func (userSvc *User) CreateTourist(tx *gorm.DB) (user userModel.User, err error) {
+	addData := userModel.AddData{"游玩家", util.Rand.GenerateRandomString(8), util.Rand.GenerateRandomString(8)}
+	option := userSvc.NewRegisterOption().WithTour(true)
+	return userSvc.Register(addData, tx, *option)
 }

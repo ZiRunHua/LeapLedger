@@ -1,27 +1,15 @@
 package constant
 
-import (
-	"os"
-)
-
 type ServerMode string
 
 var Debug, Production ServerMode = "debug", "production"
 
-var WORK_PATH string
+const WORK_PATH = "/go/LeapLedger"
 
 var LOG_PAYH = WORK_PATH + "/log"
 var DATA_PATH = WORK_PATH + "/data"
 
-func init() {
-	var err error
-	WORK_PATH, err = os.Getwd()
-	if err != nil {
-		panic(err)
-	}
-	LOG_PAYH = WORK_PATH + "/log"
-	DATA_PATH = WORK_PATH + "/data"
-}
+var ExampleAccountJsonPath = DATA_PATH + "/template/account/example.json"
 
 // IncomeExpense 收支类型
 type IncomeExpense string

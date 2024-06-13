@@ -88,9 +88,9 @@ func (p *PublicApi) Login(ctx *gin.Context) {
 	client := contextFunc.GetClient(ctx)
 	// 开始处理
 	var user userModel.User
-	responseData := response.Login{}
+	var clientBaseInfo userModel.UserClientBaseInfo
+	var responseData response.Login
 	transactionFunc := func(tx *gorm.DB) error {
-		var clientBaseInfo userModel.UserClientBaseInfo
 		var customClaims util.CustomClaims
 		user, clientBaseInfo, responseData.Token, customClaims, err = userService.Base.Login(
 			requestData.Email, requestData.Password, client, tx,
@@ -103,35 +103,15 @@ func (p *PublicApi) Login(ctx *gin.Context) {
 		if err != nil {
 			return err
 		}
-		// 当前客户端操作账本
-		if clientBaseInfo.CurrentAccountId != 0 {
-			var account accountModel.Account
-			account, err = accountModel.NewDao().SelectById(clientBaseInfo.CurrentAccountId)
-			if err != nil {
-				return err
-			}
-			err = responseData.CurrentAccount.SetDataFromAccount(account)
-			if err != nil {
-				return err
-			}
-		}
-		// 当前客户端操作共享账本
-		if clientBaseInfo.CurrentShareAccountId != 0 {
-			var accountUser accountModel.User
-			accountUser, err = accountModel.NewDao().SelectUser(clientBaseInfo.CurrentShareAccountId, user.ID)
-			if err != nil && false == errors.Is(err, gorm.ErrRecordNotFound) {
-				return err
-			}
-			err = responseData.CurrentShareAccount.SetData(accountUser)
-			if err != nil {
-				return err
-			}
-		}
 		return err
 	}
 
 	if err = global.GvaDb.Transaction(transactionFunc); err != nil {
 		err = errors.New("用户名不存在或者密码错误")
+		return
+	}
+	err = responseData.SetDataFormClientInto(clientBaseInfo)
+	if err != nil {
 		return
 	}
 	if responseData.Token == "" {
@@ -186,6 +166,45 @@ func (p *PublicApi) Register(ctx *gin.Context) {
 		return
 	}
 	response.OkWithDetailed(responseData, "注册成功", ctx)
+}
+
+func (p *PublicApi) TourRequest(ctx *gin.Context) {
+	var requestData request.TourRequest
+	if err := ctx.ShouldBindJSON(&requestData); err != nil {
+		response.FailToParameter(ctx, err)
+		return
+	}
+	var user userModel.User
+	err := global.GvaDb.Transaction(
+		func(tx *gorm.DB) error {
+			var err error
+			user, err = userService.Base.EnableTourist(requestData.DeviceNumber, contextFunc.GetClient(ctx), tx)
+			return err
+		},
+	)
+	if responseError(err, ctx) {
+		return
+	}
+	//response
+	customClaims := commonService.MakeCustomClaims(user.ID)
+	token, err := commonService.GenerateJWT(customClaims)
+	if responseError(err, ctx) {
+		return
+	}
+	responseData := response.Login{Token: token, TokenExpirationTime: customClaims.ExpiresAt}
+	err = responseData.User.SetData(user)
+	if responseError(err, ctx) {
+		return
+	}
+	clientInfo, err := user.GetUserClient(contextFunc.GetClient(ctx))
+	if responseError(err, ctx) {
+		return
+	}
+	err = responseData.SetDataFormClientInto(clientInfo)
+	if responseError(err, ctx) {
+		return
+	}
+	response.OkWithDetailed(responseData, "欢迎", ctx)
 }
 
 func (p *PublicApi) UpdatePassword(ctx *gin.Context) {

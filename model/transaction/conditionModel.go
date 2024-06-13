@@ -105,16 +105,16 @@ func (tc *TimeCondition) addConditionToQuery(query *gorm.DB) *gorm.DB {
 
 // ExtensionCondition 拓展查询条件 多是无索引条件
 type ExtensionCondition struct {
-	MiniAmount, MaxAmount *int
+	MinAmount, MaxAmount *int
 }
 
 func (ec *ExtensionCondition) IsSet() bool {
-	return ec != nil && (ec.MiniAmount != nil || ec.MaxAmount != nil)
+	return ec != nil && (ec.MinAmount != nil || ec.MaxAmount != nil)
 }
 
 func (ec *ExtensionCondition) addConditionToQuery(query *gorm.DB) *gorm.DB {
-	if ec.MiniAmount != nil {
-		query = query.Where("amount >= ?", *ec.MiniAmount)
+	if ec.MinAmount != nil {
+		query = query.Where("amount >= ?", *ec.MinAmount)
 	}
 	if ec.MaxAmount != nil {
 		query = query.Where("amount <= ?", *ec.MaxAmount)

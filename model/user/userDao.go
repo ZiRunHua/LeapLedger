@@ -5,6 +5,7 @@ import (
 	"KeepAccount/global/constant"
 	"errors"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 type UserDao struct {
@@ -81,6 +82,11 @@ func (u *UserDao) SelectByEmail(email string) (User, error) {
 	user := User{}
 	err := u.db.Where("email = ?", email).First(&user).Error
 	return user, err
+}
+
+func (u *UserDao) SelectByDeviceNumber(client constant.Client, deviceNumber string) (clientBaseInfo UserClientBaseInfo, err error) {
+	err = u.db.Model(GetUserClientModel(client)).Where("device_number = ?", deviceNumber).First(&clientBaseInfo).Error
+	return
 }
 
 type Condition struct {
@@ -194,4 +200,18 @@ func (u *UserDao) AddFriend(userId uint, friendId uint, add AddMode) (mapping Fr
 func (u *UserDao) SelectFriendList(userId uint) (result []Friend, err error) {
 	err = u.db.Model(&Friend{}).Where("user_id = ?", userId).Find(&result).Error
 	return
+}
+
+func (u *UserDao) CreateTour(user User) (Tour, error) {
+	tour := Tour{
+		UserId: user.ID,
+		Status: false,
+	}
+	err := u.db.Create(&tour).Error
+	return tour, err
+}
+
+func (u *UserDao) SelectByUnusedTour() (tour Tour, err error) {
+	err = u.db.Where("status = false").Clauses(clause.Locking{Strength: "UPDATE", Options: "SKIP LOCKED"}).First(&tour).Error
+	return tour, err
 }

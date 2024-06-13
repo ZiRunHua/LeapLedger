@@ -17,7 +17,7 @@ type template struct{}
 
 func (t *template) GetList() ([]accountModel.Account, error) {
 	list := []accountModel.Account{}
-	err := global.GvaDb.Where("user_id = ?", tempUser.ID).Find(&list).Error
+	err := global.GvaDb.Where("user_id = ?", tmplUser.ID).Find(&list).Error
 	return list, err
 }
 
@@ -25,7 +25,7 @@ func (t *template) CreateAccount(
 	user userModel.User, tmplAccount accountModel.Account, ctx context.Context,
 ) (account accountModel.Account, err error) {
 	tx := ctx.Value(contextKey.Tx).(*gorm.DB)
-	if tmplAccount.UserId != tempUser.ID {
+	if tmplAccount.UserId != tmplUser.ID {
 		return account, ErrNotBelongTemplate
 	}
 	account, _, err = accountService.ServiceGroupApp.Base.CreateOne(
@@ -83,7 +83,7 @@ func (t *template) CreateFatherCategory(
 	var mappingList []productModel.TransactionCategoryMapping
 	productDao := productModel.NewDao(tx)
 	for _, tmplCategory := range tmplCategoryList {
-		category, err = categoryService.CreateOne(father, categoryService.NewCategoryData(tmplCategory), ctx)
+		category, err = categoryService.CreateOne(father, categoryService.NewCategoryData(tmplCategory.Name, tmplCategory.Icon), ctx)
 		if err != nil {
 			return err
 		}
@@ -93,9 +93,9 @@ func (t *template) CreateFatherCategory(
 		}
 		for _, tmpMapping := range mappingList {
 			mapping := productModel.TransactionCategoryMapping{
-				AccountID:  category.AccountId,
-				CategoryID: category.ID,
-				PtcID:      tmpMapping.PtcID,
+				AccountId:  category.AccountId,
+				CategoryId: category.ID,
+				PtcId:      tmpMapping.PtcId,
 				ProductKey: tmpMapping.ProductKey,
 			}
 			err = tx.Create(&mapping).Error

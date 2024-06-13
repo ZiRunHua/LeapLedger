@@ -155,13 +155,13 @@ func (p *ProductApi) GetMappingTree(ctx *gin.Context) {
 			return
 		}
 
-		if children[prodTransCategoryMapping.CategoryID] == nil {
-			fatherList = append(fatherList, prodTransCategoryMapping.CategoryID)
+		if children[prodTransCategoryMapping.CategoryId] == nil {
+			fatherList = append(fatherList, prodTransCategoryMapping.CategoryId)
 		}
-		prodTransCategory = transCategoryMap[prodTransCategoryMapping.PtcID]
-		children[prodTransCategoryMapping.CategoryID] = append(
-			children[prodTransCategoryMapping.CategoryID],
-			prodTransCategoryMapping.PtcID,
+		prodTransCategory = transCategoryMap[prodTransCategoryMapping.PtcId]
+		children[prodTransCategoryMapping.CategoryId] = append(
+			children[prodTransCategoryMapping.CategoryId],
+			prodTransCategoryMapping.PtcId,
 		)
 	}
 

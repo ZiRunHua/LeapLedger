@@ -7,8 +7,8 @@ import (
 
 type TransactionShareConfig struct {
 	gorm.Model
-	UserId       uint `gorm:"type:int;unsigned;comment:'用户ID';unique"`
-	DisplayFlags Flag `gorm:"type:smallint;unsigned;comment:'展示字段标志'"`
+	UserId       uint `gorm:"comment:'用户ID';unique"`
+	DisplayFlags Flag `gorm:"comment:'展示字段标志'"`
 }
 
 type Flag uint

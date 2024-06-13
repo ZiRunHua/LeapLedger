@@ -25,6 +25,11 @@ func (cd *CategoryDao) SelectById(id uint) (category Category, err error) {
 	return
 }
 
+func (cd *CategoryDao) SelectByName(accountId uint, name string) (category Category, err error) {
+	err = cd.db.Where("account_id = ? AND name = ?", accountId, name).First(&category).Error
+	return
+}
+
 type CategoryUpdateData struct {
 	Name *string
 	Icon *string

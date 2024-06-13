@@ -41,7 +41,8 @@ func (t *TransactionDao) GetIeStatisticByCondition(
 ) (result global.IncomeExpenseStatistic, err error) {
 	if extCond.IsSet() {
 		// 走transaction表查询
-		query := condition.addConditionToQuery(t.db)
+		query := condition.ForeignKeyCondition.addConditionToQuery(t.db)
+		query = query.Where("trans_time between ? AND ?", condition.StartTime, condition.EndTime)
 		query = extCond.addConditionToQuery(query)
 		result, err = t.getIncomeExpenseStatisticByWhere(ie, query)
 	} else {

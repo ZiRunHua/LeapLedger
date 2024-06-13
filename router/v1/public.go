@@ -17,6 +17,7 @@ func (s *PublicRouter) InitPublicRouter(Router *gin.RouterGroup) *gin.RouterGrou
 		publicRouter.POST("/user/login", publicApi.Login)
 		publicRouter.POST("/user/register", publicApi.Register)
 		publicRouter.PUT("/user/password", publicApi.UpdatePassword)
+		publicRouter.POST("/user/tour", publicApi.TourRequest)
 	}
 	return publicRouter
 }
