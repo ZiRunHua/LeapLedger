@@ -3,7 +3,6 @@ package userService
 import (
 	"KeepAccount/global"
 	"KeepAccount/global/constant"
-	"KeepAccount/global/nats"
 	accountModel "KeepAccount/model/account"
 	"KeepAccount/model/common/query"
 	userModel "KeepAccount/model/user"
@@ -230,7 +229,7 @@ func (userSvc *User) EnableTourist(
 	if err != nil {
 		return
 	}
-	nats.Publish[any](nats.TaskCreateTourist, struct{}{})
+	globalTask.Publish[any](globalTask.TaskCreateTourist, struct{}{})
 	return
 }
 

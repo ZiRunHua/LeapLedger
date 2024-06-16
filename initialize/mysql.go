@@ -17,14 +17,14 @@ type _mysql struct {
 	Password string `yaml:"Password"`
 }
 
-func (m *_mysql) Dsn() string {
+func (m *_mysql) dsn() string {
 	return m.Username + ":" + m.Password + "@tcp(" + m.Path + ":" + m.Port + ")/" + m.DbName + "?" + m.Config
 }
 
 func (m *_mysql) do() error {
 	var err error
 	mysqlConfig := mysql.Config{
-		DSN:                       m.Dsn(), // DSN data source name
+		DSN:                       m.dsn(), // DSN data source name
 		DefaultStringSize:         191,     // string 类型字段的默认长度
 		SkipInitializeWithVersion: false,   //
 	}
@@ -49,11 +49,11 @@ func (m *_mysql) connect(mysqlConfig mysql.Config, retryTimes int) (db *gorm.DB,
 			db, err = m.connect(mysqlConfig, retryTimes+1)
 		}
 	}()
-	db, err = gorm.Open(mysql.New(mysqlConfig), m.GormConfig())
+	db, err = gorm.Open(mysql.New(mysqlConfig), m.gormConfig())
 	return
 }
 
-func (m *_mysql) GormConfig() *gorm.Config {
+func (m *_mysql) gormConfig() *gorm.Config {
 	config := &gorm.Config{
 		SkipDefaultTransaction: true,
 		NamingStrategy: schema.NamingStrategy{

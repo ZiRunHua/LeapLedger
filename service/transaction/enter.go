@@ -19,7 +19,7 @@ var server = &Transaction{}
 // 初始化
 func init() {
 	var err error
-	if errorLog, err = _log.GetNewZapLogger(constant.LOG_PAYH + "/service/transaction/error.log"); err != nil {
+	if errorLog, err = _log.GetNewZapLogger(constant.LOG_PATH + "/service/transaction/error.log"); err != nil {
 		panic(err)
 	}
 }

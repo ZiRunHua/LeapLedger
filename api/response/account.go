@@ -180,7 +180,7 @@ func (a *AccountMapping) SetData(data accountModel.Mapping) error {
 	a.Id = data.ID
 	a.CreateTime = data.CreatedAt.Unix()
 	a.UpdateTime = data.UpdatedAt.Unix()
-	account, err := data.GetMainAccount()
+	account, err := data.GetMainAccount(global.GvaDb)
 	if err != nil {
 		return err
 	}
@@ -188,7 +188,7 @@ func (a *AccountMapping) SetData(data accountModel.Mapping) error {
 	if err != nil {
 		return err
 	}
-	account, err = data.GetRelatedAccount()
+	account, err = data.GetRelatedAccount(global.GvaDb)
 	if err != nil {
 		return err
 	}

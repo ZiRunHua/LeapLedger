@@ -29,7 +29,7 @@ var (
 var (
 	userService        = service.GroupApp.UserServiceGroup
 	accountService     = service.GroupApp.AccountServiceGroup
-	categoryService    = service.GroupApp.CategoryServiceGroup.Category
+	categoryService    = service.GroupApp.CategoryServiceGroup
 	transactionService = service.GroupApp.TransactionServiceGroup.Transaction
 	productService     = service.GroupApp.ProductServiceGroup.Product
 	templateService    = service.GroupApp.TemplateService.Template

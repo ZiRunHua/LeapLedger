@@ -4,6 +4,8 @@ import (
 	"KeepAccount/global/constant"
 	"KeepAccount/util"
 	"context"
+	"github.com/go-co-op/gocron"
+	"github.com/nats-io/nats.go"
 	"go.uber.org/zap"
 	"golang.org/x/sync/errgroup"
 	"gopkg.in/yaml.v3"
@@ -16,6 +18,7 @@ type _config struct {
 	Redis      _redis              `yaml:"Redis"`
 	Mysql      _mysql              `yaml:"Mysql"`
 	Nats       _nats               `yaml:"Nats"`
+	Scheduler  _scheduler          `yaml:"Scheduler"`
 	Logger     _logger             `yaml:"Logger"`
 	System     _system             `yaml:"System"`
 	Captcha    _captcha            `yaml:"Captcha"`
@@ -26,10 +29,13 @@ var (
 	Config        *_config
 	Cache         util.Cache
 	Db            *gorm.DB
+	Nats          *nats.Conn
+	Scheduler     *gocron.Scheduler
 	RequestLogger *zap.Logger
 	ErrorLogger   *zap.Logger
 	PanicLogger   *zap.Logger
 	NatsLogger    *zap.Logger
+	CronLogger    *zap.Logger
 )
 
 func init() {

@@ -2,7 +2,7 @@ package transactionService
 
 import (
 	"KeepAccount/global/contextKey"
-	"KeepAccount/global/nats"
+	gTask "KeepAccount/global/task"
 	transactionModel "KeepAccount/model/transaction"
 	"context"
 	"gorm.io/gorm"
@@ -11,21 +11,19 @@ import (
 type _task struct{}
 
 func init() {
-	nats.TransSubscribe[transactionModel.StatisticData](
-		nats.TaskStatisticUpdate, func(db *gorm.DB, data transactionModel.StatisticData) error {
-			return GroupApp.Transaction.updateStatistic(data, db)
+	gTask.Subscribe[transactionModel.StatisticData](
+		gTask.TaskStatisticUpdate, func(data transactionModel.StatisticData, ctx context.Context) error {
+			return GroupApp.Transaction.updateStatistic(data, ctx.Value(contextKey.Tx).(*gorm.DB))
 		},
 	)
 
-	nats.TransSubscribe[transactionModel.Transaction](
-		nats.TaskTransactionSync, func(db *gorm.DB, data transactionModel.Transaction) error {
-			return GroupApp.Transaction.SyncToMappingAccount(data, context.WithValue(context.Background(), contextKey.Tx, db))
-		},
+	gTask.Subscribe[transactionModel.Transaction](
+		gTask.TaskTransactionSync, GroupApp.Transaction.SyncToMappingAccount,
 	)
 }
 
 func (t *_task) updateStatistic(data transactionModel.StatisticData, tx *gorm.DB) error {
-	isSuccess := nats.Publish[transactionModel.StatisticData](nats.TaskStatisticUpdate, data)
+	isSuccess := gTask.Publish[transactionModel.StatisticData](gTask.TaskStatisticUpdate, data)
 	if false == isSuccess {
 		return server.updateStatistic(data, tx)
 	}
@@ -33,7 +31,7 @@ func (t *_task) updateStatistic(data transactionModel.StatisticData, tx *gorm.DB
 }
 
 func (t *_task) syncToMappingAccount(trans transactionModel.Transaction, ctx context.Context) error {
-	isSuccess := nats.Publish[transactionModel.Transaction](nats.TaskTransactionSync, trans)
+	isSuccess := gTask.Publish[transactionModel.Transaction](gTask.TaskTransactionSync, trans)
 	if false == isSuccess {
 		return server.SyncToMappingAccount(trans, ctx)
 	}

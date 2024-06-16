@@ -7,10 +7,7 @@ import (
 )
 
 type _logger struct {
-	Path    string          `yaml:"Path"`   // 日志路径
-	Level   string          `yaml:"Level"`  // 日志级别
-	Format  string          `yaml:"Format"` // 日志格式
-	encoder zapcore.Encoder // 这是一个字段，不需要YAML标签
+	encoder zapcore.Encoder
 }
 
 const (
@@ -18,6 +15,7 @@ const (
 	_errorLogPath      = "log/error.log"
 	_panicLogPath      = "log/panic.log"
 	_natsLogPath       = "log/nats.log"
+	_cronLogPath       = "log/cron.log"
 	_natsServerLogPath = "log/natsServer.log"
 )
 
@@ -34,6 +32,9 @@ func (l *_logger) do() error {
 		return err
 	}
 	if NatsLogger, err = l.initLogger(_natsLogPath); err != nil {
+		return err
+	}
+	if CronLogger, err = l.initLogger(_cronLogPath); err != nil {
 		return err
 	}
 	return nil

@@ -11,7 +11,6 @@ import (
 	"KeepAccount/util/dataType"
 	"context"
 	"github.com/pkg/errors"
-	"go.uber.org/zap"
 	"gorm.io/gorm"
 	"time"
 )
@@ -60,18 +59,13 @@ func (catSvc *Category) CreateOne(father categoryModel.Father, data CreateData, 
 		return category, errors.Wrap(err, "category.CreateOne()")
 	}
 	// other
-	otherErr := tx.Transaction(func(tx *gorm.DB) error {
-		return catSvc.UpdateCategoryMapping(category, context.WithValue(ctx, contextKey.Tx, tx))
-	})
-	if otherErr != nil {
-		errorLog.Error("UpdateCategoryMapping", zap.Error(otherErr))
-	}
+	_ = task.UpdateCategoryMapping(category)
 	return
 }
 
 func (catSvc *Category) UpdateCategoryMapping(category categoryModel.Category, ctx context.Context) error {
 	if !aiService.IsOpen() {
-		return nil
+		return errors.New("ai service is not enabled")
 	}
 	tx := ctx.Value(contextKey.Tx).(*gorm.DB)
 	accountDao, categoryDao := accountModel.NewDao(tx), categoryModel.NewDao(tx)
@@ -328,7 +322,7 @@ func (catSvc *Category) Delete(category categoryModel.Category, tx *gorm.DB) err
 		return err
 	}
 	if exits {
-		return errors.Wrap(ErrExistTransacion, "delete category")
+		return errors.Wrap(ErrExistTransaction, "delete category")
 	}
 	return tx.Delete(&category).Error
 }
@@ -343,7 +337,7 @@ func (catSvc *Category) DeleteFather(father categoryModel.Father, tx *gorm.DB) e
 	if err != nil {
 		return err
 	} else if exits {
-		return errors.Wrap(ErrExistTransacion, "delete category")
+		return errors.Wrap(ErrExistTransaction, "delete category")
 	}
 
 	err = tx.Where("father_id = ?", father.ID).Delete(&categoryModel.Category{}).Error
@@ -407,7 +401,21 @@ func (catSvc *Category) DeleteMapping(parent, child categoryModel.Category, oper
 	return err
 }
 
-func (catSvc *Category) MappingAccountCategoryByAI(mainAccount, mappingAccount accountModel.Account, ctx context.Context, tx *gorm.DB) error {
+func (catSvc *Category) MappingCategoryToAccountMapping(mappingAccount accountModel.Mapping, ctx context.Context) error {
+	tx := ctx.Value(contextKey.Tx).(*gorm.DB)
+	main, err := mappingAccount.GetMainAccount(tx)
+	if err != nil {
+		return err
+	}
+	related, err := mappingAccount.GetRelatedAccount(tx)
+	if err != nil {
+		return err
+	}
+	return catSvc.mappingAccountCategoryByAI(main, related, ctx)
+}
+
+func (catSvc *Category) mappingAccountCategoryByAI(mainAccount, mappingAccount accountModel.Account, ctx context.Context) error {
+	tx := ctx.Value(contextKey.Tx).(*gorm.DB)
 	if false == aiService.IsOpen() {
 		return nil
 	}

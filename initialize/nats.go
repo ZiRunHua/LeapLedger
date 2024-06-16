@@ -7,35 +7,41 @@ import (
 )
 
 type _nats struct {
-	ServerUrl  string             `yaml:"ServerUrl"`
-	Subjects   []constant.Subject `yaml:"Subjects"`
-	subjectMap map[constant.Subject]struct{}
+	ServerUrl        string             `yaml:"ServerUrl"`
+	Subjects         []constant.Subject `yaml:"Subjects"`
+	subjectMap       map[constant.Subject]struct{}
+	IsConsumerServer bool
 }
 
-var Nats *nats.Conn
+// NatsDb is used to record and retry failure messages
+// Enabled in consumer server
 
-type NastConn[T struct{}] struct {
-	nats *nats.Conn
-}
+const nastStoreDir = constant.WORK_PATH + "/nats"
 
 func (n *_nats) do(mode constant.ServerMode) error {
-	n.init()
+	err := n.init()
+	if err != nil {
+		return err
+	}
 	if mode == constant.Debug {
 		opts := &server.Options{
 			JetStream: true,
 			Trace:     true,
 			Debug:     true,
 			Logtime:   true,
-			LogFile:   _natsServerLogPath}
-		nastServer, err := server.NewServer(opts)
+			LogFile:   _natsServerLogPath,
+			StoreDir:  nastStoreDir,
+		}
+		var nastServer *server.Server
+		nastServer, err = server.NewServer(opts)
 		if err != nil {
 			return err
 		}
+		//If you don't call ConfigureLogger, there will be no logging, even if has been set up in the options
 		nastServer.ConfigureLogger()
 		nastServer.Start()
 		n.ServerUrl = nats.DefaultURL
 	}
-	var err error
 	Nats, err = nats.Connect(n.ServerUrl)
 	if err != nil {
 		return err
@@ -43,14 +49,21 @@ func (n *_nats) do(mode constant.ServerMode) error {
 	return err
 }
 
-func (n *_nats) init() {
+func (n *_nats) init() error {
 	n.subjectMap = make(map[constant.Subject]struct{})
 	for _, subject := range n.Subjects {
 		n.subjectMap[subject] = struct{}{}
 	}
+	n.IsConsumerServer = len(n.subjectMap) > 0
+	return nil
 }
 
+const allTask constant.Subject = "all"
+
 func (n *_nats) CanSubscribe(subj constant.Subject) bool {
+	if _, ok := n.subjectMap[allTask]; ok {
+		return true
+	}
 	_, ok := n.subjectMap[subj]
 	return ok
 }

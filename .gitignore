@@ -12,6 +12,6 @@ local_test
 
 *.log
 
-mysql_data
+runtime
 docker
 production_config.yaml

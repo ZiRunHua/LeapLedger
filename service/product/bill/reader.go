@@ -23,7 +23,7 @@ func init() {
 }
 
 func initLogger() error {
-	path := constant.LOG_PAYH + "/service/product/bill.log"
+	path := constant.LOG_PATH + "/service/product/bill.log"
 	dir := filepath.Dir(path)
 	err := os.MkdirAll(dir, os.ModePerm)
 	logFile, err := os.Create(path)

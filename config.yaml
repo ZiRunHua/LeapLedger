@@ -2,15 +2,15 @@
 # This is the service initialization configuration file execution code see ./initialize/initialize.go
 Mode: debug
 
+System:
+  Addr: 8080
+  RouterPrefix: ""
+
 Redis:
   Db: 0
   # 设置Addr开启redis
   Addr: ""
   Password: ""
-
-System:
-  Addr: 8080
-  RouterPrefix: ""
 
 Mysql:
   Path: "leap-ledger-mysql"
@@ -22,7 +22,9 @@ Mysql:
 
 Nats:
   ServerUrl: nats://127.0.0.1:4222
-  Subjects: [createTourist,statisticUpdate,transactionSync]
+  # This is the topic that the consumer server needs to subscribe to, such as createTourist, statisticUpdate, transactionSync.
+  # subjects see ./global/nats/nats.go
+  Subjects: [all]
 
 Captcha:
   KeyLong: 6
@@ -34,14 +36,13 @@ Captcha:
   EmailCaptchaTimeOut: 3600
 
 ThirdParty:
-  # WeCom目前只用于发送邮件
+  # WeCom used to send domain email
   WeCom:
-    # 设置CorpId和CorpSecret开启服务
     CorpId: ""
     CorpSecret: ""
-  # ai服务暂时只有中文相似度比较，用于交易类型的匹配 基于[https://huggingface.co/google-bert/bert-base-chinese]简单实现
+  # Ai is used to obtain Chinese similarity, which is used to match transaction types
+  # https://huggingface.co/google-bert/bert-base-chinese
   Ai:
-    # 设置Host和Port开启服务
     Host: "" # leap-ledger-ai-server
     Port: "" # 5000
     MinSimilarity: 0.85

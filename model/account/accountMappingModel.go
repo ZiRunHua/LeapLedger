@@ -1,7 +1,6 @@
 package accountModel
 
 import (
-	"KeepAccount/global"
 	logModel "KeepAccount/model/log"
 	"gorm.io/gorm"
 	"time"
@@ -19,13 +18,13 @@ func (m *Mapping) TableName() string {
 	return "account_mapping"
 }
 
-func (m *Mapping) GetMainAccount() (result Account, err error) {
-	err = global.GvaDb.First(&result, m.MainId).Error
+func (m *Mapping) GetMainAccount(db *gorm.DB) (result Account, err error) {
+	err = db.First(&result, m.MainId).Error
 	return
 }
 
-func (m *Mapping) GetRelatedAccount() (result Account, err error) {
-	err = global.GvaDb.First(&result, m.RelatedId).Error
+func (m *Mapping) GetRelatedAccount(db *gorm.DB) (result Account, err error) {
+	err = db.First(&result, m.RelatedId).Error
 	return
 }
 

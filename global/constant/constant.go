@@ -5,9 +5,10 @@ type ServerMode string
 var Debug, Production ServerMode = "debug", "production"
 
 const WORK_PATH = "/go/LeapLedger"
+const RUNTIME_DATA_PATH = WORK_PATH + "/runtime/data"
 
-var LOG_PAYH = WORK_PATH + "/log"
-var DATA_PATH = WORK_PATH + "/data"
+const LOG_PATH = WORK_PATH + "/log"
+const DATA_PATH = WORK_PATH + "/data"
 
 var ExampleAccountJsonPath = DATA_PATH + "/template/account/example.json"
 

@@ -693,9 +693,7 @@ func (a *AccountApi) CreateAccountMapping(ctx *gin.Context) {
 	if responseError(err, ctx) {
 		return
 	}
-	err = global.GvaDb.Transaction(func(tx *gorm.DB) error {
-		return categoryService.MappingAccountCategoryByAI(mainAccount, mappingAccount, ctx, tx)
-	})
+	err = categoryService.Task.MappingCategoryToAccountMapping(mapping)
 	if responseError(err, ctx) {
 		return
 	}
