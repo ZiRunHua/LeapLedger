@@ -3,6 +3,7 @@ package userService
 import (
 	"KeepAccount/global"
 	"KeepAccount/global/constant"
+	globalTask "KeepAccount/global/task"
 	accountModel "KeepAccount/model/account"
 	"KeepAccount/model/common/query"
 	userModel "KeepAccount/model/user"

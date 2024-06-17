@@ -89,7 +89,7 @@ const (
 	RetryStatusOfAbnormal  RetryStatus = 32
 )
 
-func (rt *RetryTask) PublishRetry(nextExecTime time.Time, db *gorm.DB) error {
+func (rt *RetryTask) Published(nextExecTime time.Time, db *gorm.DB) error {
 	rt.Count++
 	rt.NextExecTime = nextExecTime
 	rt.Status = RetryStatusOfPublished

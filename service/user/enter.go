@@ -1,6 +1,9 @@
 package userService
 
 import (
+	"KeepAccount/global/contextKey"
+	globalTask "KeepAccount/global/task"
+	"context"
 	"gorm.io/gorm"
 )
 
@@ -12,9 +15,9 @@ type Group struct {
 var GroupApp = new(Group)
 
 func init() {
-	globalTask.TransSubscribe[any](
-		globalTask.TaskCreateTourist, func(db *gorm.DB, data any) error {
-			_, err := GroupApp.Base.CreateTourist(db)
+	globalTask.Subscribe[any](
+		globalTask.TaskCreateTourist, func(data any, ctx context.Context) error {
+			_, err := GroupApp.Base.CreateTourist(ctx.Value(contextKey.Tx).(*gorm.DB))
 			return err
 		},
 	)

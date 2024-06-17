@@ -1,17 +1,7 @@
 package globalTask
 
 import (
-	"KeepAccount/global"
-	"KeepAccount/global/task/model"
+	"gorm.io/gorm"
 )
 
-var db = global.GvaDb
-
-func init() {
-	if global.Config.Nats.IsConsumerServer {
-		err := db.AutoMigrate(model.Task{}, model.RetryTask{})
-		if err != nil {
-			panic(err)
-		}
-	}
-}
+var db *gorm.DB

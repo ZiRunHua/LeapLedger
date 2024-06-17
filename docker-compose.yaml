@@ -1,4 +1,4 @@
-version: '4'
+version: '3.3'
 services:
   leap-ledger-server:
     container_name: leap-ledger-server
@@ -8,8 +8,8 @@ services:
       dockerfile: Dockerfile
     ports:
       - "8080:8080"
-#    environment:
-#      - CONFIG_FILE_NAME=production_config.yaml
+    #    environment:
+    #      - CONFIG_FILE_NAME=production_config.yaml
     volumes:
       - ./runtime:/go/LeapLedger/runtime
       - ./log:/go/LeapLedger/log
@@ -22,15 +22,12 @@ services:
     image: mysql:8.0.22
     environment:
       MYSQL_ALLOW_EMPTY_PASSWORD: "yes"
+      MYSQL_DATABASE: leap_ledger
     ports:
       - "3306:3306"
     volumes:
       - ../LeapLedgerMysql/data:/var/lib/mysql
     networks:
       - leap-ledger-network
-    # Create the leap_ledger and nats databases
-    command: >
-      sh -c "echo 'CREATE DATABASE IF NOT EXISTS leap_ledger; CREATE DATABASE IF NOT EXISTS leap_ledger_task;' > /docker-entrypoint-initdb.d/init.sql &&
-             docker-entrypoint.sh mysqld"
 networks:
   leap-ledger-network:

@@ -15,9 +15,10 @@ import (
 	"time"
 )
 
-var natsConn = initialize.Nats
 var config = initialize.Config.Nats
-var natsLogger = initialize.NatsLogger
+
+var natsConn *nats.Conn
+var natsLogger *zap.Logger
 
 // user task
 const TaskCreateTourist constant.Subject = "createTourist"
@@ -29,8 +30,6 @@ const TaskTransactionSync constant.Subject = "transactionSync"
 // category task
 const TaskMappingCategoryToAccountMapping constant.Subject = "mappingCategoryToAccountMapping"
 const TaskUpdateCategoryMapping constant.Subject = "updateCategoryMapping"
-
-const execTime = time.Second * 5
 
 func Subscribe[DataType any](subj constant.Subject, handleFunc transactionHandle[DataType]) {
 	subscribe[DataType](subj, handleFunc)
@@ -131,8 +130,8 @@ func publish(subj constant.Subject, data []byte) bool {
 	return true
 }
 
-func publishRetryTask(subj constant.Subject, retryTask model.RetryTask) bool {
-	err := natsConn.Publish(string(subj), strconv.AppendUint([]byte{}, uint64(retryTask.TaskId), 10))
+func publishTask(subj constant.Subject, task model.Task) bool {
+	err := natsConn.Publish(string(subj), strconv.AppendUint([]byte{}, uint64(task.ID), 10))
 	if err != nil {
 		natsLogger.Error(string(subj), zap.Error(err))
 		return false

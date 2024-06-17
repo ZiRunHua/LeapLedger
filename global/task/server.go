@@ -34,7 +34,14 @@ func (ts *_taskService) addRetryTask(task model.Task) (retryTask model.RetryTask
 
 var ErrRepublishFailure = errors.New("republish task failed")
 
-func (ts *_taskService) republishTask(retryTask model.RetryTask, db *gorm.DB) error {
+func (ts *_taskService) republishTask(task model.Task, _ *gorm.DB) error {
+	if false == publishTask(task.Subject, task) {
+		return ErrRepublishFailure
+	}
+	return nil
+}
+
+func (ts *_taskService) republishRetryTask(retryTask model.RetryTask, db *gorm.DB) error {
 	task, err := retryTask.GetTask(db)
 	if err != nil {
 		return err
@@ -42,8 +49,10 @@ func (ts *_taskService) republishTask(retryTask model.RetryTask, db *gorm.DB) er
 	if task.Status != model.StatusOfRetrying {
 		return nil
 	}
-	if false == publishRetryTask(task.Subject, retryTask) {
-		return ErrRepublishFailure
+	err = ts.republishTask(task, db)
+	if err != nil {
+		return err
 	}
-	return retryTask.PublishRetry(time.Now().Add(backOff(retryTask.Count+1)), db)
+	nextExecTime := time.Now().Add(backOff(retryTask.Count + 1))
+	return retryTask.Published(nextExecTime, db)
 }

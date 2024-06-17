@@ -3,6 +3,7 @@ package main
 import (
 	_ "KeepAccount/global"
 	_ "KeepAccount/global/constant"
+	_ "KeepAccount/global/task"
 	"KeepAccount/initialize"
 	_ "KeepAccount/initialize/database"
 	"KeepAccount/router"
@@ -19,7 +20,6 @@ import (
 var httpServer *http.Server
 
 func main() {
-	fmt.Println()
 	engine := router.Init()
 	httpServer = &http.Server{
 		Addr:           fmt.Sprintf(":%d", initialize.Config.System.Addr),

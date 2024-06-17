@@ -48,11 +48,14 @@ func init() {
 	if err = initConfig(); err != nil {
 		panic(err)
 	}
+
 	group, _ := errgroup.WithContext(context.TODO())
 	group.Go(Config.Logger.do)
 	group.Go(Config.Mysql.do)
 	group.Go(Config.Redis.do)
 	group.Go(func() error { return Config.Nats.do(Config.Mode) })
+	group.Go(Config.Scheduler.do)
+
 	if err = group.Wait(); err != nil {
 		panic(err)
 	}

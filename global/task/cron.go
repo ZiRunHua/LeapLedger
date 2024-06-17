@@ -2,22 +2,27 @@ package globalTask
 
 import (
 	"KeepAccount/global/task/model"
-	"KeepAccount/initialize"
+	"database/sql"
 	"errors"
+	"github.com/go-co-op/gocron"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
+	"gorm.io/gorm/logger"
 	"time"
 )
 
-var cronLogger = initialize.CronLogger
-var scheduler = initialize.Scheduler
+var cronLogger *zap.Logger
+var scheduler *gocron.Scheduler
 
-type retryTasker[Data any] struct {
-	Data   Data
-	TaskId uint
+func NewTransactionCron(handler func(db *gorm.DB) error) func() {
+	return func() {
+		err := db.Session(&gorm.Session{Logger: db.Logger.LogMode(logger.Silent)}).Transaction(handler)
+		if err != nil {
+			cronLogger.Error("cronOfPublishRetryTask", zap.Error(err))
+		}
+	}
 }
-
 func cronOfPublishRetryTask(db *gorm.DB) error {
 	var retryTask model.RetryTask
 	rows, err := db.Model(&retryTask).
@@ -26,7 +31,12 @@ func cronOfPublishRetryTask(db *gorm.DB) error {
 	if err != nil {
 		return err
 	}
-	defer rows.Close()
+	defer func(rows *sql.Rows) {
+		err := rows.Close()
+		if err != nil {
+			cronLogger.Error("cronOfPublishRetryTask:retryTask.rows.Close", zap.Error(err))
+		}
+	}(rows)
 
 	for rows.Next() {
 		err = db.ScanRows(rows, &retryTask)
@@ -35,7 +45,7 @@ func cronOfPublishRetryTask(db *gorm.DB) error {
 			continue
 		}
 		err = db.Transaction(func(tx *gorm.DB) error {
-			return taskServer.republishTask(retryTask, tx)
+			return taskServer.republishRetryTask(retryTask, tx)
 		})
 		if err != nil {
 			if errors.Is(err, ErrRepublishFailure) {
