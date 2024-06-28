@@ -74,7 +74,7 @@ func (t *template) CreateFatherCategory(
 		return err
 	}
 
-	tmplCategoryList, err := categoryModel.NewDao(tx).GetListByFather(&tmplFather)
+	tmplCategoryList, err := categoryModel.NewDao(tx).GetListByFather(tmplFather)
 	if err != nil {
 		return err
 	}

@@ -244,12 +244,12 @@ func (catSvc *Category) MoveFather(father categoryModel.Father, previous *catego
 // GetSequenceCategoryByFather 返回排序后的category
 func (catSvc *Category) GetSequenceCategoryByFather(father categoryModel.Father) (sequenceCategory []categoryModel.Category, err error) {
 	categoryDao := categoryModel.NewDao()
-	categoryList, err := categoryDao.GetListByFather(&father)
+	categoryList, err := categoryDao.GetListByFather(father)
 	if err != nil {
 		return sequenceCategory, errors.Wrap(err, "categoryServer.GetSequenceCategory")
 	}
 	if len(categoryList) == 0 {
-		return []categoryModel.Category{}, nil
+		return
 	}
 	tree := make(map[uint][]categoryModel.Category)
 	for _, category := range categoryList {

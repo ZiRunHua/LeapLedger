@@ -77,7 +77,7 @@ func (cd *CategoryDao) UpdateFatherChildPrevious(categoryId, newPrevious uint) e
 	return cd.db.Model(&Father{}).Where("previous = ?", categoryId).Update("previous", newPrevious).Error
 }
 
-func (cd *CategoryDao) GetListByFather(father *Father) ([]Category, error) {
+func (cd *CategoryDao) GetListByFather(father Father) ([]Category, error) {
 	var list []Category
 	err := cd.setCategoryOrder(cd.db.Where("father_id = ?", father.ID)).Find(&list).Error
 	return list, err
