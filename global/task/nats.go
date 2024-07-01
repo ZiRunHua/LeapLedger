@@ -7,6 +7,7 @@ import (
 	"KeepAccount/initialize"
 	"context"
 	"encoding/json"
+	"github.com/nats-io/nats-server/v2/server"
 	"github.com/nats-io/nats.go"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
@@ -19,6 +20,7 @@ var config = initialize.Config.Nats
 
 var natsConn *nats.Conn
 var natsLogger *zap.Logger
+var natsServer *server.Server
 
 // user task
 const TaskCreateTourist constant.Subject = "createTourist"

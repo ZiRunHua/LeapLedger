@@ -3,7 +3,7 @@ package main
 import (
 	_ "KeepAccount/global"
 	_ "KeepAccount/global/constant"
-	_ "KeepAccount/global/task"
+	GvaTask "KeepAccount/global/task"
 	"KeepAccount/initialize"
 	_ "KeepAccount/initialize/database"
 	"KeepAccount/router"
@@ -40,11 +40,9 @@ func shutDown() {
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 	<-quit
 	log.Println("Shutting down server...")
+	GvaTask.Shutdown()
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
-	if err := httpServer.Shutdown(ctx); err != nil {
+	if err := httpServer.Shutdown(context.TODO()); err != nil {
 		log.Fatal("Server forced to shutdown:", err)
 	}
 

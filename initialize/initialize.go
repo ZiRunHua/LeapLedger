@@ -5,6 +5,7 @@ import (
 	"KeepAccount/util"
 	"context"
 	"github.com/go-co-op/gocron"
+	"github.com/nats-io/nats-server/v2/server"
 	"github.com/nats-io/nats.go"
 	"go.uber.org/zap"
 	"golang.org/x/sync/errgroup"
@@ -30,6 +31,7 @@ var (
 	Cache         util.Cache
 	Db            *gorm.DB
 	Nats          *nats.Conn
+	NatsServer    *server.Server
 	Scheduler     *gocron.Scheduler
 	RequestLogger *zap.Logger
 	ErrorLogger   *zap.Logger

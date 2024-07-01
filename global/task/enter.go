@@ -10,6 +10,7 @@ type transactionHandle[Data any] func(Data, context.Context) error
 
 func init() {
 	natsConn = initialize.Nats
+	natsServer = initialize.NatsServer
 	natsLogger = initialize.NatsLogger
 	cronLogger = initialize.CronLogger
 	scheduler = initialize.Scheduler
@@ -33,5 +34,15 @@ func initCron() {
 	_, err := scheduler.Every(1).Second().Do(NewTransactionCron(cronOfPublishRetryTask))
 	if err != nil {
 		panic(err)
+	}
+}
+
+func Shutdown() {
+	scheduler.Stop()
+	if natsConn != nil {
+		natsConn.Close()
+	}
+	if natsServer != nil {
+		natsServer.Shutdown()
 	}
 }

@@ -32,14 +32,13 @@ func (n *_nats) do(mode constant.ServerMode) error {
 			LogFile:   _natsServerLogPath,
 			StoreDir:  nastStoreDir,
 		}
-		var nastServer *server.Server
-		nastServer, err = server.NewServer(opts)
+		NatsServer, err = server.NewServer(opts)
 		if err != nil {
 			return err
 		}
 		//If you don't call ConfigureLogger, there will be no logging, even if has been set up in the options
-		nastServer.ConfigureLogger()
-		nastServer.Start()
+		NatsServer.ConfigureLogger()
+		NatsServer.Start()
 		n.ServerUrl = nats.DefaultURL
 	}
 	Nats, err = nats.Connect(n.ServerUrl)
