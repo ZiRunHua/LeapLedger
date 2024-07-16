@@ -7,8 +7,8 @@ import (
 
 type TransactionRouter struct{}
 
-func (c *TransactionRouter) InitTransactionRouter(Router *gin.RouterGroup) {
-	router := Router.Group("transaction")
+func (c *TransactionRouter) InitTransactionRouter(_router *gin.RouterGroup) {
+	router := _router.Group("transaction")
 	baseApi := v1.ApiGroupApp.TransactionApi
 	{
 		router.GET("/:id", baseApi.GetOne)

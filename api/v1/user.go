@@ -394,7 +394,6 @@ func (u *UserApi) SendCaptchaEmail(ctx *gin.Context) {
 	if responseError(err, ctx) {
 		return
 	}
-
 	err = thirdpartyService.SendCaptchaEmail(user.Email, requestData.Type)
 	if responseError(err, ctx) {
 		return

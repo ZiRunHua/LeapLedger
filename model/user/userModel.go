@@ -42,6 +42,17 @@ func (u *User) GetUserClient(client constant.Client) (clientInfo UserClientBaseI
 	return
 }
 
+func (u *User) IsTourist(db *gorm.DB) (bool, error) {
+	_, err := NewDao(db).SelectTour(u.ID)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return false, nil
+		}
+		return false, err
+	}
+	return true, nil
+}
+
 func (u *User) ModifyAsTourist(db *gorm.DB) error {
 	return db.Model(u).Updates(map[string]interface{}{
 		"username": "游玩家",

@@ -7,8 +7,8 @@ import (
 
 type AccountRouter struct{}
 
-func (a *AccountRouter) InitAccountRouter(Router *gin.RouterGroup) {
-	router := Router.Group("account")
+func (a *AccountRouter) InitAccountRouter(_router *gin.RouterGroup) {
+	router := _router.Group("account")
 	baseApi := v1.ApiGroupApp.AccountApi
 	{
 		router.POST("", baseApi.CreateOne)
@@ -22,7 +22,7 @@ func (a *AccountRouter) InitAccountRouter(Router *gin.RouterGroup) {
 		//模板
 		router.GET("/template/list", baseApi.GetAccountTemplateList)
 		router.POST("/form/template/:id", baseApi.CreateOneByTemplate)
-		router.POST("/:id/transaction/category/init", baseApi.InitTransCategoryByTemplate)
+		router.POST("/:id/transaction/category/init", baseApi.InitCategoryByTemplate)
 		//共享
 		router.PUT("/user/:id", baseApi.UpdateUser)
 		router.GET("/:id/user/list", baseApi.GetUserList)

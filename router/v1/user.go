@@ -7,17 +7,18 @@ import (
 
 type UserRouter struct{}
 
-func (s *PublicRouter) InitUserRouter(Router *gin.RouterGroup) {
-	router := Router.Group("user")
+func (s *PublicRouter) InitUserRouter(_router *gin.RouterGroup, _turnAwayTouristRouter *gin.RouterGroup) {
+	router := _router.Group("user")
+	turnAwayTouristRouter := _turnAwayTouristRouter.Group("user")
 	baseApi := v1.ApiGroupApp.UserApi
 	{
 		router.POST("/token/refresh", baseApi.RefreshToken)
 
 		router.GET("/search", baseApi.SearchUser)
-		router.POST("/current/captcha/email/send", baseApi.SendCaptchaEmail)
+		turnAwayTouristRouter.POST("/current/captcha/email/send", baseApi.SendCaptchaEmail)
 		router.PUT("/client/current/account", baseApi.SetCurrentAccount)
 		router.PUT("/client/current/share/account", baseApi.SetCurrentShareAccount)
-		router.PUT("/current/password", baseApi.UpdatePassword)
+		turnAwayTouristRouter.PUT("/current/password", baseApi.UpdatePassword)
 		router.PUT("/current", baseApi.UpdateInfo)
 		router.GET("/home", baseApi.Home)
 

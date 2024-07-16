@@ -49,14 +49,16 @@ func Init() *gin.Engine {
 		APIv1Router.InitPublicRouter(PublicGroup)
 	}
 	//需要登录校验
-	PrivateGroup := engine.Group(global.Config.System.RouterPrefix)
-	PrivateGroup.Use(middleware.JWTAuth())
+	privateGroup := engine.Group(global.Config.System.RouterPrefix)
+	privateGroup.Use(middleware.JWTAuth())
+	turnAwayTouristPrivateGroup := privateGroup.Group("")
+	turnAwayTouristPrivateGroup.Use(middleware.TurnAwayTourist())
 	{
-		APIv1Router.InitUserRouter(PrivateGroup)
-		APIv1Router.InitCategoryRouter(PrivateGroup)
-		APIv1Router.InitAccountRouter(PrivateGroup)
-		APIv1Router.InitTransactionImportRouter(PrivateGroup)
-		APIv1Router.InitTransactionRouter(PrivateGroup)
+		APIv1Router.InitUserRouter(privateGroup, turnAwayTouristPrivateGroup)
+		APIv1Router.InitCategoryRouter(privateGroup)
+		APIv1Router.InitAccountRouter(privateGroup)
+		APIv1Router.InitTransactionImportRouter(privateGroup)
+		APIv1Router.InitTransactionRouter(privateGroup)
 	}
 	return engine
 }

@@ -43,11 +43,16 @@ func (catApi *CategoryApi) CreateOne(ctx *gin.Context) {
 			return err
 		},
 	)
-
 	if responseError(err, ctx) {
 		return
 	}
-	response.OkWithData(response.Id{Id: category.ID}, ctx)
+
+	var responseData response.CategoryOne
+	err = responseData.SetData(category)
+	if responseError(err, ctx) {
+		return
+	}
+	response.OkWithData(responseData, ctx)
 }
 
 func (catApi *CategoryApi) CreateOneFather(ctx *gin.Context) {
@@ -71,7 +76,13 @@ func (catApi *CategoryApi) CreateOneFather(ctx *gin.Context) {
 	if responseError(err, ctx) {
 		return
 	}
-	response.OkWithData(response.Id{Id: father.ID}, ctx)
+
+	var responseData response.FatherOne
+	err = responseData.SetData(father, []categoryModel.Category{})
+	if responseError(err, ctx) {
+		return
+	}
+	response.OkWithData(responseData, ctx)
 }
 
 func (catApi *CategoryApi) MoveCategory(ctx *gin.Context) {
@@ -151,21 +162,28 @@ func (catApi *CategoryApi) Update(ctx *gin.Context) {
 		response.FailToParameter(ctx, err)
 		return
 	}
-	var category categoryModel.Category
-	err := global.GvaDb.First(&category, ctx.Param("id")).Error
-	if err != nil {
-		response.FailToError(ctx, err)
+	categoryId, pass := contextFunc.GetParamId(ctx)
+	if !pass {
 		return
 	}
+
+	var category categoryModel.Category
+	var err error
 	txFunc := func(tx *gorm.DB) error {
-		return categoryService.Update(
-			category, categoryModel.CategoryUpdateData{Name: requestData.Name, Icon: requestData.Icon}, tx,
+		category, err = categoryService.Update(
+			categoryId, categoryModel.CategoryUpdateData{Name: requestData.Name, Icon: requestData.Icon}, tx,
 		)
+		return err
 	}
 	if err = global.GvaDb.Transaction(txFunc); responseError(err, ctx) {
 		return
 	}
-	response.Ok(ctx)
+	var responseData response.CategoryOne
+	err = responseData.SetData(category)
+	if responseError(err, ctx) {
+		return
+	}
+	response.OkWithData(responseData, ctx)
 }
 
 func (catApi *CategoryApi) UpdateFather(ctx *gin.Context) {
@@ -176,16 +194,19 @@ func (catApi *CategoryApi) UpdateFather(ctx *gin.Context) {
 	}
 	var father categoryModel.Father
 	err := global.GvaDb.First(&father, ctx.Param("id")).Error
-	if err != nil {
-		response.FailToError(ctx, err)
+	if responseError(err, ctx) {
 		return
 	}
-	err = categoryService.UpdateFather(father, requestData.Name)
-	if err != nil {
-		response.FailToError(ctx, err)
+	father, err = categoryService.UpdateFather(father, requestData.Name)
+	if responseError(err, ctx) {
 		return
 	}
-	response.Ok(ctx)
+	var responseData response.FatherOne
+	err = responseData.SetData(father, []categoryModel.Category{})
+	if responseError(err, ctx) {
+		return
+	}
+	response.OkWithData(responseData, ctx)
 }
 
 func (catApi *CategoryApi) GetTree(ctx *gin.Context) {
@@ -222,6 +243,39 @@ func (catApi *CategoryApi) GetTree(ctx *gin.Context) {
 	response.OkWithData(responseTree, ctx)
 }
 
+func (catApi *CategoryApi) GetList(ctx *gin.Context) {
+	var requestData request.CategoryGetList
+	var err error
+	if err = ctx.ShouldBindJSON(&requestData); err != nil {
+		response.FailToParameter(ctx, err)
+		return
+	}
+	account, _, pass := checkFunc.AccountBelongAndGet(requestData.AccountId, ctx)
+	if false == pass {
+		return
+	}
+	fatherSequence, err := categoryService.GetSequenceFather(account, requestData.IncomeExpense)
+	if err != nil {
+		response.FailToError(ctx, err)
+		return
+	}
+	// 响应
+	var list, categoryList []categoryModel.Category
+	var responseData response.CategoryDetailList
+	for _, father := range fatherSequence {
+		categoryList, err = categoryService.GetSequenceCategoryByFather(father)
+		if responseError(err, ctx) {
+			return
+		}
+		list = append(list, categoryList...)
+	}
+	err = responseData.SetData(list)
+	if responseError(err, ctx) {
+		return
+	}
+	response.OkWithData(response.List[response.CategoryDetail]{List: responseData}, ctx)
+}
+
 func (catApi *CategoryApi) Delete(ctx *gin.Context) {
 	var category categoryModel.Category
 	err := global.GvaDb.First(&category, ctx.Param("id")).Error
@@ -233,9 +287,7 @@ func (catApi *CategoryApi) Delete(ctx *gin.Context) {
 		return
 	}
 	err = global.GvaDb.Transaction(
-		func(tx *gorm.DB) error {
-			return categoryService.Delete(category, tx)
-		},
+		func(tx *gorm.DB) error { return categoryService.Delete(category, tx) },
 	)
 	if responseError(err, ctx) {
 		return
@@ -267,30 +319,6 @@ func (catApi *CategoryApi) DeleteFather(ctx *gin.Context) {
 		return
 	}
 	response.Ok(ctx)
-}
-
-func (catApi *CategoryApi) GetList(ctx *gin.Context) {
-	var requestData request.CategoryGetList
-	var err error
-	if err = ctx.ShouldBindJSON(&requestData); err != nil {
-		response.FailToParameter(ctx, err)
-		return
-	}
-	account, _, pass := checkFunc.AccountBelongAndGet(requestData.AccountId, ctx)
-	if false == pass {
-		return
-	}
-	categoryList, err := categoryModel.NewDao().GetListByAccount(account, requestData.IncomeExpense)
-	if responseError(err, ctx) {
-		return
-	}
-
-	var responseData response.CategoryDetailList
-	err = responseData.SetData(categoryList)
-	if responseError(err, ctx) {
-		return
-	}
-	response.OkWithData(response.List[response.CategoryDetail]{List: responseData}, ctx)
 }
 
 func (catApi *CategoryApi) MappingCategory(ctx *gin.Context) {

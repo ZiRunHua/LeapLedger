@@ -3,8 +3,11 @@ package v1
 import (
 	"KeepAccount/api/response"
 	apiUtil "KeepAccount/api/util"
+	"KeepAccount/global"
+	userModel "KeepAccount/model/user"
 	"KeepAccount/service"
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 )
 
 // 接口
@@ -52,6 +55,24 @@ func handelError(err error, ctx *gin.Context) bool {
 func responseError(err error, ctx *gin.Context) bool {
 	if err != nil {
 		response.FailToError(ctx, err)
+		return true
+	}
+	return false
+}
+
+func turnAwayTourist(user userModel.User, ctx *gin.Context, _db ...*gorm.DB) bool {
+	var db *gorm.DB
+	if len(_db) > 0 {
+		db = _db[0]
+	} else {
+		db = global.GvaDb
+	}
+	isTourist, err := user.IsTourist(db)
+	if responseError(err, ctx) {
+		return true
+	}
+	if isTourist {
+		response.FailToParameter(ctx, global.ErrTouristHaveNoRight)
 		return true
 	}
 	return false

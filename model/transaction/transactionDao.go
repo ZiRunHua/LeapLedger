@@ -40,13 +40,14 @@ func (t *TransactionDao) GetIeStatisticByCondition(
 	ie *constant.IncomeExpense, condition StatisticCondition, extCond *ExtensionCondition,
 ) (result global.IncomeExpenseStatistic, err error) {
 	if extCond.IsSet() {
-		// 走transaction表查询
-		query := condition.ForeignKeyCondition.addConditionToQuery(t.db)
-		query = query.Where("trans_time between ? AND ?", condition.StartTime, condition.EndTime)
+		// transaction table select
+		query := t.db.Model(&Transaction{})
+		query = condition.ForeignKeyCondition.addConditionToQuery(query)
+		query = query.Where("trade_time between ? AND ?", condition.StartTime, condition.EndTime)
 		query = extCond.addConditionToQuery(query)
-		result, err = t.getIncomeExpenseStatisticByWhere(ie, query)
+		result, err = t.getIEStatisticByWhere(ie, query)
 	} else {
-		// 走统计表查询
+		// statistic table select
 		result, err = NewStatisticDao(t.db).GetIeStatisticByCondition(ie, condition)
 	}
 	if err != nil {
@@ -55,7 +56,7 @@ func (t *TransactionDao) GetIeStatisticByCondition(
 	return
 }
 
-func (t *TransactionDao) getIncomeExpenseStatisticByWhere(ie *constant.IncomeExpense, query *gorm.DB) (
+func (t *TransactionDao) getIEStatisticByWhere(ie *constant.IncomeExpense, query *gorm.DB) (
 	result global.IncomeExpenseStatistic, err error,
 ) {
 	if ie.QueryIncome() {

@@ -35,7 +35,7 @@ type CategoryUpdateData struct {
 	Icon *string
 }
 
-func (cd *CategoryDao) Update(category Category, data CategoryUpdateData) error {
+func (cd *CategoryDao) Update(categoryId uint, data CategoryUpdateData) error {
 	updateData := &Category{}
 	if err := util.Data.CopyNotEmptyStringOptional(data.Name, &updateData.Name); err != nil {
 		return err
@@ -48,7 +48,7 @@ func (cd *CategoryDao) Update(category Category, data CategoryUpdateData) error 
 			return err
 		}
 	}
-	err := cd.db.Model(&category).Updates(updateData).Error
+	err := cd.db.Model(&updateData).Where("category_id = ?", categoryId).Updates(updateData).Error
 	if errors.Is(err, gorm.ErrDuplicatedKey) {
 		return global.ErrCategorySameName
 	}
@@ -77,6 +77,34 @@ func (cd *CategoryDao) UpdateFatherChildPrevious(categoryId, newPrevious uint) e
 	return cd.db.Model(&Father{}).Where("previous = ?", categoryId).Update("previous", newPrevious).Error
 }
 
+func (cd *CategoryDao) Order(list []Category) {
+	if len(list) == 0 {
+		return
+	}
+	tree := make(map[uint][]Category, len(list)/4)
+	for _, category := range list {
+		if _, ok := tree[category.Previous]; !ok {
+			tree[category.Previous] = []Category{category}
+		} else {
+			tree[category.Previous] = append(tree[category.Previous], category)
+		}
+	}
+	var listLen, previous uint = 0, 0
+	var makeSequenceFunc func()
+	makeSequenceFunc = func() {
+		childList, exist := tree[previous]
+		if !exist {
+			return
+		}
+		for _, child := range childList {
+			list[listLen], previous = child, child.ID
+			listLen++
+			makeSequenceFunc()
+		}
+	}
+	makeSequenceFunc()
+}
+
 func (cd *CategoryDao) GetListByFather(father Father) ([]Category, error) {
 	var list []Category
 	err := cd.setCategoryOrder(cd.db.Where("father_id = ?", father.ID)).Find(&list).Error
@@ -86,7 +114,7 @@ func (cd *CategoryDao) GetListByFather(father Father) ([]Category, error) {
 func (cd *CategoryDao) GetListByAccount(account accountModel.Account, ie *constant.IncomeExpense) ([]Category, error) {
 	condition := &Condition{account: account, ie: ie}
 	var list []Category
-	return list, condition.buildWhere(cd.db).Order("income_expense asc,previous asc,order_updated_at desc").Find(&list).Error
+	return list, condition.buildWhere(cd.db).Find(&list).Error
 }
 
 func (cd *CategoryDao) GetUnmappedList(mainAccount, mappingAccount accountModel.Account, ie *constant.IncomeExpense) (list []Category, err error) {
@@ -94,6 +122,34 @@ func (cd *CategoryDao) GetUnmappedList(mainAccount, mappingAccount accountModel.
 	childSelect.Where("parent_account_id = ? AND child_account_id = ?", mainAccount.ID, mappingAccount.ID)
 	err = cd.db.Where("account_id = ? AND income_expense = ? ", mappingAccount.ID, ie).Not("id IN (?)", childSelect).Find(&list).Error
 	return
+}
+
+func (cd *CategoryDao) OrderFather(list []Father) {
+	if len(list) == 0 {
+		return
+	}
+	tree := make(map[uint][]Father, len(list)/4)
+	for _, father := range list {
+		if _, ok := tree[father.Previous]; !ok {
+			tree[father.Previous] = []Father{father}
+		} else {
+			tree[father.Previous] = append(tree[father.Previous], father)
+		}
+	}
+	var listLen, previous uint = 0, 0
+	var makeSequenceFunc func()
+	makeSequenceFunc = func() {
+		childList, exist := tree[previous]
+		if !exist {
+			return
+		}
+		for _, child := range childList {
+			list[listLen], previous = child, child.ID
+			listLen++
+			makeSequenceFunc()
+		}
+	}
+	makeSequenceFunc()
 }
 
 func (cd *CategoryDao) GetFatherList(account accountModel.Account, incomeExpense *constant.IncomeExpense) ([]Father, error) {

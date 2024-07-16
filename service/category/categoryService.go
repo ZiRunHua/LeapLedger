@@ -8,7 +8,7 @@ import (
 	categoryModel "KeepAccount/model/category"
 	transactionModel "KeepAccount/model/transaction"
 	userModel "KeepAccount/model/user"
-	"KeepAccount/util/dataType"
+	"KeepAccount/util/dataTools"
 	"context"
 	"github.com/pkg/errors"
 	"gorm.io/gorm"
@@ -79,7 +79,7 @@ func (catSvc *Category) UpdateCategoryMapping(category categoryModel.Category, c
 		if err != nil {
 			return err
 		}
-		var mainCategoryList dataType.Slice[string, categoryModel.Category]
+		var mainCategoryList dataTools.Slice[string, categoryModel.Category]
 		mainCategoryList, err = categoryDao.GetListByAccount(mainAccount, &category.IncomeExpense)
 		if err != nil {
 			return err
@@ -242,78 +242,43 @@ func (catSvc *Category) MoveFather(father categoryModel.Father, previous *catego
 }
 
 // GetSequenceCategoryByFather 返回排序后的category
-func (catSvc *Category) GetSequenceCategoryByFather(father categoryModel.Father) (sequenceCategory []categoryModel.Category, err error) {
+func (catSvc *Category) GetSequenceCategoryByFather(father categoryModel.Father) (categoryList []categoryModel.Category, err error) {
 	categoryDao := categoryModel.NewDao()
-	categoryList, err := categoryDao.GetListByFather(father)
+	categoryList, err = categoryDao.GetListByFather(father)
 	if err != nil {
-		return sequenceCategory, errors.Wrap(err, "categoryServer.GetSequenceCategory")
+		return categoryList, errors.Wrap(err, "categoryServer.GetSequenceCategory")
 	}
-	if len(categoryList) == 0 {
-		return
-	}
-	tree := make(map[uint][]categoryModel.Category)
-	for _, category := range categoryList {
-		if _, ok := tree[category.Previous]; !ok {
-			tree[category.Previous] = []categoryModel.Category{category}
-		} else {
-			tree[category.Previous] = append(tree[category.Previous], category)
-		}
-	}
-
-	sequenceCategory = make([]categoryModel.Category, 0, len(categoryList))
-	catSvc.makeSequenceOfCategory(&sequenceCategory, tree, 0)
-	return sequenceCategory, nil
-}
-
-func (catSvc *Category) makeSequenceOfCategory(
-	queue *[]categoryModel.Category, tree map[uint][]categoryModel.Category, id uint,
-) {
-	if categoryList, exist := tree[id]; exist {
-		for _, child := range categoryList {
-			*queue = append(*queue, child)
-			catSvc.makeSequenceOfCategory(queue, tree, child.ID)
-		}
-	}
+	categoryDao.Order(categoryList)
+	return
 }
 
 func (catSvc *Category) GetSequenceFather(
 	account accountModel.Account, incomeExpense *constant.IncomeExpense,
-) ([]categoryModel.Father, error) {
-	rows, err := categoryModel.NewDao().GetFatherList(account, incomeExpense)
+) (list []categoryModel.Father, err error) {
+	dao := categoryModel.NewDao()
+	list, err = dao.GetFatherList(account, incomeExpense)
 	if err != nil {
-		return []categoryModel.Father{}, err
+		return
 	}
-	var tree = make(map[uint][]categoryModel.Father, len(rows))
-	for _, father := range rows {
-		tree[father.Previous] = append(tree[father.Previous], father)
-	}
-	var result = []categoryModel.Father{}
-	catSvc.makeSequenceOfFather(&result, tree, 0)
-	return result, nil
+	dao.OrderFather(list)
+	return
 }
 
-func (catSvc *Category) makeSequenceOfFather(
-	queue *[]categoryModel.Father, tree map[uint][]categoryModel.Father, treeKey uint,
-) {
-	if children, exist := tree[treeKey]; exist {
-		for _, child := range children {
-			*queue = append(*queue, child)
-			catSvc.makeSequenceOfFather(queue, tree, child.ID)
-		}
+func (catSvc *Category) Update(categoryId uint, data categoryModel.CategoryUpdateData, tx *gorm.DB) (category categoryModel.Category, err error) {
+	dao := categoryModel.NewDao(tx)
+	err = dao.Update(categoryId, data)
+	if err != nil {
+		return category, err
 	}
+	return dao.SelectById(categoryId)
 }
 
-func (catSvc *Category) Update(
-	category categoryModel.Category, data categoryModel.CategoryUpdateData, tx *gorm.DB,
-) error {
-	return categoryModel.NewDao(tx).Update(category, data)
-}
-
-func (catSvc *Category) UpdateFather(father categoryModel.Father, name string) error {
+func (catSvc *Category) UpdateFather(father categoryModel.Father, name string) (categoryModel.Father, error) {
 	if name == "" {
-		return global.ErrInvalidParameter
+		return father, global.ErrCategoryNameEmpty
 	}
-	return global.GvaDb.Model(&father).Update("name", name).Error
+	err := global.GvaDb.Model(&father).Update("name", name).Error
+	return father, err
 }
 
 func (catSvc *Category) Delete(category categoryModel.Category, tx *gorm.DB) error {
@@ -419,7 +384,7 @@ func (catSvc *Category) mappingAccountCategoryByAI(mainAccount, mappingAccount a
 	if false == aiService.IsOpen() {
 		return nil
 	}
-	var mainCategoryList, mappingCategoryList dataType.Slice[string, categoryModel.Category]
+	var mainCategoryList, mappingCategoryList dataTools.Slice[string, categoryModel.Category]
 	var err error
 	var matchingResult map[string]string
 	categoryDao := categoryModel.NewDao(tx)

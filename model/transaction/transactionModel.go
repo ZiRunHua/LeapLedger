@@ -15,13 +15,13 @@ import (
 
 type Transaction struct {
 	gorm.Model
-	UserId        uint
-	AccountId     uint
-	CategoryId    uint
+	UserId        uint `gorm:"index:account_idx,priority:3"`
+	AccountId     uint `gorm:"index:account_idx,priority:1"`
+	CategoryId    uint `gorm:"index:category_idx,priority:1"`
 	IncomeExpense constant.IncomeExpense
 	Amount        int
 	Remark        string
-	TradeTime     time.Time
+	TradeTime     time.Time `gorm:"index:account_idx,priority:2;index:category_idx,priority:2"`
 	commonModel.BaseModel
 }
 

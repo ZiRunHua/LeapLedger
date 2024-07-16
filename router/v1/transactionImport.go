@@ -7,8 +7,8 @@ import (
 
 type TransactionImportRouter struct{}
 
-func (a *TransactionImportRouter) InitTransactionImportRouter(Router *gin.RouterGroup) {
-	router := Router.Group("transaction/import")
+func (a *TransactionImportRouter) InitTransactionImportRouter(_router *gin.RouterGroup) {
+	router := _router.Group("transaction/import")
 	baseApi := v1.ApiGroupApp.ProductApi
 	{
 		router.GET("/product/list", baseApi.GetList)

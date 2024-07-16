@@ -90,7 +90,7 @@ func (a *AccountApi) Update(ctx *gin.Context) {
 	if responseError(err, ctx) {
 		return
 	}
-	//响应
+	//response
 	account, err = accountModel.NewDao().SelectById(account.ID)
 	if responseError(err, ctx) {
 		return
@@ -115,7 +115,7 @@ func (a *AccountApi) Delete(ctx *gin.Context) {
 	if err := global.GvaDb.Transaction(txFunc); responseError(err, ctx) {
 		return
 	}
-	// 响应可以已被更新的当前客户端信息
+	// response可以已被更新的当前客户端信息
 	var responseData response.UserCurrentClientInfo
 	clientInfo, err := contextFunc.GetUserCurrentClientInfo(ctx)
 	if responseError(err, ctx) {
@@ -196,7 +196,7 @@ func (a *AccountApi) CreateOneByTemplate(ctx *gin.Context) {
 	if responseError(err, ctx) {
 		return
 	}
-	// 响应
+	// response
 	var responseData response.AccountDetail
 	err = responseData.SetDataFromAccount(account)
 	if responseError(err, ctx) {
@@ -224,7 +224,7 @@ func (a *AccountApi) GetAccountTemplateList(ctx *gin.Context) {
 	response.OkWithData(responseData, ctx)
 }
 
-func (a *AccountApi) InitTransCategoryByTemplate(ctx *gin.Context) {
+func (a *AccountApi) InitCategoryByTemplate(ctx *gin.Context) {
 	var err error
 	var requestData request.AccountTransCategoryInit
 	if err = ctx.ShouldBindJSON(&requestData); err != nil {
@@ -232,7 +232,7 @@ func (a *AccountApi) InitTransCategoryByTemplate(ctx *gin.Context) {
 		return
 	}
 
-	account, template := accountModel.Account{}, accountModel.Account{}
+	var account, template accountModel.Account
 	id, pass := contextFunc.GetUintParamByKey("id", ctx)
 	if false == pass {
 		return
@@ -252,7 +252,7 @@ func (a *AccountApi) InitTransCategoryByTemplate(ctx *gin.Context) {
 	if responseError(err, ctx) {
 		return
 	}
-	// 响应
+	// response
 	var responseData response.AccountDetail
 	err = responseData.SetDataFromAccount(account)
 	if responseError(err, ctx) {
@@ -286,7 +286,7 @@ func (a *AccountApi) GetUserInvitationList(ctx *gin.Context) {
 	if responseError(err, ctx) {
 		return
 	}
-	// 响应
+	// response
 	responseData := make([]response.AccountUserInvitation, len(list), len(list))
 	for i := 0; i < len(responseData); i++ {
 		err = responseData[i].SetData(list[i])
@@ -317,7 +317,7 @@ func (a *AccountApi) CreateAccountUserInvitation(ctx *gin.Context) {
 	if responseError(err, ctx) {
 		return
 	}
-	// 处理
+	// handle
 	var invitation accountModel.UserInvitation
 	txFunc := func(tx *gorm.DB) error {
 		// 不为创建者不可设置角色 只能取默认值
@@ -337,7 +337,7 @@ func (a *AccountApi) CreateAccountUserInvitation(ctx *gin.Context) {
 	if responseError(err, ctx) {
 		return
 	}
-	// 响应
+	// response
 	var responseData response.AccountUserInvitation
 	err = responseData.SetData(invitation)
 	if responseError(err, ctx) {
@@ -368,7 +368,7 @@ func (a *AccountApi) AcceptAccountUserInvitation(ctx *gin.Context) {
 		response.Forbidden(ctx)
 		return
 	}
-	// 处理
+	// handle
 	txFunc := func(tx *gorm.DB) error {
 		_, err := invitation.Accept(tx)
 		return err
@@ -377,7 +377,7 @@ func (a *AccountApi) AcceptAccountUserInvitation(ctx *gin.Context) {
 	if responseError(err, ctx) {
 		return
 	}
-	// 响应
+	// response
 	var responseData response.AccountUserInvitation
 	err = responseData.SetData(invitation)
 	if responseError(err, ctx) {
@@ -395,7 +395,7 @@ func (a *AccountApi) RefuseAccountUserInvitation(ctx *gin.Context) {
 		response.Forbidden(ctx)
 		return
 	}
-	// 处理
+	// handle
 	txFunc := func(tx *gorm.DB) error {
 		err := invitation.Refuse(tx)
 		return err
@@ -404,7 +404,7 @@ func (a *AccountApi) RefuseAccountUserInvitation(ctx *gin.Context) {
 	if responseError(err, ctx) {
 		return
 	}
-	// 响应
+	// response
 	var responseData response.AccountUserInvitation
 	err = responseData.SetData(invitation)
 	if responseError(err, ctx) {
@@ -451,7 +451,7 @@ func (a *AccountApi) GetUserList(ctx *gin.Context) {
 		return
 	}
 	list, err := accountModel.NewDao().SelectUserListByAccountId(account.ID)
-	// 响应
+	// response
 	responseData := make([]response.AccountUser, len(list), len(list))
 	for i := 0; i < len(responseData); i++ {
 		err = responseData[i].SetData(list[i])
@@ -669,7 +669,7 @@ func (a *AccountApi) CreateAccountMapping(ctx *gin.Context) {
 		response.FailToParameter(ctx, err)
 		return
 	}
-	// 获取数据
+	// data
 	var user userModel.User
 	if user, err = contextFunc.GetUser(ctx); responseError(err, ctx) {
 		return
@@ -684,7 +684,7 @@ func (a *AccountApi) CreateAccountMapping(ctx *gin.Context) {
 	) {
 		return
 	}
-	// 处理
+	// handle
 	var mapping accountModel.Mapping
 	err = global.GvaDb.Transaction(func(tx *gorm.DB) error {
 		mapping, err = accountService.Share.MappingAccount(user, mainAccount, mappingAccount, tx)
@@ -697,7 +697,7 @@ func (a *AccountApi) CreateAccountMapping(ctx *gin.Context) {
 	if responseError(err, ctx) {
 		return
 	}
-	// 响应
+	// response
 	var responseData response.AccountMapping
 	err = responseData.SetData(mapping)
 	if responseError(err, ctx) {
@@ -717,7 +717,7 @@ func (a *AccountApi) DeleteAccountMapping(ctx *gin.Context) {
 	if responseError(err, ctx) {
 		return
 	}
-	// 处理
+	// handle
 	var mapping accountModel.Mapping
 	txFunc := func(tx *gorm.DB) error {
 		mapping, err = accountModel.NewDao(tx).SelectMappingById(id)
@@ -734,7 +734,7 @@ func (a *AccountApi) DeleteAccountMapping(ctx *gin.Context) {
 	if responseError(err, ctx) {
 		return
 	}
-	// 响应
+	// response
 	var responseData response.AccountMapping
 	err = responseData.SetData(mapping)
 	if responseError(err, ctx) {
@@ -759,7 +759,7 @@ func (a *AccountApi) UpdateAccountMapping(ctx *gin.Context) {
 	if responseError(err, ctx) {
 		return
 	}
-	// 处理
+	// handle
 	var mapping accountModel.Mapping
 	var relatedAccount accountModel.Account
 	txFunc := func(tx *gorm.DB) error {
@@ -782,7 +782,7 @@ func (a *AccountApi) UpdateAccountMapping(ctx *gin.Context) {
 	if responseError(err, ctx) {
 		return
 	}
-	// 响应
+	// response
 	var responseData response.AccountMapping
 	err = responseData.SetData(mapping)
 	if responseError(err, ctx) {
@@ -836,7 +836,7 @@ func (a *AccountApi) GetInfo(ctx *gin.Context) {
 		}
 		return nil
 	}
-	// 处理响应
+	// handleresponse
 	account, pass := a.GetAccountByParam(ctx, true)
 	if false == pass {
 		return

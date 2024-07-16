@@ -19,6 +19,26 @@ type _middleware struct {
 
 var middleware = &_middleware{}
 
+func (m *_middleware) TurnAwayTourist() gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		user, err := apiUtil.ContextFunc.GetUser(ctx)
+		if err != nil {
+			response.FailToError(ctx, err)
+			return
+		}
+		isTourist, err := user.IsTourist(global.GvaDb)
+		if err != nil {
+			response.FailToError(ctx, err)
+			return
+		}
+		if isTourist {
+			response.FailToError(ctx, global.ErrTouristHaveNoRight)
+			return
+		}
+		ctx.Next()
+	}
+}
+
 func (m *_middleware) JWTAuth() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		token := apiUtil.ContextFunc.GetToken(ctx)

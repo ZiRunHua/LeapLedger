@@ -16,6 +16,7 @@ var ContextFunc = new(contextFunc)
 
 const (
 	_UserId = "_user_id_"
+	_User   = "_user_"
 	_Claims = "_claims_"
 )
 
@@ -34,9 +35,14 @@ func (cf *contextFunc) GetUserId(ctx *gin.Context) uint {
 }
 
 func (cf *contextFunc) GetUser(ctx *gin.Context) (userModel.User, error) {
-	user := new(userModel.User)
-	err := global.GvaDb.First(user, cf.GetUserId(ctx)).Error
-	return *user, err
+	value, exits := ctx.Get(_User)
+	if exits {
+		return value.(userModel.User), nil
+	}
+	var user userModel.User
+	err := global.GvaDb.First(&user, cf.GetUserId(ctx)).Error
+	ctx.Set(_User, user)
+	return user, err
 }
 
 func (cf *contextFunc) GetToken(ctx *gin.Context) string {

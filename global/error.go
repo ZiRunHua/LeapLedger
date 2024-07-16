@@ -36,7 +36,8 @@ func NewErrDataIsEmpty(param string) error {
 
 var ErrOperationTooFrequent = errors.New("操作过于频繁,请稍后再试！")
 var ErrVerifyEmailCaptchaFail = errors.New("校验邮箱验证码失败！")
-var ErrServiceClosed = errors.New("服务未开启")
+var ErrServiceClosed = errors.New("服务未开启！")
+var ErrTouristHaveNoRight = errors.New("游客无权操作！")
 
 // 对应constant.UserAction
 var ErrUnsupportedUserAction = errors.New("暂不支持该操作")
@@ -48,6 +49,7 @@ var ErrSameAsTheOldPassword = errors.New("新旧密码相同")
 var ErrAccountType = errors.New("账本类型不允许该操作")
 
 // 交易类型
+var ErrCategoryNameEmpty = errors.New("名称不可为空")
 var ErrCategorySameName = errors.New("类型名称相同")
 
 func NewErrThirdpartyApi(name, msg string) error {

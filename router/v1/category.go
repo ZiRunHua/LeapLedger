@@ -7,8 +7,8 @@ import (
 
 type CategoryRouter struct{}
 
-func (c *CategoryRouter) InitCategoryRouter(Router *gin.RouterGroup) {
-	router := Router.Group("transaction/category")
+func (c *CategoryRouter) InitCategoryRouter(_router *gin.RouterGroup) {
+	router := _router.Group("transaction/category")
 	baseApi := v1.ApiGroupApp.CategoryApi
 	{
 		router.POST("", baseApi.CreateOne)

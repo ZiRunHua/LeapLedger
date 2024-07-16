@@ -53,10 +53,12 @@ func (t *template) CreateCategory(account accountModel.Account, tmplAccount acco
 		return errors.WithStack(errors.New("交易类型已存在"))
 	}
 	var tmplFatherList []categoryModel.Father
-	tmplFatherList, err = categoryModel.NewDao(tx).GetFatherList(tmplAccount, nil)
+	categoryDao := categoryModel.NewDao(tx)
+	tmplFatherList, err = categoryDao.GetFatherList(tmplAccount, nil)
 	if err != nil {
 		return err
 	}
+	categoryDao.OrderFather(tmplFatherList)
 	for _, tmplFather := range tmplFatherList {
 		if err = t.CreateFatherCategory(account, tmplFather, ctx); err != nil {
 			return err
@@ -73,12 +75,12 @@ func (t *template) CreateFatherCategory(
 	if err != nil {
 		return err
 	}
-
-	tmplCategoryList, err := categoryModel.NewDao(tx).GetListByFather(tmplFather)
+	categoryDao := categoryModel.NewDao(tx)
+	tmplCategoryList, err := categoryDao.GetListByFather(tmplFather)
 	if err != nil {
 		return err
 	}
-
+	categoryDao.Order(tmplCategoryList)
 	var category categoryModel.Category
 	var mappingList []productModel.TransactionCategoryMapping
 	productDao := productModel.NewDao(tx)

@@ -121,9 +121,6 @@ func (u *UserDao) SelectClientInfoByUserAndAccount(
 }
 
 func (u *UserDao) SelectUserClientBaseInfo(userId uint, client constant.Client) (result UserClientBaseInfo, err error) {
-	if err != nil {
-		return
-	}
 	err = u.db.Model(GetUserClientModel(client)).First(&result, userId).Error
 	if err != nil {
 		return
@@ -132,9 +129,6 @@ func (u *UserDao) SelectUserClientBaseInfo(userId uint, client constant.Client) 
 }
 
 func (u *UserDao) UpdateUserClientBaseInfo(userId uint, client constant.Client) (result UserClientBaseInfo, err error) {
-	if err != nil {
-		return
-	}
 	err = u.db.Model(GetUserClientModel(client)).First(&result, userId).Error
 	if err != nil {
 		return
@@ -200,6 +194,11 @@ func (u *UserDao) AddFriend(userId uint, friendId uint, add AddMode) (mapping Fr
 func (u *UserDao) SelectFriendList(userId uint) (result []Friend, err error) {
 	err = u.db.Model(&Friend{}).Where("user_id = ?", userId).Find(&result).Error
 	return
+}
+
+func (u *UserDao) SelectTour(userId uint) (Tour, error) {
+	var tour Tour
+	return tour, u.db.Model(&tour).Where("user_id = ?", userId).Error
 }
 
 func (u *UserDao) CreateTour(user User) (Tour, error) {

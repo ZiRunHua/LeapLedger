@@ -10,7 +10,6 @@ import (
 	categoryModel "KeepAccount/model/category"
 	transactionModel "KeepAccount/model/transaction"
 	"KeepAccount/util"
-	"KeepAccount/util/dataType"
 	"context"
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
@@ -318,7 +317,7 @@ func (t *TransactionApi) GetCategoryAmountRank(ctx *gin.Context) {
 		EndTime:   endTime,
 	}
 	var err error
-	var rankingList dataType.Slice[uint, transactionModel.CategoryAmountRank]
+	var rankingList dataTools.Slice[uint, transactionModel.CategoryAmountRank]
 	rankingList, err = transactionModel.NewStatisticDao().GetCategoryAmountRank(
 		requestData.IncomeExpense, condition, requestData.Limit,
 	)
@@ -332,7 +331,7 @@ func (t *TransactionApi) GetCategoryAmountRank(ctx *gin.Context) {
 		},
 	)
 	// fetch category
-	var categoryList dataType.Slice[uint, categoryModel.Category]
+	var categoryList dataTools.Slice[uint, categoryModel.Category]
 	err = global.GvaDb.Where("id IN (?)", categoryIds).Find(&categoryList).Error
 	if responseError(err, ctx) {
 		return

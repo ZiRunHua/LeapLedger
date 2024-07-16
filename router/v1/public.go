@@ -7,17 +7,17 @@ import (
 
 type PublicRouter struct{}
 
-func (s *PublicRouter) InitPublicRouter(Router *gin.RouterGroup) *gin.RouterGroup {
-	publicRouter := Router.Group("public")
+func (s *PublicRouter) InitPublicRouter(_router *gin.RouterGroup) *gin.RouterGroup {
+	router := _router.Group("public")
 	publicApi := v1.ApiGroupApp.PublicApi
 	{
-		publicRouter.GET("/captcha", publicApi.Captcha)
-		publicRouter.POST("/captcha/email/send", publicApi.SendEmailCaptcha)
+		router.GET("/captcha", publicApi.Captcha)
+		router.POST("/captcha/email/send", publicApi.SendEmailCaptcha)
 
-		publicRouter.POST("/user/login", publicApi.Login)
-		publicRouter.POST("/user/register", publicApi.Register)
-		publicRouter.PUT("/user/password", publicApi.UpdatePassword)
-		publicRouter.POST("/user/tour", publicApi.TourRequest)
+		router.POST("/user/login", publicApi.Login)
+		router.POST("/user/register", publicApi.Register)
+		router.PUT("/user/password", publicApi.UpdatePassword)
+		router.POST("/user/tour", publicApi.TourRequest)
 	}
-	return publicRouter
+	return router
 }

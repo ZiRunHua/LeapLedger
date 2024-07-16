@@ -1,4 +1,4 @@
-package dataType
+package dataTools
 
 // Slice的拓展方法
 type Slice[K comparable, V any] []V
@@ -6,7 +6,7 @@ type Slice[K comparable, V any] []V
 // ToMap slice转map
 /**
 示例：
-	var userList dataType.Slice[uint, User]
+	var userList dataTools.Slice[uint, User]
 	userList = []User{
 		{ID: 1, Name: "test1", Password: "test2"},
 		{ID: 2, Name: "test2", Password: "test3"},
@@ -28,7 +28,7 @@ func (s *Slice[K, V]) ToMap(getKey func(V) K) (result map[K]V) {
 // ExtractValues 提取slice中的值
 /**
 示例：
-	var userList dataType.Slice[uint, User]
+	var userList dataTools.Slice[uint, User]
 	userList = []User{
 		{ID: 1, Name: "test1", Password: "test2"},
 		{ID: 2, Name: "test2", Password: "test3"},
@@ -44,4 +44,18 @@ func (s *Slice[K, V]) ExtractValues(getVal func(V) K) (result []K) {
 		result[i] = getVal(v)
 	}
 	return
+}
+
+func (s *Slice[K, V]) Reverse() {
+	n := len(*s)
+	for i := 0; i < n/2; i++ {
+		(*s)[i], (*s)[n-1-i] = (*s)[n-1-i], (*s)[i]
+	}
+}
+
+func (s *Slice[K, V]) CopyReverse() Slice[K, V] {
+	list := make(Slice[K, V], len(*s), len(*s))
+	copy(list, *s)
+	list.Reverse()
+	return list
 }

@@ -25,12 +25,13 @@ func (n *_nats) do(mode constant.ServerMode) error {
 	}
 	if mode == constant.Debug {
 		opts := &server.Options{
-			JetStream: true,
-			Trace:     true,
-			Debug:     true,
-			Logtime:   true,
-			LogFile:   _natsServerLogPath,
-			StoreDir:  nastStoreDir,
+			JetStream:    true,
+			Trace:        true,
+			Debug:        true,
+			Logtime:      true,
+			LogFile:      _natsServerLogPath,
+			LogSizeLimit: 2048,
+			StoreDir:     nastStoreDir,
 		}
 		NatsServer, err = server.NewServer(opts)
 		if err != nil {

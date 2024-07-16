@@ -4,7 +4,6 @@ import (
 	"KeepAccount/global"
 	accountModel "KeepAccount/model/account"
 	userModel "KeepAccount/model/user"
-	"KeepAccount/util/dataType"
 	"github.com/pkg/errors"
 )
 
@@ -123,21 +122,21 @@ func (a *AccountDetail) setAccount(account accountModel.Account) {
 
 type AccountDetailList []AccountDetail
 
-func (a *AccountDetailList) SetData(list dataType.Slice[uint, accountModel.User]) error {
+func (a *AccountDetailList) SetData(list dataTools.Slice[uint, accountModel.User]) error {
 	if len(list) == 0 {
 		*a = make([]AccountDetail, 0, 0)
 		return nil
 	}
 	// 账本
 	ids := list.ExtractValues(func(user accountModel.User) uint { return user.AccountId })
-	var accountList dataType.Slice[uint, accountModel.Account]
+	var accountList dataTools.Slice[uint, accountModel.Account]
 	err := global.GvaDb.Where("id IN (?)", ids).Find(&accountList).Error
 	if err != nil {
 		return err
 	}
 	// 创建者
 	ids = accountList.ExtractValues(func(account accountModel.Account) uint { return account.UserId })
-	var creatorList dataType.Slice[uint, userModel.User]
+	var creatorList dataTools.Slice[uint, userModel.User]
 	err = global.GvaDb.Select("username", "id").Where("id IN (?)", ids).Find(&creatorList).Error
 	if err != nil {
 		return err
