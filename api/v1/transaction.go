@@ -9,7 +9,8 @@ import (
 	accountModel "KeepAccount/model/account"
 	categoryModel "KeepAccount/model/category"
 	transactionModel "KeepAccount/model/transaction"
-	"KeepAccount/util"
+	"KeepAccount/util/dataTool"
+	"KeepAccount/util/timeTool"
 	"context"
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
@@ -194,7 +195,7 @@ func (t *TransactionApi) GetTotal(ctx *gin.Context) {
 	if responseError(err, ctx) {
 		return
 	}
-	response.OkWithData(response.TransactionTotal{IncomeExpenseStatistic: total}, ctx)
+	response.OkWithData(response.TransactionTotal{IEStatistic: total}, ctx)
 }
 
 func (t *TransactionApi) GetMonthStatistic(ctx *gin.Context) {
@@ -213,7 +214,7 @@ func (t *TransactionApi) GetMonthStatistic(ctx *gin.Context) {
 	// 设置查询条件
 	requestCondition, extCond := requestData.GetStatisticCondition(), requestData.GetExtensionCondition()
 	condition := requestCondition
-	months := util.Time.SplitMonths(requestCondition.StartTime, requestCondition.EndTime)
+	months := timeTool.SplitMonths(requestCondition.StartTime, requestCondition.EndTime)
 	// 查询并处理响应
 	responseList := make([]response.TransactionStatistic, len(months), len(months))
 	dao := transactionModel.NewDao()
@@ -226,9 +227,9 @@ func (t *TransactionApi) GetMonthStatistic(ctx *gin.Context) {
 			return
 		}
 		responseList[i] = response.TransactionStatistic{
-			IncomeExpenseStatistic: monthStatistic,
-			StartTime:              condition.StartTime.Unix(),
-			EndTime:                condition.EndTime.Unix(),
+			IEStatistic: monthStatistic,
+			StartTime:   condition.StartTime.Unix(),
+			EndTime:     condition.EndTime.Unix(),
 		}
 	}
 	response.OkWithData(response.TransactionMonthStatistic{List: responseList}, ctx)
@@ -250,7 +251,7 @@ func (t *TransactionApi) GetDayStatistic(ctx *gin.Context) {
 	}
 	// 处理请求
 	var startTime, endTime = requestData.FormatDayTime()
-	days := util.Time.SplitDays(startTime, endTime)
+	days := timeTool.SplitDays(startTime, endTime)
 	dayMap := make(map[time.Time]*response.TransactionDayStatistic, len(days))
 	condition := transactionModel.StatisticCondition{
 		ForeignKeyCondition: transactionModel.ForeignKeyCondition{
@@ -317,7 +318,7 @@ func (t *TransactionApi) GetCategoryAmountRank(ctx *gin.Context) {
 		EndTime:   endTime,
 	}
 	var err error
-	var rankingList dataTools.Slice[uint, transactionModel.CategoryAmountRank]
+	var rankingList dataTool.Slice[uint, transactionModel.CategoryAmountRank]
 	rankingList, err = transactionModel.NewStatisticDao().GetCategoryAmountRank(
 		requestData.IncomeExpense, condition, requestData.Limit,
 	)
@@ -331,7 +332,7 @@ func (t *TransactionApi) GetCategoryAmountRank(ctx *gin.Context) {
 		},
 	)
 	// fetch category
-	var categoryList dataTools.Slice[uint, categoryModel.Category]
+	var categoryList dataTool.Slice[uint, categoryModel.Category]
 	err = global.GvaDb.Where("id IN (?)", categoryIds).Find(&categoryList).Error
 	if responseError(err, ctx) {
 		return

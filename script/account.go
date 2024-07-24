@@ -4,7 +4,7 @@ import (
 	"KeepAccount/global/constant"
 	accountModel "KeepAccount/model/account"
 	userModel "KeepAccount/model/user"
-	"KeepAccount/util/dataTools"
+	"KeepAccount/util/dataTool"
 	"encoding/json"
 	"gorm.io/gorm"
 	"io"
@@ -21,7 +21,7 @@ func (as *accountScripts) CreateByTemplate(tmpl AccountTmpl, user userModel.User
 	if err != nil {
 		return
 	}
-	var list dataTools.Slice[any, fatherTmpl] = tmpl.Category
+	var list dataTool.Slice[any, fatherTmpl] = tmpl.Category
 	for _, f := range list.CopyReverse() {
 		err = f.create(account, tx)
 		if err != nil {

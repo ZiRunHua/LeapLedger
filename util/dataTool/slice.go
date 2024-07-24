@@ -1,4 +1,4 @@
-package dataTools
+package dataTool
 
 // Slice的拓展方法
 type Slice[K comparable, V any] []V

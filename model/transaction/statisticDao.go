@@ -85,9 +85,9 @@ func (s *StatisticDao) GetCategoryAmountRank(
 	return result, err
 }
 
-// GetIeStatisticByCondition 查询收支统计 返回 global.IncomeExpenseStatistic
+// GetIeStatisticByCondition 查询收支统计 返回 global.IEStatistic
 func (s *StatisticDao) GetIeStatisticByCondition(ie *constant.IncomeExpense, condition StatisticCondition) (
-	result global.IncomeExpenseStatistic, err error,
+	result global.IEStatistic, err error,
 ) {
 	if false == condition.CheckAvailability() {
 		return result, errors.New("查询条件错误")

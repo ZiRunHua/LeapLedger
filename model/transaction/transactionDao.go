@@ -6,6 +6,7 @@ import (
 	accountModel "KeepAccount/model/account"
 	"github.com/pkg/errors"
 	"gorm.io/gorm"
+	"time"
 )
 
 type TransactionDao struct {
@@ -38,12 +39,12 @@ func (t *TransactionDao) GetListByCondition(condition Condition, limit int, offs
 
 func (t *TransactionDao) GetIeStatisticByCondition(
 	ie *constant.IncomeExpense, condition StatisticCondition, extCond *ExtensionCondition,
-) (result global.IncomeExpenseStatistic, err error) {
+) (result global.IEStatistic, err error) {
 	if extCond.IsSet() {
 		// transaction table select
 		query := t.db.Model(&Transaction{})
 		query = condition.ForeignKeyCondition.addConditionToQuery(query)
-		query = query.Where("trade_time between ? AND ?", condition.StartTime, condition.EndTime)
+		query = query.Where("trade_time between ? AND ?", condition.StartTime.Truncate(24*time.Hour), condition.EndTime.Truncate(24*time.Hour))
 		query = extCond.addConditionToQuery(query)
 		result, err = t.getIEStatisticByWhere(ie, query)
 	} else {
@@ -57,7 +58,7 @@ func (t *TransactionDao) GetIeStatisticByCondition(
 }
 
 func (t *TransactionDao) getIEStatisticByWhere(ie *constant.IncomeExpense, query *gorm.DB) (
-	result global.IncomeExpenseStatistic, err error,
+	result global.IEStatistic, err error,
 ) {
 	if ie.QueryIncome() {
 		result.Income, err = t.getAmountCountStatistic(query, constant.Income)

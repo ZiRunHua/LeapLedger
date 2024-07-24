@@ -9,6 +9,7 @@ import (
 	transactionModel "KeepAccount/model/transaction"
 	userModel "KeepAccount/model/user"
 	"KeepAccount/util"
+	"KeepAccount/util/timeTool"
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
 	"github.com/songzhibin97/gkit/egroup"
@@ -427,9 +428,9 @@ func (u *UserApi) Home(ctx *gin.Context) {
 			return err
 		}
 		*data = response.TransactionStatistic{
-			IncomeExpenseStatistic: result,
-			StartTime:              startTime.Unix(),
-			EndTime:                endTime.Unix(),
+			IEStatistic: result,
+			StartTime:   startTime.Unix(),
+			EndTime:     endTime.Unix(),
 		}
 		return nil
 	}
@@ -454,7 +455,7 @@ func (u *UserApi) Home(ctx *gin.Context) {
 		//周统计
 		if err = handelOneTime(
 			&weekData,
-			util.Time.GetFirstSecondOfMonday(nowTime),
+			timeTool.GetFirstSecondOfMonday(nowTime),
 			time.Date(year, month, day, 23, 59, 59, 0, time.Local),
 		); err != nil {
 			return err
@@ -467,7 +468,7 @@ func (u *UserApi) Home(ctx *gin.Context) {
 		//月统计
 		if err = handelOneTime(
 			&monthData,
-			util.Time.GetFirstSecondOfMonth(nowTime),
+			timeTool.GetFirstSecondOfMonth(nowTime),
 			time.Date(year, month, day, 23, 59, 59, 0, time.Local),
 		); err != nil {
 			return err
@@ -475,7 +476,7 @@ func (u *UserApi) Home(ctx *gin.Context) {
 		//年统计
 		if err = handelOneTime(
 			&yearData,
-			util.Time.GetFirstSecondOfYear(nowTime),
+			timeTool.GetFirstSecondOfYear(nowTime),
 			time.Date(year, month, day, 23, 59, 59, 0, time.Local),
 		); err != nil {
 			return err

@@ -8,7 +8,7 @@ import (
 	categoryModel "KeepAccount/model/category"
 	transactionModel "KeepAccount/model/transaction"
 	userModel "KeepAccount/model/user"
-	"KeepAccount/util/dataTools"
+	"KeepAccount/util/dataTool"
 	"context"
 	"github.com/pkg/errors"
 	"gorm.io/gorm"
@@ -79,7 +79,7 @@ func (catSvc *Category) UpdateCategoryMapping(category categoryModel.Category, c
 		if err != nil {
 			return err
 		}
-		var mainCategoryList dataTools.Slice[string, categoryModel.Category]
+		var mainCategoryList dataTool.Slice[string, categoryModel.Category]
 		mainCategoryList, err = categoryDao.GetListByAccount(mainAccount, &category.IncomeExpense)
 		if err != nil {
 			return err
@@ -384,7 +384,7 @@ func (catSvc *Category) mappingAccountCategoryByAI(mainAccount, mappingAccount a
 	if false == aiService.IsOpen() {
 		return nil
 	}
-	var mainCategoryList, mappingCategoryList dataTools.Slice[string, categoryModel.Category]
+	var mainCategoryList, mappingCategoryList dataTool.Slice[string, categoryModel.Category]
 	var err error
 	var matchingResult map[string]string
 	categoryDao := categoryModel.NewDao(tx)

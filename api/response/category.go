@@ -4,6 +4,7 @@ import (
 	"KeepAccount/global"
 	"KeepAccount/global/constant"
 	categoryModel "KeepAccount/model/category"
+	"KeepAccount/util/dataTool"
 	"github.com/pkg/errors"
 )
 
@@ -45,14 +46,14 @@ func (cd *CategoryDetail) SetData(category categoryModel.Category, father catego
 
 type CategoryDetailList []CategoryDetail
 
-func (cdl *CategoryDetailList) SetData(categoryList dataTools.Slice[uint, categoryModel.Category]) error {
+func (cdl *CategoryDetailList) SetData(categoryList dataTool.Slice[uint, categoryModel.Category]) error {
 	*cdl = make(CategoryDetailList, len(categoryList), len(categoryList))
 	if len(categoryList) == 0 {
 		return nil
 	}
 
 	fatherIds := categoryList.ExtractValues(func(category categoryModel.Category) uint { return category.FatherId })
-	var fatherList dataTools.Slice[uint, categoryModel.Father]
+	var fatherList dataTool.Slice[uint, categoryModel.Father]
 	err := global.GvaDb.Where("id IN (?)", fatherIds).Find(&fatherList).Error
 	if err != nil {
 		return err

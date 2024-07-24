@@ -91,10 +91,10 @@ func (b *base) updateUserCurrentAfterDelete(
 		for _, info := range list {
 			updates := make(map[string]interface{})
 			if info.CurrentShareAccountId == accountUser.AccountId {
-				updates["current_share_Account_id"] = newCurrentShareAccount.ID
+				updates["current_share_account_id"] = newCurrentShareAccount.ID
 			}
 			if info.CurrentAccountId == accountUser.AccountId {
-				updates["current_Account_id"] = newCurrentAccount.ID
+				updates["current_account_id"] = newCurrentAccount.ID
 			}
 			if len(updates) > 0 {
 				err = tx.Model(userModel.GetUserClientModel(client)).Where("user_id = ?", info.UserId).Updates(updates).Error

@@ -9,7 +9,7 @@ import (
 	accountModel "KeepAccount/model/account"
 	transactionModel "KeepAccount/model/transaction"
 	userModel "KeepAccount/model/user"
-	"KeepAccount/util"
+	"KeepAccount/util/timeTool"
 	"context"
 	"errors"
 	"github.com/gin-gonic/gin"
@@ -476,7 +476,7 @@ func (a *AccountApi) GetUserInfo(ctx *gin.Context) {
 		return
 	}
 	group := egroup.WithContext(ctx)
-	var todayTotal, monthTotal *global.IncomeExpenseStatistic
+	var todayTotal, monthTotal *global.IEStatisticWithTime
 	var recentTrans *response.TransactionDetailList
 	for _, infoType := range requestData.Types {
 		switch infoType {
@@ -489,7 +489,7 @@ func (a *AccountApi) GetUserInfo(ctx *gin.Context) {
 
 		case request.CurrentMonthTransTotal:
 			result, err := a.getTransTotal(
-				account, &[]uint{accountUser.UserId}, util.Time.GetFirstSecondOfMonth(time.Now()), time.Now(),
+				account, &[]uint{accountUser.UserId}, timeTool.GetFirstSecondOfMonth(time.Now()), time.Now(),
 			)
 			monthTotal = &result
 			if responseError(err, ctx) {
@@ -586,7 +586,7 @@ func (a *AccountApi) UpdateUserConfigFlag(ctx *gin.Context) {
 
 func (a *AccountApi) getTransTotal(
 	account accountModel.Account, UserIds *[]uint, start time.Time, end time.Time,
-) (result global.IncomeExpenseStatistic, err error) {
+) (result global.IEStatisticWithTime, err error) {
 	condition := transactionModel.StatisticCondition{
 		ForeignKeyCondition: transactionModel.ForeignKeyCondition{
 			AccountId: account.ID,
@@ -602,6 +602,11 @@ func (a *AccountApi) getTransTotal(
 		return
 	}
 	result.Expense, err = dao.GetTotalByCondition(constant.Expense, condition)
+	if err != nil {
+		return
+	}
+	result.StartTime = timeTool.NewTimestamp(condition.StartTime)
+	result.EndTime = timeTool.NewTimestamp(condition.EndTime)
 	return
 }
 
@@ -810,16 +815,16 @@ func (a *AccountApi) GetInfo(ctx *gin.Context) {
 		types = []request.InfoType{infoType}
 	}
 	//查询
-	var todayTotal, monthTotal *global.IncomeExpenseStatistic
+	var todayTotal, monthTotal *global.IEStatisticWithTime
 	var recentTrans *response.TransactionDetailList
 	typeHandleFunc := func(infoType request.InfoType, account accountModel.Account) error {
 		switch infoType {
 		case request.TodayTransTotal:
-			result, err := a.getTransTotal(account, nil, time.Now(), time.Now())
+			result, err := a.getTransTotal(account, nil, time.Now(), time.Now().Add(time.Hour*24-time.Second))
 			todayTotal = &result
 			return err
 		case request.CurrentMonthTransTotal:
-			result, err := a.getTransTotal(account, nil, util.Time.GetFirstSecondOfMonth(time.Now()), time.Now())
+			result, err := a.getTransTotal(account, nil, timeTool.GetFirstSecondOfMonth(time.Now()), time.Now())
 			monthTotal = &result
 			return err
 		case request.RecentTrans:
@@ -836,7 +841,7 @@ func (a *AccountApi) GetInfo(ctx *gin.Context) {
 		}
 		return nil
 	}
-	// handleresponse
+	// handle response
 	account, pass := a.GetAccountByParam(ctx, true)
 	if false == pass {
 		return

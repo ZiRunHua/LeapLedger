@@ -4,6 +4,7 @@ import (
 	"KeepAccount/global"
 	accountModel "KeepAccount/model/account"
 	userModel "KeepAccount/model/user"
+	"KeepAccount/util/dataTool"
 	"github.com/pkg/errors"
 )
 
@@ -122,21 +123,21 @@ func (a *AccountDetail) setAccount(account accountModel.Account) {
 
 type AccountDetailList []AccountDetail
 
-func (a *AccountDetailList) SetData(list dataTools.Slice[uint, accountModel.User]) error {
+func (a *AccountDetailList) SetData(list dataTool.Slice[uint, accountModel.User]) error {
 	if len(list) == 0 {
 		*a = make([]AccountDetail, 0, 0)
 		return nil
 	}
 	// 账本
 	ids := list.ExtractValues(func(user accountModel.User) uint { return user.AccountId })
-	var accountList dataTools.Slice[uint, accountModel.Account]
+	var accountList dataTool.Slice[uint, accountModel.Account]
 	err := global.GvaDb.Where("id IN (?)", ids).Find(&accountList).Error
 	if err != nil {
 		return err
 	}
 	// 创建者
 	ids = accountList.ExtractValues(func(account accountModel.Account) uint { return account.UserId })
-	var creatorList dataTools.Slice[uint, userModel.User]
+	var creatorList dataTool.Slice[uint, userModel.User]
 	err = global.GvaDb.Select("username", "id").Where("id IN (?)", ids).Find(&creatorList).Error
 	if err != nil {
 		return err
@@ -260,14 +261,14 @@ func (a *AccountUser) SetData(data accountModel.User) error {
 }
 
 type AccountUserInfo struct {
-	TodayTransTotal        *global.IncomeExpenseStatistic
-	CurrentMonthTransTotal *global.IncomeExpenseStatistic
+	TodayTransTotal        *global.IEStatisticWithTime
+	CurrentMonthTransTotal *global.IEStatisticWithTime
 	RecentTrans            *TransactionDetailList
 }
 
 type AccountInfo struct {
-	TodayTransTotal        *global.IncomeExpenseStatistic
-	CurrentMonthTransTotal *global.IncomeExpenseStatistic
+	TodayTransTotal        *global.IEStatisticWithTime
+	CurrentMonthTransTotal *global.IEStatisticWithTime
 	RecentTrans            *TransactionDetailList
 }
 

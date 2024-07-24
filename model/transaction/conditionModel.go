@@ -132,7 +132,7 @@ type StatisticCondition struct {
 // addConditionToQuery 通过条件获取附带查询条件的gorm.DB
 func (s *StatisticCondition) addConditionToQuery(db *gorm.DB) *gorm.DB {
 	query := s.ForeignKeyCondition.addConditionToQuery(db)
-	query = query.Where("date BETWEEN ? AND ?", s.StartTime, s.EndTime)
+	query = query.Where("date BETWEEN ? AND ?", s.StartTime.Truncate(24*time.Hour), s.EndTime.Truncate(24*time.Hour))
 	return query
 }
 

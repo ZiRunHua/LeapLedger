@@ -6,7 +6,7 @@ import (
 	accountModel "KeepAccount/model/account"
 	categoryModel "KeepAccount/model/category"
 	productModel "KeepAccount/model/product"
-	"KeepAccount/util/dataTools"
+	"KeepAccount/util/dataTool"
 	"context"
 	"gorm.io/gorm"
 )
@@ -27,7 +27,7 @@ func (ft *fatherTmpl) create(account accountModel.Account, tx *gorm.DB) error {
 	if err != nil {
 		return err
 	}
-	var list dataTools.Slice[any, categoryTmpl] = ft.Children
+	var list dataTool.Slice[any, categoryTmpl] = ft.Children
 	for _, child := range list.CopyReverse() {
 		_, err = child.create(father, tx)
 		if err != nil {

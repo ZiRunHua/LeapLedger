@@ -187,11 +187,11 @@ type TransactionGetList struct {
 	PageData
 }
 type TransactionTotal struct {
-	global.IncomeExpenseStatistic
+	global.IEStatistic
 }
 
 type TransactionStatistic struct {
-	global.IncomeExpenseStatistic
+	global.IEStatistic
 	StartTime int64
 	EndTime   int64
 }
