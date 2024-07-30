@@ -7,10 +7,10 @@ System:
   RouterPrefix: ""
 
 Redis:
-  Db: 0
-  # 设置Addr开启redis
-  Addr: ""
+  Addr: "leap-ledger-redis:6379"
   Password: ""
+  Db: 0
+  LockDb: 1
 
 Mysql:
   Path: "leap-ledger-mysql"

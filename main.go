@@ -1,11 +1,13 @@
 package main
 
 import (
+	"KeepAccount/global"
 	_ "KeepAccount/global"
+	"KeepAccount/global/constant"
 	_ "KeepAccount/global/constant"
 	GvaTask "KeepAccount/global/task"
 	"KeepAccount/initialize"
-	_ "KeepAccount/initialize/database"
+	"KeepAccount/initialize/database"
 	"KeepAccount/router"
 	"context"
 	"fmt"
@@ -20,6 +22,10 @@ import (
 var httpServer *http.Server
 
 func main() {
+	var tip string
+	if global.Config.Mode == constant.Debug {
+		tip = database.NewTestUser()
+	}
 	engine := router.Init()
 	httpServer = &http.Server{
 		Addr:           fmt.Sprintf(":%d", initialize.Config.System.Addr),
@@ -28,6 +34,7 @@ func main() {
 		WriteTimeout:   5 * time.Second,
 		MaxHeaderBytes: 1 << 20,
 	}
+	fmt.Println(tip)
 	err := httpServer.ListenAndServe()
 	if err != nil {
 		panic(err)

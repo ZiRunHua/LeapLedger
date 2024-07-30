@@ -9,7 +9,7 @@
 # Test binary, built with `go test -c`
 *.test
 local_test
-
+/log
 *.log
 
 runtime

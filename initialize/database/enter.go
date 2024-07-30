@@ -14,14 +14,7 @@ import (
 )
 
 var (
-	userService        = service.GroupApp.UserServiceGroup.Base
-	accountService     = service.GroupApp.AccountServiceGroup.Base
-	categoryService    = service.GroupApp.CategoryServiceGroup.Category
-	transactionService = service.GroupApp.TransactionServiceGroup.Transaction
-	productService     = service.GroupApp.ProductServiceGroup.Product
-	templateService    = service.GroupApp.TemplateService.Template
-	//第三方服务
-	thirdpartyService = service.GroupApp.ThirdpartyServiceGroup
+	userService = service.GroupApp.UserServiceGroup.Base
 )
 var tmplUserId = _templateService.TmplUserId
 
@@ -38,7 +31,7 @@ func init() {
 	if err != nil {
 		panic(err)
 	}
-	// init tourist
+	// init tourist User
 	err = global.GvaDb.Transaction(initTourist)
 	if err != nil {
 		panic(err)
@@ -82,38 +75,45 @@ func initTemplateUser(tx *gorm.DB) (err error) {
 	}
 	return
 }
+func NewTestUser() (result string) {
+	var err error
+	err = global.GvaDb.Transaction(func(tx *gorm.DB) error {
+		result, err = newTestUser(tx)
+		return err
+	})
+	if err != nil {
+		result = err.Error()
+	}
+	return result
+}
+
+func newTestUser(tx *gorm.DB) (tip string, err error) {
+	var user userModel.User
+	user, err = script.User.CreateTourist(tx)
+	if err != nil {
+		return
+	}
+	var tourist userModel.Tour
+	tourist, err = userModel.NewDao(tx).SelectTour(user.ID)
+	if err != nil {
+		return
+	}
+	err = tourist.Use(tx)
+	if err != nil {
+		return
+	}
+	err = userService.UpdatePassword(user, util.ClientPasswordHash(user.Email, tmplUserPassword), tx)
+	return fmt.Sprintf("email:%s password:%s", user.Email, tmplUserPassword), err
+}
 
 func initTourist(tx *gorm.DB) error {
-	var user userModel.User
-	var err error
-	deferFunc := func() error {
-		err = userService.UpdatePassword(user, util.ClientPasswordHash(user.Email, tmplUserPassword), tx)
-		if err != nil {
-			return err
-		}
-		fmt.Println("email:", user.Email, " password:", tmplUserPassword)
-		return nil
-	}
-	defer func() {
-		if err == nil {
-			err = deferFunc()
-		}
-	}()
-
-	tourist, err := userModel.NewDao(tx).SelectByUnusedTour()
+	_, err := userModel.NewDao(tx).SelectByUnusedTour()
 	if err == nil {
-		err = tourist.Use(tx)
-		if err != nil {
-			return err
-		}
-		user, err = tourist.GetUser(tx)
-		if err != nil {
-			return err
-		}
+		return nil
 	} else if !errors.Is(err, gorm.ErrRecordNotFound) {
 		return err
 	}
-	user, err = script.User.CreateTourist(tx)
+	user, err := script.User.CreateTourist(tx)
 	if err != nil {
 		return err
 	}

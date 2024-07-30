@@ -12,6 +12,7 @@ import (
 	"gopkg.in/yaml.v3"
 	"gorm.io/gorm"
 	"os"
+	"time"
 )
 
 type _config struct {
@@ -80,4 +81,15 @@ func initConfig() error {
 		return err
 	}
 	return nil
+}
+
+func reconnection[T any](connect func() (T, error), retryTimes int) (result T, err error) {
+	defer func() {
+		if err != nil && retryTimes < 3 {
+			time.Sleep(time.Second * 3)
+			result, err = reconnection[T](connect, retryTimes-1)
+		}
+	}()
+	result, err = connect()
+	return
 }

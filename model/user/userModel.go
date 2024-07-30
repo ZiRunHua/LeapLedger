@@ -83,5 +83,5 @@ func (t *Tour) Use(db *gorm.DB) error {
 	if t.Status == true {
 		return errors.New("tourist used")
 	}
-	return db.Model(t).Update("status", true).Error
+	return db.Model(t).Where("user_id = ?", t.UserId).Update("status", true).Error
 }
