@@ -1,0 +1,46 @@
+version: '3.3'
+services:
+  leap-ledger-server:
+    container_name: leap-ledger-server
+    image: registry.cn-hangzhou.aliyuncs.com/xiaozirun/leap-ledger:latest
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+#    environment:
+#      - CONFIG_FILE_NAME=production_config.yaml
+    volumes:
+      - ./runtime:/go/LeapLedger/runtime
+      - ./log/server:/go/LeapLedger/log
+    networks:
+      - leap-ledger-network
+    depends_on:
+      - leap-ledger-mysql
+      - leap-ledger-redis
+  leap-ledger-mysql:
+    container_name: leap-ledger-mysql
+    image: mysql:8.0.22
+    environment:
+      MYSQL_ALLOW_EMPTY_PASSWORD: "yes"
+      MYSQL_DATABASE: leap_ledger
+    ports:
+      - "3306:3306"
+    volumes:
+      - ./data/mysql:/var/lib/mysql
+    networks:
+      - leap-ledger-network
+  leap-ledger-redis:
+    container_name: leap-ledger-redis
+    privileged: true
+    image: redis:latest
+    ports:
+      - "6379:6379"
+    volumes:
+      - ./redis.conf:/redis.conf
+      - ./data/redis:/data
+    networks:
+      - leap-ledger-network
+    command: ["redis-server", "/redis.conf"]
+networks:
+  leap-ledger-network:
