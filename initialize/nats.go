@@ -30,7 +30,8 @@ func (n *_nats) do(mode constant.ServerMode) error {
 			Debug:        true,
 			Logtime:      true,
 			LogFile:      _natsServerLogPath,
-			LogSizeLimit: 2048,
+			LogSizeLimit: 20480,
+			LogMaxFiles:  1,
 			StoreDir:     nastStoreDir,
 		}
 		NatsServer, err = server.NewServer(opts)

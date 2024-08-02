@@ -8,24 +8,47 @@ import (
 	productModel "KeepAccount/model/product"
 	userModel "KeepAccount/model/user"
 	accountService "KeepAccount/service/account"
+	"KeepAccount/util/dataTool"
 	"context"
 	"github.com/pkg/errors"
+	"go.uber.org/zap"
 	"gorm.io/gorm"
+	"time"
 )
 
 type template struct{}
 
+var TemplateApp = &template{}
+
 func (t *template) GetList() ([]accountModel.Account, error) {
 	list := []accountModel.Account{}
-	err := global.GvaDb.Where("user_id = ?", tmplUser.ID).Find(&list).Error
+	err := global.GvaDb.Where("user_id = ?", TmplUserId).Find(&list).Error
 	return list, err
 }
 
+func (t *template) GetListByRank(ctx context.Context) (result []accountModel.Account, err error) {
+	var list dataTool.Slice[uint, rankMember]
+	list, err = rank.GetAll(ctx)
+	if err != nil {
+		return
+	}
+	ids := list.ExtractValues(func(member rankMember) uint { return member.id })
+	if len(ids) == 0 {
+		return
+	}
+	err = global.GvaDb.Where("id IN (?)", ids).Find(&result).Error
+	return
+}
+func (t *template) rankOnceIncr(userId uint, tmplAccount accountModel.Account, ctx context.Context) error {
+	member := newRankMember(tmplAccount)
+	_, err := rank.OnceIncrWeight(member, userId, time.Now().Unix(), ctx)
+	return err
+}
 func (t *template) CreateAccount(
 	user userModel.User, tmplAccount accountModel.Account, ctx context.Context,
 ) (account accountModel.Account, err error) {
 	tx := ctx.Value(contextKey.Tx).(*gorm.DB)
-	if tmplAccount.UserId != tmplUser.ID {
+	if tmplAccount.UserId != TmplUserId {
 		return account, ErrNotBelongTemplate
 	}
 	account, _, err = accountService.ServiceGroupApp.Base.CreateOne(
@@ -63,6 +86,11 @@ func (t *template) CreateCategory(account accountModel.Account, tmplAccount acco
 		if err = t.CreateFatherCategory(account, tmplFather, ctx); err != nil {
 			return err
 		}
+	}
+	err = t.rankOnceIncr(account.UserId, tmplAccount, ctx)
+	if err != nil {
+		errorLog.Error("CreateAccount => rankOnceIncr", zap.Error(err))
+		err = nil
 	}
 	return nil
 }

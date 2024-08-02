@@ -63,29 +63,29 @@ func (rh RedisHook) BeforeProcess(ctx context.Context, cmd redis.Cmder) (context
 	return ctx, nil
 }
 
-func (rh RedisHook) AfterProcess(ctx context.Context, cmd redis.Cmder) error {
+func (rh RedisHook) AfterProcess(_ context.Context, cmd redis.Cmder) error {
 	if len(rh.name) == 0 {
-		fmt.Printf("finish=> <%s>\n", cmd)
+		fmt.Printf("finish => <%s>\n", cmd)
 	} else {
-		fmt.Printf("%s finish=> <%s>\n", rh.name, cmd)
+		fmt.Printf("%s finish => <%s>\n", rh.name, cmd)
 	}
 	return nil
 }
 
 func (rh RedisHook) BeforeProcessPipeline(ctx context.Context, cmds []redis.Cmder) (context.Context, error) {
 	if len(rh.name) == 0 {
-		fmt.Printf("pipeline exec  => %v\n", cmds)
+		fmt.Printf("pipeline exec   => %v\n", cmds)
 	} else {
-		fmt.Printf("%s pipeline exec  => %v\n", rh.name, cmds)
+		fmt.Printf("%s pipeline exec   => %v\n", rh.name, cmds)
 	}
 	return ctx, nil
 }
 
-func (rh RedisHook) AfterProcessPipeline(ctx context.Context, cmds []redis.Cmder) error {
+func (rh RedisHook) AfterProcessPipeline(_ context.Context, cmds []redis.Cmder) error {
 	if len(rh.name) == 0 {
-		fmt.Printf("pipeline finish=> %v\n", rh.name, cmds)
+		fmt.Printf("pipeline finish => %v\n", rh.name, cmds)
 	} else {
-		fmt.Printf("%s pipeline finish=> %v\n", rh.name, cmds)
+		fmt.Printf("%s pipeline finish => %v\n", rh.name, cmds)
 	}
 	return nil
 }

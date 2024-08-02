@@ -1,26 +1,38 @@
 package templateService
 
 import (
+	"KeepAccount/global/constant"
 	userModel "KeepAccount/model/user"
 	_categoryService "KeepAccount/service/category"
+	_log "KeepAccount/util/log"
+	"go.uber.org/zap"
 )
-
-var GroupApp = &Group{}
 
 type Group struct {
 	Template template
 }
 
-var TmplUserId uint = 1
+var (
+	GroupApp = &Group{}
+
+	errorLog *zap.Logger
+
+	TmplUserId uint = 1
+	tmplUser   userModel.User
+)
+
+func init() {
+	var err error
+	if errorLog, err = _log.GetNewZapLogger(constant.LOG_PATH + "/service/template/error.log"); err != nil {
+		panic(err)
+	}
+	initRank()
+}
 
 const (
 	TmplUserEmail    = "template@gmail.com"
 	TmplUserPassword = "1999123456"
 	TmplUserName     = "template"
-)
-
-var (
-	tmplUser userModel.User
 )
 
 func SetTmplUser(user userModel.User) {

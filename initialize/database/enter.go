@@ -40,11 +40,6 @@ func init() {
 
 func initTemplateUser(tx *gorm.DB) (err error) {
 	var user userModel.User
-	defer func() {
-		if err == nil {
-			_templateService.SetTmplUser(user)
-		}
-	}()
 	//find user
 	err = global.GvaDb.First(&user, tmplUserId).Error
 	if err == nil {
@@ -73,6 +68,7 @@ func initTemplateUser(tx *gorm.DB) (err error) {
 	if err != nil {
 		return
 	}
+	_templateService.SetTmplUser(user)
 	return
 }
 func NewTestUser() (result string) {

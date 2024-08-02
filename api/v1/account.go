@@ -206,7 +206,7 @@ func (a *AccountApi) CreateOneByTemplate(ctx *gin.Context) {
 }
 
 func (a *AccountApi) GetAccountTemplateList(ctx *gin.Context) {
-	list, err := templateService.GetList()
+	list, err := templateService.GetListByRank(ctx)
 	if responseError(err, ctx) {
 		return
 	}

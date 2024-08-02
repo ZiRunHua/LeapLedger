@@ -198,7 +198,7 @@ func (u *UserDao) SelectFriendList(userId uint) (result []Friend, err error) {
 
 func (u *UserDao) SelectTour(userId uint) (Tour, error) {
 	var tour Tour
-	return tour, u.db.Model(&tour).Where("user_id = ?", userId).Error
+	return tour, u.db.Where("user_id = ?", userId).First(&tour).Error
 }
 
 func (u *UserDao) CreateTour(user User) (Tour, error) {
