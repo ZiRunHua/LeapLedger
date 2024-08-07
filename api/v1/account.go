@@ -605,8 +605,8 @@ func (a *AccountApi) getTransTotal(
 	if err != nil {
 		return
 	}
-	result.StartTime = timeTool.NewTimestamp(condition.StartTime)
-	result.EndTime = timeTool.NewTimestamp(condition.EndTime)
+	result.StartTime = condition.StartTime.Unix()
+	result.EndTime = condition.EndTime.Unix()
 	return
 }
 

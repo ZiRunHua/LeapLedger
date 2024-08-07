@@ -1,2 +1,4 @@
 local_test
-runtime
+docker/runtime
+docker/log
+docker/data
