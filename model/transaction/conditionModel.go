@@ -152,7 +152,7 @@ type StatisticConditionBuilder struct {
 }
 
 // NewStatisticConditionBuilder 返回一个新的 StatisticConditionBuilder 实例
-func NewStatisticConditionBuilder(accountId uint) *StatisticConditionBuilder {
+func _(accountId uint) *StatisticConditionBuilder {
 	return &StatisticConditionBuilder{
 		condition: StatisticCondition{
 			ForeignKeyCondition: ForeignKeyCondition{AccountId: accountId},
@@ -161,17 +161,13 @@ func NewStatisticConditionBuilder(accountId uint) *StatisticConditionBuilder {
 }
 
 // WithUserIds 设置用户ids
-func (b *StatisticConditionBuilder) WithUserIds(
-	Ids []uint,
-) *StatisticConditionBuilder {
+func (b *StatisticConditionBuilder) WithUserIds(Ids []uint) *StatisticConditionBuilder {
 	b.condition.UserIds = &Ids
 	return b
 }
 
 // WithCategoryIds 设置交易类型ids
-func (b *StatisticConditionBuilder) WithCategoryIds(
-	Ids []uint,
-) *StatisticConditionBuilder {
+func (b *StatisticConditionBuilder) WithCategoryIds(Ids []uint) *StatisticConditionBuilder {
 	b.condition.CategoryIds = &Ids
 	return b
 }

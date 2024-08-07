@@ -8,6 +8,7 @@ import (
 	commonModel "KeepAccount/model/common"
 	queryFunc "KeepAccount/model/common/query"
 	userModel "KeepAccount/model/user"
+	"errors"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 	"time"
@@ -15,14 +16,40 @@ import (
 
 type Transaction struct {
 	gorm.Model
-	UserId        uint `gorm:"index:account_idx,priority:3"`
-	AccountId     uint `gorm:"index:account_idx,priority:1"`
-	CategoryId    uint `gorm:"index:category_idx,priority:1"`
-	IncomeExpense constant.IncomeExpense
-	Amount        int
-	Remark        string
-	TradeTime     time.Time `gorm:"index:account_idx,priority:2;index:category_idx,priority:2"`
+	Info
 	commonModel.BaseModel
+}
+
+type Info struct {
+	UserId, AccountId, CategoryId uint
+	IncomeExpense                 constant.IncomeExpense
+	Amount                        int
+	Remark                        string
+	TradeTime                     time.Time
+}
+
+func (i *Info) Check(db *gorm.DB) error {
+	category, err := categoryModel.NewDao(db).SelectById(i.CategoryId)
+	if err != nil {
+		return err
+	}
+	accountUser, err := accountModel.NewDao(db).SelectUser(i.AccountId, i.UserId)
+	if err != nil {
+		return err
+	}
+	err = accountUser.CheckTransAddByUserId(accountUser.UserId)
+	if err != nil {
+		return err
+	}
+	switch true {
+	case i.Amount < 0:
+		return errors.New("transaction Check:Amount")
+	case i.IncomeExpense != category.IncomeExpense:
+		return errors.New("transaction Check:IncomeExpense")
+	case category.AccountId != i.AccountId:
+		return global.ErrAccountId
+	}
+	return nil
 }
 
 func (t *Transaction) ForUpdate(tx *gorm.DB) error {
@@ -45,6 +72,23 @@ func (t *Transaction) SelectById(id uint) error {
 
 func (t *Transaction) Exits(query interface{}, args ...interface{}) (bool, error) {
 	return queryFunc.Exist[*Transaction](query, args)
+}
+
+func (t *Transaction) Check(db *gorm.DB) error {
+	category, err := t.GetCategory(db)
+	if err != nil {
+		return err
+	}
+	if category.AccountId != t.AccountId {
+		return global.ErrAccountId
+	}
+	if t.Amount < 0 {
+		return errors.New("transaction Check:Amount")
+	}
+	if t.IncomeExpense != category.IncomeExpense {
+		return errors.New("transaction Check:IncomeExpense")
+	}
+	return nil
 }
 
 func (t *Transaction) GetCategory(db ...*gorm.DB) (category categoryModel.Category, err error) {
@@ -76,11 +120,13 @@ func (t *Transaction) GetAccount(db ...*gorm.DB) (account accountModel.Account, 
 
 func (t *Transaction) SyncDataClone() Transaction {
 	return Transaction{
-		UserId:        t.UserId,
-		IncomeExpense: t.IncomeExpense,
-		Amount:        t.Amount,
-		Remark:        t.Remark,
-		TradeTime:     t.TradeTime,
+		Info: Info{
+			UserId:        t.UserId,
+			IncomeExpense: t.IncomeExpense,
+			Amount:        t.Amount,
+			Remark:        t.Remark,
+			TradeTime:     t.TradeTime,
+		},
 	}
 }
 
@@ -94,7 +140,7 @@ type StatisticData struct {
 	Count         int
 }
 
-func (t *Transaction) GetStatisticData(isAdd bool) StatisticData {
+func (t *Info) GetStatisticData(isAdd bool) StatisticData {
 	if isAdd {
 		return StatisticData{
 			AccountId: t.AccountId, UserId: t.UserId, IncomeExpense: t.IncomeExpense,
@@ -136,4 +182,103 @@ func (m *Mapping) CanSyncTrans(transaction Transaction) bool {
 
 func (m *Mapping) OnSyncSuccess(db *gorm.DB, transaction Transaction) error {
 	return db.Model(m).Update("last_synced_trans_update_time", transaction.UpdatedAt).Error
+}
+
+type Timing struct {
+	ID         uint `gorm:"primarykey"`
+	AccountId  uint `gorm:"index"`
+	UserId     uint
+	TransInfo  Info       `gorm:"not null;json"`
+	Type       TimingType `gorm:"not null;char(16)"`
+	OffsetDays int        `gorm:"not null;"`
+	NextTime   time.Time  `gorm:"not null;"`
+	Close      bool
+	gorm.Model
+}
+
+func (t *Timing) TableName() string { return "transaction_timing" }
+
+type TimingType string
+
+const (
+	Once           TimingType = "Once"
+	EveryDay       TimingType = "EveryDay"
+	EveryWeek      TimingType = "EveryWeek"
+	EveryMonth     TimingType = "EveryMonth"
+	LastDayOfMonth TimingType = "LastDayOfMonth"
+)
+
+func (t *Timing) UpdateNextTime(db *gorm.DB) error {
+	var nextTime time.Time
+	if t.Type == Once {
+		err := db.Model(t).Update("close", true).Error
+		if err != nil {
+			return err
+		}
+	} else {
+		switch t.Type {
+		case EveryDay:
+			nextTime = t.NextTime.AddDate(0, 0, 1)
+		case EveryWeek:
+			nextTime = t.NextTime.AddDate(0, 0, 7)
+		case EveryMonth:
+			nextTime = t.NextTime.AddDate(0, 1, 0)
+		case LastDayOfMonth:
+			nextTime = time.Date(t.NextTime.Year(), t.NextTime.Month()+2, 1, 0, 0, 0, 0, time.Local)
+			nextTime = nextTime.AddDate(0, 0, -1)
+		}
+		err := db.Model(t).Update("next_time", nextTime).Error
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (t *Timing) MakeExecTask(db *gorm.DB) (TimingExec, error) {
+	exec := TimingExec{
+		ConfigId:  t.ID,
+		Status:    TimingExecWait,
+		TransInfo: t.TransInfo,
+	}
+	return exec, db.Create(&exec).Error
+}
+
+type TimingExec struct {
+	ID            uint             `gorm:"primarykey"`
+	Status        TimingExecStatus `gorm:"default:0"`
+	ConfigId      uint             `gorm:"index;not null"`
+	FailCause     string           `gorm:"default:'';not null"`
+	TransInfo     Info             `gorm:"not null;json"`
+	TransactionId uint
+	ExecTime      time.Time
+	gorm.Model
+}
+type TimingExecStatus int8
+
+const (
+	TimingExecWait TimingExecStatus = iota * 3
+	TimingExecFail
+	TimingExecSuccess
+)
+
+func (t *TimingExec) TableName() string { return "transaction_timing_exec" }
+func (t *TimingExec) GetConfig(db *gorm.DB) (Timing, error) {
+	return NewDao(db).SelectTimingById(t.ConfigId)
+}
+
+func (t *TimingExec) ExecFail(execErr error, db *gorm.DB) error {
+	err := db.Model(&Timing{}).Where("id = ?", t.ConfigId).Error
+	if err != nil {
+		return err
+	}
+	var failCause string
+	if errors.Is(execErr, global.ErrNoPermission) {
+		failCause = "账本无权操作"
+	}
+	return db.Model(t).Where("id = ?", t.ID).Updates(TimingExec{FailCause: failCause, Status: TimingExecFail, ExecTime: time.Now()}).Error
+}
+
+func (t *TimingExec) ExecSuccess(trans Transaction, db *gorm.DB) error {
+	return db.Model(t).Where("id = ?", t.ID).Updates(TimingExec{TransactionId: trans.ID, Status: TimingExecSuccess, ExecTime: time.Now()}).Error
 }

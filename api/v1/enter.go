@@ -4,13 +4,10 @@ import (
 	"KeepAccount/api/response"
 	apiUtil "KeepAccount/api/util"
 	"KeepAccount/global"
-	userModel "KeepAccount/model/user"
 	"KeepAccount/service"
 	"github.com/gin-gonic/gin"
-	"gorm.io/gorm"
 )
 
-// 接口
 type PublicApi struct {
 }
 
@@ -23,7 +20,10 @@ type ApiGroup struct {
 	ProductApi
 }
 
-var ApiGroupApp = new(ApiGroup)
+var (
+	ApiGroupApp = new(ApiGroup)
+	gdb         = global.GvaDb
+)
 
 // 服务
 var (
@@ -33,9 +33,9 @@ var (
 	userService        = service.GroupApp.UserServiceGroup
 	accountService     = service.GroupApp.AccountServiceGroup
 	categoryService    = service.GroupApp.CategoryServiceGroup
-	transactionService = service.GroupApp.TransactionServiceGroup.Transaction
-	productService     = service.GroupApp.ProductServiceGroup.Product
-	templateService    = service.GroupApp.TemplateService.Template
+	transactionService = service.GroupApp.TransactionServiceGroup
+	productService     = service.GroupApp.ProductServiceGroup
+	templateService    = service.GroupApp.TemplateServiceGroup
 	//第三方服务
 	thirdpartyService = service.GroupApp.ThirdpartyServiceGroup
 )
@@ -55,24 +55,6 @@ func handelError(err error, ctx *gin.Context) bool {
 func responseError(err error, ctx *gin.Context) bool {
 	if err != nil {
 		response.FailToError(ctx, err)
-		return true
-	}
-	return false
-}
-
-func turnAwayTourist(user userModel.User, ctx *gin.Context, _db ...*gorm.DB) bool {
-	var db *gorm.DB
-	if len(_db) > 0 {
-		db = _db[0]
-	} else {
-		db = global.GvaDb
-	}
-	isTourist, err := user.IsTourist(db)
-	if responseError(err, ctx) {
-		return true
-	}
-	if isTourist {
-		response.FailToParameter(ctx, global.ErrTouristHaveNoRight)
 		return true
 	}
 	return false

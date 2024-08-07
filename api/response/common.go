@@ -1,5 +1,12 @@
 package response
 
+import (
+	"KeepAccount/global"
+	accountModel "KeepAccount/model/account"
+	userModel "KeepAccount/model/user"
+	"KeepAccount/util/dataTool"
+)
+
 type CommonCaptcha struct {
 	CaptchaId     string
 	PicBase64     string
@@ -48,4 +55,36 @@ type ExpirationTime struct {
 
 type List[T any] struct {
 	List []T
+}
+
+func getUsernameMap(ids []uint) (map[uint]string, error) {
+	var nameList dataTool.Slice[uint, struct {
+		ID       uint
+		Username string
+	}]
+	err := global.GvaDb.Model(&userModel.User{}).Where("id IN (?)", ids).Find(&nameList).Error
+	if err != nil {
+		return nil, err
+	}
+	result := make(map[uint]string)
+	for _, s := range nameList {
+		result[s.ID] = s.Username
+	}
+	return result, nil
+}
+
+func getAccountNameMap(ids []uint) (map[uint]string, error) {
+	var nameList dataTool.Slice[uint, struct {
+		ID   uint
+		Name string
+	}]
+	err := global.GvaDb.Model(&accountModel.Account{}).Where("id IN (?)", ids).Find(&nameList).Error
+	if err != nil {
+		return nil, err
+	}
+	result := make(map[uint]string)
+	for _, s := range nameList {
+		result[s.ID] = s.Name
+	}
+	return result, nil
 }

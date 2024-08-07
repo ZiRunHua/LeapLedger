@@ -95,6 +95,11 @@ func (a *AccountDao) SelectUser(accountId uint, userId uint) (user User, err err
 	return
 }
 
+func (a *AccountDao) CheckUserPermission(permission UserPermission, accountId uint, userId uint) (pass bool, err error) {
+	err = a.db.Model(&User{}).Where("account_id = ? AND user_id = ?", accountId, userId).Select("(permission & ?) > 0 as pass", permission).Pluck("pass", &pass).Error
+	return
+}
+
 func (a *AccountDao) ExistUser(accountId uint, userId uint) (exist bool, err error) {
 	err = a.db.Raw(
 		"SELECT EXISTS(SELECT 1 FROM account_user WHERE account_id = ? AND user_id = ? AND deleted_at is null) AS exist",

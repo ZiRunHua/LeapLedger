@@ -10,8 +10,8 @@ import (
 var (
 	currentMode mode
 
-	NewLock             func(key string) Lock
-	NewLockWithDuration func(key string, duration time.Duration) Lock
+	New             func(key Key) Lock
+	NewWithDuration func(key Key, duration time.Duration) Lock
 
 	ErrLockNotExist = errors.New("lock not exist")
 	ErrLockOccupied = errors.New("lock occupied")
@@ -41,11 +41,11 @@ func updatePublicFunc() {
 		if err != nil {
 			panic(err)
 		}
-		NewLock = func(key string) Lock {
-			return newRedisLock(rdb, key, time.Second*10)
+		New = func(key Key) Lock {
+			return newRedisLock(rdb, string(key), time.Second*10)
 		}
-		NewLockWithDuration = func(key string, duration time.Duration) Lock {
-			return newRedisLock(rdb, key, duration)
+		NewWithDuration = func(key Key, duration time.Duration) Lock {
+			return newRedisLock(rdb, string(key), duration)
 		}
 		return
 	case redisMode:
@@ -53,11 +53,11 @@ func updatePublicFunc() {
 		if rdb == nil {
 			panic("initialize.LockRdb is nil")
 		}
-		NewLock = func(key string) Lock {
-			return newMysqlLock(mdb, key, time.Second*10)
+		New = func(key Key) Lock {
+			return newMysqlLock(mdb, string(key), time.Second*10)
 		}
-		NewLockWithDuration = func(key string, duration time.Duration) Lock {
-			return newMysqlLock(mdb, key, duration)
+		NewWithDuration = func(key Key, duration time.Duration) Lock {
+			return newMysqlLock(mdb, string(key), duration)
 		}
 		return
 	}

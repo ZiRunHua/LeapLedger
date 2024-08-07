@@ -5,6 +5,7 @@ import (
 	"KeepAccount/api/response"
 	"KeepAccount/global"
 	"KeepAccount/global/constant"
+	"KeepAccount/global/contextKey"
 	accountModel "KeepAccount/model/account"
 	userModel "KeepAccount/model/user"
 	"KeepAccount/util"
@@ -74,6 +75,26 @@ func (cf *contextFunc) GetUintParamByKey(key string, ctx *gin.Context) (uint, bo
 		return 0, false
 	}
 	return uint(id), true
+}
+
+func (cf *contextFunc) GetAccountIdByParam(ctx *gin.Context) (uint, bool) {
+	return cf.GetUintParamByKey(string(contextKey.AccountId), ctx)
+}
+
+func (cf *contextFunc) CheckAccountPermissionFromParam(ctx *gin.Context, permission accountModel.UserPermission) (pass bool) {
+	accountId, pass := cf.GetAccountIdByParam(ctx)
+	if !pass {
+		return
+	}
+	pass, err := accountModel.NewDao().CheckUserPermission(permission, accountId, cf.GetUserId(ctx))
+	if err != nil {
+		response.FailToError(ctx, err)
+		return
+	}
+	if !pass {
+		response.Forbidden(ctx)
+	}
+	return true
 }
 
 func (cf *contextFunc) GetInfoTypeFormParam(ctx *gin.Context) request.InfoType {

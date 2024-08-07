@@ -90,9 +90,9 @@ func (u *User) HavePermission(permission UserPermission) bool {
 	return (u.Permission & permission) > 0
 }
 
-func (u *User) CheckTransEditByUserId(userId uint) error {
+func (u *User) CheckTransEditByUserId(transOwner uint) error {
 	var pass bool
-	if userId == u.UserId {
+	if transOwner == u.UserId {
 		pass = u.HavePermission(UserPermissionEditOwn)
 	} else {
 		pass = u.HavePermission(UserPermissionEditOther)
@@ -103,9 +103,9 @@ func (u *User) CheckTransEditByUserId(userId uint) error {
 	return nil
 }
 
-func (u *User) CheckTransAddByUserId(userId uint) error {
+func (u *User) CheckTransAddByUserId(transOwner uint) error {
 	var pass bool
-	if userId == u.UserId {
+	if transOwner == u.UserId {
 		pass = u.HavePermission(UserPermissionAddOwn)
 	} else {
 		pass = u.HavePermission(UserPermissionAddOther)

@@ -3,11 +3,15 @@ package router
 import (
 	"KeepAccount/global"
 	"KeepAccount/global/constant"
+	"KeepAccount/global/contextKey"
+	accountModel "KeepAccount/model/account"
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"net/http"
 	"time"
 )
+
+const accountWithIdPrefixPath = "/account/:" + string(contextKey.AccountId)
 
 func Init() *gin.Engine {
 	engine := gin.New()
@@ -51,14 +55,18 @@ func Init() *gin.Engine {
 	//需要登录校验
 	privateGroup := engine.Group(global.Config.System.RouterPrefix)
 	privateGroup.Use(middleware.JWTAuth())
+
 	turnAwayTouristPrivateGroup := privateGroup.Group("")
 	turnAwayTouristPrivateGroup.Use(middleware.TurnAwayTourist())
+
+	adminAuthRouter := privateGroup.Group(accountWithIdPrefixPath)
+	adminAuthRouter.Use(middleware.AccountAuth(accountModel.UserPermissionAdministrator))
 	{
 		APIv1Router.InitUserRouter(privateGroup, turnAwayTouristPrivateGroup)
 		APIv1Router.InitCategoryRouter(privateGroup)
 		APIv1Router.InitAccountRouter(privateGroup)
 		APIv1Router.InitTransactionImportRouter(privateGroup)
-		APIv1Router.InitTransactionRouter(privateGroup)
+		APIv1Router.InitTransactionRouter(privateGroup, adminAuthRouter)
 	}
 	return engine
 }

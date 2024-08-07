@@ -28,7 +28,7 @@ func (cf *contextFunc) GetTransByParam(ctx *gin.Context) (result transactionMode
 func (cf *contextFunc) GetAccountByParam(ctx *gin.Context, checkBelong bool) (
 	account accountModel.Account, accountUser accountModel.User, pass bool,
 ) {
-	id, ok := cf.GetUintParamByKey("id", ctx)
+	id, ok := cf.GetAccountIdByParam(ctx)
 	if false == ok {
 		return
 	}

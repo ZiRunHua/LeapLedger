@@ -4,6 +4,7 @@ import (
 	"KeepAccount/global"
 	accountModel "KeepAccount/model/account"
 	commonModel "KeepAccount/model/common"
+	"database/sql"
 	"time"
 )
 
@@ -32,11 +33,22 @@ func (tcm *TransactionCategoryMapping) GetPtcIdMapping(
 	rows, err := db.Model(&TransactionCategoryMapping{}).Where(
 		"account_id = ? AND product_key = ?", account.ID, productKey,
 	).Rows()
-	defer rows.Close()
-
+	defer func(rows *sql.Rows) {
+		if err != nil {
+			_ = rows.Close()
+		} else {
+			err = rows.Close()
+		}
+	}(rows)
+	if err != nil {
+		return
+	}
 	row, result := TransactionCategoryMapping{}, map[uint]TransactionCategoryMapping{}
 	for rows.Next() {
-		db.ScanRows(rows, &row)
+		err = db.ScanRows(rows, &row)
+		if err != nil {
+			return
+		}
 		result[row.PtcId] = row
 	}
 	return

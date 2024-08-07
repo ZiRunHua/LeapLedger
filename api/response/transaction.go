@@ -7,6 +7,8 @@ import (
 	categoryModel "KeepAccount/model/category"
 	transactionModel "KeepAccount/model/transaction"
 	userModel "KeepAccount/model/user"
+	"KeepAccount/util/dataTool"
+	"time"
 )
 
 func TransactionModelToResponse(trans transactionModel.Transaction) TransactionOne {
@@ -208,4 +210,192 @@ type TransactionDayStatistic struct {
 type TransactionCategoryAmountRank struct {
 	Category CategoryOne
 	global.AmountCount
+}
+
+type TransactionTimingConfig struct {
+	Id, AccountId, UserId uint
+	Type                  transactionModel.TimingType
+	OffsetDays            int
+	NextTime              time.Time
+	Username              string
+	CreatedAt             time.Time
+	UpdatedAt             time.Time
+}
+
+type TransactionTiming struct {
+	Trans  TransactionInfo
+	Config TransactionTimingConfig
+}
+
+func (tt *TransactionTiming) SetData(data transactionModel.Timing) error {
+	name, err := userModel.NewDao().PluckNameById(data.UserId)
+	if err != nil {
+		return err
+	}
+	err = tt.Trans.SetData(data.TransInfo)
+	if err != nil {
+		return err
+	}
+	tt.Config = TransactionTimingConfig{
+		Id:         data.ID,
+		UserId:     data.UserId,
+		AccountId:  data.AccountId,
+		Type:       data.Type,
+		OffsetDays: data.OffsetDays,
+		NextTime:   data.NextTime,
+		Username:   name,
+		CreatedAt:  data.CreatedAt,
+		UpdatedAt:  data.UpdatedAt,
+	}
+	return nil
+}
+
+type TransactionTimingList []TransactionTiming
+
+func (ttl *TransactionTimingList) SetData(list dataTool.Slice[uint, transactionModel.Timing]) error {
+	*ttl = make(TransactionTimingList, len(list), len(list))
+	if len(*ttl) == 0 {
+		return nil
+	}
+	nameMap, err := getUsernameMap(list.ExtractValues(func(timing transactionModel.Timing) uint { return timing.ID }))
+	transList := make(dataTool.Slice[uint, transactionModel.Info], len(list), len(list))
+	for i, timing := range list {
+		transList[i] = timing.TransInfo
+		(*ttl)[i].Config = TransactionTimingConfig{
+			Id:         timing.ID,
+			UserId:     timing.UserId,
+			AccountId:  timing.AccountId,
+			Type:       timing.Type,
+			OffsetDays: timing.OffsetDays,
+			NextTime:   timing.NextTime,
+			Username:   nameMap[timing.UserId],
+			CreatedAt:  timing.CreatedAt,
+			UpdatedAt:  timing.UpdatedAt,
+		}
+	}
+	var infoList TransactionInfoList
+	err = infoList.SetData(transList)
+	if err != nil {
+		return err
+	}
+	for i, info := range infoList {
+		(*ttl)[i].Trans = info
+	}
+	return nil
+}
+
+// 交易详情
+type TransactionInfo struct {
+	Id                 uint
+	UserId             uint
+	UserName           string
+	AccountId          uint
+	AccountName        string
+	Amount             int
+	CategoryId         uint
+	CategoryIcon       string
+	CategoryName       string
+	CategoryFatherName string
+	IncomeExpense      constant.IncomeExpense
+	Remark             string
+	TradeTime          time.Time
+}
+
+func (ti *TransactionInfo) SetData(data transactionModel.Info) error {
+	var (
+		username string
+		account  accountModel.Account
+		category categoryModel.Category
+		father   categoryModel.Father
+		err      error
+	)
+	account, err = accountModel.NewDao().SelectById(data.AccountId)
+	if err != nil {
+		return err
+	}
+	username, err = userModel.NewDao().PluckNameById(data.UserId)
+	if err != nil {
+		return err
+	}
+	category, err = categoryModel.NewDao().SelectById(data.CategoryId)
+	if err != nil {
+		return err
+	}
+	if father, err = category.GetFather(); err != nil {
+		return err
+	}
+
+	ti.UserId = data.UserId
+	ti.UserName = username
+	ti.AccountId = account.ID
+	ti.AccountName = account.Name
+	ti.Amount = data.Amount
+	ti.CategoryId = data.CategoryId
+	ti.CategoryIcon = category.Icon
+	ti.CategoryName = category.Name
+	ti.CategoryFatherName = father.Name
+	ti.IncomeExpense = category.IncomeExpense
+	ti.Remark = category.Icon
+	ti.TradeTime = data.TradeTime
+	return nil
+}
+
+type TransactionInfoList []TransactionInfo
+
+func (t *TransactionInfoList) SetData(list dataTool.Slice[uint, transactionModel.Info]) error {
+	*t = make([]TransactionInfo, len(list), len(list))
+	if len(list) == 0 {
+		return nil
+	}
+
+	userMap, err := getUsernameMap(list.ExtractValues(func(info transactionModel.Info) uint { return info.UserId }))
+	if err != nil {
+		return err
+	}
+	accountMap, err := getAccountNameMap(list.ExtractValues(func(info transactionModel.Info) uint { return info.AccountId }))
+	if err != nil {
+		return err
+	}
+	categoryMap, fatherMap, err := t.getCategoryMap(list)
+	if err != nil {
+		return err
+	}
+	for i, data := range list {
+		category := categoryMap[data.CategoryId]
+		(*t)[i] = TransactionInfo{
+			Id:                 0,
+			UserId:             data.UserId,
+			UserName:           userMap[data.UserId],
+			AccountId:          data.AccountId,
+			AccountName:        accountMap[data.AccountId],
+			Amount:             data.Amount,
+			CategoryId:         data.CategoryId,
+			CategoryIcon:       category.Icon,
+			CategoryName:       category.Name,
+			CategoryFatherName: fatherMap[category.FatherId].Name,
+			IncomeExpense:      data.IncomeExpense,
+			Remark:             data.Remark,
+			TradeTime:          data.TradeTime,
+		}
+	}
+	return nil
+}
+
+func (t *TransactionInfoList) getCategoryMap(list dataTool.Slice[uint, transactionModel.Info]) (categoryMap map[uint]categoryModel.Category, fatherMap map[uint]categoryModel.Father, err error) {
+	var categoryList dataTool.Slice[uint, categoryModel.Category]
+	ids := list.ExtractValues(func(info transactionModel.Info) uint { return info.CategoryId })
+	err = global.GvaDb.Select("icon", "name", "father_id", "id").Where("id IN (?)", ids).Find(&categoryList).Error
+	if err != nil {
+		return
+	}
+
+	var fatherList dataTool.Slice[uint, categoryModel.Father]
+	ids = categoryList.ExtractValues(func(category categoryModel.Category) uint { return category.FatherId })
+	err = global.GvaDb.Select("name", "id").Where("id IN (?)", ids).Find(&fatherList).Error
+	if err != nil {
+		return
+	}
+	categoryMap = categoryList.ToMap(func(category categoryModel.Category) uint { return category.ID })
+	fatherMap = fatherList.ToMap(func(father categoryModel.Father) uint { return father.ID })
+	return
 }

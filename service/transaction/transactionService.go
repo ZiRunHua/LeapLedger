@@ -18,28 +18,32 @@ import (
 type Transaction struct{}
 
 func (txnService *Transaction) Create(
-	trans transactionModel.Transaction, accountUser accountModel.User, option Option, ctx context.Context,
+	transInfo transactionModel.Info, accountUser accountModel.User, option Option, ctx context.Context,
 ) (transactionModel.Transaction, error) {
 	tx := ctx.Value(contextKey.Tx).(*gorm.DB)
+	trans := transactionModel.Transaction{Info: transInfo}
 	err := tx.Transaction(func(tx *gorm.DB) error {
 		// check
-		err := txnService.checkTransaction(trans, accountUser, tx)
+		if transInfo.AccountId != accountUser.AccountId {
+			return global.ErrAccountId
+		}
+		err := transInfo.Check(tx)
 		if err != nil {
 			return errors.WithStack(err)
 		}
-		err = accountUser.CheckTransAddByUserId(trans.UserId)
+		err = accountUser.CheckTransAddByUserId(transInfo.UserId)
 		if err != nil {
 			return errors.WithStack(err)
 		}
 		// handle
-		trans.UserId = accountUser.UserId
+		transInfo.UserId = accountUser.UserId
 		err = tx.Create(&trans).Error
 		if err != nil {
 			return errors.WithStack(err)
 		}
 		// other
 		if option.syncUpdateStatistic {
-			err = txnService.updateStatistic(trans.GetStatisticData(true), tx)
+			err = txnService.updateStatistic(transInfo.GetStatisticData(true), tx)
 		}
 		return nil
 	})
@@ -155,18 +159,12 @@ func (txnService *Transaction) updateStatisticAfterDelete(txn transactionModel.T
 }
 
 func (txnService *Transaction) checkTransaction(trans transactionModel.Transaction, accountUser accountModel.User, tx *gorm.DB) error {
-	category, err := trans.GetCategory(tx)
-	if err != nil {
-		return err
-	}
-	if category.AccountId != trans.AccountId || trans.AccountId != accountUser.AccountId {
+	if trans.AccountId != accountUser.AccountId {
 		return global.ErrAccountId
 	}
-	if trans.Amount < 0 {
-		return errors.New("error trans.amount")
-	}
-	if trans.IncomeExpense != category.IncomeExpense {
-		return errors.New("error trans.IncomeExpense")
+	err := trans.Check(tx)
+	if err != nil {
+		return err
 	}
 	return nil
 }
@@ -327,7 +325,7 @@ func (txnService *Transaction) CreateSyncTrans(trans, syncTrans transactionModel
 	}
 	option := txnService.NewDefaultOption()
 	option.WithTransSyncToMappingAccount(false)
-	newTrans, err := txnService.Create(syncTrans, accountUser, option, ctx)
+	newTrans, err := txnService.Create(syncTrans.Info, accountUser, option, ctx)
 	if err != nil {
 		return
 	}
@@ -473,7 +471,6 @@ func (txnService *Transaction) addStatisticAfterCreateMultiple(
 	return nil
 }
 
-// Option
 type Option struct {
 	syncUpdateStatistic       bool // syncUpdateStatistic 同步/异步更新统计数据
 	transSyncToMappingAccount bool // transSyncToMappingAccount 交易数据至同步关联账本
@@ -487,7 +484,7 @@ func (txnService *Transaction) NewOption() Option {
 	return Option{}
 }
 
-func (txnService *Transaction) NewOptionFormConfig(trans transactionModel.Transaction, ctx context.Context) (option Option, err error) {
+func (txnService *Transaction) NewOptionFormConfig(trans transactionModel.Info, ctx context.Context) (option Option, err error) {
 	userConfig, err := accountModel.NewDao(ctx.Value(contextKey.Tx).(*gorm.DB)).SelectUserConfig(trans.AccountId, trans.UserId)
 	if err != nil {
 		return
@@ -509,7 +506,8 @@ func (o *Option) WithTransSyncToMappingAccount(val bool) *Option {
 
 type TransTask func(trans transactionModel.Transaction, ctx context.Context) error
 
-func handelTransTasks(taskList []TransTask, trans transactionModel.Transaction, ctx context.Context) error {
+// handelTransTasks
+func _(taskList []TransTask, trans transactionModel.Transaction, ctx context.Context) error {
 	if len(taskList) > 2 {
 		errGroup, _ := errgroup.WithContext(ctx)
 		handFunc := func(task TransTask, trans transactionModel.Transaction, ctx context.Context) {

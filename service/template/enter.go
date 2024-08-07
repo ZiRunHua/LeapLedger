@@ -9,7 +9,7 @@ import (
 )
 
 type Group struct {
-	Template template
+	template
 }
 
 var (
@@ -18,7 +18,6 @@ var (
 	errorLog *zap.Logger
 
 	TmplUserId uint = 1
-	tmplUser   userModel.User
 )
 
 func init() {
@@ -36,7 +35,6 @@ const (
 )
 
 func SetTmplUser(user userModel.User) {
-	tmplUser = user
 	TmplUserId = user.ID
 }
 

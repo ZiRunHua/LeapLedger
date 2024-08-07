@@ -5,6 +5,7 @@ import (
 	apiUtil "KeepAccount/api/util"
 	"KeepAccount/global"
 	"KeepAccount/global/constant"
+	accountModel "KeepAccount/model/account"
 	"KeepAccount/util"
 	"bytes"
 	"errors"
@@ -105,5 +106,13 @@ func (m *_middleware) RequestLogger(logger *zap.Logger) gin.HandlerFunc {
 			zap.String("errors", c.Errors.ByType(gin.ErrorTypePrivate).String()),
 			zap.Duration("cost", cost),
 		)
+	}
+}
+func (m *_middleware) AccountAuth(permission accountModel.UserPermission) gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		if !apiUtil.ContextFunc.CheckAccountPermissionFromParam(ctx, permission) {
+			return
+		}
+		ctx.Next()
 	}
 }

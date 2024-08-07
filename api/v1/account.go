@@ -21,26 +21,6 @@ import (
 type AccountApi struct {
 }
 
-// GetAccountByParam 获得account通过ctx的Param
-func (a *AccountApi) GetAccountByParam(ctx *gin.Context, checkBelong bool) (accountModel.Account, bool) {
-	id, pass := contextFunc.GetUintParamByKey("id", ctx)
-	if false == pass {
-		return accountModel.Account{}, pass
-	}
-	var account accountModel.Account
-	if checkBelong {
-		if account, _, pass = checkFunc.AccountBelongAndGet(id, ctx); pass == false {
-			return accountModel.Account{}, pass
-		}
-	} else {
-		err := global.GvaDb.First(&account, id).Error
-		if responseError(err, ctx) {
-			return account, false
-		}
-	}
-	return account, true
-}
-
 func (a *AccountApi) CreateOne(ctx *gin.Context) {
 	var requestData request.AccountCreateOne
 	if err := ctx.ShouldBindJSON(&requestData); err != nil {
@@ -232,12 +212,9 @@ func (a *AccountApi) InitCategoryByTemplate(ctx *gin.Context) {
 		return
 	}
 
-	var account, template accountModel.Account
-	id, pass := contextFunc.GetUintParamByKey("id", ctx)
-	if false == pass {
-		return
-	}
-	if account, _, pass = checkFunc.AccountBelongAndGet(id, ctx); pass == false {
+	var template accountModel.Account
+	account, _, pass := contextFunc.GetAccountByParam(ctx, true)
+	if pass == false {
 		return
 	}
 	if err = global.GvaDb.First(&template, requestData.TemplateId).Error; responseError(err, ctx) {
@@ -446,7 +423,7 @@ func (a *AccountApi) UpdateUser(ctx *gin.Context) {
 }
 
 func (a *AccountApi) GetUserList(ctx *gin.Context) {
-	account, pass := a.GetAccountByParam(ctx, true)
+	account, _, pass := contextFunc.GetAccountByParam(ctx, true)
 	if false == pass {
 		return
 	}
@@ -619,11 +596,11 @@ func (a *AccountApi) getTrans(
 			UserIds:   UserIds,
 		},
 	}
-	return transactionModel.NewDao().GetListByCondition(condition, limit, offset)
+	return transactionModel.NewDao().GetListByCondition(condition, offset, limit)
 }
 
 func (a *AccountApi) GetAccountMappingList(ctx *gin.Context) {
-	account, pass := a.GetAccountByParam(ctx, true)
+	account, _, pass := contextFunc.GetAccountByParam(ctx, true)
 	if pass == false {
 		return
 	}
@@ -681,7 +658,7 @@ func (a *AccountApi) CreateAccountMapping(ctx *gin.Context) {
 	}
 	var mainAccount, mappingAccount accountModel.Account
 	var pass bool
-	if mainAccount, pass = a.GetAccountByParam(ctx, true); false == pass {
+	if mainAccount, _, pass = contextFunc.GetAccountByParam(ctx, true); false == pass {
 		return
 	}
 	if mappingAccount, err = accountModel.NewDao().SelectById(requestData.AccountId); responseError(
@@ -842,7 +819,7 @@ func (a *AccountApi) GetInfo(ctx *gin.Context) {
 		return nil
 	}
 	// handle response
-	account, pass := a.GetAccountByParam(ctx, true)
+	account, _, pass := contextFunc.GetAccountByParam(ctx, true)
 	if false == pass {
 		return
 	}

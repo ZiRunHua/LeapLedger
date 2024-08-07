@@ -74,7 +74,7 @@ func (u *UserDao) SelectUserInfoById(id uint) (result UserInfo, err error) {
 
 func (u *UserDao) PluckNameById(id uint) (string, error) {
 	var name string
-	err := u.db.Model(&User{}).Where("Id = ?", id).Pluck("name", &name).Error
+	err := u.db.Model(&User{}).Where("Id = ?", id).Pluck("username", &name).Error
 	return name, err
 }
 

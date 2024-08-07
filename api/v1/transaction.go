@@ -41,22 +41,24 @@ func (t *TransactionApi) CreateOne(ctx *gin.Context) {
 	}
 
 	transaction := transactionModel.Transaction{
-		AccountId:     requestData.AccountId,
-		UserId:        contextFunc.GetUserId(ctx),
-		CategoryId:    requestData.CategoryId,
-		IncomeExpense: requestData.IncomeExpense,
-		Amount:        requestData.Amount,
-		Remark:        requestData.Remark,
-		TradeTime:     time.Unix(int64(requestData.TradeTime), 0),
+		Info: transactionModel.Info{
+			AccountId:     requestData.AccountId,
+			UserId:        contextFunc.GetUserId(ctx),
+			CategoryId:    requestData.CategoryId,
+			IncomeExpense: requestData.IncomeExpense,
+			Amount:        requestData.Amount,
+			Remark:        requestData.Remark,
+			TradeTime:     time.Unix(int64(requestData.TradeTime), 0),
+		},
 	}
 
 	txCtx := context.WithValue(ctx, contextKey.Tx, global.GvaDb)
-	createOption, err := transactionService.NewOptionFormConfig(transaction, txCtx)
+	createOption, err := transactionService.NewOptionFormConfig(transaction.Info, txCtx)
 	if responseError(err, ctx) {
 		return
 	}
 	createOption.WithSyncUpdateStatistic(false)
-	transaction, err = transactionService.Create(transaction, accountUser, createOption, txCtx)
+	transaction, err = transactionService.Create(transaction.Info, accountUser, createOption, txCtx)
 	if responseError(err, ctx) {
 		return
 	}
@@ -87,18 +89,20 @@ func (t *TransactionApi) Update(ctx *gin.Context) {
 		return
 	}
 	transaction := transactionModel.Transaction{
-		UserId:        oldTrans.UserId,
-		AccountId:     requestData.AccountId,
-		CategoryId:    requestData.CategoryId,
-		IncomeExpense: requestData.IncomeExpense,
-		Amount:        requestData.Amount,
-		Remark:        requestData.Remark,
-		TradeTime:     time.Unix(int64(requestData.TradeTime), 0),
+		Info: transactionModel.Info{
+			UserId:        oldTrans.UserId,
+			AccountId:     requestData.AccountId,
+			CategoryId:    requestData.CategoryId,
+			IncomeExpense: requestData.IncomeExpense,
+			Amount:        requestData.Amount,
+			Remark:        requestData.Remark,
+			TradeTime:     time.Unix(int64(requestData.TradeTime), 0),
+		},
 	}
 	transaction.ID = oldTrans.ID
 
 	txCtx := context.WithValue(ctx, contextKey.Tx, global.GvaDb)
-	option, err := transactionService.NewOptionFormConfig(transaction, txCtx)
+	option, err := transactionService.NewOptionFormConfig(transaction.Info, txCtx)
 	if responseError(err, ctx) {
 		return
 	}
@@ -158,9 +162,7 @@ func (t *TransactionApi) GetList(ctx *gin.Context) {
 	// 查询并获取结果
 	condition := requestData.GetCondition()
 	var transactionList []transactionModel.Transaction
-	transactionList, err = transactionModel.NewDao().GetListByCondition(
-		condition, requestData.Limit, requestData.Offset,
-	)
+	transactionList, err = transactionModel.NewDao().GetListByCondition(condition, requestData.Offset, requestData.Limit)
 	if responseError(err, ctx) {
 		return
 	}
@@ -398,4 +400,95 @@ func (t *TransactionApi) GetAmountRank(ctx *gin.Context) {
 		return
 	}
 	response.OkWithData(response.List[response.TransactionDetail]{List: responseList}, ctx)
+}
+
+func (t *TransactionApi) CreateTiming(ctx *gin.Context) {
+	var requestData request.TransactionTiming
+	if err := ctx.ShouldBindJSON(&requestData); err != nil {
+		response.FailToParameter(ctx, err)
+		return
+	}
+	timing := requestData.GetTimingModel()
+	if timing.UserId != contextFunc.GetUserId(ctx) || timing.TransInfo.UserId != contextFunc.GetUserId(ctx) {
+		response.Forbidden(ctx)
+		return
+	}
+	var pass bool
+	timing.AccountId, pass = contextFunc.GetAccountIdByParam(ctx)
+	if !pass {
+		return
+	}
+	// handle
+	var err error
+	err = gdb.Transaction(func(tx *gorm.DB) error {
+		timing, err = transactionService.Timing.CreateTiming(timing, context.WithValue(ctx, contextKey.Tx, tx))
+		return err
+	})
+	if responseError(err, ctx) {
+		return
+	}
+	//response
+	var responseData response.TransactionTiming
+	err = responseData.SetData(timing)
+	if responseError(err, ctx) {
+		return
+	}
+	response.OkWithData(responseData, ctx)
+}
+
+func (t *TransactionApi) UpdateTiming(ctx *gin.Context) {
+	var requestData request.TransactionTiming
+	if err := ctx.ShouldBindJSON(&requestData); err != nil {
+		response.FailToParameter(ctx, err)
+		return
+	}
+	timing := requestData.GetTimingModel()
+	var pass bool
+	timing.ID, pass = contextFunc.GetUintParamByKey(string(contextKey.TransactionTimingId), ctx)
+	if !pass {
+		return
+	}
+	timing.AccountId, pass = contextFunc.GetAccountIdByParam(ctx)
+	if !pass {
+		return
+	}
+	// handle
+	var err error
+	err = gdb.Transaction(func(tx *gorm.DB) error {
+		timing, err = transactionService.Timing.UpdateTiming(timing, context.WithValue(ctx, contextKey.Tx, tx))
+		return err
+	})
+	if responseError(err, ctx) {
+		return
+	}
+	//response
+	var responseData response.TransactionTiming
+	err = responseData.SetData(timing)
+	if responseError(err, ctx) {
+		return
+	}
+	response.OkWithData(responseData, ctx)
+}
+
+func (t *TransactionApi) GetTimingList(ctx *gin.Context) {
+	var requestData request.PageData
+	if err := ctx.ShouldBindJSON(&requestData); err != nil {
+		response.FailToParameter(ctx, err)
+		return
+	}
+	account, _, pass := contextFunc.GetAccountByParam(ctx, true)
+	if !pass {
+		return
+	}
+	list, err := transactionModel.NewDao().SelectTimingListByUserId(account.ID, requestData.Offset, requestData.Limit)
+	if responseError(err, ctx) {
+		return
+	}
+	//response
+	var responseData response.TransactionTimingList
+	err = responseData.SetData(list)
+	if responseError(err, ctx) {
+		return
+	}
+	response.OkWithData(response.List[response.TransactionTiming]{List: responseData}, ctx)
 }

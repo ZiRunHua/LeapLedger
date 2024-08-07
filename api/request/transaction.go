@@ -3,6 +3,7 @@ package request
 import (
 	"KeepAccount/global/constant"
 	transactionModel "KeepAccount/model/transaction"
+	"time"
 )
 
 type TransactionCreateOne struct {
@@ -94,8 +95,31 @@ type TransactionCategoryAmountRank struct {
 	Limit         *int                   `binding:"omitempty"`
 	TimeFrame
 }
+
 type TransactionAmountRank struct {
 	AccountId     uint                   `binding:"required"`
 	IncomeExpense constant.IncomeExpense `binding:"required,oneof=income expense"`
 	TimeFrame
+}
+
+type TransactionTimingConfig struct {
+	UserId     uint
+	Type       transactionModel.TimingType
+	OffsetDays int
+	NextTime   time.Time
+}
+
+type TransactionTiming struct {
+	Trans  transactionModel.Info
+	Config TransactionTimingConfig
+}
+
+func (tt TransactionTiming) GetTimingModel() transactionModel.Timing {
+	return transactionModel.Timing{
+		TransInfo:  tt.Trans,
+		UserId:     tt.Config.UserId,
+		Type:       tt.Config.Type,
+		OffsetDays: tt.Config.OffsetDays,
+		NextTime:   tt.Config.NextTime,
+	}
 }

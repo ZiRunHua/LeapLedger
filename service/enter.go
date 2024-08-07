@@ -20,6 +20,6 @@ type Group struct {
 	TransactionServiceGroup transactionService.Group
 	UserServiceGroup        userService.Group
 	ProductServiceGroup     productService.Group
-	TemplateService         templateService.Group
+	TemplateServiceGroup    templateService.Group
 	ThirdpartyServiceGroup  thirdpartyService.Group
 }

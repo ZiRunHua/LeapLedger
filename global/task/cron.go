@@ -13,7 +13,7 @@ import (
 )
 
 var cronLogger *zap.Logger
-var scheduler *gocron.Scheduler
+var Scheduler *gocron.Scheduler
 
 func NewTransactionCron(handler func(db *gorm.DB) error) func() {
 	return func() {

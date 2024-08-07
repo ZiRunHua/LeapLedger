@@ -8,13 +8,16 @@ import (
 
 type Group struct {
 	Transaction
+	Timing Timing
 }
 
-var GroupApp = new(Group)
+var (
+	GroupApp = new(Group)
 
-var errorLog *zap.Logger
-var task = &_task{}
-var server = &Transaction{}
+	errorLog *zap.Logger
+	task     = &_task{}
+	server   = &Transaction{}
+)
 
 // 初始化
 func init() {

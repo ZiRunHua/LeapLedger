@@ -13,9 +13,9 @@ func init() {
 	natsServer = initialize.NatsServer
 	natsLogger = initialize.NatsLogger
 	cronLogger = initialize.CronLogger
-	scheduler = initialize.Scheduler
-	if scheduler == nil {
-		panic("init scheduler")
+	Scheduler = initialize.Scheduler
+	if Scheduler == nil {
+		panic("init Scheduler")
 	}
 	initDb()
 	initCron()
@@ -31,14 +31,14 @@ func initDb() {
 }
 
 func initCron() {
-	_, err := scheduler.Every(1).Second().Do(NewTransactionCron(cronOfPublishRetryTask))
+	_, err := Scheduler.Every(1).Second().Do(NewTransactionCron(cronOfPublishRetryTask))
 	if err != nil {
 		panic(err)
 	}
 }
 
 func Shutdown() {
-	scheduler.Stop()
+	Scheduler.Stop()
 	if natsConn != nil {
 		natsConn.Close()
 	}

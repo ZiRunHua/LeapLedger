@@ -41,7 +41,7 @@ func (a *AccountOne) SetData(data accountModel.Account) error {
 	return nil
 }
 
-// 账本详情
+// AccountDetail 账本详情
 type AccountDetail struct {
 	AccountOne
 	CreatorId   uint
@@ -91,7 +91,7 @@ func (a *AccountDetail) SetDataFromAccountAndUser(account accountModel.Account, 
 	return nil
 }
 
-// SetDataFromAccount 通过account设置数据，数据中的user来源为account.userId
+// SetDataFromAccount 通过account设置数据，数据中的user来源为account.UserId
 func (a *AccountDetail) SetDataFromAccount(account accountModel.Account) error {
 	a.setAccount(account)
 
@@ -125,7 +125,7 @@ type AccountDetailList []AccountDetail
 
 func (a *AccountDetailList) SetData(list dataTool.Slice[uint, accountModel.User]) error {
 	if len(list) == 0 {
-		*a = make([]AccountDetail, 0, 0)
+		*a = make([]AccountDetail, 0)
 		return nil
 	}
 	// 账本

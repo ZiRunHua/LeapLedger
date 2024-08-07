@@ -105,6 +105,11 @@ func (cd *CategoryDao) Order(list []Category) {
 	makeSequenceFunc()
 }
 
+func (cd *CategoryDao) SelectFatherById(id uint) (father Father, err error) {
+	err = cd.db.First(&father, id).Error
+	return
+}
+
 func (cd *CategoryDao) GetListByFather(father Father) ([]Category, error) {
 	var list []Category
 	err := cd.setCategoryOrder(cd.db.Where("father_id = ?", father.ID)).Find(&list).Error

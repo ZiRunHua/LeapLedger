@@ -5,10 +5,10 @@ import "KeepAccount/service"
 var (
 	userService        = service.GroupApp.UserServiceGroup.Base
 	accountService     = service.GroupApp.AccountServiceGroup.Base
-	categoryService    = service.GroupApp.CategoryServiceGroup.Category
-	transactionService = service.GroupApp.TransactionServiceGroup.Transaction
-	productService     = service.GroupApp.ProductServiceGroup.Product
-	templateService    = service.GroupApp.TemplateService.Template
+	categoryService    = service.GroupApp.CategoryServiceGroup
+	transactionService = service.GroupApp.TransactionServiceGroup
+	productService     = service.GroupApp.ProductServiceGroup
+	templateService    = service.GroupApp.TemplateServiceGroup
 	//第三方服务
 	thirdpartyService = service.GroupApp.ThirdpartyServiceGroup
 )

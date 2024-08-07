@@ -4,6 +4,7 @@ import (
 	"KeepAccount/global"
 	"KeepAccount/global/constant"
 	accountModel "KeepAccount/model/account"
+	"database/sql"
 	"github.com/pkg/errors"
 	"gorm.io/gorm"
 	"time"
@@ -29,9 +30,7 @@ func (t *TransactionDao) SelectById(id uint, forUpdate bool) (result Transaction
 	return
 }
 
-func (t *TransactionDao) GetListByCondition(condition Condition, limit int, offset int) (
-	result []Transaction, err error,
-) {
+func (t *TransactionDao) GetListByCondition(condition Condition, offset int, limit int) (result []Transaction, err error) {
 	query := condition.addConditionToQuery(t.db)
 	err = query.Limit(limit).Offset(offset).Order("trade_time DESC").Find(&result).Error
 	return
@@ -132,4 +131,43 @@ func (t *TransactionDao) GetAmountRank(accountId uint, ie constant.IncomeExpense
 	query := timeCond.addConditionToQuery(t.db)
 	query = query.Where("account_id = ?", accountId).Where("income_expense = ?", ie)
 	return result, query.Limit(limit).Order("amount DESC").Find(&result).Error
+}
+func (t *TransactionDao) SelectTimingById(id uint) (result Timing, err error) {
+	err = t.db.First(&result, id).Error
+	return
+}
+func (t *TransactionDao) SelectTimingListByUserId(accountId uint, offset int, limit int) (result []Timing, err error) {
+	err = t.db.Where("account_id = ?", accountId).Limit(limit).Offset(offset).Order("id DESC").Find(&result).Error
+	return
+}
+func (t *TransactionDao) SelectAllTimingAndProcess(startTime time.Time, process func(timing Timing) error) (err error) {
+	rows, err := t.db.Model(&Timing{}).Where("next_time < ?", startTime).Rows()
+	if err != nil {
+		return err
+	}
+	defer func(rows *sql.Rows) {
+		if err != nil {
+			_ = rows.Close()
+		} else {
+			err = rows.Close()
+		}
+	}(rows)
+
+	var timing = Timing{}
+	for rows.Next() {
+		err = t.db.ScanRows(rows, &timing)
+		if err != nil {
+			return err
+		}
+		err = process(timing)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+func (t *TransactionDao) SelectWaitTimingExec(startId uint, limit int) ([]TimingExec, error) {
+	var list []TimingExec
+	err := t.db.Where("id >= ? AND status = ? AND close = ?", startId, TimingExecWait, false).Order("id ASC").Limit(limit).Find(&list).Error
+	return list, err
 }

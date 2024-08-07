@@ -16,11 +16,15 @@ import (
 	"time"
 )
 
-var config = initialize.Config.Nats
+var (
+	config = initialize.Config.Nats
 
-var natsConn *nats.Conn
-var natsLogger *zap.Logger
-var natsServer *server.Server
+	natsConn   *nats.Conn
+	natsLogger *zap.Logger
+	natsServer *server.Server
+
+	ErrNatsNotWork = errors.New("nats not work")
+)
 
 // user task
 const TaskCreateTourist constant.Subject = "createTourist"
@@ -28,6 +32,8 @@ const TaskCreateTourist constant.Subject = "createTourist"
 // transaction task
 const TaskStatisticUpdate constant.Subject = "statisticUpdate"
 const TaskTransactionSync constant.Subject = "transactionSync"
+const TaskTransactionTimingExec constant.Subject = "transactionTimingExec"
+const TaskTransactionTimingTaskAssign constant.Subject = "transactionTimingTaskAssign"
 
 // category task
 const TaskMappingCategoryToAccountMapping constant.Subject = "mappingCategoryToAccountMapping"
