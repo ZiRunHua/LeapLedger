@@ -1,10 +1,10 @@
 package globalTask
 
 import (
+	"KeepAccount/global"
 	"KeepAccount/global/constant"
 	"KeepAccount/global/contextKey"
 	"KeepAccount/global/task/model"
-	"KeepAccount/initialize"
 	"context"
 	"encoding/json"
 	"github.com/nats-io/nats-server/v2/server"
@@ -17,7 +17,7 @@ import (
 )
 
 var (
-	config = initialize.Config.Nats
+	config = global.Config.Nats
 
 	natsConn   *nats.Conn
 	natsLogger *zap.Logger
@@ -92,7 +92,7 @@ func subscribe[DataType any](subject constant.Subject, handleTransaction transac
 		} else {
 			err := executeTransaction(msg.Data, db)
 			if err != nil {
-				msgProcessingFailure(msg, err)
+				msgProcessFail(msg, err)
 				return
 			}
 		}
@@ -106,10 +106,11 @@ func subscribe[DataType any](subject constant.Subject, handleTransaction transac
 
 func isRetryTask(msg *nats.Msg) bool { return isDigits(msg.Data) }
 
-func msgProcessingFailure(msg *nats.Msg, execErr error) {
+func msgProcessFail(msg *nats.Msg, execErr error) {
 	task, err := taskServer.addFailedTask(constant.Subject(msg.Subject), string(msg.Data), execErr)
 	if err != nil {
 		natsLogger.Error("taskServer.addFailedTask", zap.Error(err))
+		return
 	}
 	_, err = taskServer.addRetryTask(task)
 	if err != nil {

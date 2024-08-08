@@ -1,17 +1,13 @@
-package util
+package rand
 
 import (
 	mathRand "math/rand"
 	"time"
 )
 
-type rand struct{}
-
-var Rand = &rand{}
-
 const charSet string = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
 
-func (rd *rand) GenerateRandomString(length int) string {
+func String(length int) string {
 	mathRand.New(mathRand.NewSource(time.Now().UnixNano()))
 	var result string
 	for i := 0; i < length; i++ {
@@ -19,4 +15,7 @@ func (rd *rand) GenerateRandomString(length int) string {
 		result += string(charSet[randomIndex])
 	}
 	return result
+}
+func Int(max int) int {
+	return mathRand.Intn(max)
 }

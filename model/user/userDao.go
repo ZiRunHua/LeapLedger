@@ -128,6 +128,12 @@ func (u *UserDao) SelectUserClientBaseInfo(userId uint, client constant.Client) 
 	return
 }
 
+func (u *UserDao) SelectUserClient(userId uint, client constant.Client) (Client, error) {
+	clientModel := GetUserClientModel(client)
+	err := u.db.Model(clientModel).First(clientModel, userId).Error
+	return clientModel, err
+}
+
 func (u *UserDao) UpdateUserClientBaseInfo(userId uint, client constant.Client) (result UserClientBaseInfo, err error) {
 	err = u.db.Model(GetUserClientModel(client)).First(&result, userId).Error
 	if err != nil {

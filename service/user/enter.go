@@ -8,7 +8,7 @@ import (
 )
 
 type Group struct {
-	Base   User
+	User
 	Friend Friend
 }
 
@@ -17,7 +17,7 @@ var GroupApp = new(Group)
 func init() {
 	globalTask.Subscribe[any](
 		globalTask.TaskCreateTourist, func(data any, ctx context.Context) error {
-			_, err := GroupApp.Base.CreateTourist(ctx.Value(contextKey.Tx).(*gorm.DB))
+			_, err := GroupApp.CreateTourist(ctx.Value(contextKey.Tx).(*gorm.DB))
 			return err
 		},
 	)

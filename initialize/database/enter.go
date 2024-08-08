@@ -2,6 +2,7 @@ package database
 
 import (
 	"KeepAccount/global"
+	"KeepAccount/global/constant"
 	_ "KeepAccount/model"
 	userModel "KeepAccount/model/user"
 	"KeepAccount/script"
@@ -14,7 +15,7 @@ import (
 )
 
 var (
-	userService = service.GroupApp.UserServiceGroup.Base
+	userService = service.GroupApp.UserServiceGroup
 )
 var tmplUserId = _templateService.TmplUserId
 
@@ -35,6 +36,13 @@ func init() {
 	err = global.GvaDb.Transaction(initTourist)
 	if err != nil {
 		panic(err)
+	}
+	// init test User
+	if global.Config.Mode == constant.Debug {
+		err = global.GvaDb.Transaction(initTestUser)
+		if err != nil {
+			panic(err)
+		}
 	}
 }
 
@@ -59,31 +67,15 @@ func initTemplateUser(tx *gorm.DB) (err error) {
 		}
 	}
 	//create account
-	_, accountUser, err := script.Account.CreateExample(user, tx)
-	if err != nil {
-		return
-	}
-	//update user client
-	err = script.User.ChangeCurrantAccount(accountUser, tx)
+	_, _, err = script.Account.CreateExample(user, tx)
 	if err != nil {
 		return
 	}
 	_templateService.SetTmplUser(user)
 	return
 }
-func NewTestUser() (result string) {
-	var err error
-	err = global.GvaDb.Transaction(func(tx *gorm.DB) error {
-		result, err = newTestUser(tx)
-		return err
-	})
-	if err != nil {
-		result = err.Error()
-	}
-	return result
-}
 
-func newTestUser(tx *gorm.DB) (tip string, err error) {
+func initTestUser(tx *gorm.DB) (err error) {
 	var user userModel.User
 	user, err = script.User.CreateTourist(tx)
 	if err != nil {
@@ -99,7 +91,16 @@ func newTestUser(tx *gorm.DB) (tip string, err error) {
 		return
 	}
 	err = userService.UpdatePassword(user, util.ClientPasswordHash(user.Email, tmplUserPassword), tx)
-	return fmt.Sprintf("email:%s password:%s", user.Email, tmplUserPassword), err
+	if err != nil {
+		return
+	}
+	_, _, err = script.Account.CreateExample(user, tx)
+	if err != nil {
+		return
+	}
+	global.TestUserId = user.ID
+	global.TestUserInfo = fmt.Sprintf("email:%s password:%s", user.Email, tmplUserPassword)
+	return
 }
 
 func initTourist(tx *gorm.DB) error {

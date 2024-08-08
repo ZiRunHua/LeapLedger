@@ -10,7 +10,7 @@ func CurrentInit() error {
 		Transaction{}, Mapping{},
 		ExpenseAccountStatistic{}, ExpenseAccountUserStatistic{}, ExpenseCategoryStatistic{},
 		IncomeAccountStatistic{}, IncomeAccountUserStatistic{}, IncomeCategoryStatistic{},
-		Timing{},
+		Timing{}, TimingExec{},
 	}
 	err := global.GvaDb.AutoMigrate(tables...)
 	if err != nil {

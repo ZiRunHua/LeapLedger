@@ -4,6 +4,7 @@ import (
 	accountModel "KeepAccount/model/account"
 	userModel "KeepAccount/model/user"
 	"KeepAccount/util"
+	"KeepAccount/util/rand"
 	"gorm.io/gorm"
 )
 
@@ -23,9 +24,9 @@ func (u *_user) Create(email, password, username string, tx *gorm.DB) (userModel
 }
 
 func (u *_user) CreateTourist(db *gorm.DB) (user userModel.User, err error) {
-	email := util.Rand.GenerateRandomString(12)
-	password := util.Rand.GenerateRandomString(8)
-	username := util.Rand.GenerateRandomString(8)
+	email := rand.String(12)
+	password := rand.String(8)
+	username := rand.String(8)
 	addData := userModel.AddData{
 		Email:    email,
 		Password: util.ClientPasswordHash(email, password),

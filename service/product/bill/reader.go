@@ -85,7 +85,9 @@ func (r *ReaderTemplate) Init(account *accountModel.Account, product *productMod
 		return err
 	}
 	r.currentTransaction = transactionModel.Transaction{
-		AccountId: account.ID,
+		Info: transactionModel.Info{
+			AccountId: account.ID,
+		},
 	}
 	bill, err := product.GetBill()
 	if err != nil {

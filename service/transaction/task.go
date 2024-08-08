@@ -30,7 +30,7 @@ func init() {
 				taskSize: 50,
 			})
 	}
-	_, err := gTask.Scheduler.Every(1).Day().Do(tingEveryCron)
+	_, err := gTask.Scheduler.Every(1).Day().At("00:00").Do(tingEveryCron)
 	if err != nil {
 		panic(err)
 	}

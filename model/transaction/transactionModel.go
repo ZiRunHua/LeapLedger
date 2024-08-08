@@ -227,7 +227,9 @@ func (t *Timing) UpdateNextTime(db *gorm.DB) error {
 			nextTime = time.Date(t.NextTime.Year(), t.NextTime.Month()+2, 1, 0, 0, 0, 0, time.Local)
 			nextTime = nextTime.AddDate(0, 0, -1)
 		}
-		err := db.Model(t).Update("next_time", nextTime).Error
+		err := db.Model(t).Updates(map[string]interface{}{
+			"next_time": nextTime, "trans_info": gorm.Expr("JSON_SET(trans_info, '$.trade_time', ?)", nextTime),
+		}).Error
 		if err != nil {
 			return err
 		}

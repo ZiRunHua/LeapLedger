@@ -3,12 +3,15 @@ package userService
 import (
 	"KeepAccount/global"
 	"KeepAccount/global/constant"
+	"KeepAccount/global/contextKey"
 	globalTask "KeepAccount/global/task"
 	accountModel "KeepAccount/model/account"
 	"KeepAccount/model/common/query"
 	userModel "KeepAccount/model/user"
 	commonService "KeepAccount/service/common"
 	"KeepAccount/util"
+	"KeepAccount/util/rand"
+	"context"
 	"github.com/pkg/errors"
 	"gorm.io/gorm"
 	"time"
@@ -235,7 +238,24 @@ func (userSvc *User) EnableTourist(
 }
 
 func (userSvc *User) CreateTourist(tx *gorm.DB) (user userModel.User, err error) {
-	addData := userModel.AddData{"游玩家", util.Rand.GenerateRandomString(8), util.Rand.GenerateRandomString(8)}
+	addData := userModel.AddData{"游玩家", rand.String(8), rand.String(8)}
 	option := userSvc.NewRegisterOption().WithTour(true)
 	return userSvc.Register(addData, tx, *option)
+}
+
+func (userSvc *User) ProcessAllClient(user userModel.User, processFunc func(userModel.Client) error, ctx context.Context) error {
+	tx := ctx.Value(contextKey.Tx).(*gorm.DB)
+	var clientInfo userModel.Client
+	var err error
+	for _, client := range constant.ClientList {
+		clientInfo, err = userModel.NewDao(tx).SelectUserClient(user.ID, client)
+		if err != nil {
+			return err
+		}
+		err = processFunc(clientInfo)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }

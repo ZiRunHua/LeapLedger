@@ -25,6 +25,9 @@ type Client interface {
 	GetByUser(User) error
 	CheckUserAgent(userAgent string) bool
 	InitByUser(User, *gorm.DB) error
+	GetUserId() uint
+	IsCurrentAccount(accountId uint) bool
+	IsCurrentShareAccount(accountId uint) bool
 }
 
 type UserClientBaseInfo struct {
@@ -34,8 +37,15 @@ type UserClientBaseInfo struct {
 	LoginTime             time.Time
 }
 
+func (uci *UserClientBaseInfo) GetUserId() uint {
+	return uci.UserId
+}
 func (uci *UserClientBaseInfo) IsCurrentAccount(accountId uint) bool {
-	return uci.CurrentAccountId == accountId || uci.CurrentShareAccountId == accountId
+	return uci.CurrentAccountId == accountId
+}
+
+func (uci *UserClientBaseInfo) IsCurrentShareAccount(accountId uint) bool {
+	return uci.CurrentShareAccountId == accountId
 }
 
 func (u *UserClientBaseInfo) GetByUser(User) error {

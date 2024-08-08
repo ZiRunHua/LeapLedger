@@ -6,7 +6,7 @@ import (
 	userModel "KeepAccount/model/user"
 	commonService "KeepAccount/service/common"
 	"KeepAccount/service/thirdparty/email"
-	"KeepAccount/util"
+	"KeepAccount/util/rand"
 	"bytes"
 	"fmt"
 	"github.com/pkg/errors"
@@ -63,7 +63,7 @@ func (e *emailTask) retry(err error) {
 }
 
 func (g *Group) SendCaptchaEmail(email string, action constant.UserAction) error {
-	captcha := util.Rand.GenerateRandomString(6)
+	captcha := rand.String(6)
 	expirationTime := time.Second * time.Duration(global.Config.Captcha.EmailCaptchaTimeOut)
 	err := commonService.Common.SetEmailCaptchaCache(email, captcha, expirationTime)
 	if err != nil {

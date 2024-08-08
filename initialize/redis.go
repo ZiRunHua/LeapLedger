@@ -83,7 +83,7 @@ func (rh RedisHook) BeforeProcessPipeline(ctx context.Context, cmds []redis.Cmde
 
 func (rh RedisHook) AfterProcessPipeline(_ context.Context, cmds []redis.Cmder) error {
 	if len(rh.name) == 0 {
-		fmt.Printf("pipeline finish => %v\n", rh.name, cmds)
+		fmt.Printf("pipeline finish => %v\n", cmds)
 	} else {
 		fmt.Printf("%s pipeline finish => %v\n", rh.name, cmds)
 	}

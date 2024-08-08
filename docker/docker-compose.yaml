@@ -12,7 +12,8 @@ services:
 #      - CONFIG_FILE_NAME=production_config.yaml
     volumes:
       - ./runtime:/go/LeapLedger/runtime
-      - ./log/server:/go/LeapLedger/log
+      - ../log:/go/LeapLedger/log
+      - ./test:/go/LeapLedger/docker/test
     networks:
       - leap-ledger-network
     depends_on:
@@ -28,6 +29,7 @@ services:
       - "3306:3306"
     volumes:
       - ./data/mysql:/var/lib/mysql
+      - ./config/my.cnf:/etc/mysql/my.cnf
     networks:
       - leap-ledger-network
   leap-ledger-redis:

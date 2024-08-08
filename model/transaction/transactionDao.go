@@ -141,7 +141,7 @@ func (t *TransactionDao) SelectTimingListByUserId(accountId uint, offset int, li
 	return
 }
 func (t *TransactionDao) SelectAllTimingAndProcess(startTime time.Time, process func(timing Timing) error) (err error) {
-	rows, err := t.db.Model(&Timing{}).Where("next_time < ?", startTime).Rows()
+	rows, err := t.db.Model(&Timing{}).Where("next_time < ? AND close = ?", startTime, false).Rows()
 	if err != nil {
 		return err
 	}

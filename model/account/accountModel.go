@@ -11,11 +11,12 @@ import (
 )
 
 type Account struct {
-	gorm.Model
+	ID     uint   `gorm:"primarykey"`
 	UserId uint   `gorm:"comment:用户id;not null"`
 	Type   Type   `gorm:"default:independent;not null"`
 	Name   string `gorm:"comment:名称;not null;size:128"`
 	Icon   string `gorm:"comment:图标;not null;default:'payment';size:64"`
+	gorm.Model
 	commonModel.BaseModel
 }
 

@@ -58,20 +58,20 @@ func init() {
 	group.Go(Config.Redis.do)
 	group.Go(func() error { return Config.Nats.do(Config.Mode) })
 	group.Go(Config.Scheduler.do)
-
+	group.Go(Config.Scheduler.do)
 	if err = group.Wait(); err != nil {
 		panic(err)
 	}
 }
 
-const _configDirectoryPath = ""
+const _configDirectoryPath = constant.WORK_PATH
 
 func initConfig() error {
 	configFileName := os.Getenv("CONFIG_FILE_NAME")
 	if len(configFileName) == 0 {
 		configFileName = "config.yaml"
 	}
-	configPath := _configDirectoryPath + configFileName
+	configPath := _configDirectoryPath + "/" + configFileName
 	yamlFile, err := os.ReadFile(configPath)
 	if err != nil {
 		return err
@@ -80,12 +80,17 @@ func initConfig() error {
 	if err != nil {
 		return err
 	}
+	return setConfigDefault()
+}
+func setConfigDefault() error {
+	if Config.System.LockMode == "" {
+		Config.System.LockMode = "redis"
+	}
 	return nil
 }
-
 func reconnection[T any](connect func() (T, error), retryTimes int) (result T, err error) {
 	defer func() {
-		if err != nil && retryTimes < 3 {
+		if err != nil && retryTimes > 0 {
 			time.Sleep(time.Second * 3)
 			result, err = reconnection[T](connect, retryTimes-1)
 		}

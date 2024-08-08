@@ -35,7 +35,7 @@ func (a *AccountApi) CreateOne(ctx *gin.Context) {
 	var _ accountModel.Account
 	var aUser accountModel.User
 	txFunc := func(tx *gorm.DB) error {
-		_, aUser, err = accountService.Base.CreateOne(user, requestData.Name, requestData.Icon, requestData.Type, tx)
+		_, aUser, err = accountService.Base.CreateOne(user, requestData.Name, requestData.Icon, requestData.Type, context.WithValue(ctx, contextKey.Tx, tx))
 		return err
 	}
 	if err = global.GvaDb.Transaction(txFunc); responseError(err, ctx) {
@@ -89,7 +89,7 @@ func (a *AccountApi) Delete(ctx *gin.Context) {
 		return
 	}
 	txFunc := func(tx *gorm.DB) error {
-		return accountService.Base.Delete(account, accountUser, tx)
+		return accountService.Base.Delete(account, accountUser, context.WithValue(ctx, contextKey.Tx, tx))
 	}
 
 	if err := global.GvaDb.Transaction(txFunc); responseError(err, ctx) {

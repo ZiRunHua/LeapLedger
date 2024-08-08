@@ -47,12 +47,11 @@ func (t *template) rankOnceIncr(userId uint, tmplAccount accountModel.Account, c
 func (t *template) CreateAccount(
 	user userModel.User, tmplAccount accountModel.Account, ctx context.Context,
 ) (account accountModel.Account, err error) {
-	tx := ctx.Value(contextKey.Tx).(*gorm.DB)
 	if tmplAccount.UserId != TmplUserId {
 		return account, ErrNotBelongTemplate
 	}
 	account, _, err = accountService.ServiceGroupApp.Base.CreateOne(
-		user, tmplAccount.Name, tmplAccount.Icon, tmplAccount.Type, tx,
+		user, tmplAccount.Name, tmplAccount.Icon, tmplAccount.Type, ctx,
 	)
 	if err != nil {
 		return

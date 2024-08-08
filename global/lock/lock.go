@@ -1,7 +1,7 @@
 package lock
 
 import (
-	"KeepAccount/initialize"
+	"KeepAccount/global"
 	"context"
 	"errors"
 	"time"
@@ -30,34 +30,34 @@ type Lock interface {
 }
 
 func init() {
-	currentMode = mode(initialize.Config.System.LockMode)
+	currentMode = mode(global.Config.System.LockMode)
 	updatePublicFunc()
 }
 func updatePublicFunc() {
 	switch currentMode {
 	case mysqlMode:
-		mdb = initialize.Db
+		mdb = global.GvaDb
 		err := mdb.AutoMigrate(&lockTable{})
 		if err != nil {
 			panic(err)
 		}
 		New = func(key Key) Lock {
-			return newRedisLock(rdb, string(key), time.Second*10)
+			return newMysqlLock(mdb, string(key), time.Second*30)
 		}
 		NewWithDuration = func(key Key, duration time.Duration) Lock {
-			return newRedisLock(rdb, string(key), duration)
+			return newMysqlLock(mdb, string(key), duration)
 		}
 		return
 	case redisMode:
-		rdb = initialize.LockRdb
+		rdb = global.GvaRdb
 		if rdb == nil {
 			panic("initialize.LockRdb is nil")
 		}
 		New = func(key Key) Lock {
-			return newMysqlLock(mdb, string(key), time.Second*10)
+			return newRedisLock(rdb, string(key), time.Second*30)
 		}
 		NewWithDuration = func(key Key, duration time.Duration) Lock {
-			return newMysqlLock(mdb, string(key), duration)
+			return newRedisLock(rdb, string(key), duration)
 		}
 		return
 	}

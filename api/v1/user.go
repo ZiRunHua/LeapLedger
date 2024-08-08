@@ -93,7 +93,7 @@ func (p *PublicApi) Login(ctx *gin.Context) {
 	var responseData response.Login
 	transactionFunc := func(tx *gorm.DB) error {
 		var customClaims util.CustomClaims
-		user, clientBaseInfo, responseData.Token, customClaims, err = userService.Base.Login(
+		user, clientBaseInfo, responseData.Token, customClaims, err = userService.Login(
 			requestData.Email, requestData.Password, client, tx,
 		)
 		if err != nil {
@@ -142,7 +142,7 @@ func (p *PublicApi) Register(ctx *gin.Context) {
 	var customClaims util.CustomClaims
 	err = global.GvaDb.Transaction(
 		func(tx *gorm.DB) error {
-			user, err = userService.Base.Register(data, tx)
+			user, err = userService.Register(data, tx)
 			if err != nil {
 				return err
 			}
@@ -179,7 +179,7 @@ func (p *PublicApi) TourRequest(ctx *gin.Context) {
 	err := global.GvaDb.Transaction(
 		func(tx *gorm.DB) error {
 			var err error
-			user, err = userService.Base.EnableTourist(requestData.DeviceNumber, contextFunc.GetClient(ctx), tx)
+			user, err = userService.EnableTourist(requestData.DeviceNumber, contextFunc.GetClient(ctx), tx)
 			return err
 		},
 	)
@@ -225,7 +225,7 @@ func (p *PublicApi) UpdatePassword(ctx *gin.Context) {
 	}
 	err = global.GvaDb.Transaction(
 		func(tx *gorm.DB) error {
-			return userService.Base.UpdatePassword(user, requestData.Password, tx)
+			return userService.UpdatePassword(user, requestData.Password, tx)
 		},
 	)
 	// 发送不成功不影响主流程
@@ -278,7 +278,7 @@ func (u *UserApi) UpdatePassword(ctx *gin.Context) {
 
 	err = global.GvaDb.Transaction(
 		func(tx *gorm.DB) error {
-			return userService.Base.UpdatePassword(user, requestData.Password, tx)
+			return userService.UpdatePassword(user, requestData.Password, tx)
 		},
 	)
 	// 发送不成功不影响主流程
@@ -344,7 +344,7 @@ func (u *UserApi) SetCurrentAccount(ctx *gin.Context) {
 
 	err := global.GvaDb.Transaction(
 		func(tx *gorm.DB) error {
-			return userService.Base.SetClientAccount(accountUser, contextFunc.GetClient(ctx), account, tx)
+			return userService.SetClientAccount(accountUser, contextFunc.GetClient(ctx), account, tx)
 		},
 	)
 	if responseError(err, ctx) {
@@ -370,7 +370,7 @@ func (u *UserApi) SetCurrentShareAccount(ctx *gin.Context) {
 
 	err := global.GvaDb.Transaction(
 		func(tx *gorm.DB) error {
-			return userService.Base.SetClientShareAccount(accountUser, contextFunc.GetClient(ctx), account, tx)
+			return userService.SetClientShareAccount(accountUser, contextFunc.GetClient(ctx), account, tx)
 		},
 	)
 	if responseError(err, ctx) {

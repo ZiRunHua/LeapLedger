@@ -8,10 +8,10 @@ import (
 )
 
 type Task struct {
-	ID          uint `gorm:"primarykey"`
-	Subject     constant.Subject
-	Data        string
-	Status      TaskStatus
+	ID          uint             `gorm:"primarykey"`
+	Subject     constant.Subject `gorm:"not null;"`
+	Data        string           `gorm:"json"`
+	Status      TaskStatus       `gorm:"not null;default:0"`
 	Error       string
 	completedAt time.Time
 	CreatedAt   time.Time
@@ -23,7 +23,7 @@ func (t *Task) Complete(db *gorm.DB) error {
 	if err != nil {
 		return err
 	}
-	return db.Model(t).Updates(map[string]interface{}{
+	return db.Model(t).Where("id = ?", t.ID).Updates(map[string]interface{}{
 		"status":       StatusOfComplete,
 		"error":        "",
 		"completed_at": time.Now(),
@@ -31,11 +31,11 @@ func (t *Task) Complete(db *gorm.DB) error {
 }
 
 func (t *Task) Die(db *gorm.DB) error {
-	return db.Model(t).Update("status", StatusOfDie).Error
+	return db.Model(t).Where("id = ?", t.ID).Update("status", StatusOfDie).Error
 }
 
 func (t *Task) Retry(execTime time.Time, db *gorm.DB) (retryTask RetryTask, err error) {
-	err = db.Model(t).Update("status", StatusOfRetrying).Error
+	err = db.Model(t).Where("id = ?", t.ID).Update("status", StatusOfRetrying).Error
 	if err != nil {
 		return
 	}
@@ -97,7 +97,7 @@ func (rt *RetryTask) Published(nextExecTime time.Time, db *gorm.DB) error {
 }
 
 func (rt *RetryTask) Abnormal(db *gorm.DB) error {
-	return db.Model(rt).Update("status", RetryStatusOfAbnormal).Error
+	return db.Model(rt).Where("task_id = ?", rt.TaskId).Update("status", RetryStatusOfAbnormal).Error
 }
 
 func (rt *RetryTask) GetTask(db *gorm.DB) (task Task, err error) {

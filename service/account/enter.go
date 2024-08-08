@@ -2,6 +2,7 @@ package accountService
 
 import (
 	log "KeepAccount/service/log"
+	userService "KeepAccount/service/user"
 )
 
 var ServiceGroupApp = &Group{}
@@ -11,4 +12,7 @@ type Group struct {
 	Share share
 }
 
-var logServer = log.Log
+var (
+	logServer  = log.Log
+	userServer = userService.GroupApp
+)

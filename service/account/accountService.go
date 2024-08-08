@@ -2,9 +2,10 @@ package accountService
 
 import (
 	"KeepAccount/global"
-	"KeepAccount/global/constant"
+	"KeepAccount/global/contextKey"
 	accountModel "KeepAccount/model/account"
 	userModel "KeepAccount/model/user"
+	"context"
 	"github.com/pkg/errors"
 	"gorm.io/gorm"
 )
@@ -12,7 +13,7 @@ import (
 type base struct{}
 
 func (b *base) CreateOne(
-	user userModel.User, name string, icon string, aType accountModel.Type, tx *gorm.DB,
+	user userModel.User, name string, icon string, aType accountModel.Type, ctx context.Context,
 ) (account accountModel.Account, aUser accountModel.User, err error) {
 	if name == "" || icon == "" {
 		err = global.NewErrDataIsEmpty("name或icon")
@@ -24,6 +25,7 @@ func (b *base) CreateOne(
 		Icon:   icon,
 		Type:   aType,
 	}
+	tx := ctx.Value(contextKey.Tx).(*gorm.DB)
 	err = tx.Create(&account).Error
 	if err != nil {
 		err = errors.WithStack(err)
@@ -32,10 +34,43 @@ func (b *base) CreateOne(
 	if err != nil {
 		err = errors.WithStack(err)
 	}
+	err = b.updateUserCurrentAfterCreate(aUser, ctx)
 	return
 }
 
-func (b *base) Delete(account accountModel.Account, accountUser accountModel.User, tx *gorm.DB) (err error) {
+func (b *base) updateUserCurrentAfterCreate(accountUser accountModel.User, ctx context.Context) (err error) {
+	tx := ctx.Value(contextKey.Tx).(*gorm.DB)
+	user, err := userModel.NewDao(tx).SelectById(accountUser.UserId)
+	if err != nil {
+		return err
+	}
+	account := accountModel.Account{ID: accountUser.AccountId}
+	err = account.ForShare(tx)
+	if err != nil {
+		return err
+	}
+	processFunc := func(clientInfo userModel.Client) error {
+		updates := make(map[string]interface{})
+		if clientInfo.IsCurrentShareAccount(0) && account.Type == accountModel.TypeShare {
+			updates["current_share_account_id"] = account.ID
+		}
+		if clientInfo.IsCurrentAccount(0) && account.Type == accountModel.TypeIndependent {
+			updates["current_account_id"] = account.ID
+		}
+		if len(updates) > 0 {
+			return tx.Model(clientInfo).Where("user_id = ?", clientInfo.GetUserId()).Updates(updates).Error
+		}
+		return nil
+	}
+	err = userServer.ProcessAllClient(user, processFunc, ctx)
+	if err != nil {
+		return err
+	}
+	return
+}
+
+func (b *base) Delete(account accountModel.Account, accountUser accountModel.User, ctx context.Context) (err error) {
+	tx := ctx.Value(contextKey.Tx).(*gorm.DB)
 	if accountUser.AccountId != account.ID {
 		panic("err accountId")
 	}
@@ -55,58 +90,62 @@ func (b *base) Delete(account accountModel.Account, accountUser accountModel.Use
 		return err
 	}
 	//删除的可能是当前账本 故需要更新客户端信息
-	err = b.updateUserCurrentAfterDelete(accountUser, tx)
+	err = b.updateUserCurrentAfterDelete(accountUser, ctx)
 	if err != nil {
 		return err
 	}
 	return
 }
 
-func (b *base) updateUserCurrentAfterDelete(
-	accountUser accountModel.User, tx *gorm.DB,
-) (err error) {
-	var newCurrentAccount, newCurrentShareAccount accountModel.Account
-	dao := accountModel.NewDao(tx)
-	condition := *accountModel.NewUserCondition()
-	newCurrentAccount, err = dao.SelectByUserAndAccountType(accountUser.UserId, condition)
-	if err != nil && false == errors.Is(err, gorm.ErrRecordNotFound) {
+func (b *base) updateUserCurrentAfterDelete(accountUser accountModel.User, ctx context.Context) (err error) {
+	tx := ctx.Value(contextKey.Tx).(*gorm.DB)
+	user, err := userModel.NewDao().SelectById(accountUser.UserId)
+	if err != nil {
 		return err
 	}
-	newCurrentShareAccount, err = dao.SelectByUserAndAccountType(
-		accountUser.UserId, *condition.SetType(accountModel.TypeShare),
-	)
-	if err != nil && false == errors.Is(err, gorm.ErrRecordNotFound) {
+	account, shareAccount, err := b.getNewCurrentAccount(user, ctx)
+	if err != nil {
 		return err
 	}
-
-	var list []userModel.UserClientBaseInfo
-	for _, client := range constant.ClientList {
-		list, err = userModel.NewDao(tx).SelectClientInfoByUserAndAccount(
-			client, accountUser.UserId, accountUser.AccountId,
-		)
-
-		if err != nil {
-			return err
-		}
-		for _, info := range list {
-			updates := make(map[string]interface{})
-			if info.CurrentShareAccountId == accountUser.AccountId {
-				updates["current_share_account_id"] = newCurrentShareAccount.ID
-			}
-			if info.CurrentAccountId == accountUser.AccountId {
-				updates["current_account_id"] = newCurrentAccount.ID
-			}
-			if len(updates) > 0 {
-				err = tx.Model(userModel.GetUserClientModel(client)).Where("user_id = ?", info.UserId).Updates(updates).Error
-				if err != nil {
-					return err
-				}
+	processFunc := func(clientInfo userModel.Client) error {
+		updates := make(map[string]interface{})
+		if clientInfo.IsCurrentShareAccount(accountUser.AccountId) {
+			if shareAccount == nil {
+				updates["current_share_account_id"] = 0
+			} else {
+				updates["current_share_account_id"] = shareAccount.ID
 			}
 		}
+		if clientInfo.IsCurrentAccount(accountUser.AccountId) {
+			updates["current_account_id"] = account.ID
+		}
+		if len(updates) > 0 {
+			return tx.Model(clientInfo).Where("user_id = ?", clientInfo.GetUserId()).Updates(updates).Error
+		}
+		return nil
+	}
+	err = userServer.ProcessAllClient(user, processFunc, ctx)
+	if err != nil {
+		return err
 	}
 	return
 }
 
+func (b *base) getNewCurrentAccount(user userModel.User, ctx context.Context) (accountModel.Account, *accountModel.Account, error) {
+	tx := ctx.Value(contextKey.Tx).(*gorm.DB)
+	dao, condition := accountModel.NewDao(tx), *accountModel.NewUserCondition()
+	current, err := dao.SelectByUserAndAccountType(user.ID, condition)
+	if err != nil {
+		return current, nil, err
+	}
+
+	var currentShare *accountModel.Account
+	condition.SetType(accountModel.TypeShare)
+	if account, err := dao.SelectByUserAndAccountType(user.ID, condition); err != nil {
+		currentShare = &account
+	}
+	return current, currentShare, err
+}
 func (b *base) Update(
 	account accountModel.Account, accountUser accountModel.User, updateData accountModel.AccountUpdateData, tx *gorm.DB,
 ) (err error) {

@@ -3,7 +3,7 @@ package script
 import "KeepAccount/service"
 
 var (
-	userService        = service.GroupApp.UserServiceGroup.Base
+	userService        = service.GroupApp.UserServiceGroup
 	accountService     = service.GroupApp.AccountServiceGroup.Base
 	categoryService    = service.GroupApp.CategoryServiceGroup
 	transactionService = service.GroupApp.TransactionServiceGroup
