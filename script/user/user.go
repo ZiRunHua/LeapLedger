@@ -19,7 +19,7 @@ func Create(email, password, username string) userModel.User {
 	err := global.GvaDb.Transaction(
 		func(tx *gorm.DB) error {
 			var err error
-			user, err = userService.GroupApp.Base.Register(addData, tx)
+			user, err = userService.GroupApp.Register(addData, tx)
 			return err
 		},
 	)
