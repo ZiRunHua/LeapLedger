@@ -6,8 +6,9 @@ import (
 	accountModel "KeepAccount/model/account"
 	transactionModel "KeepAccount/model/transaction"
 	"context"
-	"gorm.io/gorm"
 	"time"
+
+	"gorm.io/gorm"
 )
 
 type Timing struct {
@@ -79,7 +80,6 @@ func (te *TimingExec) GenerateAndPublishTasks(deadline time.Time, taskSize int, 
 func (te *TimingExec) makeAndSplitExecTask(deadline time.Time, size int, ctx context.Context) (starIds []uint, err error) {
 	var (
 		tx       = ctx.Value(contextKey.Tx).(*gorm.DB)
-		transDao = transactionModel.NewDao(tx)
 		count    int
 		timeExec transactionModel.TimingExec
 	)
@@ -99,7 +99,7 @@ func (te *TimingExec) makeAndSplitExecTask(deadline time.Time, size int, ctx con
 		count++
 		return nil
 	}
-	err = transDao.SelectAllTimingAndProcess(deadline, process)
+	err = transactionModel.NewDao().SelectAllTimingAndProcess(deadline, process)
 	return
 }
 

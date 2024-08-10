@@ -1,9 +1,9 @@
 package thirdparty
 
 import (
-	_ "KeepAccount/global"
-	_ "KeepAccount/global/constant"
-	_ "KeepAccount/initialize"
+	_ "KeepAccount/test/initialize"
+)
+import (
 	_thirdpartyService "KeepAccount/service/thirdparty"
 	"context"
 	"testing"

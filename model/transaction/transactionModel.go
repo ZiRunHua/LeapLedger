@@ -8,10 +8,13 @@ import (
 	commonModel "KeepAccount/model/common"
 	queryFunc "KeepAccount/model/common/query"
 	userModel "KeepAccount/model/user"
+	"database/sql"
+	"encoding/json"
 	"errors"
+	"time"
+
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
-	"time"
 )
 
 type Transaction struct {
@@ -188,8 +191,8 @@ type Timing struct {
 	ID         uint `gorm:"primarykey"`
 	AccountId  uint `gorm:"index"`
 	UserId     uint
-	TransInfo  Info       `gorm:"not null;json"`
-	Type       TimingType `gorm:"not null;char(16)"`
+	TransInfo  Info       `gorm:"not null;type:json;serializer:json"`
+	Type       TimingType `gorm:"not null;type:char(16)"`
 	OffsetDays int        `gorm:"not null;"`
 	NextTime   time.Time  `gorm:"not null;"`
 	Close      bool
@@ -227,8 +230,14 @@ func (t *Timing) UpdateNextTime(db *gorm.DB) error {
 			nextTime = time.Date(t.NextTime.Year(), t.NextTime.Month()+2, 1, 0, 0, 0, 0, time.Local)
 			nextTime = nextTime.AddDate(0, 0, -1)
 		}
-		err := db.Model(t).Updates(map[string]interface{}{
-			"next_time": nextTime, "trans_info": gorm.Expr("JSON_SET(trans_info, '$.trade_time', ?)", nextTime),
+		t.NextTime, t.TransInfo.TradeTime = nextTime, nextTime
+		str, err := json.Marshal(t.TransInfo)
+		if err != nil {
+			return err
+		}
+		err = db.Model(t).Updates(map[string]interface{}{
+			"trans_info": str,
+			"next_time":  t.NextTime,
 		}).Error
 		if err != nil {
 			return err
@@ -251,9 +260,9 @@ type TimingExec struct {
 	Status        TimingExecStatus `gorm:"default:0"`
 	ConfigId      uint             `gorm:"index;not null"`
 	FailCause     string           `gorm:"default:'';not null"`
-	TransInfo     Info             `gorm:"not null;json"`
+	TransInfo     Info             `gorm:"not null;type:json;serializer:json"`
 	TransactionId uint
-	ExecTime      time.Time
+	ExecTime      sql.NullTime
 	gorm.Model
 }
 type TimingExecStatus int8
@@ -278,9 +287,17 @@ func (t *TimingExec) ExecFail(execErr error, db *gorm.DB) error {
 	if errors.Is(execErr, global.ErrNoPermission) {
 		failCause = "账本无权操作"
 	}
-	return db.Model(t).Where("id = ?", t.ID).Updates(TimingExec{FailCause: failCause, Status: TimingExecFail, ExecTime: time.Now()}).Error
+	return db.Model(t).Where("id = ?", t.ID).Updates(TimingExec{
+		FailCause: failCause,
+		Status:    TimingExecFail,
+		ExecTime:  sql.NullTime{Time: time.Now(), Valid: true},
+	}).Error
 }
 
 func (t *TimingExec) ExecSuccess(trans Transaction, db *gorm.DB) error {
-	return db.Model(t).Where("id = ?", t.ID).Updates(TimingExec{TransactionId: trans.ID, Status: TimingExecSuccess, ExecTime: time.Now()}).Error
+	return db.Model(t).Where("id = ?", t.ID).Updates(TimingExec{
+		TransactionId: trans.ID,
+		Status:        TimingExecSuccess,
+		ExecTime:      sql.NullTime{Time: time.Now(), Valid: true},
+	}).Error
 }

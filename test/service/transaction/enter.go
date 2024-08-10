@@ -1,6 +1,9 @@
 package transaction
 
 import (
+	_ "KeepAccount/test/initialize"
+)
+import (
 	"KeepAccount/global"
 	"KeepAccount/global/constant"
 	accountModel "KeepAccount/model/account"

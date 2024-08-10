@@ -5,6 +5,7 @@ import (
 	"KeepAccount/global/constant"
 	accountModel "KeepAccount/model/account"
 	"KeepAccount/util"
+
 	"github.com/pkg/errors"
 	"gorm.io/gorm"
 )
@@ -116,9 +117,8 @@ func (cd *CategoryDao) GetListByFather(father Father) ([]Category, error) {
 	return list, err
 }
 
-func (cd *CategoryDao) GetListByAccount(account accountModel.Account, ie *constant.IncomeExpense) ([]Category, error) {
+func (cd *CategoryDao) GetListByAccount(account accountModel.Account, ie *constant.IncomeExpense) (list []Category, err error) {
 	condition := &Condition{account: account, ie: ie}
-	var list []Category
 	return list, condition.buildWhere(cd.db).Find(&list).Error
 }
 

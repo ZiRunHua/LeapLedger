@@ -2,15 +2,16 @@ package model
 
 import (
 	"KeepAccount/global/constant"
+	"time"
+
 	"github.com/pkg/errors"
 	"gorm.io/gorm"
-	"time"
 )
 
 type Task struct {
 	ID          uint             `gorm:"primarykey"`
 	Subject     constant.Subject `gorm:"not null;"`
-	Data        string           `gorm:"json"`
+	Data        string           `gorm:"type:json;serializer:json"`
 	Status      TaskStatus       `gorm:"not null;default:0"`
 	Error       string
 	completedAt time.Time
@@ -31,11 +32,11 @@ func (t *Task) Complete(db *gorm.DB) error {
 }
 
 func (t *Task) Die(db *gorm.DB) error {
-	return db.Model(t).Where("id = ?", t.ID).Update("status", StatusOfDie).Error
+	return db.Model(t).Update("status", StatusOfDie).Error
 }
 
 func (t *Task) Retry(execTime time.Time, db *gorm.DB) (retryTask RetryTask, err error) {
-	err = db.Model(t).Where("id = ?", t.ID).Update("status", StatusOfRetrying).Error
+	err = db.Model(t).Update("status", StatusOfRetrying).Error
 	if err != nil {
 		return
 	}

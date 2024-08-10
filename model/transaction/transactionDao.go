@@ -5,9 +5,10 @@ import (
 	"KeepAccount/global/constant"
 	accountModel "KeepAccount/model/account"
 	"database/sql"
+	"time"
+
 	"github.com/pkg/errors"
 	"gorm.io/gorm"
-	"time"
 )
 
 type TransactionDao struct {
@@ -94,7 +95,7 @@ func (t *TransactionDao) SelectMappingByTrans(trans, syncTrans Transaction) (map
 		case accountModel.TypeShare:
 			err = t.db.Where("main_id = ? AND related_id = ?", trans.ID, syncTrans.ID).First(&mapping).Error
 		default:
-			panic("err account.Type")
+			panic(accountModel.ErrAccountType)
 		}
 		return
 	}
@@ -152,8 +153,7 @@ func (t *TransactionDao) SelectAllTimingAndProcess(startTime time.Time, process 
 			err = rows.Close()
 		}
 	}(rows)
-
-	var timing = Timing{}
+	var timing Timing
 	for rows.Next() {
 		err = t.db.ScanRows(rows, &timing)
 		if err != nil {
@@ -166,8 +166,14 @@ func (t *TransactionDao) SelectAllTimingAndProcess(startTime time.Time, process 
 	}
 	return nil
 }
+
 func (t *TransactionDao) SelectWaitTimingExec(startId uint, limit int) ([]TimingExec, error) {
 	var list []TimingExec
-	err := t.db.Where("id >= ? AND status = ? AND close = ?", startId, TimingExecWait, false).Order("id ASC").Limit(limit).Find(&list).Error
+	err := t.db.Where("id >= ? AND status = ?", startId, TimingExecWait).Order("id ASC").Limit(limit).Find(&list).Error
 	return list, err
+}
+
+func (t *TransactionDao) UpdateTimingNextTime(id uint, nextTime time.Time) error {
+	s := "Update transaction_timing set next_time = ? AND trans_info = JSON_SET(trans_info,'$.trade_time',?) WHERE id  = ?"
+	return t.db.Exec(s, nextTime.Format("2006-01-02 15:04:05.000"), nextTime.Format("2006-01-02 15:04:05.000"), id).Error
 }

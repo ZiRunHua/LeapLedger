@@ -1,16 +1,21 @@
 package database
 
 import (
+	_ "KeepAccount/model"
+)
+
+import (
 	"KeepAccount/global"
 	"KeepAccount/global/constant"
-	_ "KeepAccount/model"
 	userModel "KeepAccount/model/user"
 	"KeepAccount/script"
 	"KeepAccount/service"
-	_templateService "KeepAccount/service/template"
 	"KeepAccount/util"
-	"errors"
 	"fmt"
+
+	_templateService "KeepAccount/service/template"
+	"errors"
+
 	"gorm.io/gorm"
 )
 
@@ -26,6 +31,7 @@ const (
 )
 
 func init() {
+
 	var err error
 	// init template User
 	err = global.GvaDb.Transaction(initTemplateUser)

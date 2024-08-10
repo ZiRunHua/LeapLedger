@@ -8,11 +8,12 @@ import (
 	categoryModel "KeepAccount/model/category"
 	transactionModel "KeepAccount/model/transaction"
 	"context"
+	"time"
+
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 	"golang.org/x/sync/errgroup"
 	"gorm.io/gorm"
-	"time"
 )
 
 type Transaction struct{}
@@ -197,8 +198,10 @@ func (txnService *Transaction) SyncToMappingAccount(trans transactionModel.Trans
 	}
 	if accountType == accountModel.TypeIndependent {
 		err = txnService.syncToShareAccount(trans, ctx)
-	} else {
+	} else if accountType == accountModel.TypeShare {
 		err = txnService.syncToIndependentAccount(trans, ctx)
+	} else {
+		return accountModel.ErrAccountType
 	}
 	return err
 }

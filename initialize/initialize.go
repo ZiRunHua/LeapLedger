@@ -4,6 +4,9 @@ import (
 	"KeepAccount/global/constant"
 	"KeepAccount/util"
 	"context"
+	"os"
+	"time"
+
 	"github.com/go-co-op/gocron"
 	"github.com/nats-io/nats-server/v2/server"
 	"github.com/nats-io/nats.go"
@@ -11,8 +14,6 @@ import (
 	"golang.org/x/sync/errgroup"
 	"gopkg.in/yaml.v3"
 	"gorm.io/gorm"
-	"os"
-	"time"
 )
 
 type _config struct {

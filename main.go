@@ -1,11 +1,13 @@
 package main
 
 import (
+	"KeepAccount/initialize"
+	_ "KeepAccount/initialize/database"
+)
+import (
 	"KeepAccount/global"
 	"KeepAccount/global/constant"
 	GvaTask "KeepAccount/global/task"
-	"KeepAccount/initialize"
-	_ "KeepAccount/initialize/database"
 	"KeepAccount/router"
 	"context"
 	"fmt"

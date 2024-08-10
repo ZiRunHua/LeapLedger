@@ -1,11 +1,13 @@
 package initialize
 
 import (
+	"time"
+
+	_ "github.com/go-sql-driver/mysql"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
 	"gorm.io/gorm/schema"
-	"time"
 )
 
 type _mysql struct {
@@ -38,8 +40,8 @@ func (m *_mysql) do() error {
 		return err
 	}
 	sqlDb, _ := db.DB()
-	sqlDb.SetMaxIdleConns(25)
-	sqlDb.SetMaxOpenConns(200)
+	sqlDb.SetMaxIdleConns(50)
+	sqlDb.SetMaxOpenConns(50)
 	sqlDb.SetConnMaxLifetime(5 * time.Minute)
 	db.InstanceSet("gorm:table_options", "ENGINE=InnoDB")
 	db.InstanceSet("gorm:queryFields", "SET TRANSACTION ISOLATION LEVEL READ COMMITTED;")

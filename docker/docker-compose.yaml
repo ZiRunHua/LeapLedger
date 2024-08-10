@@ -29,7 +29,6 @@ services:
       - "3306:3306"
     volumes:
       - ./data/mysql:/var/lib/mysql
-      - ./config/my.cnf:/etc/mysql/my.cnf
     networks:
       - leap-ledger-network
   leap-ledger-redis:
