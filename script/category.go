@@ -2,7 +2,7 @@ package script
 
 import (
 	"KeepAccount/global/constant"
-	"KeepAccount/global/contextKey"
+	"KeepAccount/global/cusCtx"
 	accountModel "KeepAccount/model/account"
 	categoryModel "KeepAccount/model/category"
 	productModel "KeepAccount/model/product"
@@ -47,7 +47,7 @@ type categoryTmpl struct {
 }
 
 func (ct *categoryTmpl) create(father categoryModel.Father, tx *gorm.DB) (category categoryModel.Category, err error) {
-	ctx := context.WithValue(context.Background(), contextKey.Tx, tx)
+	ctx := context.WithValue(context.Background(), cusCtx.Db, tx)
 	category, err = categoryService.CreateOne(father, categoryService.NewCategoryData(ct.Name, ct.Icon), ctx)
 	if err != nil {
 		return

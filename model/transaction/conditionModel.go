@@ -68,12 +68,12 @@ type Condition struct {
 	ExtensionCondition
 }
 
-func (tc *Condition) addConditionToQuery(db *gorm.DB) *gorm.DB {
-	query := tc.ForeignKeyCondition.addConditionToQuery(db)
-	query = tc.TimeCondition.addConditionToQuery(query)
-	query = tc.ExtensionCondition.addConditionToQuery(query)
-	if tc.IncomeExpense != nil {
-		query = query.Where("income_expense = ?", *tc.IncomeExpense)
+func (c *Condition) addConditionToQuery(db *gorm.DB) *gorm.DB {
+	query := c.ForeignKeyCondition.addConditionToQuery(db)
+	query = c.TimeCondition.addConditionToQuery(query)
+	query = c.ExtensionCondition.addConditionToQuery(query)
+	if c.IncomeExpense != nil {
+		query = query.Where("income_expense = ?", *c.IncomeExpense)
 	}
 	return query
 }
@@ -129,7 +129,7 @@ type StatisticCondition struct {
 	EndTime   time.Time
 }
 
-// addConditionToQuery 通过条件获取附带查询条件的gorm.DB
+// addConditionToQuery 通过条件获取附带查询条件的gorm.db
 func (s *StatisticCondition) addConditionToQuery(db *gorm.DB) *gorm.DB {
 	query := s.ForeignKeyCondition.addConditionToQuery(db)
 	query = query.Where("date BETWEEN ? AND ?", s.StartTime.Truncate(24*time.Hour), s.EndTime.Truncate(24*time.Hour))

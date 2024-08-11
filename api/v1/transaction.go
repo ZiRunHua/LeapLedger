@@ -5,7 +5,8 @@ import (
 	"KeepAccount/api/response"
 	"KeepAccount/global"
 	"KeepAccount/global/constant"
-	"KeepAccount/global/contextKey"
+	"KeepAccount/global/cusCtx"
+	"KeepAccount/global/db"
 	accountModel "KeepAccount/model/account"
 	categoryModel "KeepAccount/model/category"
 	transactionModel "KeepAccount/model/transaction"
@@ -39,7 +40,6 @@ func (t *TransactionApi) CreateOne(ctx *gin.Context) {
 	if false == pass {
 		return
 	}
-
 	transaction := transactionModel.Transaction{
 		Info: transactionModel.Info{
 			AccountId:     requestData.AccountId,
@@ -52,13 +52,15 @@ func (t *TransactionApi) CreateOne(ctx *gin.Context) {
 		},
 	}
 
-	txCtx := context.WithValue(ctx, contextKey.Tx, global.GvaDb)
-	createOption, err := transactionService.NewOptionFormConfig(transaction.Info, txCtx)
-	if responseError(err, ctx) {
-		return
-	}
-	createOption.WithSyncUpdateStatistic(false)
-	transaction, err = transactionService.Create(transaction.Info, accountUser, createOption, txCtx)
+	err := db.Transaction(ctx, func(ctx *cusCtx.TxContext) error {
+		createOption, err := transactionService.NewOptionFormConfig(transaction.Info, ctx)
+		if err != nil {
+			return err
+		}
+		createOption.WithSyncUpdateStatistic(false)
+		transaction, err = transactionService.Create(transaction.Info, accountUser, createOption, ctx)
+		return err
+	})
 	if responseError(err, ctx) {
 		return
 	}
@@ -101,7 +103,7 @@ func (t *TransactionApi) Update(ctx *gin.Context) {
 	}
 	transaction.ID = oldTrans.ID
 
-	txCtx := context.WithValue(ctx, contextKey.Tx, global.GvaDb)
+	txCtx := context.WithValue(ctx, cusCtx.Db, global.GvaDb)
 	option, err := transactionService.NewOptionFormConfig(transaction.Info, txCtx)
 	if responseError(err, ctx) {
 		return
@@ -420,8 +422,8 @@ func (t *TransactionApi) CreateTiming(ctx *gin.Context) {
 	}
 	// handle
 	var err error
-	err = gdb.Transaction(func(tx *gorm.DB) error {
-		timing, err = transactionService.Timing.CreateTiming(timing, context.WithValue(ctx, contextKey.Tx, tx))
+	err = db.Transaction(ctx, func(ctx *cusCtx.TxContext) error {
+		timing, err = transactionService.Timing.CreateTiming(timing, ctx)
 		return err
 	})
 	if responseError(err, ctx) {
@@ -444,7 +446,7 @@ func (t *TransactionApi) UpdateTiming(ctx *gin.Context) {
 	}
 	timing := requestData.GetTimingModel()
 	var pass bool
-	timing.ID, pass = contextFunc.GetUintParamByKey(string(contextKey.TransactionTimingId), ctx)
+	timing.ID, pass = contextFunc.GetUintParamByKey(string(cusCtx.TransactionTimingId), ctx)
 	if !pass {
 		return
 	}
@@ -454,8 +456,9 @@ func (t *TransactionApi) UpdateTiming(ctx *gin.Context) {
 	}
 	// handle
 	var err error
-	err = gdb.Transaction(func(tx *gorm.DB) error {
-		timing, err = transactionService.Timing.UpdateTiming(timing, context.WithValue(ctx, contextKey.Tx, tx))
+	err = db.Transaction(ctx, func(ctx *cusCtx.TxContext) error {
+		tx := ctx.GetDb()
+		timing, err = transactionService.Timing.UpdateTiming(timing, context.WithValue(ctx, cusCtx.Db, tx))
 		return err
 	})
 	if responseError(err, ctx) {

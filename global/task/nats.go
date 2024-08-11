@@ -3,7 +3,8 @@ package globalTask
 import (
 	"KeepAccount/global"
 	"KeepAccount/global/constant"
-	"KeepAccount/global/contextKey"
+	"KeepAccount/global/cusCtx"
+	"KeepAccount/global/db"
 	"KeepAccount/global/task/model"
 	"context"
 	"encoding/json"
@@ -11,7 +12,6 @@ import (
 	"github.com/nats-io/nats.go"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
-	"gorm.io/gorm"
 	"strconv"
 	"time"
 )
@@ -39,58 +39,58 @@ const TaskTransactionTimingTaskAssign constant.Subject = "transactionTimingTaskA
 const TaskMappingCategoryToAccountMapping constant.Subject = "mappingCategoryToAccountMapping"
 const TaskUpdateCategoryMapping constant.Subject = "updateCategoryMapping"
 
-func Subscribe[DataType any](subj constant.Subject, handleFunc transactionHandle[DataType]) {
+func Subscribe[DataType any](subj constant.Subject, handleFunc txHandle[DataType]) {
 	subscribe[DataType](subj, handleFunc)
 }
-
-func subscribe[DataType any](subject constant.Subject, handleTransaction transactionHandle[DataType]) {
+func subscribe[DataType any](subject constant.Subject, handleTransaction txHandle[DataType]) {
 	if natsConn == nil || !config.CanSubscribe(subject) {
 		return
 	}
 
-	executeTransaction := func(msgData []byte, dbTransaction *gorm.DB) error {
+	executeTransaction := func(msgData []byte, ctx context.Context) error {
 		var data DataType
 		if err := json.Unmarshal(msgData, &data); err != nil {
 			return err
 		}
-		return dbTransaction.Transaction(func(tx *gorm.DB) error {
-			return handleTransaction(data, context.WithValue(context.Background(), contextKey.Tx, tx))
+		return db.Transaction(ctx, func(ctx *cusCtx.TxContext) error {
+			return handleTransaction(data, ctx)
 		})
 	}
 
 	msgHandler := func(msg *nats.Msg) {
+		ctx := db.Context
 		if isRetryTask(msg) {
 			taskId, err := strconv.ParseUint(string(msg.Data), 10, 0)
 			if err != nil {
 				natsLogger.Error(string(subject), zap.Error(errors.WithMessage(err, "task retry:task_id")))
 				return
 			}
-			retryTransaction := func(tx *gorm.DB) error {
+			retryTransaction := func(ctx *cusCtx.TxContext) error {
 				var task model.Task
-				err = db.First(&task, taskId).Error
+				err = ctx.GetDb().First(&task, taskId).Error
 				if err != nil {
 					return errors.WithMessage(err, "select task")
 				}
-				err = executeTransaction(msg.Data, tx)
+				err = executeTransaction(msg.Data, ctx)
 				if err != nil {
 					return err
 				}
-				err = task.Complete(tx)
+				err = task.Complete(ctx.GetDb())
 				if err != nil {
 					return err
 				}
 				return nil
 			}
-			err = db.Transaction(retryTransaction)
+			err = db.Transaction(ctx, retryTransaction)
 			if err != nil {
-				err = db.Model(&model.Task{}).Where("id = ?", taskId).Update("error", err.Error()).Error
+				err = ctx.GetDb().Model(&model.Task{}).Where("id = ?", taskId).Update("error", err.Error()).Error
 				if err != nil {
 					natsLogger.Error(string(subject), zap.Error(errors.WithMessage(err, "task error update")))
 					return
 				}
 			}
 		} else {
-			err := executeTransaction(msg.Data, db)
+			err := executeTransaction(msg.Data, ctx)
 			if err != nil {
 				msgProcessFail(msg, err)
 				return

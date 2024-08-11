@@ -13,7 +13,6 @@ import (
 )
 
 var (
-	db                      = global.GvaDb
 	testUser                userModel.User
 	testAccount             accountModel.Account
 	testExpenseCategoryList []categoryModel.Category

@@ -3,7 +3,7 @@ package userService
 import (
 	"KeepAccount/global"
 	"KeepAccount/global/constant"
-	"KeepAccount/global/contextKey"
+	"KeepAccount/global/db"
 	globalTask "KeepAccount/global/task"
 	accountModel "KeepAccount/model/account"
 	"KeepAccount/model/common/query"
@@ -244,7 +244,7 @@ func (userSvc *User) CreateTourist(tx *gorm.DB) (user userModel.User, err error)
 }
 
 func (userSvc *User) ProcessAllClient(user userModel.User, processFunc func(userModel.Client) error, ctx context.Context) error {
-	tx := ctx.Value(contextKey.Tx).(*gorm.DB)
+	tx := db.Get(ctx)
 	var clientInfo userModel.Client
 	var err error
 	for _, client := range constant.ClientList {

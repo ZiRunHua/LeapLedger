@@ -40,6 +40,7 @@ func (t *TransactionDao) GetListByCondition(condition Condition, offset int, lim
 func (t *TransactionDao) GetIeStatisticByCondition(
 	ie *constant.IncomeExpense, condition StatisticCondition, extCond *ExtensionCondition,
 ) (result global.IEStatistic, err error) {
+
 	if extCond.IsSet() {
 		// transaction table select
 		query := t.db.Model(&Transaction{})

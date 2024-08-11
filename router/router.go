@@ -3,7 +3,7 @@ package router
 import (
 	"KeepAccount/global"
 	"KeepAccount/global/constant"
-	"KeepAccount/global/contextKey"
+	"KeepAccount/global/cusCtx"
 	accountModel "KeepAccount/model/account"
 	"fmt"
 	"github.com/gin-gonic/gin"
@@ -11,7 +11,7 @@ import (
 	"time"
 )
 
-const accountWithIdPrefixPath = "/account/:" + string(contextKey.AccountId)
+const accountWithIdPrefixPath = "/account/:" + string(cusCtx.AccountId)
 
 func Init() *gin.Engine {
 	engine := gin.New()

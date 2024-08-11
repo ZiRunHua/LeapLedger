@@ -3,7 +3,8 @@ package transactionService
 import (
 	"KeepAccount/global"
 	"KeepAccount/global/constant"
-	"KeepAccount/global/contextKey"
+	"KeepAccount/global/cusCtx"
+	"KeepAccount/global/db"
 	accountModel "KeepAccount/model/account"
 	categoryModel "KeepAccount/model/category"
 	transactionModel "KeepAccount/model/transaction"
@@ -21,9 +22,9 @@ type Transaction struct{}
 func (txnService *Transaction) Create(
 	transInfo transactionModel.Info, accountUser accountModel.User, option Option, ctx context.Context,
 ) (transactionModel.Transaction, error) {
-	tx := ctx.Value(contextKey.Tx).(*gorm.DB)
 	trans := transactionModel.Transaction{Info: transInfo}
-	err := tx.Transaction(func(tx *gorm.DB) error {
+	err := db.Transaction(ctx, func(ctx *cusCtx.TxContext) error {
+		tx := ctx.GetDb()
 		// check
 		if transInfo.AccountId != accountUser.AccountId {
 			return global.ErrAccountId
@@ -59,14 +60,24 @@ func (txnService *Transaction) onCreateSuccess(trans transactionModel.Transactio
 	var err error
 
 	if option.transSyncToMappingAccount {
-		err = task.syncToMappingAccount(trans, ctx)
+		err = db.AddCommitCallback(ctx, func() {
+			err = task.syncToMappingAccount(trans, ctx)
+			if err != nil {
+				errorLog.Error("onCreateSuccess=>syncToMappingAccount", zap.Error(err))
+			}
+		})
 		if err != nil {
 			errorLog.Error("onCreateSuccess=>syncToMappingAccount", zap.Error(err))
 		}
 	}
 
 	if false == option.syncUpdateStatistic {
-		err = task.updateStatistic(trans.GetStatisticData(true), ctx.Value(contextKey.Tx).(*gorm.DB))
+		err = db.AddCommitCallback(ctx, func() {
+			err = task.updateStatistic(trans.GetStatisticData(true), db.Get(ctx))
+			if err != nil {
+				errorLog.Error("onCreateSuccess=>updateStatistic", zap.Error(err))
+			}
+		})
 		if err != nil {
 			errorLog.Error("onCreateSuccess=>updateStatistic", zap.Error(err))
 		}
@@ -79,9 +90,9 @@ func (txnService *Transaction) onCreateSuccess(trans transactionModel.Transactio
 func (txnService *Transaction) Update(
 	trans transactionModel.Transaction, accountUser accountModel.User, option Option, ctx context.Context,
 ) error {
-	tx := ctx.Value(contextKey.Tx).(*gorm.DB)
 	var oldTrans transactionModel.Transaction
-	err := tx.Transaction(func(tx *gorm.DB) error {
+	err := db.Transaction(ctx, func(ctx *cusCtx.TxContext) error {
+		tx := ctx.GetDb()
 		// check
 		err := txnService.checkTransaction(trans, accountUser, tx)
 		if err != nil {
@@ -132,7 +143,7 @@ func (txnService *Transaction) onUpdateSuccess(
 	}
 
 	if false == option.syncUpdateStatistic {
-		err = task.updateStatistic(trans.GetStatisticData(true), ctx.Value(contextKey.Tx).(*gorm.DB))
+		err = task.updateStatistic(trans.GetStatisticData(true), db.Get(ctx))
 		if err != nil {
 			errorLog.Error("onUpdateSuccess=>updateStatistic", zap.Error(err))
 		}
@@ -191,7 +202,7 @@ func (txnService *Transaction) updateStatistic(data transactionModel.StatisticDa
 }
 
 func (txnService *Transaction) SyncToMappingAccount(trans transactionModel.Transaction, ctx context.Context) error {
-	tx := ctx.Value(contextKey.Tx).(*gorm.DB)
+	tx := db.Get(ctx)
 	accountType, err := accountModel.NewDao(tx).GetAccountType(trans.AccountId)
 	if err != nil {
 		return errors.WithMessage(err, "同步交易失败")
@@ -207,7 +218,7 @@ func (txnService *Transaction) SyncToMappingAccount(trans transactionModel.Trans
 }
 
 func (txnService *Transaction) syncToShareAccount(indAccountTrans transactionModel.Transaction, ctx context.Context) error {
-	tx := ctx.Value(contextKey.Tx).(*gorm.DB)
+	tx := db.Get(ctx)
 	accountDao, categoryDao := accountModel.NewDao(tx), categoryModel.NewDao(tx)
 
 	accountMappings, err := accountDao.SelectMultipleMapping(*accountModel.NewMappingCondition().WithRelatedId(indAccountTrans.AccountId))
@@ -245,7 +256,7 @@ func (txnService *Transaction) syncToShareAccount(indAccountTrans transactionMod
 			}
 			option := txnService.NewDefaultOption()
 			option.WithTransSyncToMappingAccount(false)
-			err = txnService.Update(syncTrans, accountUser, option, context.WithValue(ctx, contextKey.Tx, tx))
+			err = txnService.Update(syncTrans, accountUser, option, context.WithValue(ctx, cusCtx.Db, tx))
 			if err != nil {
 				return err
 			}
@@ -266,7 +277,7 @@ func (txnService *Transaction) syncToShareAccount(indAccountTrans transactionMod
 }
 
 func (txnService *Transaction) syncToIndependentAccount(shareAccountTrans transactionModel.Transaction, ctx context.Context) error {
-	tx := ctx.Value(contextKey.Tx).(*gorm.DB)
+	tx := db.Get(ctx)
 	var err error
 	accountMapping, err := accountModel.NewDao(tx).SelectMappingByMainAccountAndRelatedUser(shareAccountTrans.AccountId, shareAccountTrans.UserId)
 	if err != nil {
@@ -321,7 +332,7 @@ func (txnService *Transaction) syncToIndependentAccount(shareAccountTrans transa
 }
 
 func (txnService *Transaction) CreateSyncTrans(trans, syncTrans transactionModel.Transaction, ctx context.Context) (mapping transactionModel.Mapping, err error) {
-	tx := ctx.Value(contextKey.Tx).(*gorm.DB)
+	tx := db.Get(ctx)
 	accountUser, err := accountModel.NewDao(tx).SelectUser(syncTrans.AccountId, syncTrans.UserId)
 	if err != nil {
 		return
@@ -488,7 +499,7 @@ func (txnService *Transaction) NewOption() Option {
 }
 
 func (txnService *Transaction) NewOptionFormConfig(trans transactionModel.Info, ctx context.Context) (option Option, err error) {
-	userConfig, err := accountModel.NewDao(ctx.Value(contextKey.Tx).(*gorm.DB)).SelectUserConfig(trans.AccountId, trans.UserId)
+	userConfig, err := accountModel.NewDao(db.Get(ctx)).SelectUserConfig(trans.AccountId, trans.UserId)
 	if err != nil {
 		return
 	}

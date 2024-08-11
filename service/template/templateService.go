@@ -2,7 +2,7 @@ package templateService
 
 import (
 	"KeepAccount/global"
-	"KeepAccount/global/contextKey"
+	"KeepAccount/global/db"
 	accountModel "KeepAccount/model/account"
 	categoryModel "KeepAccount/model/category"
 	productModel "KeepAccount/model/product"
@@ -12,7 +12,6 @@ import (
 	"context"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
-	"gorm.io/gorm"
 	"time"
 )
 
@@ -64,7 +63,7 @@ func (t *template) CreateAccount(
 }
 
 func (t *template) CreateCategory(account accountModel.Account, tmplAccount accountModel.Account, ctx context.Context) error {
-	tx := ctx.Value(contextKey.Tx).(*gorm.DB)
+	tx := db.Get(ctx)
 	var err error
 	if err = account.ForShare(tx); err != nil {
 		return err
@@ -97,7 +96,7 @@ func (t *template) CreateCategory(account accountModel.Account, tmplAccount acco
 func (t *template) CreateFatherCategory(
 	account accountModel.Account, tmplFather categoryModel.Father, ctx context.Context,
 ) error {
-	tx := ctx.Value(contextKey.Tx).(*gorm.DB)
+	tx := db.Get(ctx)
 	father, err := categoryService.CreateOneFather(account, tmplFather.IncomeExpense, tmplFather.Name, tx)
 	if err != nil {
 		return err

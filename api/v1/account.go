@@ -5,7 +5,7 @@ import (
 	"KeepAccount/api/response"
 	"KeepAccount/global"
 	"KeepAccount/global/constant"
-	"KeepAccount/global/contextKey"
+	"KeepAccount/global/cusCtx"
 	accountModel "KeepAccount/model/account"
 	transactionModel "KeepAccount/model/transaction"
 	userModel "KeepAccount/model/user"
@@ -35,7 +35,7 @@ func (a *AccountApi) CreateOne(ctx *gin.Context) {
 	var _ accountModel.Account
 	var aUser accountModel.User
 	txFunc := func(tx *gorm.DB) error {
-		_, aUser, err = accountService.Base.CreateOne(user, requestData.Name, requestData.Icon, requestData.Type, context.WithValue(ctx, contextKey.Tx, tx))
+		_, aUser, err = accountService.Base.CreateOne(user, requestData.Name, requestData.Icon, requestData.Type, context.WithValue(ctx, cusCtx.Db, tx))
 		return err
 	}
 	if err = global.GvaDb.Transaction(txFunc); responseError(err, ctx) {
@@ -89,7 +89,7 @@ func (a *AccountApi) Delete(ctx *gin.Context) {
 		return
 	}
 	txFunc := func(tx *gorm.DB) error {
-		return accountService.Base.Delete(account, accountUser, context.WithValue(ctx, contextKey.Tx, tx))
+		return accountService.Base.Delete(account, accountUser, context.WithValue(ctx, cusCtx.Db, tx))
 	}
 
 	if err := global.GvaDb.Transaction(txFunc); responseError(err, ctx) {
@@ -169,7 +169,7 @@ func (a *AccountApi) CreateOneByTemplate(ctx *gin.Context) {
 	var account accountModel.Account
 	err = global.GvaDb.Transaction(
 		func(tx *gorm.DB) error {
-			account, err = templateService.CreateAccount(user, tmpAccount, context.WithValue(ctx, contextKey.Tx, tx))
+			account, err = templateService.CreateAccount(user, tmpAccount, context.WithValue(ctx, cusCtx.Db, tx))
 			return err
 		},
 	)
@@ -222,7 +222,7 @@ func (a *AccountApi) InitCategoryByTemplate(ctx *gin.Context) {
 	}
 
 	txFunc := func(tx *gorm.DB) error {
-		err = templateService.CreateCategory(account, template, context.WithValue(ctx, contextKey.Tx, tx))
+		err = templateService.CreateCategory(account, template, context.WithValue(ctx, cusCtx.Db, tx))
 		return err
 	}
 	err = global.GvaDb.Transaction(txFunc)

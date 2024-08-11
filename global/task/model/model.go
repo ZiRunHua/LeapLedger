@@ -18,6 +18,15 @@ type Task struct {
 	CreatedAt   time.Time
 	UpdatedAt   time.Time
 }
+type TaskStatus uint8
+
+const (
+	StatusOfNormal   TaskStatus = 0
+	StatusOfFailed   TaskStatus = 4
+	StatusOfRetrying TaskStatus = 8
+	StatusOfDie      TaskStatus = 16
+	StatusOfComplete TaskStatus = 32
+)
 
 func (t *Task) Complete(db *gorm.DB) error {
 	err := db.Model(&RetryTask{}).Delete("task_id = ?", t.ID).Error
@@ -63,16 +72,6 @@ func (t *Task) Retry(execTime time.Time, db *gorm.DB) (retryTask RetryTask, err 
 	}
 	return
 }
-
-type TaskStatus uint8
-
-const (
-	StatusOfNormal   TaskStatus = 0
-	StatusOfFailed   TaskStatus = 4
-	StatusOfRetrying TaskStatus = 8
-	StatusOfDie      TaskStatus = 16
-	StatusOfComplete TaskStatus = 32
-)
 
 type RetryTask struct {
 	TaskId       uint `gorm:"primarykey"`

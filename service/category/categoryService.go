@@ -3,7 +3,7 @@ package categoryService
 import (
 	"KeepAccount/global"
 	"KeepAccount/global/constant"
-	"KeepAccount/global/contextKey"
+	"KeepAccount/global/db"
 	accountModel "KeepAccount/model/account"
 	categoryModel "KeepAccount/model/category"
 	transactionModel "KeepAccount/model/transaction"
@@ -37,7 +37,7 @@ func (catSvc *Category) CreateOne(father categoryModel.Father, data CreateData, 
 		Previous:       0,
 		OrderUpdatedAt: time.Now(),
 	}
-	tx := ctx.Value(contextKey.Tx).(*gorm.DB)
+	tx := db.Get(ctx)
 	if err = category.CheckName(tx); err != nil {
 		return
 	}
@@ -65,9 +65,9 @@ func (catSvc *Category) CreateOne(father categoryModel.Father, data CreateData, 
 
 func (catSvc *Category) UpdateCategoryMapping(category categoryModel.Category, ctx context.Context) error {
 	if !aiService.IsOpen() {
-		return errors.New("ai service is not enabled")
+		return nil
 	}
-	tx := ctx.Value(contextKey.Tx).(*gorm.DB)
+	tx := db.Get(ctx)
 	accountDao, categoryDao := accountModel.NewDao(tx), categoryModel.NewDao(tx)
 	accountMapping, err := accountDao.SelectMultipleMapping(*accountModel.NewMappingCondition().WithRelatedId(category.AccountId))
 	if err != nil {
@@ -367,7 +367,7 @@ func (catSvc *Category) DeleteMapping(parent, child categoryModel.Category, oper
 }
 
 func (catSvc *Category) MappingCategoryToAccountMapping(mappingAccount accountModel.Mapping, ctx context.Context) error {
-	tx := ctx.Value(contextKey.Tx).(*gorm.DB)
+	tx := db.Get(ctx)
 	main, err := mappingAccount.GetMainAccount(tx)
 	if err != nil {
 		return err
@@ -380,7 +380,7 @@ func (catSvc *Category) MappingCategoryToAccountMapping(mappingAccount accountMo
 }
 
 func (catSvc *Category) mappingAccountCategoryByAI(mainAccount, mappingAccount accountModel.Account, ctx context.Context) error {
-	tx := ctx.Value(contextKey.Tx).(*gorm.DB)
+	tx := db.Get(ctx)
 	if false == aiService.IsOpen() {
 		return nil
 	}

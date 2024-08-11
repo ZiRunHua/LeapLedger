@@ -4,7 +4,7 @@ import (
 	"KeepAccount/api/request"
 	"KeepAccount/api/response"
 	"KeepAccount/global"
-	"KeepAccount/global/contextKey"
+	"KeepAccount/global/cusCtx"
 	accountModel "KeepAccount/model/account"
 	categoryModel "KeepAccount/model/category"
 	userModel "KeepAccount/model/user"
@@ -38,7 +38,7 @@ func (catApi *CategoryApi) CreateOne(ctx *gin.Context) {
 			category, err = categoryService.CreateOne(
 				father,
 				categoryService.NewCategoryData(requestData.Name, requestData.Icon),
-				context.WithValue(ctx, contextKey.Tx, tx),
+				context.WithValue(ctx, cusCtx.Db, tx),
 			)
 			return err
 		},

@@ -2,7 +2,7 @@ package accountService
 
 import (
 	"KeepAccount/global"
-	"KeepAccount/global/contextKey"
+	"KeepAccount/global/db"
 	accountModel "KeepAccount/model/account"
 	userModel "KeepAccount/model/user"
 	"context"
@@ -25,7 +25,7 @@ func (b *base) CreateOne(
 		Icon:   icon,
 		Type:   aType,
 	}
-	tx := ctx.Value(contextKey.Tx).(*gorm.DB)
+	tx := db.Get(ctx)
 	err = tx.Create(&account).Error
 	if err != nil {
 		err = errors.WithStack(err)
@@ -39,7 +39,7 @@ func (b *base) CreateOne(
 }
 
 func (b *base) updateUserCurrentAfterCreate(accountUser accountModel.User, ctx context.Context) (err error) {
-	tx := ctx.Value(contextKey.Tx).(*gorm.DB)
+	tx := db.Get(ctx)
 	user, err := userModel.NewDao(tx).SelectById(accountUser.UserId)
 	if err != nil {
 		return err
@@ -70,7 +70,7 @@ func (b *base) updateUserCurrentAfterCreate(accountUser accountModel.User, ctx c
 }
 
 func (b *base) Delete(account accountModel.Account, accountUser accountModel.User, ctx context.Context) (err error) {
-	tx := ctx.Value(contextKey.Tx).(*gorm.DB)
+	tx := db.Get(ctx)
 	if accountUser.AccountId != account.ID {
 		panic("err accountId")
 	}
@@ -98,7 +98,7 @@ func (b *base) Delete(account accountModel.Account, accountUser accountModel.Use
 }
 
 func (b *base) updateUserCurrentAfterDelete(accountUser accountModel.User, ctx context.Context) (err error) {
-	tx := ctx.Value(contextKey.Tx).(*gorm.DB)
+	tx := db.Get(ctx)
 	user, err := userModel.NewDao().SelectById(accountUser.UserId)
 	if err != nil {
 		return err
@@ -132,7 +132,7 @@ func (b *base) updateUserCurrentAfterDelete(accountUser accountModel.User, ctx c
 }
 
 func (b *base) getNewCurrentAccount(user userModel.User, ctx context.Context) (accountModel.Account, *accountModel.Account, error) {
-	tx := ctx.Value(contextKey.Tx).(*gorm.DB)
+	tx := db.Get(ctx)
 	dao, condition := accountModel.NewDao(tx), *accountModel.NewUserCondition()
 	current, err := dao.SelectByUserAndAccountType(user.ID, condition)
 	if err != nil {

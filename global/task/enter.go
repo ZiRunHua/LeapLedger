@@ -1,12 +1,13 @@
 package globalTask
 
 import (
+	"KeepAccount/global/db"
 	"KeepAccount/global/task/model"
 	"KeepAccount/initialize"
 	"context"
 )
 
-type transactionHandle[Data any] func(Data, context.Context) error
+type txHandle[Data any] func(Data, context.Context) error
 
 func init() {
 	natsConn = initialize.Nats
@@ -21,9 +22,8 @@ func init() {
 	initCron()
 }
 func initDb() {
-	db = initialize.Db
 	if initialize.Config.Nats.IsConsumerServer {
-		err := db.AutoMigrate(model.Task{}, model.RetryTask{})
+		err := db.Get(context.TODO()).AutoMigrate(model.Task{}, model.RetryTask{})
 		if err != nil {
 			panic(err)
 		}
@@ -31,10 +31,10 @@ func initDb() {
 }
 
 func initCron() {
-	_, err := Scheduler.Every(1).Second().Do(NewTransactionCron(cronOfPublishRetryTask))
-	if err != nil {
-		panic(err)
-	}
+	//_, err := Scheduler.Every(1).Second().Do(NewTransactionCron(cronOfPublishRetryTask))
+	//if err != nil {
+	//	panic(err)
+	//}
 }
 
 func Shutdown() {

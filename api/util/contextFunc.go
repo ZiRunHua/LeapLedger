@@ -5,7 +5,7 @@ import (
 	"KeepAccount/api/response"
 	"KeepAccount/global"
 	"KeepAccount/global/constant"
-	"KeepAccount/global/contextKey"
+	"KeepAccount/global/cusCtx"
 	accountModel "KeepAccount/model/account"
 	userModel "KeepAccount/model/user"
 	"KeepAccount/util"
@@ -78,7 +78,7 @@ func (cf *contextFunc) GetUintParamByKey(key string, ctx *gin.Context) (uint, bo
 }
 
 func (cf *contextFunc) GetAccountIdByParam(ctx *gin.Context) (uint, bool) {
-	return cf.GetUintParamByKey(string(contextKey.AccountId), ctx)
+	return cf.GetUintParamByKey(string(cusCtx.AccountId), ctx)
 }
 
 func (cf *contextFunc) CheckAccountPermissionFromParam(ctx *gin.Context, permission accountModel.UserPermission) (pass bool) {

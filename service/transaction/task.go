@@ -1,7 +1,7 @@
 package transactionService
 
 import (
-	"KeepAccount/global/contextKey"
+	"KeepAccount/global/db"
 	gTask "KeepAccount/global/task"
 	transactionModel "KeepAccount/model/transaction"
 	"context"
@@ -14,7 +14,7 @@ type _task struct{}
 func init() {
 	gTask.Subscribe[transactionModel.StatisticData](
 		gTask.TaskStatisticUpdate, func(data transactionModel.StatisticData, ctx context.Context) error {
-			return GroupApp.Transaction.updateStatistic(data, ctx.Value(contextKey.Tx).(*gorm.DB))
+			return GroupApp.Transaction.updateStatistic(data, db.Get(ctx))
 		},
 	)
 

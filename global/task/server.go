@@ -2,7 +2,10 @@ package globalTask
 
 import (
 	"KeepAccount/global/constant"
+	"KeepAccount/global/cusCtx"
+	"KeepAccount/global/db"
 	"KeepAccount/global/task/model"
+	"context"
 	"github.com/pkg/errors"
 	"gorm.io/gorm"
 	"time"
@@ -20,15 +23,17 @@ func (ts *_taskService) addFailedTask(Subject constant.Subject, Data string, exe
 		Error:   execErr.Error(),
 		Status:  model.StatusOfFailed,
 	}
-	err = db.Create(&task).Error
+	err = db.Get(context.Background()).Create(&task).Error
 	return
 }
 
 func (ts *_taskService) addRetryTask(task model.Task) (retryTask model.RetryTask, err error) {
-	err = db.Transaction(func(tx *gorm.DB) error {
-		retryTask, err = task.Retry(time.Now().Add(backOff(0)), tx)
-		return err
-	})
+	err = db.Transaction(
+		db.Context, func(ctx *cusCtx.TxContext) error {
+			retryTask, err = task.Retry(time.Now().Add(backOff(0)), ctx.GetDb())
+			return err
+		},
+	)
 	return
 }
 

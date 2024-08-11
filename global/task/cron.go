@@ -1,14 +1,16 @@
 package globalTask
 
 import (
+	"KeepAccount/global/cusCtx"
+	"KeepAccount/global/db"
 	"KeepAccount/global/task/model"
+	"context"
 	"database/sql"
 	"errors"
 	"github.com/go-co-op/gocron"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
-	"gorm.io/gorm/logger"
 	"time"
 )
 
@@ -17,7 +19,10 @@ var Scheduler *gocron.Scheduler
 
 func NewTransactionCron(handler func(db *gorm.DB) error) func() {
 	return func() {
-		err := db.Session(&gorm.Session{Logger: db.Logger.LogMode(logger.Silent)}).Transaction(handler)
+		err := db.Transaction(context.TODO(), func(ctx *cusCtx.TxContext) error {
+			tx := ctx.GetDb()
+			return handler(tx)
+		})
 		if err != nil {
 			cronLogger.Error("cronOfPublishRetryTask", zap.Error(err))
 		}

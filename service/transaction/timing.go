@@ -1,14 +1,14 @@
 package transactionService
 
 import (
-	"KeepAccount/global/contextKey"
+	"KeepAccount/global/cusCtx"
+	"KeepAccount/global/db"
 	"KeepAccount/global/lock"
 	accountModel "KeepAccount/model/account"
 	transactionModel "KeepAccount/model/transaction"
 	"context"
+	"go.uber.org/zap"
 	"time"
-
-	"gorm.io/gorm"
 )
 
 type Timing struct {
@@ -16,7 +16,7 @@ type Timing struct {
 }
 
 func (tService *Timing) CreateTiming(timing transactionModel.Timing, ctx context.Context) (transactionModel.Timing, error) {
-	tx := ctx.Value(contextKey.Tx).(*gorm.DB)
+	tx := db.Get(ctx)
 	if err := timing.TransInfo.Check(tx); err != nil {
 		return timing, err
 	}
@@ -26,7 +26,7 @@ func (tService *Timing) CreateTiming(timing transactionModel.Timing, ctx context
 }
 
 func (tService *Timing) UpdateTiming(timing transactionModel.Timing, ctx context.Context) (transactionModel.Timing, error) {
-	tx := ctx.Value(contextKey.Tx).(*gorm.DB)
+	tx := db.Get(ctx)
 	if err := timing.TransInfo.Check(tx); err != nil {
 		return timing, err
 	}
@@ -69,17 +69,24 @@ func (te *TimingExec) GenerateAndPublishTasks(deadline time.Time, taskSize int, 
 		return err
 	}
 	for _, startId := range startIds {
-		err = task.execTransactionTiming(startId, taskSize)
+		err = db.AddCommitCallback(ctx, func() {
+			var err error
+			err = task.execTransactionTiming(startId, taskSize)
+			if err != nil {
+				errorLog.Error("GenerateAndPublishTasks => execTransactionTiming", zap.Error(err))
+			}
+		})
 		if err != nil {
 			return err
 		}
+
 	}
 	return nil
 }
 
 func (te *TimingExec) makeAndSplitExecTask(deadline time.Time, size int, ctx context.Context) (starIds []uint, err error) {
 	var (
-		tx       = ctx.Value(contextKey.Tx).(*gorm.DB)
+		tx       = db.Get(ctx)
 		count    int
 		timeExec transactionModel.TimingExec
 	)
@@ -108,7 +115,7 @@ func (te *TimingExec) ProcessWaitExecByStartId(startId uint, limit int, ctx cont
 		accountUser          accountModel.User
 		createOption         Option
 		trans                transactionModel.Transaction
-		tx                   = ctx.Value(contextKey.Tx).(*gorm.DB)
+		tx                   = db.Get(ctx)
 		transDao, accountDao = transactionModel.NewDao(tx), accountModel.NewDao(tx)
 	)
 	list, err := transDao.SelectWaitTimingExec(startId, limit)
@@ -116,12 +123,11 @@ func (te *TimingExec) ProcessWaitExecByStartId(startId uint, limit int, ctx cont
 		return err
 	}
 	for _, timingExec := range list {
-		err = tx.Transaction(func(tx *gorm.DB) error {
+		err = db.Transaction(ctx, func(ctx *cusCtx.TxContext) error {
 			accountUser, err = accountDao.SelectUser(timingExec.TransInfo.AccountId, timingExec.TransInfo.UserId)
 			if err != nil {
 				return err
 			}
-			ctx = context.WithValue(ctx, contextKey.Tx, tx)
 			createOption, err = server.NewOptionFormConfig(timingExec.TransInfo, ctx)
 			if err != nil {
 				return err

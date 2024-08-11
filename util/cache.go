@@ -43,7 +43,7 @@ func (rc *RedisCache) Init() error {
 		&redis.Options{
 			Addr:     rc.Addr,
 			Password: rc.Password, // no password set
-			DB:       rc.DB,       // use default DB
+			DB:       rc.DB,       // use default db
 		},
 	)
 	_, err := client.Ping(context.Background()).Result()

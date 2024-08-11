@@ -1,7 +1,10 @@
 package database
 
 import (
+	"KeepAccount/global/cusCtx"
+	"KeepAccount/global/db"
 	_ "KeepAccount/model"
+	"context"
 )
 
 import (
@@ -34,28 +37,29 @@ func init() {
 
 	var err error
 	// init template User
-	err = global.GvaDb.Transaction(initTemplateUser)
+	err = db.Transaction(context.Background(), initTemplateUser)
 	if err != nil {
 		panic(err)
 	}
 	// init tourist User
-	err = global.GvaDb.Transaction(initTourist)
+	err = db.Transaction(context.Background(), initTestUser)
 	if err != nil {
 		panic(err)
 	}
 	// init test User
 	if global.Config.Mode == constant.Debug {
-		err = global.GvaDb.Transaction(initTestUser)
+		err = db.Transaction(context.Background(), initTestUser)
 		if err != nil {
 			panic(err)
 		}
 	}
 }
 
-func initTemplateUser(tx *gorm.DB) (err error) {
+func initTemplateUser(ctx *cusCtx.TxContext) (err error) {
+	tx := ctx.GetDb()
 	var user userModel.User
 	//find user
-	err = global.GvaDb.First(&user, tmplUserId).Error
+	err = tx.First(&user, tmplUserId).Error
 	if err == nil {
 		return
 	} else if !errors.Is(err, gorm.ErrRecordNotFound) {
@@ -68,9 +72,7 @@ func initTemplateUser(tx *gorm.DB) (err error) {
 	}
 	if user.ID != tmplUserId {
 		tmplUserId = user.ID
-		if err != nil {
-			return
-		}
+
 	}
 	//create account
 	_, _, err = script.Account.CreateExample(user, tx)
@@ -81,7 +83,8 @@ func initTemplateUser(tx *gorm.DB) (err error) {
 	return
 }
 
-func initTestUser(tx *gorm.DB) (err error) {
+func initTestUser(ctx *cusCtx.TxContext) (err error) {
+	tx := ctx.GetDb()
 	var user userModel.User
 	user, err = script.User.CreateTourist(tx)
 	if err != nil {
@@ -109,7 +112,8 @@ func initTestUser(tx *gorm.DB) (err error) {
 	return
 }
 
-func initTourist(tx *gorm.DB) error {
+func initTourist(ctx *cusCtx.TxContext) error {
+	tx := ctx.GetDb()
 	_, err := userModel.NewDao(tx).SelectByUnusedTour()
 	if err == nil {
 		return nil
