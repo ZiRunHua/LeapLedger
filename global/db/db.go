@@ -7,12 +7,15 @@ import (
 	"gorm.io/gorm"
 )
 
-var db = initialize.Db
-var Context *cusCtx.DbContext
+var (
+	db      = initialize.Db
+	Context *cusCtx.DbContext
+)
 
 func init() {
 	Context = cusCtx.WithDb(context.Background(), db)
 }
+
 func Get(ctx context.Context) *gorm.DB {
 	value := ctx.Value(cusCtx.Db)
 	if value == nil {
@@ -26,14 +29,18 @@ type TxFunc func(ctx *cusCtx.TxContext) error
 func Transaction(parent context.Context, fc TxFunc) error {
 	value := parent.Value(cusCtx.Tx)
 	if value != nil {
-		return value.(*gorm.DB).Transaction(func(tx *gorm.DB) error {
-			return fc(cusCtx.WithTx(parent, tx))
-		})
+		return value.(*gorm.DB).Transaction(
+			func(tx *gorm.DB) error {
+				return fc(cusCtx.WithTx(parent, tx))
+			},
+		)
 	}
 	ctx := cusCtx.WithTxCommitContext(parent)
-	err := db.Transaction(func(tx *gorm.DB) error {
-		return fc(cusCtx.WithTx(ctx, tx))
-	})
+	err := db.Transaction(
+		func(tx *gorm.DB) error {
+			return fc(cusCtx.WithTx(ctx, tx))
+		},
+	)
 	if err == nil {
 		ctx.ExecCallback()
 	}

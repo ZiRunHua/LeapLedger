@@ -1,0 +1,2 @@
+*.go filter=tabspace
+*.go whitespace=fix
