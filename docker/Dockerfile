@@ -23,6 +23,7 @@ RUN go build -o leapledger
 EXPOSE 8080
 
 # 测试报告
+RUN go install github.com/jstemmer/go-junit-report@latest
 
-CMD ["/bin/sh", "-c", "./leapledger"]
+CMD ["/bin/sh", "-c", "go test -v 2>&1 ./... | go-junit-report > docker/test/result.xml && ./leapledger"]
 

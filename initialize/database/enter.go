@@ -5,6 +5,7 @@ import (
 	"KeepAccount/global/db"
 	_ "KeepAccount/model"
 	"context"
+	"gorm.io/gorm/logger"
 )
 
 import (
@@ -42,7 +43,7 @@ func init() {
 		panic(err)
 	}
 	// init tourist User
-	err = db.Transaction(context.Background(), initTestUser)
+	err = db.Transaction(context.Background(), initTourist)
 	if err != nil {
 		panic(err)
 	}
@@ -57,15 +58,16 @@ func init() {
 
 func initTemplateUser(ctx *cusCtx.TxContext) (err error) {
 	tx := ctx.GetDb()
+	tx = tx.Session(&gorm.Session{Logger: tx.Logger.LogMode(logger.Silent)})
 	var user userModel.User
-	//find user
+	// find user
 	err = tx.First(&user, tmplUserId).Error
 	if err == nil {
 		return
 	} else if !errors.Is(err, gorm.ErrRecordNotFound) {
 		return
 	}
-	//create user
+	// create user
 	user, err = script.User.Create(tmplUserEmail, tmplUserPassword, tmplUserName, tx)
 	if err != nil {
 		return
@@ -74,7 +76,7 @@ func initTemplateUser(ctx *cusCtx.TxContext) (err error) {
 		tmplUserId = user.ID
 
 	}
-	//create account
+	// create account
 	_, _, err = script.Account.CreateExample(user, tx)
 	if err != nil {
 		return
@@ -85,6 +87,7 @@ func initTemplateUser(ctx *cusCtx.TxContext) (err error) {
 
 func initTestUser(ctx *cusCtx.TxContext) (err error) {
 	tx := ctx.GetDb()
+	tx = tx.Session(&gorm.Session{Logger: tx.Logger.LogMode(logger.Silent)})
 	var user userModel.User
 	user, err = script.User.CreateTourist(tx)
 	if err != nil {
@@ -108,12 +111,13 @@ func initTestUser(ctx *cusCtx.TxContext) (err error) {
 		return
 	}
 	global.TestUserId = user.ID
-	global.TestUserInfo = fmt.Sprintf("email:%s password:%s", user.Email, tmplUserPassword)
+	global.TestUserInfo = fmt.Sprintf("test user:\nemail:%s password:%s", user.Email, tmplUserPassword)
 	return
 }
 
 func initTourist(ctx *cusCtx.TxContext) error {
 	tx := ctx.GetDb()
+	tx = tx.Session(&gorm.Session{Logger: tx.Logger.LogMode(logger.Silent)})
 	_, err := userModel.NewDao(tx).SelectByUnusedTour()
 	if err == nil {
 		return nil

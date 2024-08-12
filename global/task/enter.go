@@ -31,10 +31,10 @@ func initDb() {
 }
 
 func initCron() {
-	//_, err := Scheduler.Every(1).Second().Do(NewTransactionCron(cronOfPublishRetryTask))
-	//if err != nil {
-	//	panic(err)
-	//}
+	_, err := Scheduler.Every(1).Second().Do(NewTransactionCron(cronOfPublishRetryTask))
+	if err != nil {
+		panic(err)
+	}
 }
 
 func Shutdown() {

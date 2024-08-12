@@ -8,18 +8,18 @@ import (
 )
 
 var (
-	db      = initialize.Db
+	Db      = initialize.Db
 	Context *cusCtx.DbContext
 )
 
 func init() {
-	Context = cusCtx.WithDb(context.Background(), db)
+	Context = cusCtx.WithDb(context.Background(), Db)
 }
 
 func Get(ctx context.Context) *gorm.DB {
 	value := ctx.Value(cusCtx.Db)
 	if value == nil {
-		return db
+		return Db
 	}
 	return ctx.Value(cusCtx.Db).(*gorm.DB)
 }
@@ -36,7 +36,7 @@ func Transaction(parent context.Context, fc TxFunc) error {
 		)
 	}
 	ctx := cusCtx.WithTxCommitContext(parent)
-	err := db.Transaction(
+	err := Db.Transaction(
 		func(tx *gorm.DB) error {
 			return fc(cusCtx.WithTx(ctx, tx))
 		},

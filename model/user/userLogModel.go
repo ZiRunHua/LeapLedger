@@ -15,13 +15,6 @@ type Log struct {
 	commonModel.BaseModel
 }
 
-func init() {
-	err := global.GvaDb.AutoMigrate(&Log{})
-	if err != nil {
-		panic(err)
-	}
-}
-
 func (l *Log) TableName() string {
 	return "user_log"
 }

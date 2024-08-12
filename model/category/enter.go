@@ -1,21 +1,20 @@
 package categoryModel
 
 import (
-	"KeepAccount/global"
 	"KeepAccount/util/gormFunc"
+	"gorm.io/gorm"
 )
 
-func CurrentInit() error {
+func CurrentInit(db *gorm.DB) error {
 	tables := []interface{}{
-		Category{}, Mapping{},
-		Father{},
+		Category{}, Mapping{}, Father{},
 	}
-	err := global.GvaDb.AutoMigrate(tables...)
+	err := db.AutoMigrate(tables...)
 	if err != nil {
 		return err
 	}
 	for _, table := range tables {
-		_ = gormFunc.AlterIdToHeader(table, global.GvaDb)
+		_ = gormFunc.AlterIdToHeader(table, db)
 	}
 	return nil
 }

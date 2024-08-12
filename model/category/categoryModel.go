@@ -71,15 +71,3 @@ type Mapping struct {
 func (p *Mapping) TableName() string {
 	return "category_mapping"
 }
-
-func init() {
-	tables := []interface{}{
-		Mapping{},
-	}
-	for _, table := range tables {
-		err := global.GvaDb.AutoMigrate(&table)
-		if err != nil {
-			panic(err)
-		}
-	}
-}
