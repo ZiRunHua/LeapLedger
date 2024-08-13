@@ -11,34 +11,6 @@ import (
 	"time"
 )
 
-func TransactionModelToResponse(trans transactionModel.Transaction) TransactionOne {
-	return TransactionOne{
-		Id:            trans.ID,
-		UserId:        trans.UserId,
-		AccountId:     trans.AccountId,
-		Amount:        trans.Amount,
-		CategoryId:    trans.CategoryId,
-		IncomeExpense: trans.IncomeExpense,
-		Remark:        trans.Remark,
-		TradeTime:     trans.TradeTime.Unix(),
-		UpdateTime:    trans.UpdatedAt.Unix(),
-		CreateTime:    trans.CreatedAt.Unix(),
-	}
-}
-
-type TransactionOne struct {
-	Id            uint
-	UserId        uint
-	AccountId     uint
-	Amount        int
-	CategoryId    uint
-	IncomeExpense constant.IncomeExpense
-	Remark        string
-	TradeTime     int64
-	UpdateTime    int64
-	CreateTime    int64
-}
-
 // 交易详情
 type TransactionDetail struct {
 	Id                 uint
@@ -381,7 +353,9 @@ func (t *TransactionInfoList) SetData(list dataTool.Slice[uint, transactionModel
 	return nil
 }
 
-func (t *TransactionInfoList) getCategoryMap(list dataTool.Slice[uint, transactionModel.Info]) (categoryMap map[uint]categoryModel.Category, fatherMap map[uint]categoryModel.Father, err error) {
+func (t *TransactionInfoList) getCategoryMap(list dataTool.Slice[uint, transactionModel.Info]) (
+	categoryMap map[uint]categoryModel.Category, fatherMap map[uint]categoryModel.Father, err error,
+) {
 	var categoryList dataTool.Slice[uint, categoryModel.Category]
 	ids := list.ExtractValues(func(info transactionModel.Info) uint { return info.CategoryId })
 	err = global.GvaDb.Select("icon", "name", "father_id", "id").Where("id IN (?)", ids).Find(&categoryList).Error

@@ -21,13 +21,21 @@ import (
 type TransactionApi struct {
 }
 
-func (t *TransactionApi) transactionApi() {}
+// @Success 200 {object} response.Data{Data=response.TransactionDetail}
+// @Accept  json
+// @Produce  json
+// @Router /transaction/{id} [get]
 func (t *TransactionApi) GetOne(ctx *gin.Context) {
 	trans, ok := contextFunc.GetTransByParam(ctx)
 	if false == ok {
 		return
 	}
-	response.OkWithData(response.TransactionModelToResponse(trans), ctx)
+	var data response.TransactionDetail
+	err := data.SetData(trans, nil)
+	if responseError(err, ctx) {
+		return
+	}
+	response.OkWithData(data, ctx)
 }
 
 func (t *TransactionApi) CreateOne(ctx *gin.Context) {
@@ -52,15 +60,17 @@ func (t *TransactionApi) CreateOne(ctx *gin.Context) {
 		},
 	}
 
-	err := db.Transaction(ctx, func(ctx *cusCtx.TxContext) error {
-		createOption, err := transactionService.NewOptionFormConfig(transaction.Info, ctx)
-		if err != nil {
+	err := db.Transaction(
+		ctx, func(ctx *cusCtx.TxContext) error {
+			createOption, err := transactionService.NewOptionFormConfig(transaction.Info, ctx)
+			if err != nil {
+				return err
+			}
+			createOption.WithSyncUpdateStatistic(false)
+			transaction, err = transactionService.Create(transaction.Info, accountUser, createOption, ctx)
 			return err
-		}
-		createOption.WithSyncUpdateStatistic(false)
-		transaction, err = transactionService.Create(transaction.Info, accountUser, createOption, ctx)
-		return err
-	})
+		},
+	)
 	if responseError(err, ctx) {
 		return
 	}
@@ -164,7 +174,9 @@ func (t *TransactionApi) GetList(ctx *gin.Context) {
 	// 查询并获取结果
 	condition := requestData.GetCondition()
 	var transactionList []transactionModel.Transaction
-	transactionList, err = transactionModel.NewDao().GetListByCondition(condition, requestData.Offset, requestData.Limit)
+	transactionList, err = transactionModel.NewDao().GetListByCondition(
+		condition, requestData.Offset, requestData.Limit,
+	)
 	if responseError(err, ctx) {
 		return
 	}
@@ -356,7 +368,7 @@ func (t *TransactionApi) GetCategoryAmountRank(ctx *gin.Context) {
 			return
 		}
 	}
-	//数量不足时补足响应数量
+	// 数量不足时补足响应数量
 	if requestData.Limit != nil && len(rankingList) < *requestData.Limit {
 		categoryList = []categoryModel.Category{}
 		limit := *requestData.Limit - len(rankingList)
@@ -388,14 +400,16 @@ func (t *TransactionApi) GetAmountRank(ctx *gin.Context) {
 		response.FailToParameter(ctx, err)
 		return
 	}
-	//fetch
+	// fetch
 	timeCond := transactionModel.NewTimeCondition()
 	timeCond.SetTradeTimes(requestData.GetStartTime(), requestData.GetEndTime())
-	rankingList, err := transactionModel.NewDao().GetAmountRank(requestData.AccountId, requestData.IncomeExpense, *timeCond)
+	rankingList, err := transactionModel.NewDao().GetAmountRank(
+		requestData.AccountId, requestData.IncomeExpense, *timeCond,
+	)
 	if responseError(err, ctx) {
 		return
 	}
-	//response
+	// response
 	var responseList response.TransactionDetailList
 	err = responseList.SetData(rankingList)
 	if responseError(err, ctx) {
@@ -422,14 +436,16 @@ func (t *TransactionApi) CreateTiming(ctx *gin.Context) {
 	}
 	// handle
 	var err error
-	err = db.Transaction(ctx, func(ctx *cusCtx.TxContext) error {
-		timing, err = transactionService.Timing.CreateTiming(timing, ctx)
-		return err
-	})
+	err = db.Transaction(
+		ctx, func(ctx *cusCtx.TxContext) error {
+			timing, err = transactionService.Timing.CreateTiming(timing, ctx)
+			return err
+		},
+	)
 	if responseError(err, ctx) {
 		return
 	}
-	//response
+	// response
 	var responseData response.TransactionTiming
 	err = responseData.SetData(timing)
 	if responseError(err, ctx) {
@@ -456,15 +472,17 @@ func (t *TransactionApi) UpdateTiming(ctx *gin.Context) {
 	}
 	// handle
 	var err error
-	err = db.Transaction(ctx, func(ctx *cusCtx.TxContext) error {
-		tx := ctx.GetDb()
-		timing, err = transactionService.Timing.UpdateTiming(timing, context.WithValue(ctx, cusCtx.Db, tx))
-		return err
-	})
+	err = db.Transaction(
+		ctx, func(ctx *cusCtx.TxContext) error {
+			tx := ctx.GetDb()
+			timing, err = transactionService.Timing.UpdateTiming(timing, context.WithValue(ctx, cusCtx.Db, tx))
+			return err
+		},
+	)
 	if responseError(err, ctx) {
 		return
 	}
-	//response
+	// response
 	var responseData response.TransactionTiming
 	err = responseData.SetData(timing)
 	if responseError(err, ctx) {
@@ -487,7 +505,7 @@ func (t *TransactionApi) GetTimingList(ctx *gin.Context) {
 	if responseError(err, ctx) {
 		return
 	}
-	//response
+	// response
 	var responseData response.TransactionTimingList
 	err = responseData.SetData(list)
 	if responseError(err, ctx) {
