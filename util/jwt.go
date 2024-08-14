@@ -19,10 +19,10 @@ var (
 )
 
 type CustomClaims struct {
-	UserId    uint   `json:"user_id"`
-	ExpiresAt int64  `json:"exp"`
-	Issuer    string `json:"iss"`
-	Subject   string `json:"sub"`
+	UserId    uint      `json:"user_id"`
+	ExpiresAt time.Time `json:"exp"`
+	Issuer    string    `json:"iss"`
+	Subject   string    `json:"sub"`
 	jwt.StandardClaims
 }
 

@@ -6,6 +6,7 @@ import (
 	"KeepAccount/global"
 	"KeepAccount/global/constant"
 	"KeepAccount/global/cusCtx"
+	"KeepAccount/global/db"
 	accountModel "KeepAccount/model/account"
 	transactionModel "KeepAccount/model/transaction"
 	userModel "KeepAccount/model/user"
@@ -38,7 +39,7 @@ func (a *AccountApi) CreateOne(ctx *gin.Context) {
 		_, aUser, err = accountService.Base.CreateOne(user, requestData.Name, requestData.Icon, requestData.Type, context.WithValue(ctx, cusCtx.Db, tx))
 		return err
 	}
-	if err = global.GvaDb.Transaction(txFunc); responseError(err, ctx) {
+	if err = db.Db.Transaction(txFunc); responseError(err, ctx) {
 		return
 	}
 	var responseData response.AccountDetail
@@ -66,7 +67,7 @@ func (a *AccountApi) Update(ctx *gin.Context) {
 			accountModel.AccountUpdateData{Name: requestData.Name, Icon: requestData.Icon, Type: requestData.Type}, tx,
 		)
 	}
-	err := global.GvaDb.Transaction(txFunc)
+	err := db.Db.Transaction(txFunc)
 	if responseError(err, ctx) {
 		return
 	}
@@ -92,7 +93,7 @@ func (a *AccountApi) Delete(ctx *gin.Context) {
 		return accountService.Base.Delete(account, accountUser, context.WithValue(ctx, cusCtx.Db, tx))
 	}
 
-	if err := global.GvaDb.Transaction(txFunc); responseError(err, ctx) {
+	if err := db.Db.Transaction(txFunc); responseError(err, ctx) {
 		return
 	}
 	// response可以已被更新的当前客户端信息
@@ -110,7 +111,7 @@ func (a *AccountApi) Delete(ctx *gin.Context) {
 
 func (a *AccountApi) GetList(ctx *gin.Context) {
 	var accountUserList []accountModel.User
-	err := global.GvaDb.Where("user_id = ?", contextFunc.GetUserId(ctx)).Find(&accountUserList).Error
+	err := db.Db.Where("user_id = ?", contextFunc.GetUserId(ctx)).Find(&accountUserList).Error
 	if responseError(err, ctx) {
 		return
 	}
@@ -167,7 +168,7 @@ func (a *AccountApi) CreateOneByTemplate(ctx *gin.Context) {
 		return
 	}
 	var account accountModel.Account
-	err = global.GvaDb.Transaction(
+	err = db.Db.Transaction(
 		func(tx *gorm.DB) error {
 			account, err = templateService.CreateAccount(user, tmpAccount, context.WithValue(ctx, cusCtx.Db, tx))
 			return err
@@ -217,7 +218,7 @@ func (a *AccountApi) InitCategoryByTemplate(ctx *gin.Context) {
 	if pass == false {
 		return
 	}
-	if err = global.GvaDb.First(&template, requestData.TemplateId).Error; responseError(err, ctx) {
+	if err = db.Db.First(&template, requestData.TemplateId).Error; responseError(err, ctx) {
 		return
 	}
 
@@ -225,7 +226,7 @@ func (a *AccountApi) InitCategoryByTemplate(ctx *gin.Context) {
 		err = templateService.CreateCategory(account, template, context.WithValue(ctx, cusCtx.Db, tx))
 		return err
 	}
-	err = global.GvaDb.Transaction(txFunc)
+	err = db.Db.Transaction(txFunc)
 	if responseError(err, ctx) {
 		return
 	}
@@ -310,7 +311,7 @@ func (a *AccountApi) CreateAccountUserInvitation(ctx *gin.Context) {
 		)
 		return err
 	}
-	err = global.GvaDb.Transaction(txFunc)
+	err = db.Db.Transaction(txFunc)
 	if responseError(err, ctx) {
 		return
 	}
@@ -329,7 +330,7 @@ func (a *AccountApi) getAcceptUserInvitationByParam(ctx *gin.Context) (accountMo
 	if isSuccess == false {
 		return invitation, false
 	}
-	err := global.GvaDb.First(&invitation, id).Error
+	err := db.Db.First(&invitation, id).Error
 	if responseError(err, ctx) {
 		return invitation, false
 	}
@@ -350,7 +351,7 @@ func (a *AccountApi) AcceptAccountUserInvitation(ctx *gin.Context) {
 		_, err := invitation.Accept(tx)
 		return err
 	}
-	err := global.GvaDb.Transaction(txFunc)
+	err := db.Db.Transaction(txFunc)
 	if responseError(err, ctx) {
 		return
 	}
@@ -377,7 +378,7 @@ func (a *AccountApi) RefuseAccountUserInvitation(ctx *gin.Context) {
 		err := invitation.Refuse(tx)
 		return err
 	}
-	err := global.GvaDb.Transaction(txFunc)
+	err := db.Db.Transaction(txFunc)
 	if responseError(err, ctx) {
 		return
 	}
@@ -410,7 +411,7 @@ func (a *AccountApi) UpdateUser(ctx *gin.Context) {
 		result, err = accountService.Base.UpdateUser(accountUser, operator, requestData.GetUpdateData(), tx)
 		return err
 	}
-	err = global.GvaDb.Transaction(txFunc)
+	err = db.Db.Transaction(txFunc)
 	if responseError(err, ctx) {
 		return
 	}
@@ -537,7 +538,7 @@ func (a *AccountApi) UpdateUserConfigFlag(ctx *gin.Context) {
 	if responseError(err, ctx) {
 		return
 	}
-	err = global.GvaDb.Transaction(func(tx *gorm.DB) error {
+	err = db.Db.Transaction(func(tx *gorm.DB) error {
 		err = userConfig.ForShare(tx)
 		if err != nil {
 			return err
@@ -582,8 +583,8 @@ func (a *AccountApi) getTransTotal(
 	if err != nil {
 		return
 	}
-	result.StartTime = condition.StartTime.Unix()
-	result.EndTime = condition.EndTime.Unix()
+	result.StartTime = condition.StartTime
+	result.EndTime = condition.EndTime
 	return
 }
 
@@ -668,7 +669,7 @@ func (a *AccountApi) CreateAccountMapping(ctx *gin.Context) {
 	}
 	// handle
 	var mapping accountModel.Mapping
-	err = global.GvaDb.Transaction(func(tx *gorm.DB) error {
+	err = db.Db.Transaction(func(tx *gorm.DB) error {
 		mapping, err = accountService.Share.MappingAccount(user, mainAccount, mappingAccount, tx)
 		return err
 	})
@@ -712,7 +713,7 @@ func (a *AccountApi) DeleteAccountMapping(ctx *gin.Context) {
 		}
 		return err
 	}
-	err = global.GvaDb.Transaction(txFunc)
+	err = db.Db.Transaction(txFunc)
 	if responseError(err, ctx) {
 		return
 	}
@@ -760,7 +761,7 @@ func (a *AccountApi) UpdateAccountMapping(ctx *gin.Context) {
 		}
 		return err
 	}
-	err = global.GvaDb.Transaction(txFunc)
+	err = db.Db.Transaction(txFunc)
 	if responseError(err, ctx) {
 		return
 	}

@@ -36,8 +36,8 @@ type TransactionQueryCondition struct {
 }
 
 func (t *TransactionQueryCondition) GetCondition() transactionModel.Condition {
-	startTime := t.TimeFrame.GetStartTime()
-	endTime := t.TimeFrame.GetEndTime()
+	startTime := t.TimeFrame.StartTime
+	endTime := t.TimeFrame.EndTime
 	return transactionModel.Condition{
 		IncomeExpense:       t.IncomeExpense,
 		TimeCondition:       transactionModel.TimeCondition{TradeStartTime: &startTime, TradeEndTime: &endTime},
@@ -57,8 +57,8 @@ func (t *TransactionQueryCondition) GetForeignKeyCondition() transactionModel.Fo
 func (t *TransactionQueryCondition) GetStatisticCondition() transactionModel.StatisticCondition {
 	return transactionModel.StatisticCondition{
 		ForeignKeyCondition: t.GetForeignKeyCondition(),
-		StartTime:           t.GetStartTime(),
-		EndTime:             t.GetEndTime(),
+		StartTime:           t.StartTime,
+		EndTime:             t.EndTime,
 	}
 }
 

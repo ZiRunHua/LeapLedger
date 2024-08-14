@@ -2,7 +2,7 @@ package util
 
 import (
 	"KeepAccount/api/response"
-	"KeepAccount/global"
+	"KeepAccount/global/db"
 	accountModel "KeepAccount/model/account"
 	categoryModel "KeepAccount/model/category"
 	userModel "KeepAccount/model/user"
@@ -31,7 +31,7 @@ func (ckf *checkFunc) AccountBelong(id uint, ctx *gin.Context) bool {
 func (ckf *checkFunc) AccountBelongAndGet(accountId uint, ctx *gin.Context) (
 	account accountModel.Account, accountUser accountModel.User, pass bool,
 ) {
-	err := global.GvaDb.First(&account, accountId).Error
+	err := db.Db.First(&account, accountId).Error
 	if ckf.handelForbiddenOrError(err, ctx) {
 		return
 	}
@@ -45,7 +45,7 @@ func (ckf *checkFunc) AccountBelongAndGet(accountId uint, ctx *gin.Context) (
 func (ckf *checkFunc) TransactionCategoryBelongAndGet(id interface{}, ctx *gin.Context) (
 	pass bool, category categoryModel.Category, account accountModel.Account,
 ) {
-	err := global.GvaDb.First(&category, id).Error
+	err := db.Db.First(&category, id).Error
 	if err != nil {
 		response.FailToError(ctx, err)
 		return
@@ -65,7 +65,7 @@ func (ckf *checkFunc) TransactionCategoryBelongAndGet(id interface{}, ctx *gin.C
 func (ckf *checkFunc) FriendInvitationBelongAndGet(id interface{}, ctx *gin.Context) (
 	pass bool, data userModel.FriendInvitation,
 ) {
-	err := global.GvaDb.First(&data, id).Error
+	err := db.Db.First(&data, id).Error
 	if err != nil {
 		response.FailToError(ctx, err)
 		return

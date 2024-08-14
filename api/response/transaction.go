@@ -3,6 +3,7 @@ package response
 import (
 	"KeepAccount/global"
 	"KeepAccount/global/constant"
+	"KeepAccount/global/db"
 	accountModel "KeepAccount/model/account"
 	categoryModel "KeepAccount/model/category"
 	transactionModel "KeepAccount/model/transaction"
@@ -25,9 +26,9 @@ type TransactionDetail struct {
 	CategoryFatherName string
 	IncomeExpense      constant.IncomeExpense
 	Remark             string
-	TradeTime          int64
-	UpdateTime         int64
-	CreateTime         int64
+	TradeTime          time.Time
+	UpdateTime         time.Time
+	CreateTime         time.Time
 }
 
 func (t *TransactionDetail) SetData(
@@ -66,9 +67,9 @@ func (t *TransactionDetail) SetData(
 	t.CategoryFatherName = father.Name
 	t.IncomeExpense = category.IncomeExpense
 	t.Remark = category.Icon
-	t.TradeTime = trans.TradeTime.Unix()
-	t.UpdateTime = trans.UpdatedAt.Unix()
-	t.CreateTime = trans.CreatedAt.Unix()
+	t.TradeTime = trans.TradeTime
+	t.UpdateTime = trans.UpdatedAt
+	t.CreateTime = trans.CreatedAt
 	return nil
 }
 
@@ -95,14 +96,14 @@ func (t *TransactionDetailList) SetData(transList []transactionModel.Transaction
 		(*t)[i].CategoryId = transList[i].CategoryId
 		(*t)[i].IncomeExpense = transList[i].IncomeExpense
 		(*t)[i].Remark = transList[i].Remark
-		(*t)[i].TradeTime = transList[i].TradeTime.Unix()
-		(*t)[i].UpdateTime = transList[i].UpdatedAt.Unix()
-		(*t)[i].CreateTime = transList[i].CreatedAt.Unix()
+		(*t)[i].TradeTime = transList[i].TradeTime
+		(*t)[i].UpdateTime = transList[i].UpdatedAt
+		(*t)[i].CreateTime = transList[i].CreatedAt
 	}
 
 	// 用户
 	var userList []userModel.User
-	err := global.GvaDb.Select("username,id").Where("id IN (?)", userIds).Find(&userList).Error
+	err := db.Db.Select("username,id").Where("id IN (?)", userIds).Find(&userList).Error
 	if err != nil {
 		return err
 	}
@@ -112,7 +113,7 @@ func (t *TransactionDetailList) SetData(transList []transactionModel.Transaction
 	}
 	// 账本
 	var accountList []accountModel.Account
-	err = global.GvaDb.Select("name", "id").Where("id IN (?)", accountIds).Find(&accountList).Error
+	err = db.Db.Select("name", "id").Where("id IN (?)", accountIds).Find(&accountList).Error
 	if err != nil {
 		return err
 	}
@@ -122,7 +123,7 @@ func (t *TransactionDetailList) SetData(transList []transactionModel.Transaction
 	}
 	// 二级交易类型
 	var categoryList []categoryModel.Category
-	err = global.GvaDb.Select("icon", "name", "father_id", "id").Where(
+	err = db.Db.Select("icon", "name", "father_id", "id").Where(
 		"id IN (?)", categoryIds,
 	).Find(&categoryList).Error
 	if err != nil {
@@ -136,7 +137,7 @@ func (t *TransactionDetailList) SetData(transList []transactionModel.Transaction
 	}
 	// 一级交易类型
 	var fatherList []categoryModel.Father
-	err = global.GvaDb.Select("name", "id").Where("id IN (?)", fatherIds).Find(&fatherList).Error
+	err = db.Db.Select("name", "id").Where("id IN (?)", fatherIds).Find(&fatherList).Error
 	if err != nil {
 		return err
 	}
@@ -166,8 +167,8 @@ type TransactionTotal struct {
 
 type TransactionStatistic struct {
 	global.IEStatistic
-	StartTime int64
-	EndTime   int64
+	StartTime time.Time
+	EndTime   time.Time
 }
 
 type TransactionMonthStatistic struct {
@@ -176,7 +177,7 @@ type TransactionMonthStatistic struct {
 
 type TransactionDayStatistic struct {
 	global.AmountCount
-	Date int64
+	Date time.Time
 }
 
 type TransactionCategoryAmountRank struct {
@@ -358,14 +359,14 @@ func (t *TransactionInfoList) getCategoryMap(list dataTool.Slice[uint, transacti
 ) {
 	var categoryList dataTool.Slice[uint, categoryModel.Category]
 	ids := list.ExtractValues(func(info transactionModel.Info) uint { return info.CategoryId })
-	err = global.GvaDb.Select("icon", "name", "father_id", "id").Where("id IN (?)", ids).Find(&categoryList).Error
+	err = db.Db.Select("icon", "name", "father_id", "id").Where("id IN (?)", ids).Find(&categoryList).Error
 	if err != nil {
 		return
 	}
 
 	var fatherList dataTool.Slice[uint, categoryModel.Father]
 	ids = categoryList.ExtractValues(func(category categoryModel.Category) uint { return category.FatherId })
-	err = global.GvaDb.Select("name", "id").Where("id IN (?)", ids).Find(&fatherList).Error
+	err = db.Db.Select("name", "id").Where("id IN (?)", ids).Find(&fatherList).Error
 	if err != nil {
 		return
 	}

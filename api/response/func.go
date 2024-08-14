@@ -9,8 +9,8 @@ import (
 )
 
 type Data struct {
-	Data interface{}
-	Msg  string
+	Data interface{} `json:"Data"`
+	Msg  string      `json:"Msg"`
 }
 
 func ResponseAndAbort(status int, data interface{}, msg string, ctx *gin.Context) {

@@ -1,10 +1,11 @@
 package response
 
 import (
-	"KeepAccount/global"
+	"KeepAccount/global/db"
 	accountModel "KeepAccount/model/account"
 	userModel "KeepAccount/model/user"
 	"KeepAccount/util/dataTool"
+	"time"
 )
 
 type CommonCaptcha struct {
@@ -19,13 +20,13 @@ type Id struct {
 
 type CreateResponse struct {
 	Id        uint
-	CreatedAt int64
-	UpdatedAt int64
+	CreatedAt time.Time
+	UpdatedAt time.Time
 }
 
 type Token struct {
 	Token               string
-	TokenExpirationTime int64
+	TokenExpirationTime time.Time
 }
 type TwoLevelTree struct {
 	Tree []Father
@@ -62,7 +63,7 @@ func getUsernameMap(ids []uint) (map[uint]string, error) {
 		ID       uint
 		Username string
 	}]
-	err := global.GvaDb.Model(&userModel.User{}).Where("id IN (?)", ids).Find(&nameList).Error
+	err := db.Db.Model(&userModel.User{}).Where("id IN (?)", ids).Find(&nameList).Error
 	if err != nil {
 		return nil, err
 	}
@@ -78,7 +79,7 @@ func getAccountNameMap(ids []uint) (map[uint]string, error) {
 		ID   uint
 		Name string
 	}]
-	err := global.GvaDb.Model(&accountModel.Account{}).Where("id IN (?)", ids).Find(&nameList).Error
+	err := db.Db.Model(&accountModel.Account{}).Where("id IN (?)", ids).Find(&nameList).Error
 	if err != nil {
 		return nil, err
 	}

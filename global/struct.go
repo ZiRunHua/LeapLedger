@@ -1,5 +1,7 @@
 package global
 
+import "time"
+
 type AmountCount struct {
 	Amount int64
 	Count  int64
@@ -12,6 +14,6 @@ type IEStatistic struct {
 
 type IEStatisticWithTime struct {
 	IEStatistic
-	StartTime int64
-	EndTime   int64
+	StartTime time.Time
+	EndTime   time.Time
 }

@@ -3,7 +3,7 @@ package v1
 import (
 	"KeepAccount/api/request"
 	"KeepAccount/api/response"
-	"KeepAccount/global"
+	"KeepAccount/global/db"
 	categoryModel "KeepAccount/model/category"
 	productModel "KeepAccount/model/product"
 	"KeepAccount/util"
@@ -17,7 +17,7 @@ type ProductApi struct {
 
 func (p *ProductApi) GetList(ctx *gin.Context) {
 	var product productModel.Product
-	rows, err := global.GvaDb.Model(&product).Where("hide = ?", 0).Order("weight desc").Rows()
+	rows, err := db.Db.Model(&product).Where("hide = ?", 0).Order("weight desc").Rows()
 	if err != nil {
 		response.FailToError(ctx, err)
 		return
@@ -26,7 +26,7 @@ func (p *ProductApi) GetList(ctx *gin.Context) {
 	var responseData response.ProductGetList
 	responseData.List = []response.ProductGetOne{}
 	for rows.Next() {
-		err = global.GvaDb.ScanRows(rows, &product)
+		err = db.Db.ScanRows(rows, &product)
 		if err != nil {
 			response.FailToError(ctx, err)
 			return
@@ -41,7 +41,7 @@ func (p *ProductApi) GetList(ctx *gin.Context) {
 
 func (p *ProductApi) GetTransactionCategory(ctx *gin.Context) {
 	var transactionCategory productModel.TransactionCategory
-	rows, err := global.GvaDb.Model(&transactionCategory).Where(
+	rows, err := db.Db.Model(&transactionCategory).Where(
 		"product_key = ?", ctx.Param("key"),
 	).Order("income_expense DESC,weight DESC").Rows()
 	if err != nil {
@@ -52,7 +52,7 @@ func (p *ProductApi) GetTransactionCategory(ctx *gin.Context) {
 	var responseData response.ProductGetTransactionCategoryList
 	responseData.List = []response.ProductGetTransactionCategory{}
 	for rows.Next() {
-		err = global.GvaDb.ScanRows(rows, &transactionCategory)
+		err = db.Db.ScanRows(rows, &transactionCategory)
 		if err != nil {
 			response.FailToError(ctx, err)
 			return
@@ -71,7 +71,7 @@ func (p *ProductApi) GetTransactionCategory(ctx *gin.Context) {
 
 func (p *ProductApi) MappingTransactionCategory(ctx *gin.Context) {
 	var transactionCategory productModel.TransactionCategory
-	err := global.GvaDb.Model(&transactionCategory).First(&transactionCategory, ctx.Param("id")).Error
+	err := db.Db.Model(&transactionCategory).First(&transactionCategory, ctx.Param("id")).Error
 	if responseError(err, ctx) {
 		return
 	}
@@ -82,7 +82,7 @@ func (p *ProductApi) MappingTransactionCategory(ctx *gin.Context) {
 	}
 
 	var category categoryModel.Category
-	err = global.GvaDb.Model(&category).First(&category, requestData.CategoryId).Error
+	err = db.Db.Model(&category).First(&category, requestData.CategoryId).Error
 	if responseError(err, ctx) {
 		return
 	}
@@ -95,7 +95,7 @@ func (p *ProductApi) MappingTransactionCategory(ctx *gin.Context) {
 
 func (p *ProductApi) DeleteTransactionCategoryMapping(ctx *gin.Context) {
 	var ptc productModel.TransactionCategory
-	err := global.GvaDb.Model(&ptc).First(&ptc, ctx.Param("id")).Error
+	err := db.Db.Model(&ptc).First(&ptc, ctx.Param("id")).Error
 	if responseError(err, ctx) {
 		return
 	}
@@ -137,7 +137,7 @@ func (p *ProductApi) GetMappingTree(ctx *gin.Context) {
 		prodTransCategoryIds = append(prodTransCategoryIds, id)
 	}
 	var prodTransCategoryMapping productModel.TransactionCategoryMapping
-	rows, err := global.GvaDb.Model(&productModel.TransactionCategoryMapping{}).Preload("TransCategory").Where(
+	rows, err := db.Db.Model(&productModel.TransactionCategoryMapping{}).Preload("TransCategory").Where(
 		"account_id = ? AND product_key = ?", requestData.AccountId, requestData.ProductKey,
 	).Order("category_id desc").Rows()
 	if err != nil {
@@ -149,7 +149,7 @@ func (p *ProductApi) GetMappingTree(ctx *gin.Context) {
 	children := make(map[uint][]uint)
 	var fatherList []uint
 	for rows.Next() {
-		err = global.GvaDb.ScanRows(rows, &prodTransCategoryMapping)
+		err = db.Db.ScanRows(rows, &prodTransCategoryMapping)
 		if err != nil {
 			response.FailToError(ctx, err)
 			return
@@ -198,7 +198,7 @@ func (p *ProductApi) ImportProductBill(ctx *gin.Context) {
 	if product, err = p.getProductByParam(ctx); err != nil {
 		return
 	}
-	err = global.GvaDb.Transaction(
+	err = db.Db.Transaction(
 		func(tx *gorm.DB) error {
 			return productService.BillImport(accountUser, account, product, file, tx)
 		},

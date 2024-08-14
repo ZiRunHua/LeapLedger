@@ -3,8 +3,8 @@ package v1
 import (
 	"KeepAccount/api/request"
 	"KeepAccount/api/response"
-	"KeepAccount/global"
 	"KeepAccount/global/cusCtx"
+	"KeepAccount/global/db"
 	accountModel "KeepAccount/model/account"
 	categoryModel "KeepAccount/model/category"
 	userModel "KeepAccount/model/user"
@@ -33,7 +33,7 @@ func (catApi *CategoryApi) CreateOne(ctx *gin.Context) {
 		return
 	}
 	var category categoryModel.Category
-	err = global.GvaDb.Transaction(
+	err = db.Db.Transaction(
 		func(tx *gorm.DB) error {
 			category, err = categoryService.CreateOne(
 				father,
@@ -67,7 +67,7 @@ func (catApi *CategoryApi) CreateOneFather(ctx *gin.Context) {
 		return
 	}
 	var father categoryModel.Father
-	err = global.GvaDb.Transaction(
+	err = db.Db.Transaction(
 		func(tx *gorm.DB) error {
 			father, err = categoryService.CreateOneFather(account, requestData.IncomeExpense, requestData.Name, tx)
 			return err
@@ -103,7 +103,7 @@ func (catApi *CategoryApi) MoveCategory(ctx *gin.Context) {
 		var previous *categoryModel.Category
 		if requestData.Previous != nil {
 			previous = &categoryModel.Category{}
-			err = global.GvaDb.First(previous, requestData.Previous).Error
+			err = db.Db.First(previous, requestData.Previous).Error
 			if err != nil {
 				return err
 			}
@@ -112,14 +112,14 @@ func (catApi *CategoryApi) MoveCategory(ctx *gin.Context) {
 		var father *categoryModel.Father
 		if requestData.FatherId != nil {
 			father = &categoryModel.Father{}
-			err = global.GvaDb.First(father, requestData.FatherId).Error
+			err = db.Db.First(father, requestData.FatherId).Error
 			if err != nil {
 				return err
 			}
 		}
 		return categoryService.MoveCategory(category, previous, father, user, tx)
 	}
-	err := global.GvaDb.Transaction(txFunc)
+	err := db.Db.Transaction(txFunc)
 	if responseError(err, ctx) {
 		return
 	}
@@ -134,7 +134,7 @@ func (catApi *CategoryApi) MoveFather(ctx *gin.Context) {
 	}
 	txFunc := func(tx *gorm.DB) error {
 		var father categoryModel.Father
-		err := global.GvaDb.First(&father, ctx.Param("id")).Error
+		err := db.Db.First(&father, ctx.Param("id")).Error
 		if err != nil {
 			return err
 		}
@@ -142,14 +142,14 @@ func (catApi *CategoryApi) MoveFather(ctx *gin.Context) {
 		var previous *categoryModel.Father
 		if requestData.Previous != nil {
 			previous = &categoryModel.Father{}
-			err = global.GvaDb.First(previous, requestData.Previous).Error
+			err = db.Db.First(previous, requestData.Previous).Error
 			if err != nil {
 				return err
 			}
 		}
 		return categoryService.MoveFather(father, previous, tx)
 	}
-	err := global.GvaDb.Transaction(txFunc)
+	err := db.Db.Transaction(txFunc)
 	if handelError(err, ctx) {
 		return
 	}
@@ -175,7 +175,7 @@ func (catApi *CategoryApi) Update(ctx *gin.Context) {
 		)
 		return err
 	}
-	if err = global.GvaDb.Transaction(txFunc); responseError(err, ctx) {
+	if err = db.Db.Transaction(txFunc); responseError(err, ctx) {
 		return
 	}
 	var responseData response.CategoryOne
@@ -193,7 +193,7 @@ func (catApi *CategoryApi) UpdateFather(ctx *gin.Context) {
 		return
 	}
 	var father categoryModel.Father
-	err := global.GvaDb.First(&father, ctx.Param("id")).Error
+	err := db.Db.First(&father, ctx.Param("id")).Error
 	if responseError(err, ctx) {
 		return
 	}
@@ -278,7 +278,7 @@ func (catApi *CategoryApi) GetList(ctx *gin.Context) {
 
 func (catApi *CategoryApi) Delete(ctx *gin.Context) {
 	var category categoryModel.Category
-	err := global.GvaDb.First(&category, ctx.Param("id")).Error
+	err := db.Db.First(&category, ctx.Param("id")).Error
 	if err != nil {
 		response.FailToError(ctx, err)
 		return
@@ -286,7 +286,7 @@ func (catApi *CategoryApi) Delete(ctx *gin.Context) {
 	if pass := checkFunc.AccountBelong(category.AccountId, ctx); pass == false {
 		return
 	}
-	err = global.GvaDb.Transaction(
+	err = db.Db.Transaction(
 		func(tx *gorm.DB) error { return categoryService.Delete(category, tx) },
 	)
 	if responseError(err, ctx) {
@@ -297,7 +297,7 @@ func (catApi *CategoryApi) Delete(ctx *gin.Context) {
 
 func (catApi *CategoryApi) DeleteFather(ctx *gin.Context) {
 	var father categoryModel.Father
-	err := global.GvaDb.First(&father, ctx.Param("id")).Error
+	err := db.Db.First(&father, ctx.Param("id")).Error
 	if err != nil {
 		response.FailToError(ctx, err)
 		return
@@ -305,7 +305,7 @@ func (catApi *CategoryApi) DeleteFather(ctx *gin.Context) {
 	if pass := checkFunc.AccountBelong(father.AccountId, ctx); pass == false {
 		return
 	}
-	err = global.GvaDb.Transaction(
+	err = db.Db.Transaction(
 		func(tx *gorm.DB) error {
 			err = categoryService.DeleteFather(father, tx)
 			if err != nil {
@@ -343,7 +343,7 @@ func (catApi *CategoryApi) MappingCategory(ctx *gin.Context) {
 		_, err = categoryService.MappingCategory(parentCategory, childCategory, operator, tx)
 		return err
 	}
-	err = global.GvaDb.Transaction(txFunc)
+	err = db.Db.Transaction(txFunc)
 	if errors.Is(err, gorm.ErrDuplicatedKey) {
 	} else if responseError(err, ctx) {
 		return
@@ -373,7 +373,7 @@ func (catApi *CategoryApi) DeleteCategoryMapping(ctx *gin.Context) {
 		err = categoryService.DeleteMapping(parentCategory, childCategory, operator, tx)
 		return err
 	}
-	err = global.GvaDb.Transaction(txFunc)
+	err = db.Db.Transaction(txFunc)
 	if responseError(err, ctx) {
 		return
 	}

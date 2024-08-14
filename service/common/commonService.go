@@ -50,7 +50,7 @@ func (cm *common) MakeCustomClaims(userId uint) util.CustomClaims {
 	expirationTime := time.Now().Add(ExpiresAt)
 	return util.CustomClaims{
 		UserId:    userId,
-		ExpiresAt: expirationTime.Unix(),
+		ExpiresAt: expirationTime,
 		Issuer:    "server", // 可自定义
 		Subject:   "user",   // 可自定义
 	}
@@ -67,8 +67,8 @@ func (cm *common) GenerateJWT(custom util.CustomClaims) (string, error) {
 
 func (cm *common) RefreshJWT(custom util.CustomClaims) (token string, newCustom util.CustomClaims, err error) {
 	newCustom = custom
-	if newCustom.ExpiresAt <= time.Now().Add(ExpiresAt/3).Unix() {
-		newCustom.ExpiresAt = time.Now().Add(ExpiresAt).Unix()
+	if newCustom.ExpiresAt.Before(time.Now().Add(ExpiresAt / 3)) {
+		newCustom.ExpiresAt = time.Now().Add(ExpiresAt)
 	}
 	token, err = cm.GenerateJWT(newCustom)
 	return

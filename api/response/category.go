@@ -1,8 +1,8 @@
 package response
 
 import (
-	"KeepAccount/global"
 	"KeepAccount/global/constant"
+	"KeepAccount/global/db"
 	categoryModel "KeepAccount/model/category"
 	"KeepAccount/util/dataTool"
 	"github.com/pkg/errors"
@@ -54,7 +54,7 @@ func (cdl *CategoryDetailList) SetData(categoryList dataTool.Slice[uint, categor
 
 	fatherIds := categoryList.ExtractValues(func(category categoryModel.Category) uint { return category.FatherId })
 	var fatherList dataTool.Slice[uint, categoryModel.Father]
-	err := global.GvaDb.Where("id IN (?)", fatherIds).Find(&fatherList).Error
+	err := db.Db.Where("id IN (?)", fatherIds).Find(&fatherList).Error
 	if err != nil {
 		return err
 	}

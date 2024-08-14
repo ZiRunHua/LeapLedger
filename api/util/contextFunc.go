@@ -3,9 +3,9 @@ package util
 import (
 	"KeepAccount/api/request"
 	"KeepAccount/api/response"
-	"KeepAccount/global"
 	"KeepAccount/global/constant"
 	"KeepAccount/global/cusCtx"
+	"KeepAccount/global/db"
 	accountModel "KeepAccount/model/account"
 	userModel "KeepAccount/model/user"
 	"KeepAccount/util"
@@ -41,7 +41,7 @@ func (cf *contextFunc) GetUser(ctx *gin.Context) (userModel.User, error) {
 		return value.(userModel.User), nil
 	}
 	var user userModel.User
-	err := global.GvaDb.First(&user, cf.GetUserId(ctx)).Error
+	err := db.Db.First(&user, cf.GetUserId(ctx)).Error
 	ctx.Set(_User, user)
 	return user, err
 }

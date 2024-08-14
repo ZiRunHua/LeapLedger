@@ -3,7 +3,6 @@ package v1
 import (
 	"KeepAccount/api/request"
 	"KeepAccount/api/response"
-	"KeepAccount/global"
 	"KeepAccount/global/constant"
 	"KeepAccount/global/cusCtx"
 	"KeepAccount/global/db"
@@ -21,6 +20,7 @@ import (
 type TransactionApi struct {
 }
 
+// GetOne
 // @Success 200 {object} response.Data{Data=response.TransactionDetail}
 // @Accept  json
 // @Produce  json
@@ -38,6 +38,11 @@ func (t *TransactionApi) GetOne(ctx *gin.Context) {
 	response.OkWithData(data, ctx)
 }
 
+// CreateOne
+// @Success 200 {object} {response.Data{}}
+// @Accept  json
+// @Produce  json
+// @Router /transaction/{id} [post]
 func (t *TransactionApi) CreateOne(ctx *gin.Context) {
 	var requestData request.TransactionCreateOne
 	if err := ctx.ShouldBindJSON(&requestData); err != nil {
@@ -113,7 +118,7 @@ func (t *TransactionApi) Update(ctx *gin.Context) {
 	}
 	transaction.ID = oldTrans.ID
 
-	txCtx := context.WithValue(ctx, cusCtx.Db, global.GvaDb)
+	txCtx := context.WithValue(ctx, cusCtx.Db, db.Db)
 	option, err := transactionService.NewOptionFormConfig(transaction.Info, txCtx)
 	if responseError(err, ctx) {
 		return
@@ -140,7 +145,7 @@ func (t *TransactionApi) Delete(ctx *gin.Context) {
 	if responseError(err, ctx) {
 		return
 	}
-	err = global.GvaDb.Transaction(
+	err = db.Db.Transaction(
 		func(tx *gorm.DB) error {
 			return transactionService.Delete(trans, accountUser, tx)
 		},
@@ -244,8 +249,8 @@ func (t *TransactionApi) GetMonthStatistic(ctx *gin.Context) {
 		}
 		responseList[i] = response.TransactionStatistic{
 			IEStatistic: monthStatistic,
-			StartTime:   condition.StartTime.Unix(),
-			EndTime:     condition.EndTime.Unix(),
+			StartTime:   condition.StartTime,
+			EndTime:     condition.EndTime,
 		}
 	}
 	response.OkWithData(response.TransactionMonthStatistic{List: responseList}, ctx)
@@ -292,7 +297,7 @@ func (t *TransactionApi) GetDayStatistic(ctx *gin.Context) {
 	var err error
 	responseData := make([]response.TransactionDayStatistic, len(days), len(days))
 	for i, day := range days {
-		responseData[i] = response.TransactionDayStatistic{Date: day.Unix()}
+		responseData[i] = response.TransactionDayStatistic{Date: day}
 		dayMap[day] = &responseData[i]
 	}
 	if requestData.IncomeExpense != nil {
@@ -349,7 +354,7 @@ func (t *TransactionApi) GetCategoryAmountRank(ctx *gin.Context) {
 	)
 	// fetch category
 	var categoryList dataTool.Slice[uint, categoryModel.Category]
-	err = global.GvaDb.Where("id IN (?)", categoryIds).Find(&categoryList).Error
+	err = db.Db.Where("id IN (?)", categoryIds).Find(&categoryList).Error
 	if responseError(err, ctx) {
 		return
 	}
@@ -372,9 +377,9 @@ func (t *TransactionApi) GetCategoryAmountRank(ctx *gin.Context) {
 	if requestData.Limit != nil && len(rankingList) < *requestData.Limit {
 		categoryList = []categoryModel.Category{}
 		limit := *requestData.Limit - len(rankingList)
-		db := global.GvaDb.Where("account_id = ?", account.ID)
-		db = db.Where("income_expense = ?", requestData.IncomeExpense)
-		err = db.Where("id NOT IN (?)", categoryIds).Limit(limit).Find(&categoryList).Error
+		query := db.Db.Where("account_id = ?", account.ID)
+		query = query.Where("income_expense = ?", requestData.IncomeExpense)
+		err = query.Where("id NOT IN (?)", categoryIds).Limit(limit).Find(&categoryList).Error
 		if responseError(err, ctx) {
 			return
 		}
@@ -402,7 +407,7 @@ func (t *TransactionApi) GetAmountRank(ctx *gin.Context) {
 	}
 	// fetch
 	timeCond := transactionModel.NewTimeCondition()
-	timeCond.SetTradeTimes(requestData.GetStartTime(), requestData.GetEndTime())
+	timeCond.SetTradeTimes(requestData.StartTime, requestData.EndTime)
 	rankingList, err := transactionModel.NewDao().GetAmountRank(
 		requestData.AccountId, requestData.IncomeExpense, *timeCond,
 	)

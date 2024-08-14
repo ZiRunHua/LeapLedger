@@ -8,11 +8,12 @@ services:
       dockerfile: docker/Dockerfile
     ports:
       - "8080:8080"
-#    environment:
-#      - CONFIG_FILE_NAME=production_config.yaml
+    environment:
+      - CONFIG_FILE_NAME=${MODE}
     volumes:
       - ./runtime:/go/LeapLedger/runtime
       - ../log:/go/LeapLedger/log
+      - ../docs:/go/LeapLedger/docs
       - ./test:/go/LeapLedger/docker/test
     networks:
       - leap-ledger-network

@@ -6,11 +6,12 @@ import (
 	"KeepAccount/util"
 	"errors"
 	"gorm.io/gorm"
+	"time"
 )
 
 type Login struct {
 	Token               string
-	TokenExpirationTime int64
+	TokenExpirationTime time.Time
 	CurrentAccount      AccountDetail
 	CurrentShareAccount AccountDetail
 	User                UserOne
@@ -49,21 +50,21 @@ func (l *Login) SetDataFormClientInto(data userModel.UserClientBaseInfo) error {
 type Register struct {
 	User                UserOne
 	Token               string
-	TokenExpirationTime int64
+	TokenExpirationTime time.Time
 }
 
 type UserOne struct {
 	Id         uint
 	Username   string
 	Email      string
-	CreateTime int64
+	CreateTime time.Time
 }
 
 func (u *UserOne) SetData(data userModel.User) error {
 	u.Id = data.ID
 	u.Email = data.Email
 	u.Username = data.Username
-	u.CreateTime = data.CreatedAt.Unix()
+	u.CreateTime = data.CreatedAt
 	return nil
 }
 
@@ -102,7 +103,7 @@ type UserFriendInvitation struct {
 	Id         uint
 	Inviter    UserInfo
 	Invitee    UserInfo
-	CreateTime int64
+	CreateTime time.Time
 }
 
 type UserInfo struct {
@@ -120,11 +121,11 @@ func (u *UserInfo) SetMaskData(data userModel.UserInfo) {
 type UserCurrentClientInfo struct {
 	CurrentAccount      AccountDetail
 	CurrentShareAccount AccountDetail
-	LoginTime           int64
+	LoginTime           time.Time
 }
 
 func (u *UserCurrentClientInfo) SetData(info userModel.UserClientBaseInfo) error {
-	u.LoginTime = info.LoginTime.Unix()
+	u.LoginTime = info.LoginTime
 	var accountUser accountModel.User
 	var err error
 	if info.CurrentAccountId > 0 {

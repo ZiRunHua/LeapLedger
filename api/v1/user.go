@@ -5,6 +5,7 @@ import (
 	"KeepAccount/api/response"
 	"KeepAccount/global"
 	"KeepAccount/global/constant"
+	"KeepAccount/global/db"
 	accountModel "KeepAccount/model/account"
 	transactionModel "KeepAccount/model/transaction"
 	userModel "KeepAccount/model/user"
@@ -107,7 +108,7 @@ func (p *PublicApi) Login(ctx *gin.Context) {
 		return err
 	}
 
-	if err = global.GvaDb.Transaction(transactionFunc); err != nil {
+	if err = db.Db.Transaction(transactionFunc); err != nil {
 		err = errors.New("用户名不存在或者密码错误")
 		return
 	}
@@ -140,7 +141,7 @@ func (p *PublicApi) Register(ctx *gin.Context) {
 	var user userModel.User
 	var token string
 	var customClaims util.CustomClaims
-	err = global.GvaDb.Transaction(
+	err = db.Db.Transaction(
 		func(tx *gorm.DB) error {
 			user, err = userService.Register(data, tx)
 			if err != nil {
@@ -176,7 +177,7 @@ func (p *PublicApi) TourRequest(ctx *gin.Context) {
 		return
 	}
 	var user userModel.User
-	err := global.GvaDb.Transaction(
+	err := db.Db.Transaction(
 		func(tx *gorm.DB) error {
 			var err error
 			user, err = userService.EnableTourist(requestData.DeviceNumber, contextFunc.GetClient(ctx), tx)
@@ -223,7 +224,7 @@ func (p *PublicApi) UpdatePassword(ctx *gin.Context) {
 	if responseError(err, ctx) {
 		return
 	}
-	err = global.GvaDb.Transaction(
+	err = db.Db.Transaction(
 		func(tx *gorm.DB) error {
 			return userService.UpdatePassword(user, requestData.Password, tx)
 		},
@@ -276,7 +277,7 @@ func (u *UserApi) UpdatePassword(ctx *gin.Context) {
 		return
 	}
 
-	err = global.GvaDb.Transaction(
+	err = db.Db.Transaction(
 		func(tx *gorm.DB) error {
 			return userService.UpdatePassword(user, requestData.Password, tx)
 		},
@@ -301,7 +302,7 @@ func (u *UserApi) UpdateInfo(ctx *gin.Context) {
 	if responseError(err, ctx) {
 		return
 	}
-	err = global.GvaDb.Model(&user).Update("username", requestData.Username).Error
+	err = db.Db.Model(&user).Update("username", requestData.Username).Error
 	if responseError(err, ctx) {
 		return
 	}
@@ -342,7 +343,7 @@ func (u *UserApi) SetCurrentAccount(ctx *gin.Context) {
 		return
 	}
 
-	err := global.GvaDb.Transaction(
+	err := db.Db.Transaction(
 		func(tx *gorm.DB) error {
 			return userService.SetClientAccount(accountUser, contextFunc.GetClient(ctx), account, tx)
 		},
@@ -368,7 +369,7 @@ func (u *UserApi) SetCurrentShareAccount(ctx *gin.Context) {
 		return
 	}
 
-	err := global.GvaDb.Transaction(
+	err := db.Db.Transaction(
 		func(tx *gorm.DB) error {
 			return userService.SetClientShareAccount(accountUser, contextFunc.GetClient(ctx), account, tx)
 		},
@@ -429,8 +430,8 @@ func (u *UserApi) Home(ctx *gin.Context) {
 		}
 		*data = response.TransactionStatistic{
 			IEStatistic: result,
-			StartTime:   startTime.Unix(),
-			EndTime:     endTime.Unix(),
+			StartTime:   startTime,
+			EndTime:     endTime,
 		}
 		return nil
 	}
@@ -538,9 +539,9 @@ func (u *UserApi) UpdateTransactionShareConfig(ctx *gin.Context) {
 	}
 
 	if requestData.Status {
-		err = config.OpenDisplayFlag(flag, global.GvaDb)
+		err = config.OpenDisplayFlag(flag, db.Db)
 	} else {
-		err = config.ClosedDisplayFlag(flag, global.GvaDb)
+		err = config.ClosedDisplayFlag(flag, db.Db)
 	}
 	// 响应
 	if responseError(err, ctx) {
@@ -602,7 +603,7 @@ func (u *UserApi) responseUserFriendInvitation(data userModel.FriendInvitation) 
 	}
 	responseData = response.UserFriendInvitation{
 		Id:         data.ID,
-		CreateTime: data.CreatedAt.Unix(),
+		CreateTime: data.CreatedAt,
 	}
 	responseData.Inviter.SetMaskData(inviterInfo)
 	responseData.Inviter.SetMaskData(inviteeInfo)
@@ -633,7 +634,7 @@ func (u *UserApi) CreateFriendInvitation(ctx *gin.Context) {
 		}
 		return nil
 	}
-	err = global.GvaDb.Transaction(txFunc)
+	err = db.Db.Transaction(txFunc)
 	if responseError(err, ctx) {
 		return
 	}
@@ -671,7 +672,7 @@ func (u *UserApi) AcceptFriendInvitation(ctx *gin.Context) {
 		_, _, err := userService.Friend.AcceptInvitation(&invitation, tx)
 		return err
 	}
-	err := global.GvaDb.Transaction(txFunc)
+	err := db.Db.Transaction(txFunc)
 	if responseError(err, ctx) {
 		return
 	}
@@ -696,7 +697,7 @@ func (u *UserApi) RefuseFriendInvitation(ctx *gin.Context) {
 		err := userService.Friend.RefuseInvitation(&invitation, tx)
 		return err
 	}
-	err := global.GvaDb.Transaction(txFunc)
+	err := db.Db.Transaction(txFunc)
 	if responseError(err, ctx) {
 		return
 	}
