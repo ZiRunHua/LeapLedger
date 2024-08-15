@@ -20,13 +20,11 @@ import (
 type TransactionApi struct {
 }
 
-// swagger:route GET /transaction/{id} transaction GetOne
-// Request:
-//   - application/json
-//
-// Responses:
-//
-//	200: TransactionDetail
+// @Tags transaction
+// @Accept  json
+// @Produce  json
+// @Success 200 {object} response.Data{data=response.TransactionDetail}
+// @Router /transaction/{id} [get]
 func (t *TransactionApi) GetOne(ctx *gin.Context) {
 	trans, ok := contextFunc.GetTransByParam(ctx)
 	if false == ok {
@@ -40,13 +38,12 @@ func (t *TransactionApi) GetOne(ctx *gin.Context) {
 	response.OkWithData(data, ctx)
 }
 
-// swagger:route POST /transaction/{id} transaction TransactionCreateOne
-// Request:
-//   - application/json
-//
-// Responses:
-//
-//	200: TransactionDetail
+// @Tags transaction
+// @Accept  json
+// @Produce  json
+// @Param user body request.TransactionCreateOne true "User data"
+// @Success 200 {object} response.Data{data=response.TransactionDetail}
+// @Router /transaction/{id} [post]
 func (t *TransactionApi) CreateOne(ctx *gin.Context) {
 	var requestData request.TransactionCreateOne
 	if err := ctx.ShouldBindJSON(&requestData); err != nil {

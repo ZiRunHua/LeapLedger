@@ -13,7 +13,7 @@ import (
 )
 
 // TransactionDetail 交易详情
-// swagger:response
+// swagger:response TransactionDetail
 type TransactionDetail struct {
 	Id                 uint
 	UserId             uint

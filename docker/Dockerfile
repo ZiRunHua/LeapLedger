@@ -1,4 +1,4 @@
-FROM golang:1.20.8-alpine
+FROM golang:1.20.8
 
 # 设置环境变量
 ENV GO111MODULE=on
@@ -27,6 +27,4 @@ EXPOSE 8080
 #
 #CMD ["/bin/sh", "-c", "go test -v 2>&1 ./... | go-junit-report > docker/test/result.xml && ./leapledger"]
 
-RUN apk add make
-
-CMD ["/bin/sh", "-c", "make"]
+CMD ["/bin/sh", "-c", "./docs/updateDocs.sh"]

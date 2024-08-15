@@ -1,0 +1,110 @@
+{
+    "definitions": {
+        "constant.IncomeExpense": {
+            "enum": [
+                "income",
+                "expense"
+            ],
+            "type": "string",
+            "x-enum-varnames": [
+                "Income",
+                "Expense"
+            ]
+        },
+        "response.Data": {
+            "properties": {
+                "DATA": {},
+                "MSG": {
+                    "type": "string"
+                }
+            },
+            "type": "object"
+        },
+        "response.TransactionDetail": {
+            "properties": {
+                "ACCOUNTID": {
+                    "type": "integer"
+                },
+                "ACCOUNTNAME": {
+                    "type": "string"
+                },
+                "AMOUNT": {
+                    "type": "integer"
+                },
+                "CATEGORYFATHERNAME": {
+                    "type": "string"
+                },
+                "CATEGORYICON": {
+                    "type": "string"
+                },
+                "CATEGORYID": {
+                    "type": "integer"
+                },
+                "CATEGORYNAME": {
+                    "type": "string"
+                },
+                "CREATETIME": {
+                    "type": "string"
+                },
+                "ID": {
+                    "type": "integer"
+                },
+                "INCOMEEXPENSE": {
+                    "$ref": "#/definitions/constant.IncomeExpense"
+                },
+                "REMARK": {
+                    "type": "string"
+                },
+                "TRADETIME": {
+                    "type": "string"
+                },
+                "UPDATETIME": {
+                    "type": "string"
+                },
+                "USERID": {
+                    "type": "integer"
+                },
+                "USERNAME": {
+                    "type": "string"
+                }
+            },
+            "type": "object"
+        }
+    },
+    "info": {
+        "contact": {}
+    },
+    "paths": {
+        "/transaction/{id}": {
+            "get": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Data"
+                                },
+                                {
+                                    "properties": {
+                                        "Data": {
+                                            "$ref": "#/definitions/response.TransactionDetail"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "swagger": "2.0"
+}

@@ -10,7 +10,7 @@ import (
 
 // swagger:response responseData
 type Data struct {
-	Data interface{}
+	Data interface{} `json:''`
 	Msg  string
 }
 
