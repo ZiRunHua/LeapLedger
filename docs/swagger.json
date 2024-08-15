@@ -11,10 +11,33 @@
                 "Expense"
             ]
         },
+        "request.TransactionCreateOne": {
+            "properties": {
+                "AccountId": {
+                    "type": "integer"
+                },
+                "Amount": {
+                    "type": "integer"
+                },
+                "CategoryId": {
+                    "type": "integer"
+                },
+                "IncomeExpense": {
+                    "$ref": "#/definitions/constant.IncomeExpense"
+                },
+                "Remark": {
+                    "type": "string"
+                },
+                "TradeTime": {
+                    "type": "string"
+                }
+            },
+            "type": "object"
+        },
         "response.Data": {
             "properties": {
-                "DATA": {},
-                "MSG": {
+                "Data": {},
+                "Msg": {
                     "type": "string"
                 }
             },
@@ -22,49 +45,49 @@
         },
         "response.TransactionDetail": {
             "properties": {
-                "ACCOUNTID": {
+                "AccountId": {
                     "type": "integer"
                 },
-                "ACCOUNTNAME": {
+                "AccountName": {
                     "type": "string"
                 },
-                "AMOUNT": {
+                "Amount": {
                     "type": "integer"
                 },
-                "CATEGORYFATHERNAME": {
+                "CategoryFatherName": {
                     "type": "string"
                 },
-                "CATEGORYICON": {
+                "CategoryIcon": {
                     "type": "string"
                 },
-                "CATEGORYID": {
+                "CategoryId": {
                     "type": "integer"
                 },
-                "CATEGORYNAME": {
+                "CategoryName": {
                     "type": "string"
                 },
-                "CREATETIME": {
+                "CreateTime": {
                     "type": "string"
                 },
-                "ID": {
+                "Id": {
                     "type": "integer"
                 },
-                "INCOMEEXPENSE": {
+                "IncomeExpense": {
                     "$ref": "#/definitions/constant.IncomeExpense"
                 },
-                "REMARK": {
+                "Remark": {
                     "type": "string"
                 },
-                "TRADETIME": {
+                "TradeTime": {
                     "type": "string"
                 },
-                "UPDATETIME": {
+                "UpdateTime": {
                     "type": "string"
                 },
-                "USERID": {
+                "UserId": {
                     "type": "integer"
                 },
-                "USERNAME": {
+                "UserName": {
                     "type": "string"
                 }
             },
@@ -93,7 +116,7 @@
                                 },
                                 {
                                     "properties": {
-                                        "Data": {
+                                        "data": {
                                             "$ref": "#/definitions/response.TransactionDetail"
                                         }
                                     },
@@ -102,7 +125,52 @@
                             ]
                         }
                     }
-                }
+                },
+                "tags": [
+                    "transaction"
+                ]
+            },
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "parameters": [
+                    {
+                        "description": "User data",
+                        "in": "body",
+                        "name": "user",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request.TransactionCreateOne"
+                        }
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Data"
+                                },
+                                {
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/response.TransactionDetail"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            ]
+                        }
+                    }
+                },
+                "tags": [
+                    "transaction"
+                ]
             }
         }
     },

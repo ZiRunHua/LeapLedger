@@ -23,6 +23,9 @@ const docTemplate = `{
                 "produces": [
                     "application/json"
                 ],
+                "tags": [
+                    "transaction"
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -34,7 +37,49 @@ const docTemplate = `{
                                 {
                                     "type": "object",
                                     "properties": {
-                                        "Data": {
+                                        "data": {
+                                            "$ref": "#/definitions/response.TransactionDetail"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            },
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "transaction"
+                ],
+                "parameters": [
+                    {
+                        "description": "User data",
+                        "name": "user",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request.TransactionCreateOne"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Data"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
                                             "$ref": "#/definitions/response.TransactionDetail"
                                         }
                                     }
@@ -57,6 +102,29 @@ const docTemplate = `{
                 "Income",
                 "Expense"
             ]
+        },
+        "request.TransactionCreateOne": {
+            "type": "object",
+            "properties": {
+                "accountId": {
+                    "type": "integer"
+                },
+                "amount": {
+                    "type": "integer"
+                },
+                "categoryId": {
+                    "type": "integer"
+                },
+                "incomeExpense": {
+                    "$ref": "#/definitions/constant.IncomeExpense"
+                },
+                "remark": {
+                    "type": "string"
+                },
+                "tradeTime": {
+                    "type": "string"
+                }
+            }
         },
         "response.Data": {
             "type": "object",
