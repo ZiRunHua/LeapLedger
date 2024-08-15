@@ -8,9 +8,18 @@ import (
 	"gorm.io/gorm"
 )
 
+// swagger:response responseData
 type Data struct {
-	Data interface{} `json:"Data"`
-	Msg  string      `json:"Msg"`
+	Data interface{}
+	Msg  string
+}
+
+// swagger:response NoContent
+type NoData struct {
+	// example: null
+	Data interface{}
+	// example: success
+	Msg string
 }
 
 func ResponseAndAbort(status int, data interface{}, msg string, ctx *gin.Context) {

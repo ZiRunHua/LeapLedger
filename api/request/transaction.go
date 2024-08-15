@@ -6,15 +6,17 @@ import (
 	"time"
 )
 
+// swagger:parameters TransactionCreateOne
 type TransactionCreateOne struct {
 	AccountId     uint
 	Amount        int
 	CategoryId    uint
 	IncomeExpense constant.IncomeExpense
 	Remark        string
-	TradeTime     uint
+	TradeTime     time.Time
 }
 
+// swagger:parameters TransactionUpdateOne
 type TransactionUpdateOne struct {
 	UserId        uint
 	AccountId     uint
@@ -22,9 +24,10 @@ type TransactionUpdateOne struct {
 	CategoryId    uint
 	IncomeExpense constant.IncomeExpense
 	Remark        string
-	TradeTime     uint
+	TradeTime     time.Time
 }
 
+// swagger:parameters TransactionQueryCondition
 type TransactionQueryCondition struct {
 	AccountId     uint `binding:"required"`
 	UserIds       *[]uint
@@ -69,19 +72,23 @@ func (t *TransactionQueryCondition) GetExtensionCondition() transactionModel.Ext
 	}
 }
 
+// swagger:parameters TransactionGetList
 type TransactionGetList struct {
 	TransactionQueryCondition
 	PageData
 }
 
+// swagger:parameters TransactionTotal
 type TransactionTotal struct {
 	TransactionQueryCondition
 }
 
+// swagger:parameters TransactionMonthStatistic
 type TransactionMonthStatistic struct {
 	TransactionQueryCondition
 }
 
+// swagger:parameters TransactionDayStatistic
 type TransactionDayStatistic struct {
 	AccountId     uint `binding:"required"`
 	CategoryIds   *[]uint
@@ -89,6 +96,7 @@ type TransactionDayStatistic struct {
 	TimeFrame
 }
 
+// swagger:parameters TransactionCategoryAmountRank
 type TransactionCategoryAmountRank struct {
 	AccountId     uint                   `binding:"required"`
 	IncomeExpense constant.IncomeExpense `binding:"required,oneof=income expense"`
@@ -96,12 +104,14 @@ type TransactionCategoryAmountRank struct {
 	TimeFrame
 }
 
+// swagger:parameters TransactionAmountRank
 type TransactionAmountRank struct {
 	AccountId     uint                   `binding:"required"`
 	IncomeExpense constant.IncomeExpense `binding:"required,oneof=income expense"`
 	TimeFrame
 }
 
+// swagger:parameters TransactionTimingConfig
 type TransactionTimingConfig struct {
 	UserId     uint
 	Type       transactionModel.TimingType
@@ -109,6 +119,7 @@ type TransactionTimingConfig struct {
 	NextTime   time.Time
 }
 
+// swagger:parameters TransactionTiming
 type TransactionTiming struct {
 	Trans  transactionModel.Info
 	Config TransactionTimingConfig

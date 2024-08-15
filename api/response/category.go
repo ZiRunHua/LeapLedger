@@ -8,6 +8,7 @@ import (
 	"github.com/pkg/errors"
 )
 
+// swagger:response
 type CategoryOne struct {
 	Id            uint
 	Name          string
@@ -25,6 +26,7 @@ func (co *CategoryOne) SetData(category categoryModel.Category) error {
 	return nil
 }
 
+// swagger:response
 type CategoryDetail struct {
 	Id            uint
 	Name          string
@@ -44,6 +46,7 @@ func (cd *CategoryDetail) SetData(category categoryModel.Category, father catego
 	return nil
 }
 
+// swagger:response
 type CategoryDetailList []CategoryDetail
 
 func (cdl *CategoryDetailList) SetData(categoryList dataTool.Slice[uint, categoryModel.Category]) error {
@@ -69,6 +72,7 @@ func (cdl *CategoryDetailList) SetData(categoryList dataTool.Slice[uint, categor
 	return nil
 }
 
+// swagger:response
 type FatherOne struct {
 	Id            uint
 	Name          string
@@ -93,14 +97,17 @@ func (fo *FatherOne) SetData(father categoryModel.Father, categoryList []categor
 	return nil
 }
 
+// swagger:response
 type CategoryTree struct {
 	Tree []FatherOne
 }
 
+// swagger:response
 type CategoryMappingTree struct {
 	Tree []CategoryMappingTreeFather
 }
 
+// swagger:response
 type CategoryMappingTreeFather struct {
 	FatherId    uint
 	ChildrenIds []uint

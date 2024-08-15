@@ -20,11 +20,13 @@ import (
 type TransactionApi struct {
 }
 
-// GetOne
-// @Success 200 {object} response.Data{Data=response.TransactionDetail}
-// @Accept  json
-// @Produce  json
-// @Router /transaction/{id} [get]
+// swagger:route GET /transaction/{id} transaction GetOne
+// Request:
+//   - application/json
+//
+// Responses:
+//
+//	200: TransactionDetail
 func (t *TransactionApi) GetOne(ctx *gin.Context) {
 	trans, ok := contextFunc.GetTransByParam(ctx)
 	if false == ok {
@@ -38,11 +40,13 @@ func (t *TransactionApi) GetOne(ctx *gin.Context) {
 	response.OkWithData(data, ctx)
 }
 
-// CreateOne
-// @Success 200 {object} {response.Data{}}
-// @Accept  json
-// @Produce  json
-// @Router /transaction/{id} [post]
+// swagger:route POST /transaction/{id} transaction TransactionCreateOne
+// Request:
+//   - application/json
+//
+// Responses:
+//
+//	200: TransactionDetail
 func (t *TransactionApi) CreateOne(ctx *gin.Context) {
 	var requestData request.TransactionCreateOne
 	if err := ctx.ShouldBindJSON(&requestData); err != nil {
@@ -61,7 +65,7 @@ func (t *TransactionApi) CreateOne(ctx *gin.Context) {
 			IncomeExpense: requestData.IncomeExpense,
 			Amount:        requestData.Amount,
 			Remark:        requestData.Remark,
-			TradeTime:     time.Unix(int64(requestData.TradeTime), 0),
+			TradeTime:     requestData.TradeTime,
 		},
 	}
 
@@ -87,6 +91,13 @@ func (t *TransactionApi) CreateOne(ctx *gin.Context) {
 	response.OkWithData(responseData, ctx)
 }
 
+// swagger:route PUT /transaction/{id} transaction TransactionUpdateOne
+// Request:
+//   - application/json
+//
+// Responses:
+//
+//	200: TransactionDetail
 func (t *TransactionApi) Update(ctx *gin.Context) {
 	var requestData request.TransactionUpdateOne
 	if err := ctx.ShouldBindJSON(&requestData); err != nil {
@@ -113,7 +124,7 @@ func (t *TransactionApi) Update(ctx *gin.Context) {
 			IncomeExpense: requestData.IncomeExpense,
 			Amount:        requestData.Amount,
 			Remark:        requestData.Remark,
-			TradeTime:     time.Unix(int64(requestData.TradeTime), 0),
+			TradeTime:     requestData.TradeTime,
 		},
 	}
 	transaction.ID = oldTrans.ID
@@ -136,6 +147,11 @@ func (t *TransactionApi) Update(ctx *gin.Context) {
 	response.OkWithData(responseData, ctx)
 }
 
+// swagger:route DELETE /transaction/{id} transaction null
+//
+// Responses:
+//
+//	204: NoContent
 func (t *TransactionApi) Delete(ctx *gin.Context) {
 	trans, pass := contextFunc.GetTransByParam(ctx)
 	if false == pass {
@@ -157,6 +173,11 @@ func (t *TransactionApi) Delete(ctx *gin.Context) {
 	response.Ok(ctx)
 }
 
+// swagger:route GET /transaction/list transaction TransactionGetList
+//
+// Responses:
+//
+//	204: List
 func (t *TransactionApi) GetList(ctx *gin.Context) {
 	var requestData request.TransactionGetList
 	if err := ctx.ShouldBindJSON(&requestData); err != nil {

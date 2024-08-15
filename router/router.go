@@ -7,24 +7,17 @@ import (
 	accountModel "KeepAccount/model/account"
 	"fmt"
 	"github.com/gin-gonic/gin"
-	swaggerFiles "github.com/swaggo/files"
-	ginSwagger "github.com/swaggo/gin-swagger"
 	"net/http"
 	"time"
 )
 
-// @title           LeapLedger API
-// @version         1.0
-
-// @license.name  AGPL 3.0
-// @license.url   https://www.gnu.org/licenses/agpl-3.0.html
-
-// @host      localhost:8080
-// @BasePath  /
-
-// @securityDefinitions.jwt Bearer
-// @in header
-// @name Authorization
+// Leap Ledger API
+//
+//     Schemes: http
+//     BasePath: /
+//     Version: 1.0.0
+//
+// swagger:meta
 
 const accountWithIdPrefixPath = "/account/:" + string(cusCtx.AccountId)
 
@@ -63,7 +56,6 @@ func Init() *gin.Engine {
 				c.JSON(http.StatusOK, "ok")
 			},
 		)
-		PublicGroup.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 	}
 	{
 		APIv1Router.InitPublicRouter(PublicGroup)
