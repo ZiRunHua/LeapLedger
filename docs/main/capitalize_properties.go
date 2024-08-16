@@ -28,19 +28,12 @@ func main() {
 
 	for _, def := range definitions {
 		defMap := def.(map[string]interface{})
-		if defMap["properties"] == nil {
-			continue
+		if defMap["properties"] != nil {
+			defMap["properties"] = updateProperties(defMap["properties"].(map[string]interface{}))
 		}
-		properties := defMap["properties"].(map[string]interface{})
-
-		newProperties := make(map[string]interface{})
-
-		for key, value := range properties {
-			newKey := CapitalizeFirstLetter(key)
-			newProperties[newKey] = value
+		if defMap["required"] != nil {
+			defMap["required"] = updateRequired(defMap["required"].([]interface{}))
 		}
-
-		defMap["properties"] = newProperties
 	}
 
 	// 将修改后的json数据写回文件
@@ -57,6 +50,25 @@ func main() {
 
 	fmt.Println("Swagger JSON has been modified successfully.")
 }
+func updateProperties(properties map[string]interface{}) map[string]interface{} {
+
+	newProperties := make(map[string]interface{})
+
+	for key, value := range properties {
+		newKey := CapitalizeFirstLetter(key)
+		newProperties[newKey] = value
+	}
+	return newProperties
+}
+
+func updateRequired(required []interface{}) []string {
+	newRequired := make([]string, len(required), len(required))
+	for i, value := range required {
+		newRequired[i] = CapitalizeFirstLetter(value.(string))
+	}
+	return newRequired
+}
+
 func CapitalizeFirstLetter(str string) string {
 	if len(str) == 0 {
 		return str

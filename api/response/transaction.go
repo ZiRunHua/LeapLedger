@@ -13,7 +13,6 @@ import (
 )
 
 // TransactionDetail 交易详情
-// swagger:response TransactionDetail
 type TransactionDetail struct {
 	Id                 uint
 	UserId             uint
@@ -74,8 +73,7 @@ func (t *TransactionDetail) SetData(
 	return nil
 }
 
-// 交易详情列表
-// swagger:response
+// TransactionDetailList 交易详情列表
 type TransactionDetailList []TransactionDetail
 
 func (t *TransactionDetailList) SetData(transList []transactionModel.Transaction) error {
@@ -159,42 +157,31 @@ func (t *TransactionDetailList) SetData(transList []transactionModel.Transaction
 	return nil
 }
 
-// swagger:response
 type TransactionGetList struct {
 	List TransactionDetailList
 	PageData
 }
 
-// swagger:response
 type TransactionTotal struct {
 	global.IEStatistic
 }
 
-// swagger:response
 type TransactionStatistic struct {
 	global.IEStatistic
 	StartTime time.Time
 	EndTime   time.Time
 }
 
-// swagger:response
-type TransactionMonthStatistic struct {
-	List []TransactionStatistic
-}
-
-// swagger:response
 type TransactionDayStatistic struct {
 	global.AmountCount
 	Date time.Time
 }
 
-// swagger:response
 type TransactionCategoryAmountRank struct {
 	Category CategoryOne
 	global.AmountCount
 }
 
-// swagger:response
 type TransactionTimingConfig struct {
 	Id, AccountId, UserId uint
 	Type                  transactionModel.TimingType
@@ -205,7 +192,6 @@ type TransactionTimingConfig struct {
 	UpdatedAt             time.Time
 }
 
-// swagger:response
 type TransactionTiming struct {
 	Trans  TransactionInfo
 	Config TransactionTimingConfig
@@ -234,7 +220,6 @@ func (tt *TransactionTiming) SetData(data transactionModel.Timing) error {
 	return nil
 }
 
-// swagger:response
 type TransactionTimingList []TransactionTiming
 
 func (ttl *TransactionTimingList) SetData(list dataTool.Slice[uint, transactionModel.Timing]) error {
@@ -270,7 +255,7 @@ func (ttl *TransactionTimingList) SetData(list dataTool.Slice[uint, transactionM
 }
 
 // 交易详情
-// swagger:response
+
 type TransactionInfo struct {
 	Id                 uint
 	UserId             uint
@@ -326,7 +311,6 @@ func (ti *TransactionInfo) SetData(data transactionModel.Info) error {
 	return nil
 }
 
-// swagger:response
 type TransactionInfoList []TransactionInfo
 
 func (t *TransactionInfoList) SetData(list dataTool.Slice[uint, transactionModel.Info]) error {

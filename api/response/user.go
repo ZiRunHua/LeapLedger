@@ -9,7 +9,6 @@ import (
 	"time"
 )
 
-// swagger:response
 type Login struct {
 	Token               string
 	TokenExpirationTime time.Time
@@ -48,14 +47,12 @@ func (l *Login) SetDataFormClientInto(data userModel.UserClientBaseInfo) error {
 	return nil
 }
 
-// swagger:response
 type Register struct {
 	User                UserOne
 	Token               string
 	TokenExpirationTime time.Time
 }
 
-// swagger:response
 type UserOne struct {
 	Id         uint
 	Username   string
@@ -71,18 +68,15 @@ func (u *UserOne) SetData(data userModel.User) error {
 	return nil
 }
 
-// swagger:response
 type UserHome struct {
 	HeaderCard           *UserHomeHeaderCard
 	TimePeriodStatistics *UserHomeTimePeriodStatistics
 }
 
-// swagger:response
 type UserHomeHeaderCard struct {
 	*TransactionStatistic
 }
 
-// swagger:response
 type UserHomeTimePeriodStatistics struct {
 	TodayData     *TransactionStatistic
 	YesterdayData *TransactionStatistic
@@ -90,7 +84,6 @@ type UserHomeTimePeriodStatistics struct {
 	YearData      *TransactionStatistic
 }
 
-// swagger:response
 type UserTransactionShareConfig struct {
 	Account    bool
 	CreateTime bool
@@ -106,7 +99,6 @@ func (u *UserTransactionShareConfig) SetData(data userModel.TransactionShareConf
 	return nil
 }
 
-// swagger:response
 type UserFriendInvitation struct {
 	Id         uint
 	Inviter    UserInfo
@@ -114,7 +106,6 @@ type UserFriendInvitation struct {
 	CreateTime time.Time
 }
 
-// swagger:response
 type UserInfo struct {
 	Id       uint
 	Username string
@@ -127,7 +118,6 @@ func (u *UserInfo) SetMaskData(data userModel.UserInfo) {
 	u.Email = util.Str.MaskEmail(data.Email)
 }
 
-// swagger:response
 type UserCurrentClientInfo struct {
 	CurrentAccount      AccountDetail
 	CurrentShareAccount AccountDetail

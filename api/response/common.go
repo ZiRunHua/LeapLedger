@@ -8,7 +8,6 @@ import (
 	"time"
 )
 
-// swagger:response// swagger:response
 type CommonCaptcha struct {
 	CaptchaId     string
 	PicBase64     string
@@ -16,62 +15,51 @@ type CommonCaptcha struct {
 	OpenCaptcha   bool
 }
 
-// swagger:response
 type Id struct {
 	Id uint
 }
 
-// swagger:response
 type CreateResponse struct {
 	Id        uint
 	CreatedAt time.Time
 	UpdatedAt time.Time
 }
 
-// swagger:response
 type Token struct {
 	Token               string
 	TokenExpirationTime time.Time
 }
 
-// swagger:response
 type TwoLevelTree struct {
 	Tree []Father
 }
 
-// swagger:response
 type Father struct {
 	NameId
 	Children []NameId
 }
 
-// swagger:response
 type NameId struct {
 	Id   uint
 	Name string
 }
 
-// swagger:response
 type NameValue struct {
 	Name  string
 	Value int
 }
 
-// swagger:response
 type PageData struct {
 	page  int
 	limit int
 	count int
 }
 
-// swagger:response
 type ExpirationTime struct {
 	ExpirationTime int
 }
 
-// swagger:model List
 type List[T any] struct {
-	// discriminator: true
 	List []T
 }
 

@@ -22,6 +22,32 @@ import (
 type AccountApi struct {
 }
 
+// GetOne
+// @Tags Account
+// @Accept  json
+// @Produce  json
+// @Success 200 {object} response.Data{Data=response.AccountDetail}
+// @Router /account/{id} [get]
+func (a *AccountApi) GetOne(ctx *gin.Context) {
+	_, accountUser, pass := contextFunc.GetAccountByParam(ctx, true)
+	if false == pass {
+		return
+	}
+	var responseData response.AccountDetail
+	err := responseData.SetData(accountUser)
+	if responseError(err, ctx) {
+		return
+	}
+	response.OkWithData(responseData, ctx)
+}
+
+// CreateOne
+// @Tags Account
+// @Accept  json
+// @Produce  json
+// @Param body body request.AccountCreateOne true "account data"
+// @Success 200 {object} response.Data{Data=response.AccountDetail}
+// @Router /account [post]
 func (a *AccountApi) CreateOne(ctx *gin.Context) {
 	var requestData request.AccountCreateOne
 	if err := ctx.ShouldBindJSON(&requestData); err != nil {
@@ -36,7 +62,9 @@ func (a *AccountApi) CreateOne(ctx *gin.Context) {
 	var _ accountModel.Account
 	var aUser accountModel.User
 	txFunc := func(tx *gorm.DB) error {
-		_, aUser, err = accountService.Base.CreateOne(user, requestData.Name, requestData.Icon, requestData.Type, context.WithValue(ctx, cusCtx.Db, tx))
+		_, aUser, err = accountService.Base.CreateOne(
+			user, requestData.Name, requestData.Icon, requestData.Type, context.WithValue(ctx, cusCtx.Db, tx),
+		)
 		return err
 	}
 	if err = db.Db.Transaction(txFunc); responseError(err, ctx) {
@@ -50,6 +78,13 @@ func (a *AccountApi) CreateOne(ctx *gin.Context) {
 	response.OkWithData(responseData, ctx)
 }
 
+// Update
+// @Tags Account
+// @Accept  json
+// @Produce  json
+// @Param body body request.AccountUpdateOne true "account data"
+// @Success 200 {object} response.Data{Data=response.AccountDetail}
+// @Router /account/{id} [put]
 func (a *AccountApi) Update(ctx *gin.Context) {
 	var requestData request.AccountUpdateOne
 	if err := ctx.ShouldBindJSON(&requestData); err != nil {
@@ -71,7 +106,7 @@ func (a *AccountApi) Update(ctx *gin.Context) {
 	if responseError(err, ctx) {
 		return
 	}
-	//response
+	// response
 	account, err = accountModel.NewDao().SelectById(account.ID)
 	if responseError(err, ctx) {
 		return
@@ -84,6 +119,11 @@ func (a *AccountApi) Update(ctx *gin.Context) {
 	response.OkWithData(responseData, ctx)
 }
 
+// Delete
+// @Tags Account
+// @Produce  json
+// @Success 200 {object} response.Data{Data=response.UserCurrentClientInfo} "new current client info"
+// @Router /account/{id} [delete]
 func (a *AccountApi) Delete(ctx *gin.Context) {
 	account, accountUser, pass := contextFunc.GetAccountByParam(ctx, true)
 	if false == pass {
@@ -109,6 +149,11 @@ func (a *AccountApi) Delete(ctx *gin.Context) {
 	response.OkWithData(responseData, ctx)
 }
 
+// GetList
+// @Tags Account
+// @Produce  json
+// @Success 200 {object} response.Data{Data=response.List[response.AccountDetail]{}}
+// @Router /account/list [get]
 func (a *AccountApi) GetList(ctx *gin.Context) {
 	var accountUserList []accountModel.User
 	err := db.Db.Where("user_id = ?", contextFunc.GetUserId(ctx)).Find(&accountUserList).Error
@@ -123,6 +168,11 @@ func (a *AccountApi) GetList(ctx *gin.Context) {
 	response.OkWithData(response.List[response.AccountDetail]{List: responseData}, ctx)
 }
 
+// GetListByType
+// @Tags Account
+// @Produce  json
+// @Success 200 {object} response.Data{Data=response.List[response.AccountDetail]{}}
+// @Router /account/list/{type} [get]
 func (a *AccountApi) GetListByType(ctx *gin.Context) {
 	t := contextFunc.GetAccountType(ctx)
 	list, err := accountModel.NewDao().SelectUserListByUserAndAccountType(contextFunc.GetUserId(ctx), t)
@@ -138,21 +188,11 @@ func (a *AccountApi) GetListByType(ctx *gin.Context) {
 	response.OkWithData(response.List[response.AccountDetail]{List: responseData}, ctx)
 }
 
-func (a *AccountApi) GetOne(ctx *gin.Context) {
-	account, _, pass := contextFunc.GetAccountByParam(ctx, true)
-	if false == pass {
-		return
-	}
-	responseData := response.AccountOne{}
-	err := responseData.SetData(account)
-	if responseError(err, ctx) {
-		return
-	}
-	response.OkWithData(
-		response.AccountModelToResponse(&account), ctx,
-	)
-}
-
+// CreateOneByTemplate
+// @Tags Account/Template
+// @Produce  json
+// @Success 200 {object} response.Data{Data=response.AccountDetail}
+// @Router /account/form/template/{id} [post]
 func (a *AccountApi) CreateOneByTemplate(ctx *gin.Context) {
 	id, ok := contextFunc.GetUintParamByKey("id", ctx)
 	if false == ok {
@@ -186,6 +226,11 @@ func (a *AccountApi) CreateOneByTemplate(ctx *gin.Context) {
 	response.OkWithData(responseData, ctx)
 }
 
+// GetAccountTemplateList
+// @Tags Account/Template
+// @Produce  json
+// @Success 200 {object} response.Data{Data=response.AccountTemplateList}
+// @Router /account/template/list [get]
 func (a *AccountApi) GetAccountTemplateList(ctx *gin.Context) {
 	list, err := templateService.GetListByRank(ctx)
 	if responseError(err, ctx) {
@@ -205,6 +250,13 @@ func (a *AccountApi) GetAccountTemplateList(ctx *gin.Context) {
 	response.OkWithData(responseData, ctx)
 }
 
+// InitCategoryByTemplate
+// @Tags Account/Template
+// @Accept  json
+// @Produce  json
+// @Param body body request.AccountTransCategoryInit true "init data"
+// @Success 200 {object} response.Data{Data=response.AccountDetail}
+// @Router /account/{accountId}/transaction/category/init [post]
 func (a *AccountApi) InitCategoryByTemplate(ctx *gin.Context) {
 	var err error
 	var requestData request.AccountTransCategoryInit
@@ -239,6 +291,13 @@ func (a *AccountApi) InitCategoryByTemplate(ctx *gin.Context) {
 	response.OkWithData(responseData, ctx)
 }
 
+// GetUserInvitationList
+// @Tags Account/User/Invitation
+// @Accept  json
+// @Produce  json
+// @Param body body request.AccountGetUserInvitationList true "query param"
+// @Success 200 {object} response.Data{Data=response.List[response.AccountUserInvitation]{}}
+// @Router /account/user/invitation/list [get]
 func (a *AccountApi) GetUserInvitationList(ctx *gin.Context) {
 	var err error
 	var requestData request.AccountGetUserInvitationList
@@ -249,7 +308,7 @@ func (a *AccountApi) GetUserInvitationList(ctx *gin.Context) {
 	if pass := checkFunc.AccountBelong(requestData.AccountId, ctx); false == pass {
 		return
 	}
-	//设置查询条件
+	// 设置查询条件
 	condition := accountModel.NewUserInvitationCondition(requestData.Limit, requestData.Offset)
 	condition.SetAccountId(requestData.AccountId)
 	if requestData.Role != nil {
@@ -278,6 +337,13 @@ func (a *AccountApi) GetUserInvitationList(ctx *gin.Context) {
 	response.OkWithData(response.List[response.AccountUserInvitation]{List: responseData}, ctx)
 }
 
+// CreateAccountUserInvitation
+// @Tags Account/User/Invitation
+// @Accept  json
+// @Produce  json
+// @Param body body request.AccountGetUserInvitationList true "invitation data"
+// @Success 200 {object} response.Data{Data=response.AccountUserInvitation}
+// @Router /account/:accountId/user/invitation [post]
 func (a *AccountApi) CreateAccountUserInvitation(ctx *gin.Context) {
 	var err error
 	var requestData request.AccountCreateOneUserInvitation
@@ -337,6 +403,11 @@ func (a *AccountApi) getAcceptUserInvitationByParam(ctx *gin.Context) (accountMo
 	return invitation, true
 }
 
+// AcceptAccountUserInvitation
+// @Tags Account/User/Invitation
+// @Produce  json
+// @Success 200 {object} response.Data{Data=response.AccountUserInvitation}
+// @Router /account/user/invitation/{id}/accept [put]
 func (a *AccountApi) AcceptAccountUserInvitation(ctx *gin.Context) {
 	invitation, pass := a.getAcceptUserInvitationByParam(ctx)
 	if false == pass {
@@ -364,6 +435,11 @@ func (a *AccountApi) AcceptAccountUserInvitation(ctx *gin.Context) {
 	response.OkWithData(responseData, ctx)
 }
 
+// RefuseAccountUserInvitation
+// @Tags Account/User/Invitation
+// @Produce  json
+// @Success 200 {object} response.Data{Data=response.AccountUserInvitation}
+// @Router /account/user/invitation/{id}/refuse [put]
 func (a *AccountApi) RefuseAccountUserInvitation(ctx *gin.Context) {
 	invitation, pass := a.getAcceptUserInvitationByParam(ctx)
 	if false == pass {
@@ -391,6 +467,13 @@ func (a *AccountApi) RefuseAccountUserInvitation(ctx *gin.Context) {
 	response.OkWithData(responseData, ctx)
 }
 
+// UpdateUser
+// @Tags Account/User
+// @Accept  json
+// @Produce  json
+// @Param body body request.AccountUpdateUser true "account user data"
+// @Success 200 {object} response.Data{Data=response.AccountUser}
+// @Router /account/user/{id} [put]
 func (a *AccountApi) UpdateUser(ctx *gin.Context) {
 	var requestData request.AccountUpdateUser
 	if err := ctx.ShouldBindJSON(&requestData); err != nil {
@@ -423,6 +506,12 @@ func (a *AccountApi) UpdateUser(ctx *gin.Context) {
 	response.OkWithData(responseData, ctx)
 }
 
+// GetUserList
+// @Tags Account/User
+// @Accept  json
+// @Produce  json
+// @Success 200 {object} response.Data{Data=response.List[response.AccountUser]{}}
+// @Router /account/{accountId}/user/list [get]
 func (a *AccountApi) GetUserList(ctx *gin.Context) {
 	account, _, pass := contextFunc.GetAccountByParam(ctx, true)
 	if false == pass {
@@ -443,6 +532,13 @@ func (a *AccountApi) GetUserList(ctx *gin.Context) {
 	response.OkWithData(response.List[response.AccountUser]{List: responseData}, ctx)
 }
 
+// GetUserInfo
+// @Tags Account/User
+// @Accept  json
+// @Produce  json
+// @Param body body request.AccountGetUserInfo true "query param"
+// @Success 200 {object} response.Data{Data=response.AccountUserInfo}
+// @Router /account/user/{id}/info [get]
 func (a *AccountApi) GetUserInfo(ctx *gin.Context) {
 	var requestData request.AccountGetUserInfo
 	if err := ctx.ShouldBindJSON(&requestData); err != nil {
@@ -495,73 +591,6 @@ func (a *AccountApi) GetUserInfo(ctx *gin.Context) {
 	response.OkWithData(responseData, ctx)
 }
 
-func (a *AccountApi) GetUserConfig(ctx *gin.Context) {
-	var requestData request.AccountId
-	if err := ctx.ShouldBindJSON(&requestData); err != nil {
-		response.FailToParameter(ctx, err)
-		return
-	}
-	_, accountUser, pass := checkFunc.AccountBelongAndGet(requestData.AccountId, ctx)
-	if false == pass {
-		return
-	}
-	config, err := accountUser.GetConfig()
-	if responseError(err, ctx) {
-		return
-	}
-	var responseData response.AccountUserConfig
-	err = responseData.SetData(config)
-	if responseError(err, ctx) {
-		return
-	}
-	response.OkWithData(responseData, ctx)
-}
-
-var AccountConfigFlagMap = map[string]interface{}{"SyncMappingAccount": accountModel.Flag_Trans_Sync_Mapping_Account}
-
-func (a *AccountApi) getUserConfigFlagByCtx(ctx *gin.Context) interface{} {
-	return AccountConfigFlagMap[ctx.Param("type")]
-}
-
-func (a *AccountApi) UpdateUserConfigFlag(ctx *gin.Context) {
-	var requestData request.AccountUserConfigFlagUpdate
-	if err := ctx.ShouldBindJSON(&requestData); err != nil {
-		response.FailToParameter(ctx, err)
-		return
-	}
-	_, accountUser, pass := checkFunc.AccountBelongAndGet(requestData.AccountId, ctx)
-	if false == pass {
-		return
-	}
-	// handle
-	userConfig, err := accountUser.GetConfig()
-	if responseError(err, ctx) {
-		return
-	}
-	err = db.Db.Transaction(func(tx *gorm.DB) error {
-		err = userConfig.ForShare(tx)
-		if err != nil {
-			return err
-		}
-		if requestData.Status {
-			err = userConfig.OpenUserConfigFlag(a.getUserConfigFlagByCtx(ctx), tx)
-		} else {
-			err = userConfig.CloseUserConfigFlag(a.getUserConfigFlagByCtx(ctx), tx)
-		}
-		return nil
-	})
-	if responseError(err, ctx) {
-		return
-	}
-	//response
-	var responseData response.AccountUserConfig
-	err = responseData.SetData(userConfig)
-	if responseError(err, ctx) {
-		return
-	}
-	response.OkWithData(responseData, ctx)
-}
-
 func (a *AccountApi) getTransTotal(
 	account accountModel.Account, UserIds *[]uint, start time.Time, end time.Time,
 ) (result global.IEStatisticWithTime, err error) {
@@ -600,6 +629,87 @@ func (a *AccountApi) getTrans(
 	return transactionModel.NewDao().GetListByCondition(condition, offset, limit)
 }
 
+// GetUserConfig
+// @Tags Account/User/Config
+// @Produce  json
+// @Success 200 {object} response.Data{Data=response.AccountUserConfig}
+// @Router /account/{accountId}/user/config [get]
+func (a *AccountApi) GetUserConfig(ctx *gin.Context) {
+	_, accountUser, pass := contextFunc.GetAccountByParam(ctx, true)
+	if false == pass {
+		return
+	}
+	config, err := accountUser.GetConfig()
+	if responseError(err, ctx) {
+		return
+	}
+	var responseData response.AccountUserConfig
+	err = responseData.SetData(config)
+	if responseError(err, ctx) {
+		return
+	}
+	response.OkWithData(responseData, ctx)
+}
+
+var AccountConfigFlagMap = map[string]interface{}{"SyncMappingAccount": accountModel.Flag_Trans_Sync_Mapping_Account}
+
+func (a *AccountApi) getUserConfigFlagByCtx(ctx *gin.Context) interface{} {
+	return AccountConfigFlagMap[ctx.Param("type")]
+}
+
+// UpdateUserConfigFlag
+// @Tags Account/User/Config
+// @Accept  json
+// @Produce  json
+// @Param body body request.AccountUserConfigFlagUpdate true "config data"
+// @Success 200 {object} response.Data{Data=response.AccountUserConfig}
+// @Router /account/{accountId}/user/config/{flag} [put]
+func (a *AccountApi) UpdateUserConfigFlag(ctx *gin.Context) {
+	var requestData request.AccountUserConfigFlagUpdate
+	if err := ctx.ShouldBindJSON(&requestData); err != nil {
+		response.FailToParameter(ctx, err)
+		return
+	}
+	_, accountUser, pass := contextFunc.GetAccountByParam(ctx, true)
+	if false == pass {
+		return
+	}
+	// handle
+	userConfig, err := accountUser.GetConfig()
+	if responseError(err, ctx) {
+		return
+	}
+	err = db.Db.Transaction(
+		func(tx *gorm.DB) error {
+			err = userConfig.ForShare(tx)
+			if err != nil {
+				return err
+			}
+			if requestData.Status {
+				err = userConfig.OpenUserConfigFlag(a.getUserConfigFlagByCtx(ctx), tx)
+			} else {
+				err = userConfig.CloseUserConfigFlag(a.getUserConfigFlagByCtx(ctx), tx)
+			}
+			return nil
+		},
+	)
+	if responseError(err, ctx) {
+		return
+	}
+	// response
+	var responseData response.AccountUserConfig
+	err = responseData.SetData(userConfig)
+	if responseError(err, ctx) {
+		return
+	}
+	response.OkWithData(responseData, ctx)
+}
+
+// GetAccountMappingList
+// @Tags Account/Mapping
+// @Produce  json
+// @Success 200 {object} response.Data{Data=response.List[response.AccountMapping]}
+// @Router /account/{accountId}/mapping/list [get]
 func (a *AccountApi) GetAccountMappingList(ctx *gin.Context) {
 	account, _, pass := contextFunc.GetAccountByParam(ctx, true)
 	if pass == false {
@@ -619,6 +729,11 @@ func (a *AccountApi) GetAccountMappingList(ctx *gin.Context) {
 	response.OkWithData(response.List[response.AccountMapping]{List: responseData}, ctx)
 }
 
+// GetAccountMapping
+// @Tags Account/Mapping
+// @Produce  json
+// @Success 200 {object} response.Data{Data=response.AccountMapping}
+// @Router /account/{accountId}/mapping [get]
 func (a *AccountApi) GetAccountMapping(ctx *gin.Context) {
 	user, err := contextFunc.GetUser(ctx)
 	if responseError(err, ctx) {
@@ -645,6 +760,13 @@ func (a *AccountApi) GetAccountMapping(ctx *gin.Context) {
 	response.OkWithData(responseData, ctx)
 }
 
+// CreateAccountMapping
+// @Tags Account/Mapping
+// @Accept  json
+// @Produce  json
+// @Param body body request.AccountMapping true "mapping data"
+// @Success 200 {object} response.Data{Data=response.AccountMapping}
+// @Router /account/{accountId}/mapping [post]
 func (a *AccountApi) CreateAccountMapping(ctx *gin.Context) {
 	var err error
 	var requestData request.AccountMapping
@@ -669,10 +791,12 @@ func (a *AccountApi) CreateAccountMapping(ctx *gin.Context) {
 	}
 	// handle
 	var mapping accountModel.Mapping
-	err = db.Db.Transaction(func(tx *gorm.DB) error {
-		mapping, err = accountService.Share.MappingAccount(user, mainAccount, mappingAccount, tx)
-		return err
-	})
+	err = db.Db.Transaction(
+		func(tx *gorm.DB) error {
+			mapping, err = accountService.Share.MappingAccount(user, mainAccount, mappingAccount, tx)
+			return err
+		},
+	)
 	if responseError(err, ctx) {
 		return
 	}
@@ -689,6 +813,11 @@ func (a *AccountApi) CreateAccountMapping(ctx *gin.Context) {
 	response.OkWithData(responseData, ctx)
 }
 
+// DeleteAccountMapping
+// @Tags Account/Mapping
+// @Produce  json
+// @Success 204 {object} response.NoContent
+// @Router /account/mapping/{id} [delete]
 func (a *AccountApi) DeleteAccountMapping(ctx *gin.Context) {
 	var err error
 	id, pass := contextFunc.GetUintParamByKey("id", ctx)
@@ -726,6 +855,13 @@ func (a *AccountApi) DeleteAccountMapping(ctx *gin.Context) {
 	response.OkWithData(responseData, ctx)
 }
 
+// UpdateAccountMapping
+// @Tags Account/Mapping
+// @Accept  json
+// @Produce  json
+// @Param body body request.UpdateAccountMapping true "mapping data"
+// @Success 200 {object} response.Data{Data=response.AccountMapping}
+// @Router /account/mapping/:id [put]
 func (a *AccountApi) UpdateAccountMapping(ctx *gin.Context) {
 	id, pass := contextFunc.GetUintParamByKey("id", ctx)
 	if false == pass {
@@ -774,8 +910,14 @@ func (a *AccountApi) UpdateAccountMapping(ctx *gin.Context) {
 	response.OkWithData(responseData, ctx)
 }
 
+// GetInfo
+// @Tags Account
+// @Produce  json
+// @Success 200 {object} response.Data{Data=response.AccountInfo}
+// @Router /account/{accountId}/info/:type [get]
+// @Router /account/{accountId}/info [get]
 func (a *AccountApi) GetInfo(ctx *gin.Context) {
-	//获取信息类型
+	// 获取信息类型
 	var types []request.InfoType
 	infoType := contextFunc.GetInfoTypeFormParam(ctx)
 	if infoType == "" {
@@ -792,7 +934,7 @@ func (a *AccountApi) GetInfo(ctx *gin.Context) {
 	} else {
 		types = []request.InfoType{infoType}
 	}
-	//查询
+	// 查询
 	var todayTotal, monthTotal *global.IEStatisticWithTime
 	var recentTrans *response.TransactionDetailList
 	typeHandleFunc := func(infoType request.InfoType, account accountModel.Account) error {

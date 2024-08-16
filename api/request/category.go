@@ -10,7 +10,7 @@ type CategoryOne struct {
 	Icon          string
 	FatherId      uint
 	IncomeExpense IncomeExpense
-}
+} // @name CategoryOne
 
 type CategoryCreateOne struct {
 	Name     string `binding:"required"`

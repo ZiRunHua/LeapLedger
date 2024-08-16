@@ -2,7 +2,6 @@ package v1
 
 import (
 	v1 "KeepAccount/api/v1"
-	"KeepAccount/global/cusCtx"
 	"github.com/gin-gonic/gin"
 )
 
@@ -25,6 +24,6 @@ func (c *TransactionRouter) InitTransactionRouter(sRouter *gin.RouterGroup, acco
 		// timing
 		accountAccountRoute.GET("/transaction/timing/list", baseApi.GetTimingList)
 		accountAccountRoute.POST("/transaction/timing", baseApi.CreateTiming)
-		accountAccountRoute.PUT("/transaction/timing/:"+string(cusCtx.TransactionTimingId), baseApi.UpdateTiming)
+		accountAccountRoute.PUT("/transaction/timing/:id", baseApi.UpdateTiming)
 	}
 }

@@ -10,21 +10,6 @@ import (
 	"time"
 )
 
-func AccountModelToResponse(account *accountModel.Account) AccountOne {
-	if account == nil {
-		return AccountOne{}
-	}
-	return AccountOne{
-		Id:         account.ID,
-		Name:       account.Name,
-		Icon:       account.Icon,
-		Type:       account.Type,
-		UpdateTime: account.UpdatedAt,
-		CreateTime: account.CreatedAt,
-	}
-}
-
-// swagger:response
 type AccountOne struct {
 	Id         uint
 	Name       string
@@ -45,7 +30,7 @@ func (a *AccountOne) SetData(data accountModel.Account) error {
 }
 
 // AccountDetail 账本详情
-// swagger:response
+
 type AccountDetail struct {
 	AccountOne
 	CreatorId   uint
@@ -125,7 +110,6 @@ func (a *AccountDetail) setAccount(account accountModel.Account) {
 	a.UpdateTime = account.UpdatedAt
 }
 
-// swagger:response
 type AccountDetailList []AccountDetail
 
 func (a *AccountDetailList) SetData(list dataTool.Slice[uint, accountModel.User]) error {
@@ -161,7 +145,6 @@ func (a *AccountDetailList) SetData(list dataTool.Slice[uint, accountModel.User]
 	return nil
 }
 
-// swagger:response
 type AccountTemplateOne struct {
 	Id   uint
 	Name string
@@ -169,13 +152,11 @@ type AccountTemplateOne struct {
 	Type accountModel.Type
 }
 
-// swagger:response
 type AccountTemplateList struct {
 	List []AccountTemplateOne
 }
 
 // AccountMapping 账本关联
-// swagger:response
 type AccountMapping struct {
 	Id             uint
 	MainAccount    AccountOne
@@ -207,7 +188,6 @@ func (a *AccountMapping) SetData(data accountModel.Mapping) error {
 	return nil
 }
 
-// swagger:response
 type AccountUserInvitation struct {
 	Id         uint
 	Account    AccountOne
@@ -245,7 +225,6 @@ func (a *AccountUserInvitation) SetData(data accountModel.UserInvitation) error 
 	return nil
 }
 
-// swagger:response
 type AccountUser struct {
 	Id         uint
 	AccountId  uint
@@ -270,21 +249,18 @@ func (a *AccountUser) SetData(data accountModel.User) error {
 	return nil
 }
 
-// swagger:response
 type AccountUserInfo struct {
 	TodayTransTotal        *global.IEStatisticWithTime
 	CurrentMonthTransTotal *global.IEStatisticWithTime
 	RecentTrans            *TransactionDetailList
 }
 
-// swagger:response
 type AccountInfo struct {
 	TodayTransTotal        *global.IEStatisticWithTime
 	CurrentMonthTransTotal *global.IEStatisticWithTime
 	RecentTrans            *TransactionDetailList
 }
 
-// swagger:response
 type AccountUserConfig struct {
 	Id        uint
 	AccountId uint

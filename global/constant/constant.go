@@ -13,7 +13,7 @@ const DATA_PATH = WORK_PATH + "/data"
 var ExampleAccountJsonPath = DATA_PATH + "/template/account/example.json"
 
 // IncomeExpense 收支类型
-type IncomeExpense string
+type IncomeExpense string // `example:"expense" enums:"income,expense"`
 
 const (
 	Income  IncomeExpense = "income"
@@ -79,6 +79,6 @@ const (
 	LogOperationOfDelete LogOperation = "delete"
 )
 
-//nats
+// nats
 
 type Subject string

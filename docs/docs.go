@@ -15,6 +15,1269 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
+        "/account": {
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Account"
+                ],
+                "parameters": [
+                    {
+                        "description": "account data",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/AccountCreateOne"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "Data": {
+                                            "$ref": "#/definitions/response.AccountDetail"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/account/:accountId/user/invitation": {
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Account/User/Invitation"
+                ],
+                "parameters": [
+                    {
+                        "description": "invitation data",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/AccountGetUserInvitationList"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "Data": {
+                                            "$ref": "#/definitions/response.AccountUserInvitation"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/account/form/template/{id}": {
+            "post": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Account/Template"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "Data": {
+                                            "$ref": "#/definitions/response.AccountDetail"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/account/list": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Account"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "Data": {
+                                            "$ref": "#/definitions/response.List-response_AccountDetail"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/account/list/{type}": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Account"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "Data": {
+                                            "$ref": "#/definitions/response.List-response_AccountDetail"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/account/mapping/:id": {
+            "put": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Account/Mapping"
+                ],
+                "parameters": [
+                    {
+                        "description": "mapping data",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/UpdateAccountMapping"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "Data": {
+                                            "$ref": "#/definitions/response.AccountMapping"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/account/mapping/{id}": {
+            "delete": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Account/Mapping"
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content",
+                        "schema": {
+                            "$ref": "#/definitions/NoContent"
+                        }
+                    }
+                }
+            }
+        },
+        "/account/template/list": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Account/Template"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "Data": {
+                                            "$ref": "#/definitions/response.AccountTemplateList"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/account/user/invitation/list": {
+            "get": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Account/User/Invitation"
+                ],
+                "parameters": [
+                    {
+                        "description": "query param",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/AccountGetUserInvitationList"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "Data": {
+                                            "$ref": "#/definitions/response.List-response_AccountUserInvitation"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/account/user/invitation/{id}/accept": {
+            "put": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Account/User/Invitation"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "Data": {
+                                            "$ref": "#/definitions/response.AccountUserInvitation"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/account/user/invitation/{id}/refuse": {
+            "put": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Account/User/Invitation"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "Data": {
+                                            "$ref": "#/definitions/response.AccountUserInvitation"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/account/user/{id}": {
+            "put": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Account/User"
+                ],
+                "parameters": [
+                    {
+                        "description": "account user data",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/AccountUpdateUser"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "Data": {
+                                            "$ref": "#/definitions/response.AccountUser"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/account/user/{id}/info": {
+            "get": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Account/User"
+                ],
+                "parameters": [
+                    {
+                        "description": "query param",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/AccountGetUserInfo"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "Data": {
+                                            "$ref": "#/definitions/response.AccountUserInfo"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/account/{accountId}/info": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Account"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "Data": {
+                                            "$ref": "#/definitions/response.AccountInfo"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/account/{accountId}/info/:type": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Account"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "Data": {
+                                            "$ref": "#/definitions/response.AccountInfo"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/account/{accountId}/mapping": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Account/Mapping"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "Data": {
+                                            "$ref": "#/definitions/response.AccountMapping"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            },
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Account/Mapping"
+                ],
+                "parameters": [
+                    {
+                        "description": "mapping data",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/AccountMapping"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "Data": {
+                                            "$ref": "#/definitions/response.AccountMapping"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/account/{accountId}/mapping/list": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Account/Mapping"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "Data": {
+                                            "$ref": "#/definitions/response.List-response_AccountMapping"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/account/{accountId}/transaction/category/init": {
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Account/Template"
+                ],
+                "parameters": [
+                    {
+                        "description": "init data",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/AccountTransCategoryInit"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "Data": {
+                                            "$ref": "#/definitions/response.AccountDetail"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/account/{accountId}/transaction/timing": {
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "transaction/timing"
+                ],
+                "parameters": [
+                    {
+                        "description": "timing config",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request.TransactionTiming"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "Data": {
+                                            "$ref": "#/definitions/response.TransactionTiming"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/account/{accountId}/transaction/timing/list": {
+            "get": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "transaction/timing"
+                ],
+                "parameters": [
+                    {
+                        "description": "Page data",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request.PageData"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "Data": {
+                                            "$ref": "#/definitions/response.List-response_TransactionTiming"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/account/{accountId}/transaction/timing/{id}": {
+            "put": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "transaction/timing"
+                ],
+                "parameters": [
+                    {
+                        "description": "timing config",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request.TransactionTiming"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "Data": {
+                                            "$ref": "#/definitions/response.TransactionTiming"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/account/{accountId}/user/config": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Account/User/Config"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "Data": {
+                                            "$ref": "#/definitions/response.AccountUserConfig"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/account/{accountId}/user/config/{flag}": {
+            "put": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Account/User/Config"
+                ],
+                "parameters": [
+                    {
+                        "description": "config data",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/AccountUserConfigFlagUpdate"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "Data": {
+                                            "$ref": "#/definitions/response.AccountUserConfig"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/account/{accountId}/user/list": {
+            "get": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Account/User"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "Data": {
+                                            "$ref": "#/definitions/response.List-response_AccountUser"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/account/{id}": {
+            "get": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Account"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "Data": {
+                                            "$ref": "#/definitions/response.AccountDetail"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            },
+            "put": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Account"
+                ],
+                "parameters": [
+                    {
+                        "description": "account data",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/AccountUpdateOne"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "Data": {
+                                            "$ref": "#/definitions/response.AccountDetail"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Account"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "new current client info",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "Data": {
+                                            "$ref": "#/definitions/response.UserCurrentClientInfo"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/transaction/amount/rank": {
+            "get": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "transaction"
+                ],
+                "parameters": [
+                    {
+                        "description": "condition",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request.TransactionAmountRank"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "Data": {
+                                            "$ref": "#/definitions/response.List-response_TransactionDetailList"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/transaction/category/amount/rank": {
+            "get": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "transaction"
+                ],
+                "parameters": [
+                    {
+                        "description": "condition",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request.TransactionCategoryAmountRank"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "Data": {
+                                            "$ref": "#/definitions/response.List-response_TransactionCategoryAmountRank"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/transaction/day/statistic": {
+            "get": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "transaction"
+                ],
+                "parameters": [
+                    {
+                        "description": "condition",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request.TransactionDayStatistic"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "Data": {
+                                            "$ref": "#/definitions/response.List-response_TransactionDayStatistic"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/transaction/list": {
+            "get": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "transaction"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "Data": {
+                                            "$ref": "#/definitions/response.List-response_TransactionDetail"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/transaction/month/statistic": {
+            "get": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "transaction"
+                ],
+                "parameters": [
+                    {
+                        "description": "condition",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request.TransactionMonthStatistic"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "Data": {
+                                            "$ref": "#/definitions/response.List-response_TransactionStatistic"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/transaction/total": {
+            "get": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "transaction"
+                ],
+                "parameters": [
+                    {
+                        "description": "Transaction total data",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request.TransactionTotal"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "Data": {
+                                            "$ref": "#/definitions/response.TransactionTotal"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
         "/transaction/{id}": {
             "get": {
                 "consumes": [
@@ -32,12 +1295,54 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/response.Data"
+                                    "$ref": "#/definitions/Response"
                                 },
                                 {
                                     "type": "object",
                                     "properties": {
-                                        "data": {
+                                        "Data": {
+                                            "$ref": "#/definitions/response.TransactionDetail"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            },
+            "put": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "transaction"
+                ],
+                "parameters": [
+                    {
+                        "description": "Transaction data",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request.TransactionCreateOne"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "Data": {
                                             "$ref": "#/definitions/response.TransactionDetail"
                                         }
                                     }
@@ -59,8 +1364,8 @@ const docTemplate = `{
                 ],
                 "parameters": [
                     {
-                        "description": "User data",
-                        "name": "user",
+                        "description": "transaction data",
+                        "name": "body",
                         "in": "body",
                         "required": true,
                         "schema": {
@@ -74,12 +1379,12 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/response.Data"
+                                    "$ref": "#/definitions/Response"
                                 },
                                 {
                                     "type": "object",
                                     "properties": {
-                                        "data": {
+                                        "Data": {
                                             "$ref": "#/definitions/response.TransactionDetail"
                                         }
                                     }
@@ -88,10 +1393,201 @@ const docTemplate = `{
                         }
                     }
                 }
+            },
+            "delete": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "transaction"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/NoContent"
+                        }
+                    }
+                }
             }
         }
     },
     "definitions": {
+        "AccountCreateOne": {
+            "type": "object",
+            "required": [
+                "icon",
+                "name",
+                "type"
+            ],
+            "properties": {
+                "icon": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "type": {
+                    "$ref": "#/definitions/accountModel.Type"
+                }
+            }
+        },
+        "AccountGetUserInfo": {
+            "type": "object",
+            "properties": {
+                "types": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "AccountGetUserInvitationList": {
+            "type": "object",
+            "required": [
+                "accountId"
+            ],
+            "properties": {
+                "accountId": {
+                    "type": "integer"
+                },
+                "invitee": {
+                    "type": "integer"
+                },
+                "limit": {
+                    "type": "integer"
+                },
+                "offset": {
+                    "type": "integer",
+                    "minimum": 0
+                },
+                "role": {
+                    "$ref": "#/definitions/accountModel.UserRole"
+                }
+            }
+        },
+        "AccountMapping": {
+            "type": "object",
+            "properties": {
+                "accountId": {
+                    "type": "integer"
+                }
+            }
+        },
+        "AccountTransCategoryInit": {
+            "type": "object",
+            "properties": {
+                "templateId": {
+                    "type": "integer"
+                }
+            }
+        },
+        "AccountUpdateOne": {
+            "type": "object",
+            "required": [
+                "type"
+            ],
+            "properties": {
+                "icon": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "type": {
+                    "$ref": "#/definitions/accountModel.Type"
+                }
+            }
+        },
+        "AccountUpdateUser": {
+            "type": "object",
+            "required": [
+                "role"
+            ],
+            "properties": {
+                "role": {
+                    "$ref": "#/definitions/accountModel.UserRole"
+                }
+            }
+        },
+        "AccountUserConfigFlagUpdate": {
+            "type": "object",
+            "properties": {
+                "status": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "NoContent": {
+            "type": "object",
+            "properties": {
+                "data": {},
+                "msg": {
+                    "type": "string"
+                }
+            }
+        },
+        "Response": {
+            "type": "object",
+            "properties": {
+                "data": {},
+                "msg": {
+                    "type": "string",
+                    "example": "success"
+                }
+            }
+        },
+        "UpdateAccountMapping": {
+            "type": "object",
+            "properties": {
+                "relatedAccountId": {
+                    "type": "integer"
+                }
+            }
+        },
+        "accountModel.Type": {
+            "type": "string",
+            "enum": [
+                "independent",
+                "share"
+            ],
+            "x-enum-varnames": [
+                "TypeIndependent",
+                "TypeShare"
+            ]
+        },
+        "accountModel.UserInvitationStatus": {
+            "type": "integer",
+            "enum": [
+                0,
+                1,
+                2
+            ],
+            "x-enum-varnames": [
+                "UserInvitationStatsOfWaiting",
+                "UserInvitationStatsOfAccept",
+                "UserInvitationStatsOfRefuse"
+            ]
+        },
+        "accountModel.UserRole": {
+            "type": "string",
+            "enum": [
+                "reader",
+                "ownEditor",
+                "administrator",
+                "creator"
+            ],
+            "x-enum-varnames": [
+                "Reader",
+                "OwnEditor",
+                "Administrator",
+                "Creator"
+            ]
+        },
         "constant.IncomeExpense": {
             "type": "string",
             "enum": [
@@ -102,6 +1598,107 @@ const docTemplate = `{
                 "Income",
                 "Expense"
             ]
+        },
+        "global.AmountCount": {
+            "type": "object",
+            "properties": {
+                "amount": {
+                    "type": "integer"
+                },
+                "count": {
+                    "type": "integer"
+                }
+            }
+        },
+        "global.IEStatisticWithTime": {
+            "type": "object",
+            "properties": {
+                "endTime": {
+                    "type": "string"
+                },
+                "expense": {
+                    "$ref": "#/definitions/global.AmountCount"
+                },
+                "income": {
+                    "$ref": "#/definitions/global.AmountCount"
+                },
+                "startTime": {
+                    "type": "string"
+                }
+            }
+        },
+        "request.PageData": {
+            "type": "object",
+            "properties": {
+                "limit": {
+                    "type": "integer"
+                },
+                "offset": {
+                    "type": "integer",
+                    "minimum": 0
+                }
+            }
+        },
+        "request.TransactionAmountRank": {
+            "type": "object",
+            "required": [
+                "accountId",
+                "incomeExpense"
+            ],
+            "properties": {
+                "accountId": {
+                    "type": "integer"
+                },
+                "endTime": {
+                    "type": "string"
+                },
+                "incomeExpense": {
+                    "enum": [
+                        "income",
+                        "expense"
+                    ],
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/constant.IncomeExpense"
+                        }
+                    ]
+                },
+                "startTime": {
+                    "type": "string"
+                }
+            }
+        },
+        "request.TransactionCategoryAmountRank": {
+            "type": "object",
+            "required": [
+                "accountId",
+                "incomeExpense"
+            ],
+            "properties": {
+                "accountId": {
+                    "type": "integer"
+                },
+                "endTime": {
+                    "type": "string"
+                },
+                "incomeExpense": {
+                    "enum": [
+                        "income",
+                        "expense"
+                    ],
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/constant.IncomeExpense"
+                        }
+                    ]
+                },
+                "limit": {
+                    "type": "integer"
+                },
+                "startTime": {
+                    "type": "string"
+                }
+            }
         },
         "request.TransactionCreateOne": {
             "type": "object",
@@ -126,11 +1723,538 @@ const docTemplate = `{
                 }
             }
         },
-        "response.Data": {
+        "request.TransactionDayStatistic": {
+            "type": "object",
+            "required": [
+                "accountId"
+            ],
+            "properties": {
+                "accountId": {
+                    "type": "integer"
+                },
+                "categoryIds": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "endTime": {
+                    "type": "string"
+                },
+                "incomeExpense": {
+                    "enum": [
+                        "income",
+                        "expense"
+                    ],
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/constant.IncomeExpense"
+                        }
+                    ]
+                },
+                "startTime": {
+                    "type": "string"
+                }
+            }
+        },
+        "request.TransactionMonthStatistic": {
+            "type": "object",
+            "required": [
+                "accountId"
+            ],
+            "properties": {
+                "accountId": {
+                    "type": "integer"
+                },
+                "categoryIds": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "endTime": {
+                    "type": "string"
+                },
+                "incomeExpense": {
+                    "enum": [
+                        "income",
+                        "expense"
+                    ],
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/constant.IncomeExpense"
+                        }
+                    ]
+                },
+                "maximumAmount": {
+                    "type": "integer",
+                    "minimum": 0
+                },
+                "minimumAmount": {
+                    "type": "integer",
+                    "minimum": 0
+                },
+                "startTime": {
+                    "type": "string"
+                },
+                "userIds": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                }
+            }
+        },
+        "request.TransactionTiming": {
             "type": "object",
             "properties": {
-                "data": {},
-                "msg": {
+                "config": {
+                    "$ref": "#/definitions/request.TransactionTimingConfig"
+                },
+                "trans": {
+                    "$ref": "#/definitions/transactionModel.Info"
+                }
+            }
+        },
+        "request.TransactionTimingConfig": {
+            "type": "object",
+            "properties": {
+                "nextTime": {
+                    "type": "string"
+                },
+                "offsetDays": {
+                    "type": "integer"
+                },
+                "type": {
+                    "$ref": "#/definitions/transactionModel.TimingType"
+                },
+                "userId": {
+                    "type": "integer"
+                }
+            }
+        },
+        "request.TransactionTotal": {
+            "type": "object",
+            "required": [
+                "accountId"
+            ],
+            "properties": {
+                "accountId": {
+                    "type": "integer"
+                },
+                "categoryIds": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "endTime": {
+                    "type": "string"
+                },
+                "incomeExpense": {
+                    "enum": [
+                        "income",
+                        "expense"
+                    ],
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/constant.IncomeExpense"
+                        }
+                    ]
+                },
+                "maximumAmount": {
+                    "type": "integer",
+                    "minimum": 0
+                },
+                "minimumAmount": {
+                    "type": "integer",
+                    "minimum": 0
+                },
+                "startTime": {
+                    "type": "string"
+                },
+                "userIds": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                }
+            }
+        },
+        "response.AccountDetail": {
+            "type": "object",
+            "properties": {
+                "createTime": {
+                    "type": "string"
+                },
+                "creatorId": {
+                    "type": "integer"
+                },
+                "creatorName": {
+                    "type": "string"
+                },
+                "icon": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "joinTime": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "role": {
+                    "$ref": "#/definitions/accountModel.UserRole"
+                },
+                "type": {
+                    "$ref": "#/definitions/accountModel.Type"
+                },
+                "updateTime": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.AccountInfo": {
+            "type": "object",
+            "properties": {
+                "currentMonthTransTotal": {
+                    "$ref": "#/definitions/global.IEStatisticWithTime"
+                },
+                "recentTrans": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/response.TransactionDetail"
+                    }
+                },
+                "todayTransTotal": {
+                    "$ref": "#/definitions/global.IEStatisticWithTime"
+                }
+            }
+        },
+        "response.AccountMapping": {
+            "type": "object",
+            "properties": {
+                "createTime": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "mainAccount": {
+                    "$ref": "#/definitions/response.AccountOne"
+                },
+                "relatedAccount": {
+                    "$ref": "#/definitions/response.AccountDetail"
+                },
+                "updateTime": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.AccountOne": {
+            "type": "object",
+            "properties": {
+                "createTime": {
+                    "type": "string"
+                },
+                "icon": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "type": {
+                    "$ref": "#/definitions/accountModel.Type"
+                },
+                "updateTime": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.AccountTemplateList": {
+            "type": "object",
+            "properties": {
+                "list": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/response.AccountTemplateOne"
+                    }
+                }
+            }
+        },
+        "response.AccountTemplateOne": {
+            "type": "object",
+            "properties": {
+                "icon": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "type": {
+                    "$ref": "#/definitions/accountModel.Type"
+                }
+            }
+        },
+        "response.AccountUser": {
+            "type": "object",
+            "properties": {
+                "accountId": {
+                    "type": "integer"
+                },
+                "createTime": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "info": {
+                    "$ref": "#/definitions/response.UserInfo"
+                },
+                "role": {
+                    "$ref": "#/definitions/accountModel.UserRole"
+                },
+                "userId": {
+                    "type": "integer"
+                }
+            }
+        },
+        "response.AccountUserConfig": {
+            "type": "object",
+            "properties": {
+                "accountId": {
+                    "type": "integer"
+                },
+                "createTime": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "trans": {
+                    "type": "object",
+                    "properties": {
+                        "syncMappingAccount": {
+                            "type": "boolean"
+                        }
+                    }
+                },
+                "updateTime": {
+                    "type": "string"
+                },
+                "userId": {
+                    "type": "integer"
+                }
+            }
+        },
+        "response.AccountUserInfo": {
+            "type": "object",
+            "properties": {
+                "currentMonthTransTotal": {
+                    "$ref": "#/definitions/global.IEStatisticWithTime"
+                },
+                "recentTrans": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/response.TransactionDetail"
+                    }
+                },
+                "todayTransTotal": {
+                    "$ref": "#/definitions/global.IEStatisticWithTime"
+                }
+            }
+        },
+        "response.AccountUserInvitation": {
+            "type": "object",
+            "properties": {
+                "account": {
+                    "$ref": "#/definitions/response.AccountOne"
+                },
+                "createTime": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "invitee": {
+                    "$ref": "#/definitions/response.UserInfo"
+                },
+                "inviter": {
+                    "$ref": "#/definitions/response.UserInfo"
+                },
+                "role": {
+                    "$ref": "#/definitions/accountModel.UserRole"
+                },
+                "status": {
+                    "$ref": "#/definitions/accountModel.UserInvitationStatus"
+                }
+            }
+        },
+        "response.CategoryOne": {
+            "type": "object",
+            "properties": {
+                "accountId": {
+                    "type": "integer"
+                },
+                "icon": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "incomeExpense": {
+                    "$ref": "#/definitions/constant.IncomeExpense"
+                },
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.List-response_AccountDetail": {
+            "type": "object",
+            "properties": {
+                "list": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/response.AccountDetail"
+                    }
+                }
+            }
+        },
+        "response.List-response_AccountMapping": {
+            "type": "object",
+            "properties": {
+                "list": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/response.AccountMapping"
+                    }
+                }
+            }
+        },
+        "response.List-response_AccountUser": {
+            "type": "object",
+            "properties": {
+                "list": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/response.AccountUser"
+                    }
+                }
+            }
+        },
+        "response.List-response_AccountUserInvitation": {
+            "type": "object",
+            "properties": {
+                "list": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/response.AccountUserInvitation"
+                    }
+                }
+            }
+        },
+        "response.List-response_TransactionCategoryAmountRank": {
+            "type": "object",
+            "properties": {
+                "list": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/response.TransactionCategoryAmountRank"
+                    }
+                }
+            }
+        },
+        "response.List-response_TransactionDayStatistic": {
+            "type": "object",
+            "properties": {
+                "list": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/response.TransactionDayStatistic"
+                    }
+                }
+            }
+        },
+        "response.List-response_TransactionDetail": {
+            "type": "object",
+            "properties": {
+                "list": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/response.TransactionDetail"
+                    }
+                }
+            }
+        },
+        "response.List-response_TransactionDetailList": {
+            "type": "object",
+            "properties": {
+                "list": {
+                    "type": "array",
+                    "items": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/definitions/response.TransactionDetail"
+                        }
+                    }
+                }
+            }
+        },
+        "response.List-response_TransactionStatistic": {
+            "type": "object",
+            "properties": {
+                "list": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/response.TransactionStatistic"
+                    }
+                }
+            }
+        },
+        "response.List-response_TransactionTiming": {
+            "type": "object",
+            "properties": {
+                "list": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/response.TransactionTiming"
+                    }
+                }
+            }
+        },
+        "response.TransactionCategoryAmountRank": {
+            "type": "object",
+            "properties": {
+                "amount": {
+                    "type": "integer"
+                },
+                "category": {
+                    "$ref": "#/definitions/response.CategoryOne"
+                },
+                "count": {
+                    "type": "integer"
+                }
+            }
+        },
+        "response.TransactionDayStatistic": {
+            "type": "object",
+            "properties": {
+                "amount": {
+                    "type": "integer"
+                },
+                "count": {
+                    "type": "integer"
+                },
+                "date": {
                     "type": "string"
                 }
             }
@@ -184,6 +2308,180 @@ const docTemplate = `{
                     "type": "string"
                 }
             }
+        },
+        "response.TransactionInfo": {
+            "type": "object",
+            "properties": {
+                "accountId": {
+                    "type": "integer"
+                },
+                "accountName": {
+                    "type": "string"
+                },
+                "amount": {
+                    "type": "integer"
+                },
+                "categoryFatherName": {
+                    "type": "string"
+                },
+                "categoryIcon": {
+                    "type": "string"
+                },
+                "categoryId": {
+                    "type": "integer"
+                },
+                "categoryName": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "incomeExpense": {
+                    "$ref": "#/definitions/constant.IncomeExpense"
+                },
+                "remark": {
+                    "type": "string"
+                },
+                "tradeTime": {
+                    "type": "string"
+                },
+                "userId": {
+                    "type": "integer"
+                },
+                "userName": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.TransactionStatistic": {
+            "type": "object",
+            "properties": {
+                "endTime": {
+                    "type": "string"
+                },
+                "expense": {
+                    "$ref": "#/definitions/global.AmountCount"
+                },
+                "income": {
+                    "$ref": "#/definitions/global.AmountCount"
+                },
+                "startTime": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.TransactionTiming": {
+            "type": "object",
+            "properties": {
+                "config": {
+                    "$ref": "#/definitions/response.TransactionTimingConfig"
+                },
+                "trans": {
+                    "$ref": "#/definitions/response.TransactionInfo"
+                }
+            }
+        },
+        "response.TransactionTimingConfig": {
+            "type": "object",
+            "properties": {
+                "createdAt": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "nextTime": {
+                    "type": "string"
+                },
+                "offsetDays": {
+                    "type": "integer"
+                },
+                "type": {
+                    "$ref": "#/definitions/transactionModel.TimingType"
+                },
+                "updatedAt": {
+                    "type": "string"
+                },
+                "username": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.TransactionTotal": {
+            "type": "object",
+            "properties": {
+                "expense": {
+                    "$ref": "#/definitions/global.AmountCount"
+                },
+                "income": {
+                    "$ref": "#/definitions/global.AmountCount"
+                }
+            }
+        },
+        "response.UserCurrentClientInfo": {
+            "type": "object",
+            "properties": {
+                "currentAccount": {
+                    "$ref": "#/definitions/response.AccountDetail"
+                },
+                "currentShareAccount": {
+                    "$ref": "#/definitions/response.AccountDetail"
+                },
+                "loginTime": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.UserInfo": {
+            "type": "object",
+            "properties": {
+                "email": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "username": {
+                    "type": "string"
+                }
+            }
+        },
+        "transactionModel.Info": {
+            "type": "object",
+            "properties": {
+                "amount": {
+                    "type": "integer"
+                },
+                "incomeExpense": {
+                    "$ref": "#/definitions/constant.IncomeExpense"
+                },
+                "remark": {
+                    "type": "string"
+                },
+                "tradeTime": {
+                    "type": "string"
+                },
+                "userId": {
+                    "type": "integer"
+                }
+            }
+        },
+        "transactionModel.TimingType": {
+            "type": "string",
+            "enum": [
+                "Once",
+                "EveryDay",
+                "EveryWeek",
+                "EveryMonth",
+                "LastDayOfMonth"
+            ],
+            "x-enum-varnames": [
+                "Once",
+                "EveryDay",
+                "EveryWeek",
+                "EveryMonth",
+                "LastDayOfMonth"
+            ]
         }
     }
 }`
