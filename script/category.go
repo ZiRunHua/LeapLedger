@@ -11,11 +11,6 @@ import (
 	"gorm.io/gorm"
 )
 
-type _category struct {
-}
-
-var Category = _category{}
-
 type fatherTmpl struct {
 	Name     string
 	Ie       constant.IncomeExpense
@@ -58,7 +53,7 @@ func (ct *categoryTmpl) create(father categoryModel.Father, tx *gorm.DB) (catego
 		if err != nil {
 			return
 		}
-		_, err = productService.MappingTransactionCategory(category, ptc)
+		_, err = productService.MappingTransactionCategory(category, ptc, ctx)
 		if err != nil {
 			return
 		}

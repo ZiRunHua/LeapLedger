@@ -1,32 +1,32 @@
 package v1
 
 import (
-	v1 "KeepAccount/api/v1"
-	"github.com/gin-gonic/gin"
+	"KeepAccount/router/group"
 )
 
-type CategoryRouter struct{}
-
-func (c *CategoryRouter) InitCategoryRouter(_router *gin.RouterGroup) {
-	router := _router.Group("transaction/category")
-	baseApi := v1.ApiGroupApp.CategoryApi
+func init() {
+	// base path: /account/{accountId}/category
+	readRouter := group.Account.Group("category")
+	editRouter := group.AccountCreator.Group("category")
+	editMappingRouter := group.AccountOwnEditor.Group("category")
+	baseApi := apiApp.CategoryApi
 	{
-		router.POST("", baseApi.CreateOne)
-		router.POST("/:id/move", baseApi.MoveCategory)
-		router.PUT("/:id", baseApi.Update)
-		router.DELETE("/:id", baseApi.Delete)
-		router.GET("/tree", baseApi.GetTree)
-		router.GET("/list", baseApi.GetList)
+		editRouter.POST("", baseApi.CreateOne)
+		editRouter.PUT("/:id/move", baseApi.MoveCategory)
+		editRouter.PUT("/:id", baseApi.Update)
+		editRouter.DELETE("/:id", baseApi.Delete)
+		readRouter.GET("/tree", baseApi.GetTree)
+		readRouter.GET("/list", baseApi.GetList)
 	}
 	{
-		router.POST("/father", baseApi.CreateOneFather)
-		router.POST("/father/:id/move", baseApi.MoveFather)
-		router.PUT("/father/:id", baseApi.UpdateFather)
-		router.DELETE("/father/:id", baseApi.DeleteFather)
+		editRouter.POST("/father", baseApi.CreateOneFather)
+		editRouter.PUT("/father/:id/move", baseApi.MoveFather)
+		editRouter.PUT("/father/:id", baseApi.UpdateFather)
+		editRouter.DELETE("/father/:id", baseApi.DeleteFather)
 	}
 	{
-		router.POST("/:id/mapping", baseApi.MappingCategory)
-		router.DELETE("/:id/mapping", baseApi.DeleteCategoryMapping)
-		router.GET("/mapping/tree", baseApi.GetMappingTree)
+		editMappingRouter.POST("/:id/mapping", baseApi.MappingCategory)
+		editMappingRouter.DELETE("/:id/mapping", baseApi.DeleteCategoryMapping)
+		editMappingRouter.GET("/mapping/tree", baseApi.GetMappingTree)
 	}
 }

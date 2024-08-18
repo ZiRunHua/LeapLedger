@@ -23,11 +23,13 @@ type AccountApi struct {
 }
 
 // GetOne
-// @Tags Account
-// @Accept  json
-// @Produce  json
-// @Success 200 {object} response.Data{Data=response.AccountDetail}
-// @Router /account/{id} [get]
+//
+//	@Tags		Account
+//	@Accept		json
+//	@Produce	json
+//	@Param		id	path		int	true	"Account ID"
+//	@Success	200	{object}	response.Data{Data=response.AccountDetail}
+//	@Router		/account/{id} [get]
 func (a *AccountApi) GetOne(ctx *gin.Context) {
 	_, accountUser, pass := contextFunc.GetAccountByParam(ctx, true)
 	if false == pass {
@@ -42,12 +44,14 @@ func (a *AccountApi) GetOne(ctx *gin.Context) {
 }
 
 // CreateOne
-// @Tags Account
-// @Accept  json
-// @Produce  json
-// @Param body body request.AccountCreateOne true "account data"
-// @Success 200 {object} response.Data{Data=response.AccountDetail}
-// @Router /account [post]
+//
+//	@Tags		Account
+//	@Accept		json
+//	@Produce	json
+//	@Param		id		path		int							true	"Account ID"
+//	@Param		body	body		request.AccountCreateOne	true	"Account data"
+//	@Success	200		{object}	response.Data{Data=response.AccountDetail}
+//	@Router		/account [post]
 func (a *AccountApi) CreateOne(ctx *gin.Context) {
 	var requestData request.AccountCreateOne
 	if err := ctx.ShouldBindJSON(&requestData); err != nil {
@@ -79,12 +83,14 @@ func (a *AccountApi) CreateOne(ctx *gin.Context) {
 }
 
 // Update
-// @Tags Account
-// @Accept  json
-// @Produce  json
-// @Param body body request.AccountUpdateOne true "account data"
-// @Success 200 {object} response.Data{Data=response.AccountDetail}
-// @Router /account/{id} [put]
+//
+//	@Tags		Account
+//	@Accept		json
+//	@Produce	json
+//	@Param		id		path		int							true	"Account ID"
+//	@Param		body	body		request.AccountUpdateOne	true	"Account data"
+//	@Success	200		{object}	response.Data{Data=response.AccountDetail}
+//	@Router		/account/{id} [put]
 func (a *AccountApi) Update(ctx *gin.Context) {
 	var requestData request.AccountUpdateOne
 	if err := ctx.ShouldBindJSON(&requestData); err != nil {
@@ -120,10 +126,12 @@ func (a *AccountApi) Update(ctx *gin.Context) {
 }
 
 // Delete
-// @Tags Account
-// @Produce  json
-// @Success 200 {object} response.Data{Data=response.UserCurrentClientInfo} "new current client info"
-// @Router /account/{id} [delete]
+//
+//	@Tags		Account
+//	@Produce	json
+//	@Param		id	path		int													true	"Account ID"
+//	@Success	200	{object}	response.Data{Data=response.UserCurrentClientInfo}	"new current client info"
+//	@Router		/account/{id} [delete]
 func (a *AccountApi) Delete(ctx *gin.Context) {
 	account, accountUser, pass := contextFunc.GetAccountByParam(ctx, true)
 	if false == pass {
@@ -150,10 +158,11 @@ func (a *AccountApi) Delete(ctx *gin.Context) {
 }
 
 // GetList
-// @Tags Account
-// @Produce  json
-// @Success 200 {object} response.Data{Data=response.List[response.AccountDetail]{}}
-// @Router /account/list [get]
+//
+//	@Tags		Account
+//	@Produce	json
+//	@Success	200	{object}	response.Data{Data=response.List[response.AccountDetail]{}}
+//	@Router		/account/list [get]
 func (a *AccountApi) GetList(ctx *gin.Context) {
 	var accountUserList []accountModel.User
 	err := db.Db.Where("user_id = ?", contextFunc.GetUserId(ctx)).Find(&accountUserList).Error
@@ -169,10 +178,12 @@ func (a *AccountApi) GetList(ctx *gin.Context) {
 }
 
 // GetListByType
-// @Tags Account
-// @Produce  json
-// @Success 200 {object} response.Data{Data=response.List[response.AccountDetail]{}}
-// @Router /account/list/{type} [get]
+//
+//	@Tags		Account
+//	@Produce	json
+//	@Param		type	path		int	true	"Account type"
+//	@Success	200		{object}	response.Data{Data=response.List[response.AccountDetail]{}}
+//	@Router		/account/list/{type} [get]
 func (a *AccountApi) GetListByType(ctx *gin.Context) {
 	t := contextFunc.GetAccountType(ctx)
 	list, err := accountModel.NewDao().SelectUserListByUserAndAccountType(contextFunc.GetUserId(ctx), t)
@@ -189,10 +200,12 @@ func (a *AccountApi) GetListByType(ctx *gin.Context) {
 }
 
 // CreateOneByTemplate
-// @Tags Account/Template
-// @Produce  json
-// @Success 200 {object} response.Data{Data=response.AccountDetail}
-// @Router /account/form/template/{id} [post]
+//
+//	@Tags		Account/Template
+//	@Produce	json
+//	@Param		id	path		int	true	"Template ID"
+//	@Success	200	{object}	response.Data{Data=response.AccountDetail}
+//	@Router		/account/form/template/{id} [post]
 func (a *AccountApi) CreateOneByTemplate(ctx *gin.Context) {
 	id, ok := contextFunc.GetUintParamByKey("id", ctx)
 	if false == ok {
@@ -227,10 +240,11 @@ func (a *AccountApi) CreateOneByTemplate(ctx *gin.Context) {
 }
 
 // GetAccountTemplateList
-// @Tags Account/Template
-// @Produce  json
-// @Success 200 {object} response.Data{Data=response.AccountTemplateList}
-// @Router /account/template/list [get]
+//
+//	@Tags		Account/Template
+//	@Produce	json
+//	@Success	200	{object}	response.Data{Data=response.AccountTemplateList}
+//	@Router		/account/template/list [get]
 func (a *AccountApi) GetAccountTemplateList(ctx *gin.Context) {
 	list, err := templateService.GetListByRank(ctx)
 	if responseError(err, ctx) {
@@ -251,12 +265,14 @@ func (a *AccountApi) GetAccountTemplateList(ctx *gin.Context) {
 }
 
 // InitCategoryByTemplate
-// @Tags Account/Template
-// @Accept  json
-// @Produce  json
-// @Param body body request.AccountTransCategoryInit true "init data"
-// @Success 200 {object} response.Data{Data=response.AccountDetail}
-// @Router /account/{accountId}/transaction/category/init [post]
+//
+//	@Tags		Account/Template
+//	@Accept		json
+//	@Produce	json
+//	@Param		accountID	path		int									true	"Account ID"
+//	@Param		body		body		request.AccountTransCategoryInit	true	"init data"
+//	@Success	200			{object}	response.Data{Data=response.AccountDetail}
+//	@Router		/account/{accountID}/transaction/category/init [post]
 func (a *AccountApi) InitCategoryByTemplate(ctx *gin.Context) {
 	var err error
 	var requestData request.AccountTransCategoryInit
@@ -292,12 +308,13 @@ func (a *AccountApi) InitCategoryByTemplate(ctx *gin.Context) {
 }
 
 // GetUserInvitationList
-// @Tags Account/User/Invitation
-// @Accept  json
-// @Produce  json
-// @Param body body request.AccountGetUserInvitationList true "query param"
-// @Success 200 {object} response.Data{Data=response.List[response.AccountUserInvitation]{}}
-// @Router /account/user/invitation/list [get]
+//
+//	@Tags		Account/User/Invitation
+//	@Accept		json
+//	@Produce	json
+//	@Param		body	body		request.AccountGetUserInvitationList	true	"query param"
+//	@Success	200		{object}	response.Data{Data=response.List[response.AccountUserInvitation]{}}
+//	@Router		/account/user/invitation/list [get]
 func (a *AccountApi) GetUserInvitationList(ctx *gin.Context) {
 	var err error
 	var requestData request.AccountGetUserInvitationList
@@ -338,12 +355,14 @@ func (a *AccountApi) GetUserInvitationList(ctx *gin.Context) {
 }
 
 // CreateAccountUserInvitation
-// @Tags Account/User/Invitation
-// @Accept  json
-// @Produce  json
-// @Param body body request.AccountGetUserInvitationList true "invitation data"
-// @Success 200 {object} response.Data{Data=response.AccountUserInvitation}
-// @Router /account/:accountId/user/invitation [post]
+//
+//	@Tags		Account/User/Invitation
+//	@Accept		json
+//	@Produce	json
+//	@Param		accountID	path		int										true	"Account ID"
+//	@Param		body		body		request.AccountGetUserInvitationList	true	"invitation data"
+//	@Success	200			{object}	response.Data{Data=response.AccountUserInvitation}
+//	@Router		/account/{accountID}/user/invitation [post]
 func (a *AccountApi) CreateAccountUserInvitation(ctx *gin.Context) {
 	var err error
 	var requestData request.AccountCreateOneUserInvitation
@@ -404,10 +423,12 @@ func (a *AccountApi) getAcceptUserInvitationByParam(ctx *gin.Context) (accountMo
 }
 
 // AcceptAccountUserInvitation
-// @Tags Account/User/Invitation
-// @Produce  json
-// @Success 200 {object} response.Data{Data=response.AccountUserInvitation}
-// @Router /account/user/invitation/{id}/accept [put]
+//
+//	@Tags		Account/User/Invitation
+//	@Produce	json
+//	@Param		id	path		int	true	"Invitation ID"
+//	@Success	200	{object}	response.Data{Data=response.AccountUserInvitation}
+//	@Router		/account/user/invitation/{id}/accept [put]
 func (a *AccountApi) AcceptAccountUserInvitation(ctx *gin.Context) {
 	invitation, pass := a.getAcceptUserInvitationByParam(ctx)
 	if false == pass {
@@ -436,10 +457,12 @@ func (a *AccountApi) AcceptAccountUserInvitation(ctx *gin.Context) {
 }
 
 // RefuseAccountUserInvitation
-// @Tags Account/User/Invitation
-// @Produce  json
-// @Success 200 {object} response.Data{Data=response.AccountUserInvitation}
-// @Router /account/user/invitation/{id}/refuse [put]
+//
+//	@Tags		Account/User/Invitation
+//	@Produce	json
+//	@Param		id	path		int	true	"Invitation ID"
+//	@Success	200	{object}	response.Data{Data=response.AccountUserInvitation}
+//	@Router		/account/user/invitation/{id}/refuse [put]
 func (a *AccountApi) RefuseAccountUserInvitation(ctx *gin.Context) {
 	invitation, pass := a.getAcceptUserInvitationByParam(ctx)
 	if false == pass {
@@ -468,23 +491,34 @@ func (a *AccountApi) RefuseAccountUserInvitation(ctx *gin.Context) {
 }
 
 // UpdateUser
-// @Tags Account/User
-// @Accept  json
-// @Produce  json
-// @Param body body request.AccountUpdateUser true "account user data"
-// @Success 200 {object} response.Data{Data=response.AccountUser}
-// @Router /account/user/{id} [put]
+//
+//	@Tags		Account/User
+//	@Accept		json
+//	@Produce	json
+//	@Param		accountID	path		int							true	"Account ID"
+//	@Param		id			path		int							true	"Account User ID"
+//	@Param		body		body		request.AccountUpdateUser	true	"account user data"
+//	@Success	200			{object}	response.Data{Data=response.AccountUser}
+//	@Router		/account/{accountID}/user/{id} [put]
 func (a *AccountApi) UpdateUser(ctx *gin.Context) {
 	var requestData request.AccountUpdateUser
 	if err := ctx.ShouldBindJSON(&requestData); err != nil {
 		response.FailToParameter(ctx, err)
 		return
 	}
-	accountUser, account, pass := contextFunc.GetAccountUserByParam(ctx)
+	accountUser, _, pass := contextFunc.GetAccountUserByParam(ctx)
 	if false == pass {
 		return
 	}
-	operator, err := accountModel.NewDao().SelectUser(account.ID, contextFunc.GetUserId(ctx))
+	accountId, pass := contextFunc.GetAccountIdByParam(ctx)
+	if false == pass {
+		return
+	}
+	if accountId != accountUser.AccountId {
+		response.FailToParameter(ctx, global.ErrAccountId)
+		return
+	}
+	operator, err := accountModel.NewDao().SelectUser(accountId, contextFunc.GetUserId(ctx))
 	if responseError(err, ctx) {
 		return
 	}
@@ -507,11 +541,13 @@ func (a *AccountApi) UpdateUser(ctx *gin.Context) {
 }
 
 // GetUserList
-// @Tags Account/User
-// @Accept  json
-// @Produce  json
-// @Success 200 {object} response.Data{Data=response.List[response.AccountUser]{}}
-// @Router /account/{accountId}/user/list [get]
+//
+//	@Tags		Account/User
+//	@Accept		json
+//	@Produce	json
+//	@Param		accountID	path		int	true	"Account ID"
+//	@Success	200			{object}	response.Data{Data=response.List[response.AccountUser]{}}
+//	@Router		/account/{accountID}/user/list [get]
 func (a *AccountApi) GetUserList(ctx *gin.Context) {
 	account, _, pass := contextFunc.GetAccountByParam(ctx, true)
 	if false == pass {
@@ -533,12 +569,14 @@ func (a *AccountApi) GetUserList(ctx *gin.Context) {
 }
 
 // GetUserInfo
-// @Tags Account/User
-// @Accept  json
-// @Produce  json
-// @Param body body request.AccountGetUserInfo true "query param"
-// @Success 200 {object} response.Data{Data=response.AccountUserInfo}
-// @Router /account/user/{id}/info [get]
+//
+//	@Tags		Account/User
+//	@Accept		json
+//	@Produce	json
+//	@Param		id		path		int							true	"Account User ID"
+//	@Param		body	body		request.AccountGetUserInfo	true	"query param"
+//	@Success	200		{object}	response.Data{Data=response.AccountUserInfo}
+//	@Router		/account/user/{id}/info [get]
 func (a *AccountApi) GetUserInfo(ctx *gin.Context) {
 	var requestData request.AccountGetUserInfo
 	if err := ctx.ShouldBindJSON(&requestData); err != nil {
@@ -630,10 +668,12 @@ func (a *AccountApi) getTrans(
 }
 
 // GetUserConfig
-// @Tags Account/User/Config
-// @Produce  json
-// @Success 200 {object} response.Data{Data=response.AccountUserConfig}
-// @Router /account/{accountId}/user/config [get]
+//
+//	@Tags		Account/User/Config
+//	@Produce	json
+//	@Param		accountID	path		int	true	"Account ID"
+//	@Success	200			{object}	response.Data{Data=response.AccountUserConfig}
+//	@Router		/account/{accountID}/user/config [get]
 func (a *AccountApi) GetUserConfig(ctx *gin.Context) {
 	_, accountUser, pass := contextFunc.GetAccountByParam(ctx, true)
 	if false == pass {
@@ -658,12 +698,14 @@ func (a *AccountApi) getUserConfigFlagByCtx(ctx *gin.Context) interface{} {
 }
 
 // UpdateUserConfigFlag
-// @Tags Account/User/Config
-// @Accept  json
-// @Produce  json
-// @Param body body request.AccountUserConfigFlagUpdate true "config data"
-// @Success 200 {object} response.Data{Data=response.AccountUserConfig}
-// @Router /account/{accountId}/user/config/{flag} [put]
+//
+//	@Tags		Account/User/Config
+//	@Accept		json
+//	@Produce	json
+//	@Param		accountID	path		int									true	"Account ID"
+//	@Param		body		body		request.AccountUserConfigFlagUpdate	true	"config data"
+//	@Success	200			{object}	response.Data{Data=response.AccountUserConfig}
+//	@Router		/account/{accountID}/user/config/{flag} [put]
 func (a *AccountApi) UpdateUserConfigFlag(ctx *gin.Context) {
 	var requestData request.AccountUserConfigFlagUpdate
 	if err := ctx.ShouldBindJSON(&requestData); err != nil {
@@ -706,10 +748,12 @@ func (a *AccountApi) UpdateUserConfigFlag(ctx *gin.Context) {
 }
 
 // GetAccountMappingList
-// @Tags Account/Mapping
-// @Produce  json
-// @Success 200 {object} response.Data{Data=response.List[response.AccountMapping]}
-// @Router /account/{accountId}/mapping/list [get]
+//
+//	@Tags		Account/Mapping
+//	@Produce	json
+//	@Param		accountID	path		int	true	"Account ID"
+//	@Success	200			{object}	response.Data{Data=response.List[response.AccountMapping]}
+//	@Router		/account/{accountID}/mapping/list [get]
 func (a *AccountApi) GetAccountMappingList(ctx *gin.Context) {
 	account, _, pass := contextFunc.GetAccountByParam(ctx, true)
 	if pass == false {
@@ -730,10 +774,12 @@ func (a *AccountApi) GetAccountMappingList(ctx *gin.Context) {
 }
 
 // GetAccountMapping
-// @Tags Account/Mapping
-// @Produce  json
-// @Success 200 {object} response.Data{Data=response.AccountMapping}
-// @Router /account/{accountId}/mapping [get]
+//
+//	@Tags		Account/Mapping
+//	@Produce	json
+//	@Param		accountID	path		int	true	"Account ID"
+//	@Success	200			{object}	response.Data{Data=response.AccountMapping}
+//	@Router		/account/{accountID}/mapping [get]
 func (a *AccountApi) GetAccountMapping(ctx *gin.Context) {
 	user, err := contextFunc.GetUser(ctx)
 	if responseError(err, ctx) {
@@ -761,12 +807,14 @@ func (a *AccountApi) GetAccountMapping(ctx *gin.Context) {
 }
 
 // CreateAccountMapping
-// @Tags Account/Mapping
-// @Accept  json
-// @Produce  json
-// @Param body body request.AccountMapping true "mapping data"
-// @Success 200 {object} response.Data{Data=response.AccountMapping}
-// @Router /account/{accountId}/mapping [post]
+//
+//	@Tags		Account/Mapping
+//	@Accept		json
+//	@Produce	json
+//	@Param		accountID	path		int						true	"Account ID"
+//	@Param		body		body		request.AccountMapping	true	"mapping data"
+//	@Success	200			{object}	response.Data{Data=response.AccountMapping}
+//	@Router		/account/{accountID}/mapping [post]
 func (a *AccountApi) CreateAccountMapping(ctx *gin.Context) {
 	var err error
 	var requestData request.AccountMapping
@@ -814,10 +862,12 @@ func (a *AccountApi) CreateAccountMapping(ctx *gin.Context) {
 }
 
 // DeleteAccountMapping
-// @Tags Account/Mapping
-// @Produce  json
-// @Success 204 {object} response.NoContent
-// @Router /account/mapping/{id} [delete]
+//
+//	@Tags		Account/Mapping
+//	@Produce	json
+//	@Param		id	path		int	true	"Mapping ID"
+//	@Success	204	{object}	response.NoContent
+//	@Router		/account/mapping/{id} [delete]
 func (a *AccountApi) DeleteAccountMapping(ctx *gin.Context) {
 	var err error
 	id, pass := contextFunc.GetUintParamByKey("id", ctx)
@@ -856,12 +906,14 @@ func (a *AccountApi) DeleteAccountMapping(ctx *gin.Context) {
 }
 
 // UpdateAccountMapping
-// @Tags Account/Mapping
-// @Accept  json
-// @Produce  json
-// @Param body body request.UpdateAccountMapping true "mapping data"
-// @Success 200 {object} response.Data{Data=response.AccountMapping}
-// @Router /account/mapping/:id [put]
+//
+//	@Tags		Account/Mapping
+//	@Accept		json
+//	@Produce	json
+//	@Param		id		path		int								true	"Mapping ID"
+//	@Param		body	body		request.UpdateAccountMapping	true	"mapping data"
+//	@Success	200		{object}	response.Data{Data=response.AccountMapping}
+//	@Router		/account/mapping/:id [put]
 func (a *AccountApi) UpdateAccountMapping(ctx *gin.Context) {
 	id, pass := contextFunc.GetUintParamByKey("id", ctx)
 	if false == pass {
@@ -911,11 +963,14 @@ func (a *AccountApi) UpdateAccountMapping(ctx *gin.Context) {
 }
 
 // GetInfo
-// @Tags Account
-// @Produce  json
-// @Success 200 {object} response.Data{Data=response.AccountInfo}
-// @Router /account/{accountId}/info/:type [get]
-// @Router /account/{accountId}/info [get]
+//
+//	@Tags		Account
+//	@Produce	json
+//	@Param		accountID	path		int	true	"Account ID"
+//	@Param		type		path		int	false	"Account type"
+//	@Success	200			{object}	response.Data{Data=response.AccountInfo}
+//	@Router		/account/{accountID}/info/:type [get]
+//	@Router		/account/{accountID}/info [get]
 func (a *AccountApi) GetInfo(ctx *gin.Context) {
 	// 获取信息类型
 	var types []request.InfoType

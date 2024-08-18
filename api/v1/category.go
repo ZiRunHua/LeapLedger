@@ -3,9 +3,9 @@ package v1
 import (
 	"KeepAccount/api/request"
 	"KeepAccount/api/response"
+	"KeepAccount/global"
 	"KeepAccount/global/cusCtx"
 	"KeepAccount/global/db"
-	accountModel "KeepAccount/model/account"
 	categoryModel "KeepAccount/model/category"
 	userModel "KeepAccount/model/user"
 	"context"
@@ -17,21 +17,31 @@ import (
 type CategoryApi struct {
 }
 
+// CreateOne
+//
+//	@Tags		Category
+//	@Accept		json
+//	@Produce	json
+//	@Param		accountID	path		int							true	"Account ID"
+//	@Param		body		body		request.CategoryCreateOne	true	"category data"
+//	@Success	200			{object}	response.Data{Data=response.CategoryOne}
+//	@Router		/account/{accountID}/category [post]
 func (catApi *CategoryApi) CreateOne(ctx *gin.Context) {
 	var requestData request.CategoryCreateOne
 	if err := ctx.ShouldBindJSON(&requestData); err != nil {
 		response.FailToParameter(ctx, err)
 		return
 	}
-	father := categoryModel.Father{}
+	var father categoryModel.Father
 	err := father.SelectById(requestData.FatherId)
-	if pass := checkFunc.AccountBelong(father.AccountId, ctx); false == pass {
+	if responseError(err, ctx) {
 		return
 	}
-	if err != nil {
-		response.FailToError(ctx, err)
+	if father.AccountId != contextFunc.GetAccountId(ctx) {
+		response.FailToError(ctx, global.ErrAccountId)
 		return
 	}
+
 	var category categoryModel.Category
 	err = db.Db.Transaction(
 		func(tx *gorm.DB) error {
@@ -55,21 +65,27 @@ func (catApi *CategoryApi) CreateOne(ctx *gin.Context) {
 	response.OkWithData(responseData, ctx)
 }
 
+// CreateOneFather
+//
+//	@Tags		Category/Father
+//	@Accept		json
+//	@Produce	json
+//	@Param		accountID	path		int								true	"Account ID"
+//	@Param		body		body		request.CategoryCreateOneFather	true	"father category data"
+//	@Success	200			{object}	response.Data{Data=response.FatherOne}
+//	@Router		/account/{accountID}/category/father [post]
 func (catApi *CategoryApi) CreateOneFather(ctx *gin.Context) {
 	var requestData request.CategoryCreateOneFather
 	if err := ctx.ShouldBindJSON(&requestData); err != nil {
 		response.FailToParameter(ctx, err)
 		return
 	}
-	var account accountModel.Account
-	err := account.SelectById(requestData.AccountId)
-	if responseError(err, ctx) {
-		return
-	}
+
 	var father categoryModel.Father
+	var err error
 	err = db.Db.Transaction(
 		func(tx *gorm.DB) error {
-			father, err = categoryService.CreateOneFather(account, requestData.IncomeExpense, requestData.Name, tx)
+			father, err = categoryService.CreateOneFather(contextFunc.GetAccount(ctx), requestData.IncomeExpense, requestData.Name, tx)
 			return err
 		},
 	)
@@ -85,8 +101,18 @@ func (catApi *CategoryApi) CreateOneFather(ctx *gin.Context) {
 	response.OkWithData(responseData, ctx)
 }
 
+// MoveCategory
+//
+//	@Tags		Category
+//	@Accept		json
+//	@Produce	json
+//	@Param		accountID	path		int						true	"Account ID"
+//	@Param		id			path		int						true	"Category ID"
+//	@Param		body		body		request.CategoryMove	true	"move data"
+//	@Success	204			{object}	response.NoContent
+//	@Router		/account/{accountID}/category/{id}/move [put]
 func (catApi *CategoryApi) MoveCategory(ctx *gin.Context) {
-	var requestData request.CategoryMoveCategory
+	var requestData request.CategoryMove
 	if err := ctx.ShouldBindJSON(&requestData); err != nil {
 		response.FailToParameter(ctx, err)
 		return
@@ -103,18 +129,24 @@ func (catApi *CategoryApi) MoveCategory(ctx *gin.Context) {
 		var previous *categoryModel.Category
 		if requestData.Previous != nil {
 			previous = &categoryModel.Category{}
-			err = db.Db.First(previous, requestData.Previous).Error
+			err = tx.First(previous, requestData.Previous).Error
 			if err != nil {
 				return err
+			}
+			if previous.AccountId != contextFunc.GetAccountId(ctx) {
+				return global.ErrAccountId
 			}
 		}
 
 		var father *categoryModel.Father
 		if requestData.FatherId != nil {
 			father = &categoryModel.Father{}
-			err = db.Db.First(father, requestData.FatherId).Error
+			err = tx.First(father, requestData.FatherId).Error
 			if err != nil {
 				return err
+			}
+			if father.AccountId != contextFunc.GetAccountId(ctx) {
+				return global.ErrAccountId
 			}
 		}
 		return categoryService.MoveCategory(category, previous, father, user, tx)
@@ -126,6 +158,16 @@ func (catApi *CategoryApi) MoveCategory(ctx *gin.Context) {
 	response.Ok(ctx)
 }
 
+// MoveFather
+//
+//	@Tags		Category/Father
+//	@Accept		json
+//	@Produce	json
+//	@Param		accountID	path		int							true	"Account ID"
+//	@Param		id			path		int							true	"Father ID"
+//	@Param		body		body		request.CategoryMoveFather	true	"move data"
+//	@Success	204			{object}	response.NoContent
+//	@Router		/account/{accountID}/category/father/{id}/move [put]
 func (catApi *CategoryApi) MoveFather(ctx *gin.Context) {
 	var requestData request.CategoryMoveFather
 	if err := ctx.ShouldBindJSON(&requestData); err != nil {
@@ -134,17 +176,22 @@ func (catApi *CategoryApi) MoveFather(ctx *gin.Context) {
 	}
 	txFunc := func(tx *gorm.DB) error {
 		var father categoryModel.Father
-		err := db.Db.First(&father, ctx.Param("id")).Error
+		err := tx.First(&father, ctx.Param("id")).Error
 		if err != nil {
 			return err
 		}
-
+		if father.AccountId != contextFunc.GetAccountId(ctx) {
+			return global.ErrAccountId
+		}
 		var previous *categoryModel.Father
 		if requestData.Previous != nil {
 			previous = &categoryModel.Father{}
-			err = db.Db.First(previous, requestData.Previous).Error
+			err = tx.First(previous, requestData.Previous).Error
 			if err != nil {
 				return err
+			}
+			if previous.AccountId != contextFunc.GetAccountId(ctx) {
+				return global.ErrAccountId
 			}
 		}
 		return categoryService.MoveFather(father, previous, tx)
@@ -156,22 +203,30 @@ func (catApi *CategoryApi) MoveFather(ctx *gin.Context) {
 	response.Ok(ctx)
 }
 
+// Update
+//
+//	@Tags		Category
+//	@Accept		json
+//	@Produce	json
+//	@Param		accountID	path		int							true	"Account ID"
+//	@Param		id			path		int							true	"Category ID"
+//	@Param		body		body		request.CategoryUpdateOne	true	"update data"
+//	@Success	204			{object}	response.NoContent
+//	@Router		/account/{accountID}/category/{id} [put]
 func (catApi *CategoryApi) Update(ctx *gin.Context) {
 	var requestData request.CategoryUpdateOne
 	if err := ctx.ShouldBindJSON(&requestData); err != nil {
 		response.FailToParameter(ctx, err)
 		return
 	}
-	categoryId, pass := contextFunc.GetParamId(ctx)
+	category, pass := contextFunc.GetCategoryByParam(ctx)
 	if !pass {
 		return
 	}
-
-	var category categoryModel.Category
 	var err error
 	txFunc := func(tx *gorm.DB) error {
 		category, err = categoryService.Update(
-			categoryId, categoryModel.CategoryUpdateData{Name: requestData.Name, Icon: requestData.Icon}, tx,
+			contextFunc.GetId(ctx), categoryModel.CategoryUpdateData{Name: requestData.Name, Icon: requestData.Icon}, tx,
 		)
 		return err
 	}
@@ -186,18 +241,27 @@ func (catApi *CategoryApi) Update(ctx *gin.Context) {
 	response.OkWithData(responseData, ctx)
 }
 
+// UpdateFather
+//
+//	@Tags		Category/Father
+//	@Accept		json
+//	@Produce	json
+//	@Param		accountID	path		int				true	"Account ID"
+//	@Param		id			path		int				true	"Father ID"
+//	@Param		body		body		request.Name	true	"update data"
+//	@Success	200			{object}	response.Data{Data=response.FatherOne}
+//	@Router		/account/{accountID}/category/father/{id} [put]
 func (catApi *CategoryApi) UpdateFather(ctx *gin.Context) {
 	var requestData request.Name
 	if err := ctx.ShouldBindJSON(&requestData); err != nil {
 		response.FailToParameter(ctx, err)
 		return
 	}
-	var father categoryModel.Father
-	err := db.Db.First(&father, ctx.Param("id")).Error
-	if responseError(err, ctx) {
+	father, pass := contextFunc.GetCategoryFatherByParam(ctx)
+	if !pass {
 		return
 	}
-	father, err = categoryService.UpdateFather(father, requestData.Name)
+	father, err := categoryService.UpdateFather(father, requestData.Name)
 	if responseError(err, ctx) {
 		return
 	}
@@ -209,6 +273,15 @@ func (catApi *CategoryApi) UpdateFather(ctx *gin.Context) {
 	response.OkWithData(responseData, ctx)
 }
 
+// GetTree
+//
+//	@Tags		Category
+//	@Accept		json
+//	@Produce	json
+//	@Param		accountID	path		int						true	"Account ID"
+//	@Param		body		body		request.CategoryGetTree	true	"query condition"
+//	@Success	200			{object}	response.Data{Data=response.CategoryTree}
+//	@Router		/account/{accountID}/category/tree [get]
 func (catApi *CategoryApi) GetTree(ctx *gin.Context) {
 	var requestData request.CategoryGetTree
 	var err error
@@ -216,13 +289,9 @@ func (catApi *CategoryApi) GetTree(ctx *gin.Context) {
 		response.FailToParameter(ctx, err)
 		return
 	}
-	account, _, pass := checkFunc.AccountBelongAndGet(requestData.AccountId, ctx)
-	if false == pass {
-		return
-	}
+	account := contextFunc.GetAccount(ctx)
 	fatherSequence, err := categoryService.GetSequenceFather(account, requestData.IncomeExpense)
-	if err != nil {
-		response.FailToError(ctx, err)
+	if responseError(err, ctx) {
 		return
 	}
 	// 响应
@@ -243,6 +312,15 @@ func (catApi *CategoryApi) GetTree(ctx *gin.Context) {
 	response.OkWithData(responseTree, ctx)
 }
 
+// GetList
+//
+//	@Tags		Category
+//	@Accept		json
+//	@Produce	json
+//	@Param		accountID	path		int						true	"Account ID"
+//	@Param		body		body		request.CategoryGetList	true	"query condition"
+//	@Success	200			{object}	response.Data{Data=response.List[response.CategoryDetail]{}}
+//	@Router		/account/{accountID}/category/tree [get]
 func (catApi *CategoryApi) GetList(ctx *gin.Context) {
 	var requestData request.CategoryGetList
 	var err error
@@ -250,13 +328,9 @@ func (catApi *CategoryApi) GetList(ctx *gin.Context) {
 		response.FailToParameter(ctx, err)
 		return
 	}
-	account, _, pass := checkFunc.AccountBelongAndGet(requestData.AccountId, ctx)
-	if false == pass {
-		return
-	}
+	account := contextFunc.GetAccount(ctx)
 	fatherSequence, err := categoryService.GetSequenceFather(account, requestData.IncomeExpense)
-	if err != nil {
-		response.FailToError(ctx, err)
+	if responseError(err, ctx) {
 		return
 	}
 	// 响应
@@ -276,11 +350,18 @@ func (catApi *CategoryApi) GetList(ctx *gin.Context) {
 	response.OkWithData(response.List[response.CategoryDetail]{List: responseData}, ctx)
 }
 
+// Delete
+//
+//	@Tags		Category
+//	@Produce	json
+//	@Param		accountID	path		int	true	"Account ID"
+//	@Param		id			path		int	true	"Category ID"
+//	@Success	204			{object}	response.NoContent
+//	@Router		/account/{accountID}/category/{id} [delete]
 func (catApi *CategoryApi) Delete(ctx *gin.Context) {
 	var category categoryModel.Category
 	err := db.Db.First(&category, ctx.Param("id")).Error
-	if err != nil {
-		response.FailToError(ctx, err)
+	if responseError(err, ctx) {
 		return
 	}
 	if pass := checkFunc.AccountBelong(category.AccountId, ctx); pass == false {
@@ -295,16 +376,21 @@ func (catApi *CategoryApi) Delete(ctx *gin.Context) {
 	response.Ok(ctx)
 }
 
+// DeleteFather
+//
+//	@Tags		Category/Father
+//	@Produce	json
+//	@Param		accountID	path		int	true	"Account ID"
+//	@Param		id			path		int	true	"Father ID"
+//	@Success	204			{object}	response.NoContent
+//	@Router		/account/{accountID}/category/father/{id} [delete]
 func (catApi *CategoryApi) DeleteFather(ctx *gin.Context) {
 	var father categoryModel.Father
 	err := db.Db.First(&father, ctx.Param("id")).Error
-	if err != nil {
-		response.FailToError(ctx, err)
+	if responseError(err, ctx) {
 		return
 	}
-	if pass := checkFunc.AccountBelong(father.AccountId, ctx); pass == false {
-		return
-	}
+
 	err = db.Db.Transaction(
 		func(tx *gorm.DB) error {
 			err = categoryService.DeleteFather(father, tx)
@@ -314,13 +400,22 @@ func (catApi *CategoryApi) DeleteFather(ctx *gin.Context) {
 			return nil
 		},
 	)
-	if err != nil {
-		response.FailToError(ctx, err)
+	if responseError(err, ctx) {
 		return
 	}
 	response.Ok(ctx)
 }
 
+// MappingCategory
+//
+//	@Tags		Category
+//	@Accept		json
+//	@Produce	json
+//	@Param		accountID	path		int						true	"Account ID"
+//	@Param		id			path		int						true	"Category ID"
+//	@Param		body		body		request.CategoryMapping	true	"data"
+//	@Success	204			{object}	response.NoContent
+//	@Router		/account/{accountID}/category/{id}/mapping [post]
 func (catApi *CategoryApi) MappingCategory(ctx *gin.Context) {
 	// 获取数据
 	var requestData request.CategoryMapping
@@ -332,13 +427,23 @@ func (catApi *CategoryApi) MappingCategory(ctx *gin.Context) {
 	if false == pass {
 		return
 	}
-	childCategory, err := categoryModel.NewDao().SelectById(requestData.ChildCategoryId)
+	childCategory, err := categoryModel.NewDao(db.Get(ctx)).SelectById(requestData.ChildCategoryId)
+	if responseError(err, ctx) {
+		return
+	}
+	if childCategory.AccountId != contextFunc.GetAccountId(ctx) {
+		response.FailToError(ctx, global.ErrAccountId)
+		return
+	}
 	if responseError(err, ctx) {
 		return
 	}
 	// 执行
 	var operator userModel.User
 	operator, err = contextFunc.GetUser(ctx)
+	if responseError(err, ctx) {
+		return
+	}
 	txFunc := func(tx *gorm.DB) error {
 		_, err = categoryService.MappingCategory(parentCategory, childCategory, operator, tx)
 		return err
@@ -351,6 +456,16 @@ func (catApi *CategoryApi) MappingCategory(ctx *gin.Context) {
 	response.Ok(ctx)
 }
 
+// MappingCategory
+//
+//	@Tags		Category
+//	@Accept		json
+//	@Produce	json
+//	@Param		accountID	path		int						true	"Account ID"
+//	@Param		id			path		int						true	"Category ID"
+//	@Param		body		body		request.CategoryMapping	true	"data"
+//	@Success	204			{object}	response.NoContent
+//	@Router		/account/{accountID}/category/{id}/mapping [delete]
 func (catApi *CategoryApi) DeleteCategoryMapping(ctx *gin.Context) {
 	// 获取数据
 	var requestData request.CategoryMapping
@@ -362,13 +477,20 @@ func (catApi *CategoryApi) DeleteCategoryMapping(ctx *gin.Context) {
 	if false == pass {
 		return
 	}
-	childCategory, err := categoryModel.NewDao().SelectById(requestData.ChildCategoryId)
+	childCategory, err := categoryModel.NewDao(db.Get(ctx)).SelectById(requestData.ChildCategoryId)
 	if responseError(err, ctx) {
+		return
+	}
+	if childCategory.AccountId != contextFunc.GetAccountId(ctx) {
+		response.FailToError(ctx, global.ErrAccountId)
 		return
 	}
 	// 执行
 	var operator userModel.User
 	operator, err = contextFunc.GetUser(ctx)
+	if responseError(err, ctx) {
+		return
+	}
 	txFunc := func(tx *gorm.DB) error {
 		err = categoryService.DeleteMapping(parentCategory, childCategory, operator, tx)
 		return err
@@ -380,6 +502,15 @@ func (catApi *CategoryApi) DeleteCategoryMapping(ctx *gin.Context) {
 	response.Ok(ctx)
 }
 
+// GetMappingTree
+//
+//	@Tags		Category
+//	@Accept		json
+//	@Produce	json
+//	@Param		accountID	path		int								true	"Account ID"
+//	@Param		body		body		request.CategoryGetMappingTree	true	"query condition"
+//	@Success	200			{object}	response.Data{Data=response.CategoryMappingTree}
+//	@Router		/account/{accountID}/category/mapping/tree [get]
 func (catApi *CategoryApi) GetMappingTree(ctx *gin.Context) {
 	var requestData request.CategoryGetMappingTree
 	if err := ctx.ShouldBindJSON(&requestData); err != nil {

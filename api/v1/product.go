@@ -3,18 +3,26 @@ package v1
 import (
 	"KeepAccount/api/request"
 	"KeepAccount/api/response"
+	"KeepAccount/global"
+	"KeepAccount/global/cusCtx"
 	"KeepAccount/global/db"
 	categoryModel "KeepAccount/model/category"
 	productModel "KeepAccount/model/product"
 	"KeepAccount/util"
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
-	"strconv"
 )
 
 type ProductApi struct {
 }
 
+// GetList
+//
+//	@Tags		Product
+//	@Produce	json
+//	@Success	200	{object}	response.Data{Data=response.ProductList}
+//	@Header		200	{string}	Cache-Control	"max-age=604800"
+//	@Router		/product/list [get]
 func (p *ProductApi) GetList(ctx *gin.Context) {
 	var product productModel.Product
 	rows, err := db.Db.Model(&product).Where("hide = ?", 0).Order("weight desc").Rows()
@@ -23,8 +31,8 @@ func (p *ProductApi) GetList(ctx *gin.Context) {
 		return
 	}
 
-	var responseData response.ProductGetList
-	responseData.List = []response.ProductGetOne{}
+	var responseData response.ProductList
+	responseData.List = []response.ProductOne{}
 	for rows.Next() {
 		err = db.Db.ScanRows(rows, &product)
 		if err != nil {
@@ -32,13 +40,21 @@ func (p *ProductApi) GetList(ctx *gin.Context) {
 			return
 		}
 		responseData.List = append(
-			responseData.List, response.ProductGetOne{Name: product.Name, UniqueKey: string(product.Key)},
+			responseData.List, response.ProductOne{Name: product.Name, UniqueKey: string(product.Key)},
 		)
 	}
 	ctx.Header("Cache-Control", "max-age=604800")
 	response.OkWithData(responseData, ctx)
 }
 
+// GetTransactionCategory
+//
+//	@Tags		Product/TransCategory
+//	@Produce	json
+//	@Param		key	path		int	true	"Product unique key"
+//	@Success	200	{object}	response.Data{Data=response.ProductTransactionCategoryList}
+//	@Header		200	{string}	Cache-Control	"max-age=604800"
+//	@Router		/product/{key}/transCategory [get]
 func (p *ProductApi) GetTransactionCategory(ctx *gin.Context) {
 	var transactionCategory productModel.TransactionCategory
 	rows, err := db.Db.Model(&transactionCategory).Where(
@@ -49,8 +65,8 @@ func (p *ProductApi) GetTransactionCategory(ctx *gin.Context) {
 		return
 	}
 
-	var responseData response.ProductGetTransactionCategoryList
-	responseData.List = []response.ProductGetTransactionCategory{}
+	var responseData response.ProductTransactionCategoryList
+	responseData.List = []response.ProductTransactionCategory{}
 	for rows.Next() {
 		err = db.Db.ScanRows(rows, &transactionCategory)
 		if err != nil {
@@ -59,7 +75,7 @@ func (p *ProductApi) GetTransactionCategory(ctx *gin.Context) {
 		}
 		responseData.List = append(
 			responseData.List,
-			response.ProductGetTransactionCategory{
+			response.ProductTransactionCategory{
 				Id: transactionCategory.ID, Name: transactionCategory.Name,
 				IncomeExpense: transactionCategory.IncomeExpense,
 			},
@@ -69,6 +85,16 @@ func (p *ProductApi) GetTransactionCategory(ctx *gin.Context) {
 	response.OkWithData(responseData, ctx)
 }
 
+// MappingTransactionCategory
+//
+//	@Tags		Product/TransCategory/Mapping
+//	@Accept		json
+//	@Produce	json
+//	@Param		accountID	path		int											true	"Account ID"
+//	@Param		id			path		int											true	"Product transaction category ID"
+//	@Param		body		body		request.ProductMappingTransactionCategory	true	"data"
+//	@Success	204			{object}	response.NoContent
+//	@Router		/account/{accountID}/product/transCategory/{id}/mapping [post]
 func (p *ProductApi) MappingTransactionCategory(ctx *gin.Context) {
 	var transactionCategory productModel.TransactionCategory
 	err := db.Db.Model(&transactionCategory).First(&transactionCategory, ctx.Param("id")).Error
@@ -86,13 +112,30 @@ func (p *ProductApi) MappingTransactionCategory(ctx *gin.Context) {
 	if responseError(err, ctx) {
 		return
 	}
-	_, err = productService.MappingTransactionCategory(category, transactionCategory)
+	if category.AccountId != contextFunc.GetAccountId(ctx) {
+		response.FailToParameter(ctx, global.ErrAccountId)
+		return
+	}
+	err = db.Transaction(ctx, func(ctx *cusCtx.TxContext) error {
+		_, err = productService.MappingTransactionCategory(category, transactionCategory, ctx)
+		return err
+	})
 	if responseError(err, ctx) {
 		return
 	}
 	response.Ok(ctx)
 }
 
+// DeleteTransactionCategoryMapping
+//
+//	@Tags		Product/TransCategory/Mapping
+//	@Accept		json
+//	@Produce	json
+//	@Param		accountID	path		int											true	"Account ID"
+//	@Param		id			path		int											true	"Product transaction category ID"
+//	@Param		body		body		request.ProductMappingTransactionCategory	true	"data"
+//	@Success	204			{object}	response.NoContent
+//	@Router		/account/{accountID}/product/transCategory/{id}/mapping [delete]
 func (p *ProductApi) DeleteTransactionCategoryMapping(ctx *gin.Context) {
 	var ptc productModel.TransactionCategory
 	err := db.Db.Model(&ptc).First(&ptc, ctx.Param("id")).Error
@@ -110,22 +153,31 @@ func (p *ProductApi) DeleteTransactionCategoryMapping(ctx *gin.Context) {
 		return
 	}
 
-	err = productService.DeleteMappingTransactionCategory(category, ptc)
+	err = db.Transaction(ctx, func(ctx *cusCtx.TxContext) error {
+		return productService.DeleteMappingTransactionCategory(category, ptc, ctx)
+	})
 	if responseError(err, ctx) {
 		return
 	}
 	response.Ok(ctx)
 }
 
+// GetMappingTree
+//
+//	@Tags		Product/TransCategory/Mapping
+//	@Accept		json
+//	@Produce	json
+//	@Param		accountID	path		int								true	"Account ID"
+//	@Param		body		body		request.ProductGetMappingTree	true	"query condition"
+//	@Success	200			{object}	response.Data{Data=response.ProductMappingTree}
+//	@Router		/account/{accountID}/product/transCategory/mapping/tree [get]
 func (p *ProductApi) GetMappingTree(ctx *gin.Context) {
 	var requestData request.ProductGetMappingTree
 	if err := ctx.ShouldBindJSON(&requestData); err != nil {
 		response.FailToParameter(ctx, err)
 		return
 	}
-	if pass := checkFunc.AccountBelong(requestData.AccountId, ctx); pass == false {
-		return
-	}
+	requestData.AccountId = contextFunc.GetAccountId(ctx)
 	var prodTransCategory productModel.TransactionCategory
 	transCategoryMap, err := prodTransCategory.GetMap(requestData.ProductKey)
 	if err != nil {
@@ -144,8 +196,8 @@ func (p *ProductApi) GetMappingTree(ctx *gin.Context) {
 		response.FailToError(ctx, err)
 		return
 	}
-
-	var tree response.ProductGetMappingTree
+	// response
+	var tree response.ProductMappingTree
 	children := make(map[uint][]uint)
 	var fatherList []uint
 	for rows.Next() {
@@ -167,12 +219,22 @@ func (p *ProductApi) GetMappingTree(ctx *gin.Context) {
 
 	for _, fatherId := range fatherList {
 		tree.Tree = append(
-			tree.Tree, response.ProductGetMappingTreeFather{FatherId: fatherId, Children: children[fatherId]},
+			tree.Tree, response.ProductMappingTreeFather{FatherId: fatherId, Children: children[fatherId]},
 		)
 	}
 	response.OkWithData(tree, ctx)
 }
 
+// ImportProductBill
+//
+//	@Tags		Product/Bill/Import
+//	@Accept		multipart/form-data
+//	@Produce	json
+//	@Param		accountID	path		int		true	"Account ID"
+//	@Param		key			path		int		true	"Product unique key"
+//	@Param		file		formData	file	true	"file to upload"
+//	@Success	200			{object}	response.NoContent
+//	@Router		/account/{accountID}/product/{key}/bill/import [post]
 func (p *ProductApi) ImportProductBill(ctx *gin.Context) {
 	fileHeader, err := ctx.FormFile("File")
 	if responseError(err, ctx) {
@@ -183,19 +245,10 @@ func (p *ProductApi) ImportProductBill(ctx *gin.Context) {
 	if responseError(err, ctx) {
 		return
 	}
-
-	var accountId int
-	accountId, err = strconv.Atoi(ctx.PostForm("AccountId"))
+	defer file.Close()
+	account, accountUser := contextFunc.GetAccount(ctx), contextFunc.GetAccountUser(ctx)
+	product, err := p.getProductByParam(ctx)
 	if responseError(err, ctx) {
-		return
-	}
-	account, accountUser, pass := checkFunc.AccountBelongAndGet(uint(accountId), ctx)
-	if false == pass {
-		return
-	}
-
-	var product productModel.Product
-	if product, err = p.getProductByParam(ctx); err != nil {
 		return
 	}
 	err = db.Db.Transaction(
@@ -203,14 +256,10 @@ func (p *ProductApi) ImportProductBill(ctx *gin.Context) {
 			return productService.BillImport(accountUser, account, product, file, tx)
 		},
 	)
-	if err != nil {
+	if responseError(err, ctx) {
 		return
 	}
-	defer response.HandleAndCleanup(
-		err, nil, func() error {
-			return file.Close()
-		}, ctx,
-	)
+	response.Ok(ctx)
 }
 
 func (p *ProductApi) getProductByParam(ctx *gin.Context) (productModel.Product, error) {

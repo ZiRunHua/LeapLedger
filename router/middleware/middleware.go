@@ -1,4 +1,4 @@
-package router
+package middleware
 
 import (
 	"KeepAccount/api/response"
@@ -15,12 +15,7 @@ import (
 	"time"
 )
 
-type _middleware struct {
-}
-
-var middleware = &_middleware{}
-
-func (m *_middleware) TurnAwayTourist() gin.HandlerFunc {
+func NoTourist() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		user, err := apiUtil.ContextFunc.GetUser(ctx)
 		if err != nil {
@@ -40,7 +35,7 @@ func (m *_middleware) TurnAwayTourist() gin.HandlerFunc {
 	}
 }
 
-func (m *_middleware) JWTAuth() gin.HandlerFunc {
+func JWTAuth() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		token := apiUtil.ContextFunc.GetToken(ctx)
 		if token == "" {
@@ -67,7 +62,7 @@ func (m *_middleware) JWTAuth() gin.HandlerFunc {
 	}
 }
 
-func (m *_middleware) Recovery(ctx *gin.Context, err any) {
+func Recovery(ctx *gin.Context, err any) {
 	body, _ := io.ReadAll(ctx.Request.Body)
 	global.PanicLogger.Error(
 		"[Recovery from panic]",
@@ -79,7 +74,7 @@ func (m *_middleware) Recovery(ctx *gin.Context, err any) {
 	response.Fail(ctx)
 }
 
-func (m *_middleware) RequestLogger(logger *zap.Logger) gin.HandlerFunc {
+func RequestLogger(logger *zap.Logger) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		start := time.Now()
 		path := c.Request.URL.Path
@@ -108,7 +103,7 @@ func (m *_middleware) RequestLogger(logger *zap.Logger) gin.HandlerFunc {
 		)
 	}
 }
-func (m *_middleware) AccountAuth(permission accountModel.UserPermission) gin.HandlerFunc {
+func AccountAuth(permission accountModel.UserPermission) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		if !apiUtil.ContextFunc.CheckAccountPermissionFromParam(ctx, permission) {
 			return

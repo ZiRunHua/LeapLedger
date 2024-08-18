@@ -51,6 +51,14 @@ type _userConfig interface {
 	UpdateTransactionShareConfig(ctx *gin.Context)
 }
 
+// Login
+//
+//	@Tags		User
+//	@Accept		json
+//	@Produce	json
+//	@Param		body	body		request.UserLogin	true	"login data"
+//	@Success	200		{object}	response.Data{Data=response.Login}
+//	@Router		/public/user/login [post]
 func (p *PublicApi) Login(ctx *gin.Context) {
 	var requestData request.UserLogin
 	var err error
@@ -125,6 +133,14 @@ func (p *PublicApi) Login(ctx *gin.Context) {
 	}
 }
 
+// Register
+//
+//	@Tags		User
+//	@Accept		json
+//	@Produce	json
+//	@Param		body	body		request.UserRegister	true	"register data"
+//	@Success	200		{object}	response.Data{Data=response.Login}
+//	@Router		/public/user/register [post]
 func (p *PublicApi) Register(ctx *gin.Context) {
 	var requestData request.UserRegister
 	var err error
@@ -170,8 +186,16 @@ func (p *PublicApi) Register(ctx *gin.Context) {
 	response.OkWithDetailed(responseData, "注册成功", ctx)
 }
 
+// TourRequest
+//
+//	@Tags		User
+//	@Accept		json
+//	@Produce	json
+//	@Param		body	body		request.TourApply	true	"data"
+//	@Success	200		{object}	response.Data{Data=response.Login}
+//	@Router		/public/user/tour [post]
 func (p *PublicApi) TourRequest(ctx *gin.Context) {
-	var requestData request.TourRequest
+	var requestData request.TourApply
 	if err := ctx.ShouldBindJSON(&requestData); err != nil {
 		response.FailToParameter(ctx, err)
 		return
@@ -209,6 +233,14 @@ func (p *PublicApi) TourRequest(ctx *gin.Context) {
 	response.OkWithDetailed(responseData, "欢迎", ctx)
 }
 
+// UpdatePassword
+//
+//	@Tags		User
+//	@Accept		json
+//	@Produce	json
+//	@Param		body	body		request.UserForgetPassword	true	"data"
+//	@Success	204		{object}	response.NoContent
+//	@Router		/public/user/password [put]
 func (p *PublicApi) UpdatePassword(ctx *gin.Context) {
 	var requestData request.UserForgetPassword
 	if err := ctx.ShouldBindJSON(&requestData); err != nil {
@@ -237,6 +269,13 @@ func (p *PublicApi) UpdatePassword(ctx *gin.Context) {
 	response.Ok(ctx)
 }
 
+// RefreshToken
+//
+//	@Tags		User
+//	@Accept		json
+//	@Produce	json
+//	@Success	200	{object}	response.Data{Data=response.Token}
+//	@Router		/user/token/refresh [post]
 func (u *UserApi) RefreshToken(ctx *gin.Context) {
 	token := contextFunc.GetToken(ctx)
 	if token == "" {
@@ -261,6 +300,14 @@ func (u *UserApi) RefreshToken(ctx *gin.Context) {
 	response.OkWithData(responseData, ctx)
 }
 
+// UpdatePassword
+//
+//	@Tags		User
+//	@Accept		json
+//	@Produce	json
+//	@Param		body	body		request.UserUpdatePassword	true	"data"
+//	@Success	204		{object}	response.NoContent
+//	@Router		/user/password [put]
 func (u *UserApi) UpdatePassword(ctx *gin.Context) {
 	var requestData request.UserUpdatePassword
 	if err := ctx.ShouldBindJSON(&requestData); err != nil {
@@ -290,6 +337,14 @@ func (u *UserApi) UpdatePassword(ctx *gin.Context) {
 	response.Ok(ctx)
 }
 
+// UpdateInfo
+//
+//	@Tags		User
+//	@Accept		json
+//	@Produce	json
+//	@Param		body	body		request.UserUpdateInfo	true	"data"
+//	@Success	204		{object}	response.NoContent
+//	@Router		/user/current [put]
 func (u *UserApi) UpdateInfo(ctx *gin.Context) {
 	var requestData request.UserUpdateInfo
 	var err error
@@ -309,6 +364,14 @@ func (u *UserApi) UpdateInfo(ctx *gin.Context) {
 	response.Ok(ctx)
 }
 
+// SearchUser
+//
+//	@Tags		User
+//	@Accept		json
+//	@Produce	json
+//	@Param		body	body		request.UserSearch	true	"data"
+//	@Success	200		{object}	response.Data{Data=response.List[response.UserInfo]{}}
+//	@Router		/user/search [get]
 func (u *UserApi) SearchUser(ctx *gin.Context) {
 	var requestData request.UserSearch
 	var err error
@@ -332,6 +395,14 @@ func (u *UserApi) SearchUser(ctx *gin.Context) {
 	response.OkWithData(responseData, ctx)
 }
 
+// SetCurrentAccount
+//
+//	@Tags		User
+//	@Accept		json
+//	@Produce	json
+//	@Param		body	body		request.Id	true	"data"
+//	@Success	204		{object}	response.NoContent
+//	@Router		/user/client/current/account [put]
 func (u *UserApi) SetCurrentAccount(ctx *gin.Context) {
 	var requestData request.Id
 	if err := ctx.ShouldBindJSON(&requestData); err != nil {
@@ -354,6 +425,14 @@ func (u *UserApi) SetCurrentAccount(ctx *gin.Context) {
 	response.Ok(ctx)
 }
 
+// SetCurrentShareAccount
+//
+//	@Tags		User
+//	@Accept		json
+//	@Produce	json
+//	@Param		body	body		request.Id	true	"data"
+//	@Success	204		{object}	response.NoContent
+//	@Router		/user/client/current/share/account [put]
 func (u *UserApi) SetCurrentShareAccount(ctx *gin.Context) {
 	var requestData request.Id
 	if err := ctx.ShouldBindJSON(&requestData); err != nil {
@@ -380,6 +459,14 @@ func (u *UserApi) SetCurrentShareAccount(ctx *gin.Context) {
 	response.Ok(ctx)
 }
 
+// SendCaptchaEmail
+//
+//	@Tags		User
+//	@Accept		json
+//	@Produce	json
+//	@Param		body	body		request.UserSendEmail	true	"data"
+//	@Success	200		{object}	response.Data{Data=response.ExpirationTime}
+//	@Router		/user/client/current/share/account [post]
 func (u *UserApi) SendCaptchaEmail(ctx *gin.Context) {
 	var requestData request.UserSendEmail
 	if err := ctx.ShouldBindJSON(&requestData); err != nil {
@@ -403,6 +490,14 @@ func (u *UserApi) SendCaptchaEmail(ctx *gin.Context) {
 	response.OkWithData(response.ExpirationTime{ExpirationTime: global.Config.Captcha.EmailCaptchaTimeOut}, ctx)
 }
 
+// Home
+//
+//	@Tags		User
+//	@Accept		json
+//	@Produce	json
+//	@Param		body	body		request.UserHome	true	"data"
+//	@Success	200		{object}	response.Data{Data=response.UserHome}
+//	@Router		/user/home [get]
 func (u *UserApi) Home(ctx *gin.Context) {
 	var requestData request.UserHome
 	if err := ctx.ShouldBindJSON(&requestData); err != nil {
@@ -499,6 +594,12 @@ func (u *UserApi) Home(ctx *gin.Context) {
 	response.OkWithData(responseData, ctx)
 }
 
+// GetTransactionShareConfig
+//
+//	@Tags		User/Config
+//	@Produce	json
+//	@Success	200	{object}	response.Data{Data=response.UserTransactionShareConfig}
+//	@Router		/user/transaction/share/config [get]
 func (u *UserApi) GetTransactionShareConfig(ctx *gin.Context) {
 	user, err := contextFunc.GetUser(ctx)
 	if responseError(err, ctx) {
@@ -516,6 +617,14 @@ func (u *UserApi) GetTransactionShareConfig(ctx *gin.Context) {
 	response.OkWithData(responseData, ctx)
 }
 
+// UpdateTransactionShareConfig
+//
+//	@Tags		User/Config
+//	@Accept		json
+//	@Produce	json
+//	@Param		body	body		request.UserTransactionShareConfigUpdate	true	"data"
+//	@Success	200		{object}	response.Data{Data=response.UserTransactionShareConfig}
+//	@Router		/user/transaction/share/config [put]
 func (u *UserApi) UpdateTransactionShareConfig(ctx *gin.Context) {
 	var err error
 	// 处理请求数据
@@ -567,6 +676,12 @@ func (u *UserApi) responseAndMaskUserInfo(data userModel.UserInfo) response.User
 	}
 }
 
+// GetFriendList
+//
+//	@Tags		User/Friend
+//	@Produce	json
+//	@Success	200	{object}	response.Data{Data=response.List[response.UserInfo]{}}
+//	@Router		/user/friend/list [get]
 func (u *UserApi) GetFriendList(ctx *gin.Context) {
 	user, err := contextFunc.GetUser(ctx)
 	if responseError(err, ctx) {
@@ -610,6 +725,14 @@ func (u *UserApi) responseUserFriendInvitation(data userModel.FriendInvitation) 
 	return
 }
 
+// CreateFriendInvitation
+//
+//	@Tags		User/Friend/Invitation
+//	@Accept		json
+//	@Produce	json
+//	@Param		body	body		request.UserCreateFriendInvitation	true	"data"
+//	@Success	200		{object}	response.Data{Data=response.UserFriendInvitation}
+//	@Router		/user/friend/invitation [post]
 func (u *UserApi) CreateFriendInvitation(ctx *gin.Context) {
 	var requestData request.UserCreateFriendInvitation
 	if err := ctx.ShouldBindJSON(&requestData); err != nil {
@@ -659,6 +782,13 @@ func (u *UserApi) getFriendInvitationByParam(ctx *gin.Context) (result userModel
 	return
 }
 
+// AcceptFriendInvitation
+//
+//	@Tags		User/Friend/Invitation
+//	@Produce	json
+//	@Param		id	path		int	true	"Invitation ID"
+//	@Success	200	{object}	response.Data{Data=response.UserFriendInvitation}
+//	@Router		/user/friend/invitation/{id}/accept [put]
 func (u *UserApi) AcceptFriendInvitation(ctx *gin.Context) {
 	invitation, pass := u.getFriendInvitationByParam(ctx)
 	if false == pass {
@@ -684,6 +814,13 @@ func (u *UserApi) AcceptFriendInvitation(ctx *gin.Context) {
 	response.OkWithData(responseData, ctx)
 }
 
+// RefuseFriendInvitation
+//
+//	@Tags		User/Friend/Invitation
+//	@Produce	json
+//	@Param		id	path		int	true	"Invitation ID"
+//	@Success	200	{object}	response.Data{Data=response.UserFriendInvitation}
+//	@Router		/user/friend/invitation/{id}/refuse [put]
 func (u *UserApi) RefuseFriendInvitation(ctx *gin.Context) {
 	invitation, pass := u.getFriendInvitationByParam(ctx)
 	if false == pass {
@@ -709,6 +846,12 @@ func (u *UserApi) RefuseFriendInvitation(ctx *gin.Context) {
 	response.OkWithData(responseData, ctx)
 }
 
+// GetFriendInvitationList
+//
+//	@Tags		User/Friend/Invitation
+//	@Produce	json
+//	@Success	200	{object}	response.Data{Data=response.List[response.UserFriendInvitation]{}}
+//	@Router		/user/friend/invitation [get]
 func (u *UserApi) GetFriendInvitationList(ctx *gin.Context) {
 	var requestData request.UserGetFriendInvitation
 	if err := ctx.ShouldBindJSON(&requestData); err != nil {
@@ -737,6 +880,14 @@ func (u *UserApi) GetFriendInvitationList(ctx *gin.Context) {
 	response.OkWithData(response.List[response.UserFriendInvitation]{List: responseData}, ctx)
 }
 
+// RefuseFriendInvitation
+//
+//	@Tags		User/Friend/Invitation
+//	@Accept		json
+//	@Produce	json
+//	@Param		body	body		request.UserGetAccountInvitationList	true	"query condition"
+//	@Success	200		{object}	response.Data{Data=response.AccountUserInvitation}
+//	@Router		/user/account/invitation/list [get]
 func (u *UserApi) GetAccountInvitationList(ctx *gin.Context) {
 	var err error
 	var requestData request.UserGetAccountInvitationList

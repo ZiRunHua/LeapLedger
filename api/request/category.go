@@ -10,7 +10,7 @@ type CategoryOne struct {
 	Icon          string
 	FatherId      uint
 	IncomeExpense IncomeExpense
-} // @name CategoryOne
+}
 
 type CategoryCreateOne struct {
 	Name     string `binding:"required"`
@@ -24,12 +24,11 @@ type CategoryUpdateOne struct {
 }
 
 type CategoryCreateOneFather struct {
-	AccountId     uint
 	Name          string
 	IncomeExpense constant.IncomeExpense
 }
 
-type CategoryMoveCategory struct {
+type CategoryMove struct {
 	Previous *uint
 	FatherId *uint
 }
@@ -39,12 +38,10 @@ type CategoryMoveFather struct {
 }
 
 type CategoryGetTree struct {
-	AccountId     uint `binding:"required"`
 	IncomeExpense *constant.IncomeExpense
 }
 
 type CategoryGetList struct {
-	AccountId     uint                    `binding:"required"`
 	IncomeExpense *constant.IncomeExpense `binding:"omitempty"`
 }
 

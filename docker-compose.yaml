@@ -4,16 +4,16 @@ services:
     container_name: leap-ledger-server
     image: registry.cn-hangzhou.aliyuncs.com/xiaozirun/leap-ledger:latest
     build:
-      context: ..
+      context: .
       dockerfile: docker/Dockerfile
     ports:
       - "8080:8080"
     #    environment:
     #      - CONFIG_FILE_NAME=production_config.yaml
     volumes:
-      - ../log:/go/LeapLedger/log
-      - ../docs:/go/LeapLedger/docs
-      - ./test:/go/LeapLedger/docker/test
+      - ./log:/go/LeapLedger/log
+      - ./docs:/go/LeapLedger/docs
+      - ./docker/test:/go/LeapLedger/docker/test
     networks:
       - leap-ledger-network
     depends_on:
@@ -29,7 +29,7 @@ services:
     ports:
       - "3306:3306"
     volumes:
-      - ./data/mysql:/var/lib/mysql
+      - ./docker/data/mysql:/var/lib/mysql
     networks:
       - leap-ledger-network
   leap-ledger-redis:
@@ -39,8 +39,8 @@ services:
     ports:
       - "6379:6379"
     volumes:
-      - ./redis.conf:/redis.conf
-      - ./data/redis:/data
+      - ./docker/redis.conf:/redis.conf
+      - ./docker/data/redis:/data
     networks:
       - leap-ledger-network
     command: ["redis-server", "/redis.conf"]
@@ -53,7 +53,7 @@ services:
       - "4222:4222"
       - "8222:8222"
     volumes:
-      - ./data/nats:/data
+      - ./docker/data/nats:/data
     networks:
       - leap-ledger-network
 networks:

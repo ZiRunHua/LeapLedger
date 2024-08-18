@@ -1,0 +1,3168 @@
+definitions:
+  AccountCreateOne:
+    properties:
+      Icon:
+        type: string
+      Name:
+        type: string
+      Type:
+        $ref: '#/definitions/accountModel.Type'
+    required:
+    - Icon
+    - Name
+    - Type
+    type: object
+  AccountGetUserInfo:
+    properties:
+      Types:
+        items:
+          type: string
+        type: array
+    type: object
+  AccountGetUserInvitationList:
+    properties:
+      AccountId:
+        type: integer
+      Invitee:
+        type: integer
+      Limit:
+        type: integer
+      Offset:
+        minimum: 0
+        type: integer
+      Role:
+        $ref: '#/definitions/accountModel.UserRole'
+    required:
+    - AccountId
+    type: object
+  AccountMapping:
+    properties:
+      AccountId:
+        type: integer
+    type: object
+  AccountTransCategoryInit:
+    properties:
+      TemplateId:
+        type: integer
+    type: object
+  AccountUpdateOne:
+    properties:
+      Icon:
+        type: string
+      Name:
+        type: string
+      Type:
+        $ref: '#/definitions/accountModel.Type'
+    required:
+    - Type
+    type: object
+  AccountUpdateUser:
+    properties:
+      Role:
+        $ref: '#/definitions/accountModel.UserRole'
+    required:
+    - Role
+    type: object
+  AccountUserConfigFlagUpdate:
+    properties:
+      Status:
+        type: boolean
+    type: object
+  IncomeExpense:
+    enum:
+    - income
+    - expense
+    type: string
+    x-enum-varnames:
+    - Income
+    - Expense
+  NoContent:
+    properties:
+      Data: {}
+      Msg:
+        type: string
+    type: object
+  Response:
+    properties:
+      Data: {}
+      Msg:
+        example: success
+        type: string
+    type: object
+  UpdateAccountMapping:
+    properties:
+      RelatedAccountId:
+        type: integer
+    type: object
+  accountModel.Type:
+    enum:
+    - independent
+    - share
+    type: string
+    x-enum-varnames:
+    - TypeIndependent
+    - TypeShare
+  accountModel.UserInvitationStatus:
+    enum:
+    - 0
+    - 1
+    - 2
+    type: integer
+    x-enum-varnames:
+    - UserInvitationStatsOfWaiting
+    - UserInvitationStatsOfAccept
+    - UserInvitationStatsOfRefuse
+  accountModel.UserRole:
+    enum:
+    - reader
+    - ownEditor
+    - administrator
+    - creator
+    type: string
+    x-enum-varnames:
+    - Reader
+    - OwnEditor
+    - Administrator
+    - Creator
+  constant.UserAction:
+    enum:
+    - login
+    - register
+    - forgetPassword
+    - updatePassword
+    type: string
+    x-enum-varnames:
+    - Login
+    - Register
+    - ForgetPassword
+    - UpdatePassword
+  global.AmountCount:
+    properties:
+      Amount:
+        type: integer
+      Count:
+        type: integer
+    type: object
+  global.IEStatisticWithTime:
+    properties:
+      EndTime:
+        type: string
+      Expense:
+        $ref: '#/definitions/global.AmountCount'
+      Income:
+        $ref: '#/definitions/global.AmountCount'
+      StartTime:
+        type: string
+    type: object
+  request.CategoryCreateOne:
+    properties:
+      FatherId:
+        type: integer
+      Icon:
+        type: string
+      Name:
+        type: string
+    required:
+    - FatherId
+    - Icon
+    - Name
+    type: object
+  request.CategoryCreateOneFather:
+    properties:
+      IncomeExpense:
+        $ref: '#/definitions/IncomeExpense'
+      Name:
+        type: string
+    type: object
+  request.CategoryGetList:
+    properties:
+      IncomeExpense:
+        $ref: '#/definitions/IncomeExpense'
+    type: object
+  request.CategoryGetMappingTree:
+    properties:
+      ChildAccountId:
+        type: integer
+      ParentAccountId:
+        type: integer
+    required:
+    - ChildAccountId
+    - ParentAccountId
+    type: object
+  request.CategoryGetTree:
+    properties:
+      IncomeExpense:
+        $ref: '#/definitions/IncomeExpense'
+    type: object
+  request.CategoryMapping:
+    properties:
+      ChildCategoryId:
+        type: integer
+    type: object
+  request.CategoryMove:
+    properties:
+      FatherId:
+        type: integer
+      Previous:
+        type: integer
+    type: object
+  request.CategoryMoveFather:
+    properties:
+      Previous:
+        type: integer
+    type: object
+  request.CategoryUpdateOne:
+    properties:
+      Icon:
+        type: string
+      Name:
+        type: string
+    type: object
+  request.CommonSendEmailCaptcha:
+    properties:
+      Captcha:
+        type: string
+      CaptchaId:
+        type: string
+      Email:
+        type: string
+      Type:
+        allOf:
+        - $ref: '#/definitions/constant.UserAction'
+        enum:
+        - register
+        - forgetPassword
+    required:
+    - Captcha
+    - CaptchaId
+    - Email
+    - Type
+    type: object
+  request.Id:
+    properties:
+      Id:
+        type: integer
+    type: object
+  request.Name:
+    properties:
+      Name:
+        type: string
+    type: object
+  request.PageData:
+    properties:
+      Limit:
+        type: integer
+      Offset:
+        minimum: 0
+        type: integer
+    type: object
+  request.ProductGetMappingTree:
+    properties:
+      AccountId:
+        type: integer
+      ProductKey:
+        type: string
+    type: object
+  request.ProductMappingTransactionCategory:
+    properties:
+      CategoryId:
+        type: integer
+    type: object
+  request.TourApply:
+    properties:
+      DeviceNumber:
+        type: string
+    type: object
+  request.TransactionAmountRank:
+    properties:
+      AccountId:
+        type: integer
+      EndTime:
+        type: string
+      IncomeExpense:
+        allOf:
+        - $ref: '#/definitions/IncomeExpense'
+        enum:
+        - income
+        - expense
+      StartTime:
+        type: string
+    required:
+    - AccountId
+    - IncomeExpense
+    type: object
+  request.TransactionCategoryAmountRank:
+    properties:
+      AccountId:
+        type: integer
+      EndTime:
+        type: string
+      IncomeExpense:
+        allOf:
+        - $ref: '#/definitions/IncomeExpense'
+        enum:
+        - income
+        - expense
+      Limit:
+        type: integer
+      StartTime:
+        type: string
+    required:
+    - AccountId
+    - IncomeExpense
+    type: object
+  request.TransactionCreateOne:
+    properties:
+      Amount:
+        type: integer
+      CategoryId:
+        type: integer
+      IncomeExpense:
+        $ref: '#/definitions/IncomeExpense'
+      Remark:
+        type: string
+      TradeTime:
+        type: string
+    type: object
+  request.TransactionDayStatistic:
+    properties:
+      AccountId:
+        type: integer
+      CategoryIds:
+        items:
+          type: integer
+        type: array
+      EndTime:
+        type: string
+      IncomeExpense:
+        allOf:
+        - $ref: '#/definitions/IncomeExpense'
+        enum:
+        - income
+        - expense
+      StartTime:
+        type: string
+    required:
+    - AccountId
+    type: object
+  request.TransactionMonthStatistic:
+    properties:
+      AccountId:
+        type: integer
+      CategoryIds:
+        items:
+          type: integer
+        type: array
+      EndTime:
+        type: string
+      IncomeExpense:
+        allOf:
+        - $ref: '#/definitions/IncomeExpense'
+        enum:
+        - income
+        - expense
+      MaximumAmount:
+        minimum: 0
+        type: integer
+      MinimumAmount:
+        minimum: 0
+        type: integer
+      StartTime:
+        type: string
+      UserIds:
+        items:
+          type: integer
+        type: array
+    required:
+    - AccountId
+    type: object
+  request.TransactionShareConfigName:
+    enum:
+    - account
+    - createTime
+    - updateTime
+    - remark
+    type: string
+    x-enum-varnames:
+    - FLAG_ACCOUNT
+    - FLAG_CREATE_TIME
+    - FLAG_UPDATE_TIME
+    - FLAG_REMARK
+  request.TransactionTiming:
+    properties:
+      Config:
+        $ref: '#/definitions/request.TransactionTimingConfig'
+      Trans:
+        $ref: '#/definitions/transactionModel.Info'
+    type: object
+  request.TransactionTimingConfig:
+    properties:
+      NextTime:
+        type: string
+      OffsetDays:
+        type: integer
+      Type:
+        $ref: '#/definitions/transactionModel.TimingType'
+      UserId:
+        type: integer
+    type: object
+  request.TransactionTotal:
+    properties:
+      AccountId:
+        type: integer
+      CategoryIds:
+        items:
+          type: integer
+        type: array
+      EndTime:
+        type: string
+      IncomeExpense:
+        allOf:
+        - $ref: '#/definitions/IncomeExpense'
+        enum:
+        - income
+        - expense
+      MaximumAmount:
+        minimum: 0
+        type: integer
+      MinimumAmount:
+        minimum: 0
+        type: integer
+      StartTime:
+        type: string
+      UserIds:
+        items:
+          type: integer
+        type: array
+    required:
+    - AccountId
+    type: object
+  request.UserCreateFriendInvitation:
+    properties:
+      Invitee:
+        type: integer
+    type: object
+  request.UserForgetPassword:
+    properties:
+      Captcha:
+        type: string
+      Email:
+        type: string
+      Password:
+        type: string
+    required:
+    - Captcha
+    - Email
+    - Password
+    type: object
+  request.UserGetAccountInvitationList:
+    properties:
+      Limit:
+        type: integer
+      Offset:
+        minimum: 0
+        type: integer
+    type: object
+  request.UserHome:
+    properties:
+      AccountId:
+        type: integer
+    type: object
+  request.UserLogin:
+    properties:
+      Captcha:
+        type: string
+      CaptchaId:
+        type: string
+      Email:
+        type: string
+      Password:
+        type: string
+    required:
+    - Captcha
+    - CaptchaId
+    - Email
+    - Password
+    type: object
+  request.UserRegister:
+    properties:
+      Captcha:
+        type: string
+      Email:
+        type: string
+      Password:
+        type: string
+      Username:
+        type: string
+    required:
+    - Captcha
+    - Email
+    - Password
+    - Username
+    type: object
+  request.UserSearch:
+    properties:
+      Id:
+        type: integer
+      Limit:
+        type: integer
+      Offset:
+        minimum: 0
+        type: integer
+      Username:
+        type: string
+    required:
+    - Username
+    type: object
+  request.UserSendEmail:
+    properties:
+      Captcha:
+        type: string
+      CaptchaId:
+        type: string
+      Type:
+        allOf:
+        - $ref: '#/definitions/constant.UserAction'
+        enum:
+        - updatePassword
+    required:
+    - Captcha
+    - CaptchaId
+    - Type
+    type: object
+  request.UserTransactionShareConfigUpdate:
+    properties:
+      Flag:
+        $ref: '#/definitions/request.TransactionShareConfigName'
+      Status:
+        type: boolean
+    type: object
+  request.UserUpdateInfo:
+    properties:
+      Username:
+        type: string
+    required:
+    - Username
+    type: object
+  request.UserUpdatePassword:
+    properties:
+      Captcha:
+        type: string
+      Password:
+        type: string
+    required:
+    - Captcha
+    - Password
+    type: object
+  response.AccountDetail:
+    properties:
+      CreateTime:
+        type: string
+      CreatorId:
+        type: integer
+      CreatorName:
+        type: string
+      Icon:
+        type: string
+      Id:
+        type: integer
+      JoinTime:
+        type: string
+      Name:
+        type: string
+      Role:
+        $ref: '#/definitions/accountModel.UserRole'
+      Type:
+        $ref: '#/definitions/accountModel.Type'
+      UpdateTime:
+        type: string
+    type: object
+  response.AccountInfo:
+    properties:
+      CurrentMonthTransTotal:
+        $ref: '#/definitions/global.IEStatisticWithTime'
+      RecentTrans:
+        items:
+          $ref: '#/definitions/response.TransactionDetail'
+        type: array
+      TodayTransTotal:
+        $ref: '#/definitions/global.IEStatisticWithTime'
+    type: object
+  response.AccountMapping:
+    properties:
+      CreateTime:
+        type: string
+      Id:
+        type: integer
+      MainAccount:
+        $ref: '#/definitions/response.AccountOne'
+      RelatedAccount:
+        $ref: '#/definitions/response.AccountDetail'
+      UpdateTime:
+        type: string
+    type: object
+  response.AccountOne:
+    properties:
+      CreateTime:
+        type: string
+      Icon:
+        type: string
+      Id:
+        type: integer
+      Name:
+        type: string
+      Type:
+        $ref: '#/definitions/accountModel.Type'
+      UpdateTime:
+        type: string
+    type: object
+  response.AccountTemplateList:
+    properties:
+      List:
+        items:
+          $ref: '#/definitions/response.AccountTemplateOne'
+        type: array
+    type: object
+  response.AccountTemplateOne:
+    properties:
+      Icon:
+        type: string
+      Id:
+        type: integer
+      Name:
+        type: string
+      Type:
+        $ref: '#/definitions/accountModel.Type'
+    type: object
+  response.AccountUser:
+    properties:
+      AccountId:
+        type: integer
+      CreateTime:
+        type: string
+      Id:
+        type: integer
+      Info:
+        $ref: '#/definitions/response.UserInfo'
+      Role:
+        $ref: '#/definitions/accountModel.UserRole'
+      UserId:
+        type: integer
+    type: object
+  response.AccountUserConfig:
+    properties:
+      AccountId:
+        type: integer
+      CreateTime:
+        type: string
+      Id:
+        type: integer
+      Trans:
+        properties:
+          SyncMappingAccount:
+            type: boolean
+        type: object
+      UpdateTime:
+        type: string
+      UserId:
+        type: integer
+    type: object
+  response.AccountUserInfo:
+    properties:
+      CurrentMonthTransTotal:
+        $ref: '#/definitions/global.IEStatisticWithTime'
+      RecentTrans:
+        items:
+          $ref: '#/definitions/response.TransactionDetail'
+        type: array
+      TodayTransTotal:
+        $ref: '#/definitions/global.IEStatisticWithTime'
+    type: object
+  response.AccountUserInvitation:
+    properties:
+      Account:
+        $ref: '#/definitions/response.AccountOne'
+      CreateTime:
+        type: string
+      Id:
+        type: integer
+      Invitee:
+        $ref: '#/definitions/response.UserInfo'
+      Inviter:
+        $ref: '#/definitions/response.UserInfo'
+      Role:
+        $ref: '#/definitions/accountModel.UserRole'
+      Status:
+        $ref: '#/definitions/accountModel.UserInvitationStatus'
+    type: object
+  response.CategoryDetail:
+    properties:
+      FatherId:
+        type: integer
+      FatherName:
+        type: string
+      Icon:
+        type: string
+      Id:
+        type: integer
+      IncomeExpense:
+        $ref: '#/definitions/IncomeExpense'
+      Name:
+        type: string
+    type: object
+  response.CategoryMappingTree:
+    properties:
+      Tree:
+        items:
+          $ref: '#/definitions/response.CategoryMappingTreeFather'
+        type: array
+    type: object
+  response.CategoryMappingTreeFather:
+    properties:
+      ChildrenIds:
+        items:
+          type: integer
+        type: array
+      FatherId:
+        type: integer
+    type: object
+  response.CategoryOne:
+    properties:
+      AccountId:
+        type: integer
+      Icon:
+        type: string
+      Id:
+        type: integer
+      IncomeExpense:
+        $ref: '#/definitions/IncomeExpense'
+      Name:
+        type: string
+    type: object
+  response.CategoryTree:
+    properties:
+      Tree:
+        items:
+          $ref: '#/definitions/response.FatherOne'
+        type: array
+    type: object
+  response.CommonCaptcha:
+    properties:
+      CaptchaId:
+        type: string
+      CaptchaLength:
+        type: integer
+      OpenCaptcha:
+        type: boolean
+      PicBase64:
+        type: string
+    type: object
+  response.ExpirationTime:
+    properties:
+      ExpirationTime:
+        type: integer
+    type: object
+  response.FatherOne:
+    properties:
+      AccountId:
+        type: integer
+      Children:
+        items:
+          $ref: '#/definitions/response.CategoryOne'
+        type: array
+      Id:
+        type: integer
+      IncomeExpense:
+        $ref: '#/definitions/IncomeExpense'
+      Name:
+        type: string
+    type: object
+  response.List-response_AccountDetail:
+    properties:
+      List:
+        items:
+          $ref: '#/definitions/response.AccountDetail'
+        type: array
+    type: object
+  response.List-response_AccountMapping:
+    properties:
+      List:
+        items:
+          $ref: '#/definitions/response.AccountMapping'
+        type: array
+    type: object
+  response.List-response_AccountUser:
+    properties:
+      List:
+        items:
+          $ref: '#/definitions/response.AccountUser'
+        type: array
+    type: object
+  response.List-response_AccountUserInvitation:
+    properties:
+      List:
+        items:
+          $ref: '#/definitions/response.AccountUserInvitation'
+        type: array
+    type: object
+  response.List-response_CategoryDetail:
+    properties:
+      List:
+        items:
+          $ref: '#/definitions/response.CategoryDetail'
+        type: array
+    type: object
+  response.List-response_TransactionCategoryAmountRank:
+    properties:
+      List:
+        items:
+          $ref: '#/definitions/response.TransactionCategoryAmountRank'
+        type: array
+    type: object
+  response.List-response_TransactionDayStatistic:
+    properties:
+      List:
+        items:
+          $ref: '#/definitions/response.TransactionDayStatistic'
+        type: array
+    type: object
+  response.List-response_TransactionDetail:
+    properties:
+      List:
+        items:
+          $ref: '#/definitions/response.TransactionDetail'
+        type: array
+    type: object
+  response.List-response_TransactionDetailList:
+    properties:
+      List:
+        items:
+          items:
+            $ref: '#/definitions/response.TransactionDetail'
+          type: array
+        type: array
+    type: object
+  response.List-response_TransactionStatistic:
+    properties:
+      List:
+        items:
+          $ref: '#/definitions/response.TransactionStatistic'
+        type: array
+    type: object
+  response.List-response_TransactionTiming:
+    properties:
+      List:
+        items:
+          $ref: '#/definitions/response.TransactionTiming'
+        type: array
+    type: object
+  response.List-response_UserFriendInvitation:
+    properties:
+      List:
+        items:
+          $ref: '#/definitions/response.UserFriendInvitation'
+        type: array
+    type: object
+  response.List-response_UserInfo:
+    properties:
+      List:
+        items:
+          $ref: '#/definitions/response.UserInfo'
+        type: array
+    type: object
+  response.Login:
+    properties:
+      CurrentAccount:
+        $ref: '#/definitions/response.AccountDetail'
+      CurrentShareAccount:
+        $ref: '#/definitions/response.AccountDetail'
+      Token:
+        type: string
+      TokenExpirationTime:
+        type: string
+      User:
+        $ref: '#/definitions/response.UserOne'
+    type: object
+  response.ProductList:
+    properties:
+      List:
+        items:
+          $ref: '#/definitions/response.ProductOne'
+        type: array
+    type: object
+  response.ProductMappingTree:
+    properties:
+      Tree:
+        items:
+          $ref: '#/definitions/response.ProductMappingTreeFather'
+        type: array
+    type: object
+  response.ProductMappingTreeFather:
+    properties:
+      Children:
+        items:
+          type: integer
+        type: array
+      FatherId:
+        type: integer
+    type: object
+  response.ProductOne:
+    properties:
+      Name:
+        type: string
+      UniqueKey:
+        type: string
+    type: object
+  response.ProductTransactionCategory:
+    properties:
+      Id:
+        type: integer
+      IncomeExpense:
+        $ref: '#/definitions/IncomeExpense'
+      Name:
+        type: string
+    type: object
+  response.ProductTransactionCategoryList:
+    properties:
+      List:
+        items:
+          $ref: '#/definitions/response.ProductTransactionCategory'
+        type: array
+    type: object
+  response.Token:
+    properties:
+      Token:
+        type: string
+      TokenExpirationTime:
+        type: string
+    type: object
+  response.TransactionCategoryAmountRank:
+    properties:
+      Amount:
+        type: integer
+      Category:
+        $ref: '#/definitions/response.CategoryOne'
+      Count:
+        type: integer
+    type: object
+  response.TransactionDayStatistic:
+    properties:
+      Amount:
+        type: integer
+      Count:
+        type: integer
+      Date:
+        type: string
+    type: object
+  response.TransactionDetail:
+    properties:
+      AccountId:
+        type: integer
+      AccountName:
+        type: string
+      Amount:
+        type: integer
+      CategoryFatherName:
+        type: string
+      CategoryIcon:
+        type: string
+      CategoryId:
+        type: integer
+      CategoryName:
+        type: string
+      CreateTime:
+        type: string
+      Id:
+        type: integer
+      IncomeExpense:
+        $ref: '#/definitions/IncomeExpense'
+      Remark:
+        type: string
+      TradeTime:
+        type: string
+      UpdateTime:
+        type: string
+      UserId:
+        type: integer
+      UserName:
+        type: string
+    type: object
+  response.TransactionInfo:
+    properties:
+      AccountId:
+        type: integer
+      AccountName:
+        type: string
+      Amount:
+        type: integer
+      CategoryFatherName:
+        type: string
+      CategoryIcon:
+        type: string
+      CategoryId:
+        type: integer
+      CategoryName:
+        type: string
+      Id:
+        type: integer
+      IncomeExpense:
+        $ref: '#/definitions/IncomeExpense'
+      Remark:
+        type: string
+      TradeTime:
+        type: string
+      UserId:
+        type: integer
+      UserName:
+        type: string
+    type: object
+  response.TransactionStatistic:
+    properties:
+      EndTime:
+        type: string
+      Expense:
+        $ref: '#/definitions/global.AmountCount'
+      Income:
+        $ref: '#/definitions/global.AmountCount'
+      StartTime:
+        type: string
+    type: object
+  response.TransactionTiming:
+    properties:
+      Config:
+        $ref: '#/definitions/response.TransactionTimingConfig'
+      Trans:
+        $ref: '#/definitions/response.TransactionInfo'
+    type: object
+  response.TransactionTimingConfig:
+    properties:
+      CreatedAt:
+        type: string
+      Id:
+        type: integer
+      NextTime:
+        type: string
+      OffsetDays:
+        type: integer
+      Type:
+        $ref: '#/definitions/transactionModel.TimingType'
+      UpdatedAt:
+        type: string
+      Username:
+        type: string
+    type: object
+  response.TransactionTotal:
+    properties:
+      Expense:
+        $ref: '#/definitions/global.AmountCount'
+      Income:
+        $ref: '#/definitions/global.AmountCount'
+    type: object
+  response.UserCurrentClientInfo:
+    properties:
+      CurrentAccount:
+        $ref: '#/definitions/response.AccountDetail'
+      CurrentShareAccount:
+        $ref: '#/definitions/response.AccountDetail'
+      LoginTime:
+        type: string
+    type: object
+  response.UserFriendInvitation:
+    properties:
+      CreateTime:
+        type: string
+      Id:
+        type: integer
+      Invitee:
+        $ref: '#/definitions/response.UserInfo'
+      Inviter:
+        $ref: '#/definitions/response.UserInfo'
+    type: object
+  response.UserHome:
+    properties:
+      HeaderCard:
+        $ref: '#/definitions/response.UserHomeHeaderCard'
+      TimePeriodStatistics:
+        $ref: '#/definitions/response.UserHomeTimePeriodStatistics'
+    type: object
+  response.UserHomeHeaderCard:
+    properties:
+      EndTime:
+        type: string
+      Expense:
+        $ref: '#/definitions/global.AmountCount'
+      Income:
+        $ref: '#/definitions/global.AmountCount'
+      StartTime:
+        type: string
+    type: object
+  response.UserHomeTimePeriodStatistics:
+    properties:
+      TodayData:
+        $ref: '#/definitions/response.TransactionStatistic'
+      WeekData:
+        $ref: '#/definitions/response.TransactionStatistic'
+      YearData:
+        $ref: '#/definitions/response.TransactionStatistic'
+      YesterdayData:
+        $ref: '#/definitions/response.TransactionStatistic'
+    type: object
+  response.UserInfo:
+    properties:
+      Email:
+        type: string
+      Id:
+        type: integer
+      Username:
+        type: string
+    type: object
+  response.UserOne:
+    properties:
+      CreateTime:
+        type: string
+      Email:
+        type: string
+      Id:
+        type: integer
+      Username:
+        type: string
+    type: object
+  response.UserTransactionShareConfig:
+    properties:
+      Account:
+        type: boolean
+      CreateTime:
+        type: boolean
+      Remark:
+        type: boolean
+      UpdateTime:
+        type: boolean
+    type: object
+  transactionModel.Info:
+    properties:
+      Amount:
+        type: integer
+      IncomeExpense:
+        $ref: '#/definitions/IncomeExpense'
+      Remark:
+        type: string
+      TradeTime:
+        type: string
+      UserId:
+        type: integer
+    type: object
+  transactionModel.TimingType:
+    enum:
+    - Once
+    - EveryDay
+    - EveryWeek
+    - EveryMonth
+    - LastDayOfMonth
+    type: string
+    x-enum-varnames:
+    - Once
+    - EveryDay
+    - EveryWeek
+    - EveryMonth
+    - LastDayOfMonth
+host: localhost:8080
+info:
+  contact:
+    name: ZiRunHua
+  license:
+    name: AGPL 3.0
+    url: https://www.gnu.org/licenses/agpl-3.0.html
+  title: LeapLedger API
+  version: "1.0"
+paths:
+  /account:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Account ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Account data
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/AccountCreateOne'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/Response'
+            - properties:
+                Data:
+                  $ref: '#/definitions/response.AccountDetail'
+              type: object
+      tags:
+      - Account
+  /account/{accountID}/category:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Account ID
+        in: path
+        name: accountID
+        required: true
+        type: integer
+      - description: category data
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/request.CategoryCreateOne'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/Response'
+            - properties:
+                Data:
+                  $ref: '#/definitions/response.CategoryOne'
+              type: object
+      tags:
+      - Category
+  /account/{accountID}/category/{id}:
+    delete:
+      parameters:
+      - description: Account ID
+        in: path
+        name: accountID
+        required: true
+        type: integer
+      - description: Category ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+          schema:
+            $ref: '#/definitions/NoContent'
+      tags:
+      - Category
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: Account ID
+        in: path
+        name: accountID
+        required: true
+        type: integer
+      - description: Category ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: update data
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/request.CategoryUpdateOne'
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+          schema:
+            $ref: '#/definitions/NoContent'
+      tags:
+      - Category
+  /account/{accountID}/category/{id}/mapping:
+    delete:
+      consumes:
+      - application/json
+      parameters:
+      - description: Account ID
+        in: path
+        name: accountID
+        required: true
+        type: integer
+      - description: Category ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: data
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/request.CategoryMapping'
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+          schema:
+            $ref: '#/definitions/NoContent'
+      tags:
+      - Category
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Account ID
+        in: path
+        name: accountID
+        required: true
+        type: integer
+      - description: Category ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: data
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/request.CategoryMapping'
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+          schema:
+            $ref: '#/definitions/NoContent'
+      tags:
+      - Category
+  /account/{accountID}/category/{id}/move:
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: Account ID
+        in: path
+        name: accountID
+        required: true
+        type: integer
+      - description: Category ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: move data
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/request.CategoryMove'
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+          schema:
+            $ref: '#/definitions/NoContent'
+      tags:
+      - Category
+  /account/{accountID}/category/father:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Account ID
+        in: path
+        name: accountID
+        required: true
+        type: integer
+      - description: father category data
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/request.CategoryCreateOneFather'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/Response'
+            - properties:
+                Data:
+                  $ref: '#/definitions/response.FatherOne'
+              type: object
+      tags:
+      - Category/Father
+  /account/{accountID}/category/father/{id}:
+    delete:
+      parameters:
+      - description: Account ID
+        in: path
+        name: accountID
+        required: true
+        type: integer
+      - description: Father ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+          schema:
+            $ref: '#/definitions/NoContent'
+      tags:
+      - Category/Father
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: Account ID
+        in: path
+        name: accountID
+        required: true
+        type: integer
+      - description: Father ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: update data
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/request.Name'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/Response'
+            - properties:
+                Data:
+                  $ref: '#/definitions/response.FatherOne'
+              type: object
+      tags:
+      - Category/Father
+  /account/{accountID}/category/father/{id}/move:
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: Account ID
+        in: path
+        name: accountID
+        required: true
+        type: integer
+      - description: Father ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: move data
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/request.CategoryMoveFather'
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+          schema:
+            $ref: '#/definitions/NoContent'
+      tags:
+      - Category/Father
+  /account/{accountID}/category/mapping/tree:
+    get:
+      consumes:
+      - application/json
+      parameters:
+      - description: Account ID
+        in: path
+        name: accountID
+        required: true
+        type: integer
+      - description: query condition
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/request.CategoryGetMappingTree'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/Response'
+            - properties:
+                Data:
+                  $ref: '#/definitions/response.CategoryMappingTree'
+              type: object
+      tags:
+      - Category
+  /account/{accountID}/category/tree:
+    get:
+      consumes:
+      - application/json
+      parameters:
+      - description: Account ID
+        in: path
+        name: accountID
+        required: true
+        type: integer
+      - description: query condition
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/request.CategoryGetList'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/Response'
+            - properties:
+                Data:
+                  $ref: '#/definitions/response.List-response_CategoryDetail'
+              type: object
+      tags:
+      - Category
+  /account/{accountID}/info:
+    get:
+      parameters:
+      - description: Account ID
+        in: path
+        name: accountID
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/Response'
+            - properties:
+                Data:
+                  $ref: '#/definitions/response.AccountInfo'
+              type: object
+      tags:
+      - Account
+  /account/{accountID}/info/:type:
+    get:
+      parameters:
+      - description: Account ID
+        in: path
+        name: accountID
+        required: true
+        type: integer
+      - description: Account type
+        in: path
+        name: type
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/Response'
+            - properties:
+                Data:
+                  $ref: '#/definitions/response.AccountInfo'
+              type: object
+      tags:
+      - Account
+  /account/{accountID}/mapping:
+    get:
+      parameters:
+      - description: Account ID
+        in: path
+        name: accountID
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/Response'
+            - properties:
+                Data:
+                  $ref: '#/definitions/response.AccountMapping'
+              type: object
+      tags:
+      - Account/Mapping
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Account ID
+        in: path
+        name: accountID
+        required: true
+        type: integer
+      - description: mapping data
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/AccountMapping'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/Response'
+            - properties:
+                Data:
+                  $ref: '#/definitions/response.AccountMapping'
+              type: object
+      tags:
+      - Account/Mapping
+  /account/{accountID}/mapping/list:
+    get:
+      parameters:
+      - description: Account ID
+        in: path
+        name: accountID
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/Response'
+            - properties:
+                Data:
+                  $ref: '#/definitions/response.List-response_AccountMapping'
+              type: object
+      tags:
+      - Account/Mapping
+  /account/{accountID}/product/{key}/bill/import:
+    post:
+      consumes:
+      - multipart/form-data
+      parameters:
+      - description: Account ID
+        in: path
+        name: accountID
+        required: true
+        type: integer
+      - description: Product unique key
+        in: path
+        name: key
+        required: true
+        type: integer
+      - description: file to upload
+        in: formData
+        name: file
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/NoContent'
+      tags:
+      - /Product/Bill/Import
+  /account/{accountID}/product/transCategory/{id}/mapping:
+    delete:
+      consumes:
+      - application/json
+      parameters:
+      - description: Account ID
+        in: path
+        name: accountID
+        required: true
+        type: integer
+      - description: Product transaction category ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: data
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/request.ProductMappingTransactionCategory'
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+          schema:
+            $ref: '#/definitions/NoContent'
+      tags:
+      - Product/TransCategory/Mapping
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Account ID
+        in: path
+        name: accountID
+        required: true
+        type: integer
+      - description: Product transaction category ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: data
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/request.ProductMappingTransactionCategory'
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+          schema:
+            $ref: '#/definitions/NoContent'
+      tags:
+      - Product/TransCategory/Mapping
+  /account/{accountID}/product/transCategory/mapping/tree:
+    get:
+      consumes:
+      - application/json
+      parameters:
+      - description: Account ID
+        in: path
+        name: accountID
+        required: true
+        type: integer
+      - description: query condition
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/request.ProductGetMappingTree'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/Response'
+            - properties:
+                Data:
+                  $ref: '#/definitions/response.ProductMappingTree'
+              type: object
+      tags:
+      - /Product/TransCategory/Mapping
+  /account/{accountID}/transaction/{id}:
+    delete:
+      consumes:
+      - application/json
+      parameters:
+      - description: Account ID
+        in: path
+        name: accountID
+        required: true
+        type: integer
+      - description: Transaction ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/NoContent'
+      tags:
+      - Transaction
+    get:
+      consumes:
+      - application/json
+      parameters:
+      - description: Account ID
+        in: path
+        name: accountID
+        required: true
+        type: integer
+      - description: Transaction ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/Response'
+            - properties:
+                Data:
+                  $ref: '#/definitions/response.TransactionDetail'
+              type: object
+      tags:
+      - Transaction
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Account ID
+        in: path
+        name: accountID
+        required: true
+        type: integer
+      - description: Transaction ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: transaction data
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/request.TransactionCreateOne'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/Response'
+            - properties:
+                Data:
+                  $ref: '#/definitions/response.TransactionDetail'
+              type: object
+      tags:
+      - Transaction
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: Account ID
+        in: path
+        name: accountID
+        required: true
+        type: integer
+      - description: Transaction ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Transaction data
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/request.TransactionCreateOne'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/Response'
+            - properties:
+                Data:
+                  $ref: '#/definitions/response.TransactionDetail'
+              type: object
+      tags:
+      - Transaction
+  /account/{accountID}/transaction/amount/rank:
+    get:
+      consumes:
+      - application/json
+      parameters:
+      - description: Account ID
+        in: path
+        name: accountID
+        required: true
+        type: integer
+      - description: condition
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/request.TransactionAmountRank'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/Response'
+            - properties:
+                Data:
+                  $ref: '#/definitions/response.List-response_TransactionDetailList'
+              type: object
+      tags:
+      - Transaction
+  /account/{accountID}/transaction/category/amount/rank:
+    get:
+      consumes:
+      - application/json
+      parameters:
+      - description: Account ID
+        in: path
+        name: accountID
+        required: true
+        type: integer
+      - description: condition
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/request.TransactionCategoryAmountRank'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/Response'
+            - properties:
+                Data:
+                  $ref: '#/definitions/response.List-response_TransactionCategoryAmountRank'
+              type: object
+      tags:
+      - Transaction
+  /account/{accountID}/transaction/category/init:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Account ID
+        in: path
+        name: accountID
+        required: true
+        type: integer
+      - description: init data
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/AccountTransCategoryInit'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/Response'
+            - properties:
+                Data:
+                  $ref: '#/definitions/response.AccountDetail'
+              type: object
+      tags:
+      - Account/Template
+  /account/{accountID}/transaction/day/statistic:
+    get:
+      consumes:
+      - application/json
+      parameters:
+      - description: Account ID
+        in: path
+        name: accountID
+        required: true
+        type: integer
+      - description: condition
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/request.TransactionDayStatistic'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/Response'
+            - properties:
+                Data:
+                  $ref: '#/definitions/response.List-response_TransactionDayStatistic'
+              type: object
+      tags:
+      - Transaction
+  /account/{accountID}/transaction/list:
+    get:
+      consumes:
+      - application/json
+      parameters:
+      - description: Account ID
+        in: path
+        name: accountID
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/Response'
+            - properties:
+                Data:
+                  $ref: '#/definitions/response.List-response_TransactionDetail'
+              type: object
+      tags:
+      - Transaction
+  /account/{accountID}/transaction/month/statistic:
+    get:
+      consumes:
+      - application/json
+      parameters:
+      - description: Account ID
+        in: path
+        name: accountID
+        required: true
+        type: integer
+      - description: condition
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/request.TransactionMonthStatistic'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/Response'
+            - properties:
+                Data:
+                  $ref: '#/definitions/response.List-response_TransactionStatistic'
+              type: object
+      tags:
+      - Transaction
+  /account/{accountID}/transaction/timing:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Account ID
+        in: path
+        name: accountID
+        required: true
+        type: integer
+      - description: timing config
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/request.TransactionTiming'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/Response'
+            - properties:
+                Data:
+                  $ref: '#/definitions/response.TransactionTiming'
+              type: object
+      tags:
+      - Transaction/Timing
+  /account/{accountID}/transaction/timing/{id}:
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: Account ID
+        in: path
+        name: accountID
+        required: true
+        type: integer
+      - description: Transaction ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: timing config
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/request.TransactionTiming'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/Response'
+            - properties:
+                Data:
+                  $ref: '#/definitions/response.TransactionTiming'
+              type: object
+      tags:
+      - Transaction/Timing
+  /account/{accountID}/transaction/timing/list:
+    get:
+      consumes:
+      - application/json
+      parameters:
+      - description: Account ID
+        in: path
+        name: accountID
+        required: true
+        type: integer
+      - description: Page data
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/request.PageData'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/Response'
+            - properties:
+                Data:
+                  $ref: '#/definitions/response.List-response_TransactionTiming'
+              type: object
+      tags:
+      - Transaction/Timing
+  /account/{accountID}/transaction/total:
+    get:
+      consumes:
+      - application/json
+      parameters:
+      - description: Account ID
+        in: path
+        name: accountID
+        required: true
+        type: integer
+      - description: Transaction total data
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/request.TransactionTotal'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/Response'
+            - properties:
+                Data:
+                  $ref: '#/definitions/response.TransactionTotal'
+              type: object
+      tags:
+      - Transaction
+  /account/{accountID}/user/{id}:
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: Account ID
+        in: path
+        name: accountID
+        required: true
+        type: integer
+      - description: Account User ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: account user data
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/AccountUpdateUser'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/Response'
+            - properties:
+                Data:
+                  $ref: '#/definitions/response.AccountUser'
+              type: object
+      tags:
+      - Account/User
+  /account/{accountID}/user/config:
+    get:
+      parameters:
+      - description: Account ID
+        in: path
+        name: accountID
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/Response'
+            - properties:
+                Data:
+                  $ref: '#/definitions/response.AccountUserConfig'
+              type: object
+      tags:
+      - Account/User/Config
+  /account/{accountID}/user/config/{flag}:
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: Account ID
+        in: path
+        name: accountID
+        required: true
+        type: integer
+      - description: config data
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/AccountUserConfigFlagUpdate'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/Response'
+            - properties:
+                Data:
+                  $ref: '#/definitions/response.AccountUserConfig'
+              type: object
+      tags:
+      - Account/User/Config
+  /account/{accountID}/user/invitation:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Account ID
+        in: path
+        name: accountID
+        required: true
+        type: integer
+      - description: invitation data
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/AccountGetUserInvitationList'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/Response'
+            - properties:
+                Data:
+                  $ref: '#/definitions/response.AccountUserInvitation'
+              type: object
+      tags:
+      - Account/User/Invitation
+  /account/{accountID}/user/list:
+    get:
+      consumes:
+      - application/json
+      parameters:
+      - description: Account ID
+        in: path
+        name: accountID
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/Response'
+            - properties:
+                Data:
+                  $ref: '#/definitions/response.List-response_AccountUser'
+              type: object
+      tags:
+      - Account/User
+  /account/{id}:
+    delete:
+      parameters:
+      - description: Account ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: new current client info
+          schema:
+            allOf:
+            - $ref: '#/definitions/Response'
+            - properties:
+                Data:
+                  $ref: '#/definitions/response.UserCurrentClientInfo'
+              type: object
+      tags:
+      - Account
+    get:
+      consumes:
+      - application/json
+      parameters:
+      - description: Account ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/Response'
+            - properties:
+                Data:
+                  $ref: '#/definitions/response.AccountDetail'
+              type: object
+      tags:
+      - Account
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: Account ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Account data
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/AccountUpdateOne'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/Response'
+            - properties:
+                Data:
+                  $ref: '#/definitions/response.AccountDetail'
+              type: object
+      tags:
+      - Account
+  /account/form/template/{id}:
+    post:
+      parameters:
+      - description: Template ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/Response'
+            - properties:
+                Data:
+                  $ref: '#/definitions/response.AccountDetail'
+              type: object
+      tags:
+      - Account/Template
+  /account/list:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/Response'
+            - properties:
+                Data:
+                  $ref: '#/definitions/response.List-response_AccountDetail'
+              type: object
+      tags:
+      - Account
+  /account/list/{type}:
+    get:
+      parameters:
+      - description: Account type
+        in: path
+        name: type
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/Response'
+            - properties:
+                Data:
+                  $ref: '#/definitions/response.List-response_AccountDetail'
+              type: object
+      tags:
+      - Account
+  /account/mapping/:id:
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: Mapping ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: mapping data
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/UpdateAccountMapping'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/Response'
+            - properties:
+                Data:
+                  $ref: '#/definitions/response.AccountMapping'
+              type: object
+      tags:
+      - Account/Mapping
+  /account/mapping/{id}:
+    delete:
+      parameters:
+      - description: Mapping ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+          schema:
+            $ref: '#/definitions/NoContent'
+      tags:
+      - Account/Mapping
+  /account/template/list:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/Response'
+            - properties:
+                Data:
+                  $ref: '#/definitions/response.AccountTemplateList'
+              type: object
+      tags:
+      - Account/Template
+  /account/user/{id}/info:
+    get:
+      consumes:
+      - application/json
+      parameters:
+      - description: Account User ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: query param
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/AccountGetUserInfo'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/Response'
+            - properties:
+                Data:
+                  $ref: '#/definitions/response.AccountUserInfo'
+              type: object
+      tags:
+      - Account/User
+  /account/user/invitation/{id}/accept:
+    put:
+      parameters:
+      - description: Invitation ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/Response'
+            - properties:
+                Data:
+                  $ref: '#/definitions/response.AccountUserInvitation'
+              type: object
+      tags:
+      - Account/User/Invitation
+  /account/user/invitation/{id}/refuse:
+    put:
+      parameters:
+      - description: Invitation ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/Response'
+            - properties:
+                Data:
+                  $ref: '#/definitions/response.AccountUserInvitation'
+              type: object
+      tags:
+      - Account/User/Invitation
+  /account/user/invitation/list:
+    get:
+      consumes:
+      - application/json
+      parameters:
+      - description: query param
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/AccountGetUserInvitationList'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/Response'
+            - properties:
+                Data:
+                  $ref: '#/definitions/response.List-response_AccountUserInvitation'
+              type: object
+      tags:
+      - Account/User/Invitation
+  /product/{key}/transCategory:
+    get:
+      parameters:
+      - description: Product unique key
+        in: path
+        name: key
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          headers:
+            Cache-Control:
+              description: max-age=604800
+              type: string
+          schema:
+            allOf:
+            - $ref: '#/definitions/Response'
+            - properties:
+                Data:
+                  $ref: '#/definitions/response.ProductTransactionCategoryList'
+              type: object
+      tags:
+      - Product/TransCategory
+  /product/list:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          headers:
+            Cache-Control:
+              description: max-age=604800
+              type: string
+          schema:
+            allOf:
+            - $ref: '#/definitions/Response'
+            - properties:
+                Data:
+                  $ref: '#/definitions/response.ProductList'
+              type: object
+      tags:
+      - Product
+  /public/captcha:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/Response'
+            - properties:
+                Data:
+                  $ref: '#/definitions/response.CommonCaptcha'
+              type: object
+      tags:
+      - Common
+  /public/captcha/email/send:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: data
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/request.CommonSendEmailCaptcha'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/Response'
+            - properties:
+                Data:
+                  $ref: '#/definitions/response.ExpirationTime'
+              type: object
+      tags:
+      - Common
+  /public/user/login:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: login data
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/request.UserLogin'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/Response'
+            - properties:
+                Data:
+                  $ref: '#/definitions/response.Login'
+              type: object
+      tags:
+      - User
+  /public/user/password:
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: data
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/request.UserForgetPassword'
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+          schema:
+            $ref: '#/definitions/NoContent'
+      tags:
+      - User
+  /public/user/register:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: register data
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/request.UserRegister'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/Response'
+            - properties:
+                Data:
+                  $ref: '#/definitions/response.Login'
+              type: object
+      tags:
+      - User
+  /public/user/tour:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: data
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/request.TourApply'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/Response'
+            - properties:
+                Data:
+                  $ref: '#/definitions/response.Login'
+              type: object
+      tags:
+      - User
+  /user/account/invitation/list:
+    get:
+      consumes:
+      - application/json
+      parameters:
+      - description: query condition
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/request.UserGetAccountInvitationList'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/Response'
+            - properties:
+                Data:
+                  $ref: '#/definitions/response.AccountUserInvitation'
+              type: object
+      tags:
+      - User/Friend/Invitation
+  /user/client/current/account:
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: data
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/request.Id'
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+          schema:
+            $ref: '#/definitions/NoContent'
+      tags:
+      - User
+  /user/client/current/share/account:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: data
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/request.UserSendEmail'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/Response'
+            - properties:
+                Data:
+                  $ref: '#/definitions/response.ExpirationTime'
+              type: object
+      tags:
+      - User
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: data
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/request.Id'
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+          schema:
+            $ref: '#/definitions/NoContent'
+      tags:
+      - User
+  /user/current:
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: data
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/request.UserUpdateInfo'
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+          schema:
+            $ref: '#/definitions/NoContent'
+      tags:
+      - User
+  /user/friend/invitation:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/Response'
+            - properties:
+                Data:
+                  $ref: '#/definitions/response.List-response_UserFriendInvitation'
+              type: object
+      tags:
+      - User/Friend/Invitation
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: data
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/request.UserCreateFriendInvitation'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/Response'
+            - properties:
+                Data:
+                  $ref: '#/definitions/response.UserFriendInvitation'
+              type: object
+      tags:
+      - User/Friend/Invitation
+  /user/friend/invitation/{id}/accept:
+    put:
+      parameters:
+      - description: Invitation ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/Response'
+            - properties:
+                Data:
+                  $ref: '#/definitions/response.UserFriendInvitation'
+              type: object
+      tags:
+      - User/Friend/Invitation
+  /user/friend/invitation/{id}/refuse:
+    put:
+      parameters:
+      - description: Invitation ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/Response'
+            - properties:
+                Data:
+                  $ref: '#/definitions/response.UserFriendInvitation'
+              type: object
+      tags:
+      - User/Friend/Invitation
+  /user/friend/list:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/Response'
+            - properties:
+                Data:
+                  $ref: '#/definitions/response.List-response_UserInfo'
+              type: object
+      tags:
+      - User/Friend
+  /user/home:
+    get:
+      consumes:
+      - application/json
+      parameters:
+      - description: data
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/request.UserHome'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/Response'
+            - properties:
+                Data:
+                  $ref: '#/definitions/response.UserHome'
+              type: object
+      tags:
+      - User
+  /user/password:
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: data
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/request.UserUpdatePassword'
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+          schema:
+            $ref: '#/definitions/NoContent'
+      tags:
+      - User
+  /user/search:
+    get:
+      consumes:
+      - application/json
+      parameters:
+      - description: data
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/request.UserSearch'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/Response'
+            - properties:
+                Data:
+                  $ref: '#/definitions/response.List-response_UserInfo'
+              type: object
+      tags:
+      - User
+  /user/token/refresh:
+    post:
+      consumes:
+      - application/json
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/Response'
+            - properties:
+                Data:
+                  $ref: '#/definitions/response.Token'
+              type: object
+      tags:
+      - User
+  /user/transaction/share/config:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/Response'
+            - properties:
+                Data:
+                  $ref: '#/definitions/response.UserTransactionShareConfig'
+              type: object
+      tags:
+      - User/Config
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: data
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/request.UserTransactionShareConfigUpdate'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/Response'
+            - properties:
+                Data:
+                  $ref: '#/definitions/response.UserTransactionShareConfig'
+              type: object
+      tags:
+      - User/Config
+swagger: "2.0"

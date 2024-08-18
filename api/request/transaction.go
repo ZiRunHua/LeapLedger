@@ -7,7 +7,6 @@ import (
 )
 
 type TransactionCreateOne struct {
-	AccountId     uint
 	Amount        int
 	CategoryId    uint
 	IncomeExpense constant.IncomeExpense
@@ -116,6 +115,7 @@ type TransactionTiming struct {
 
 func (tt TransactionTiming) GetTimingModel() transactionModel.Timing {
 	return transactionModel.Timing{
+		AccountId:  tt.Trans.AccountId,
 		TransInfo:  tt.Trans,
 		UserId:     tt.Config.UserId,
 		Type:       tt.Config.Type,

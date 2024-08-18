@@ -3,7 +3,6 @@ package v1
 import (
 	"KeepAccount/api/response"
 	apiUtil "KeepAccount/api/util"
-	"KeepAccount/global/db"
 	"KeepAccount/service"
 	"github.com/gin-gonic/gin"
 )
@@ -22,7 +21,6 @@ type ApiGroup struct {
 
 var (
 	ApiGroupApp = new(ApiGroup)
-	gdb         = db.Db
 )
 
 // 服务

@@ -13,7 +13,7 @@ const DATA_PATH = WORK_PATH + "/data"
 var ExampleAccountJsonPath = DATA_PATH + "/template/account/example.json"
 
 // IncomeExpense 收支类型
-type IncomeExpense string // `example:"expense" enums:"income,expense"`
+type IncomeExpense string //@name IncomeExpense `example:"expense" enums:"income,expense" swaggertype:"string"`
 
 const (
 	Income  IncomeExpense = "income"

@@ -1,8 +1,8 @@
+#!/bin/sh
 
+echo go install github.com/swaggo/swag/cmd/swag@latest
 go install github.com/swaggo/swag/cmd/swag@latest
-
-swag init
-
-go run /go/LeapLedger/docs/main/capitalize_properties.go
-
-rm /go/LeapLedger/docs/swagger.yaml
+echo go run /go/LeapLedger/docs/beforeDocsMake/renameModel/main.go
+go run /go/LeapLedger/docs/beforeDocsMake/renameModel/main.go
+echo swag init -p pascalcase
+swag init -p pascalcase

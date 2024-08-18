@@ -49,7 +49,7 @@ type UserHome struct {
 	AccountId uint
 }
 
-type TourRequest struct {
+type TourApply struct {
 	DeviceNumber string
 }
 

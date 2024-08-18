@@ -1,10 +1,10 @@
 package v1
 
-type RouterGroup struct {
-	AccountRouter
-	CategoryRouter
-	TransactionRouter
-	UserRouter
-	PublicRouter
-	TransactionImportRouter
-}
+import (
+	v1 "KeepAccount/api/v1"
+)
+
+var (
+	apiApp    = v1.ApiGroupApp
+	publicApi = apiApp.PublicApi
+)

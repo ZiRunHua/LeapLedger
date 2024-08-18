@@ -3,12 +3,12 @@ package main
 import (
 	"KeepAccount/initialize"
 	_ "KeepAccount/initialize/database"
+	"KeepAccount/router/engine"
 )
 import (
 	"KeepAccount/global"
 	"KeepAccount/global/constant"
 	GvaTask "KeepAccount/global/task"
-	"KeepAccount/router"
 	"context"
 	"fmt"
 	"log"
@@ -18,14 +18,29 @@ import (
 	"syscall"
 	"time"
 )
+import (
+	_ "KeepAccount/router"
+)
 
 var httpServer *http.Server
 
+//	@title		LeapLedger API
+//	@version	1.0
+
+//	@contact.name	ZiRunHua
+
+//	@license.name	AGPL 3.0
+//	@license.url	https://www.gnu.org/licenses/agpl-3.0.html
+
+//	@host	localhost:8080
+
+// @securityDefinitions.jwt	Bearer
+// @in							header
+// @name						Authorization
 func main() {
-	engine := router.Init()
 	httpServer = &http.Server{
 		Addr:           fmt.Sprintf(":%d", initialize.Config.System.Addr),
-		Handler:        engine,
+		Handler:        engine.Engine,
 		ReadTimeout:    5 * time.Second,
 		WriteTimeout:   5 * time.Second,
 		MaxHeaderBytes: 1 << 20,

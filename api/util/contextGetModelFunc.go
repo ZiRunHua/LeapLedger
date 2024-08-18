@@ -2,6 +2,8 @@ package util
 
 import (
 	"KeepAccount/api/response"
+	"KeepAccount/global"
+	"KeepAccount/global/cusCtx"
 	accountModel "KeepAccount/model/account"
 	categoryModel "KeepAccount/model/category"
 	transactionModel "KeepAccount/model/transaction"
@@ -13,6 +15,7 @@ func (cf *contextFunc) GetTransByParam(ctx *gin.Context) (result transactionMode
 	if false == ok {
 		return
 	}
+
 	trans := transactionModel.Transaction{}
 	if err := trans.SelectById(id); err != nil {
 		response.FailToError(ctx, err)
@@ -21,7 +24,18 @@ func (cf *contextFunc) GetTransByParam(ctx *gin.Context) (result transactionMode
 	if pass = CheckFunc.AccountBelong(trans.AccountId, ctx); false == pass {
 		return
 	}
+	accountId, exist := ctx.Get(string(cusCtx.AccountId))
+	if exist && accountId != trans.AccountId {
+		response.FailToParameter(ctx, global.ErrAccountId)
+		return
+	}
 	return trans, true
+}
+
+func (cf *contextFunc) GetAccountAndCheckByParam(ctx *gin.Context) (
+	account accountModel.Account, accountUser accountModel.User, pass bool,
+) {
+	return cf.GetAccountByParam(ctx, true)
 }
 
 // GetAccountByParam 返回pass表示是否获取成功
@@ -83,8 +97,28 @@ func (cf *contextFunc) GetCategoryByParam(ctx *gin.Context) (
 		response.FailToError(ctx, err)
 		return
 	}
-	if pass = CheckFunc.AccountBelong(category.AccountId, ctx); false == pass {
+	if category.AccountId != cf.GetAccountId(ctx) {
+		response.FailToError(ctx, global.ErrAccountId)
 		return
 	}
 	return category, true
+}
+func (cf *contextFunc) GetCategoryFatherByParam(ctx *gin.Context) (
+	father categoryModel.Father, pass bool,
+) {
+	id, ok := cf.GetUintParamByKey("id", ctx)
+	if false == ok {
+		return
+	}
+	var err error
+	father, err = categoryModel.NewDao().SelectFatherById(id)
+	if err != nil {
+		response.FailToError(ctx, err)
+		return
+	}
+	if father.AccountId != cf.GetAccountId(ctx) {
+		response.FailToError(ctx, global.ErrAccountId)
+		return
+	}
+	return father, true
 }

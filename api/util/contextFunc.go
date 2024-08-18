@@ -15,43 +15,73 @@ import (
 
 var ContextFunc = new(contextFunc)
 
-const (
-	_UserId = "_user_id_"
-	_User   = "_user_"
-	_Claims = "_claims_"
-)
-
 type contextFunc struct{}
-
-func (cf *contextFunc) SetUserId(id uint, ctx *gin.Context) {
-	ctx.Set(_UserId, id)
-}
-
-func (cf *contextFunc) SetClaims(claims *util.CustomClaims, ctx *gin.Context) {
-	ctx.Set(_Claims, claims)
-}
-
-func (cf *contextFunc) GetUserId(ctx *gin.Context) uint {
-	return ctx.MustGet(_UserId).(uint)
-}
-
-func (cf *contextFunc) GetUser(ctx *gin.Context) (userModel.User, error) {
-	value, exits := ctx.Get(_User)
-	if exits {
-		return value.(userModel.User), nil
-	}
-	var user userModel.User
-	err := db.Db.First(&user, cf.GetUserId(ctx)).Error
-	ctx.Set(_User, user)
-	return user, err
-}
 
 func (cf *contextFunc) GetToken(ctx *gin.Context) string {
 	return ctx.Request.Header.Get("authorization")
 }
 
+func (cf *contextFunc) SetClaims(claims *util.CustomClaims, ctx *gin.Context) {
+	ctx.Set(string(cusCtx.Claims), claims)
+}
+
 func (cf *contextFunc) GetClaims(ctx *gin.Context) util.CustomClaims {
-	return ctx.MustGet(_Claims).(util.CustomClaims)
+	return ctx.MustGet(string(cusCtx.Claims)).(util.CustomClaims)
+}
+
+func (cf *contextFunc) SetUserId(id uint, ctx *gin.Context) {
+	ctx.Set(string(cusCtx.UserId), id)
+}
+
+func (cf *contextFunc) GetUserId(ctx *gin.Context) uint {
+	return ctx.MustGet(string(cusCtx.UserId)).(uint)
+}
+
+func (cf *contextFunc) GetUser(ctx *gin.Context) (userModel.User, error) {
+	value, exits := ctx.Get(string(cusCtx.UserId))
+	if exits {
+		return value.(userModel.User), nil
+	}
+	var user userModel.User
+	err := db.Db.First(&user, cf.GetUserId(ctx)).Error
+	ctx.Set(string(cusCtx.UserId), user)
+	return user, err
+}
+
+func (cf *contextFunc) SetAccountId(id uint, ctx *gin.Context) {
+	ctx.Set(string(cusCtx.AccountId), id)
+}
+
+func (cf *contextFunc) GetAccountId(ctx *gin.Context) uint {
+	return ctx.MustGet(string(cusCtx.AccountId)).(uint)
+}
+
+func (cf *contextFunc) GetAccount(ctx *gin.Context) accountModel.Account {
+	value, exist := ctx.Get(string(cusCtx.Account))
+	if exist {
+		return value.(accountModel.Account)
+	}
+	account, accountUser, exist := cf.GetAccountByParam(ctx, false)
+	if !exist {
+		panic("account not exist")
+	}
+	ctx.Set(string(cusCtx.Account), account)
+	ctx.Set(string(cusCtx.AccountUser), accountUser)
+	return account
+}
+
+func (cf *contextFunc) GetAccountUser(ctx *gin.Context) accountModel.User {
+	value, exist := ctx.Get(string(cusCtx.AccountUser))
+	if exist {
+		return value.(accountModel.User)
+	}
+	account, accountUser, exist := cf.GetAccountByParam(ctx, false)
+	if !exist {
+		panic("account not exist")
+	}
+	ctx.Set(string(cusCtx.Account), account)
+	ctx.Set(string(cusCtx.AccountUser), accountUser)
+	return accountUser
 }
 
 func (cf *contextFunc) GetClient(ctx *gin.Context) constant.Client {
@@ -66,6 +96,14 @@ func (cf *contextFunc) GetClient(ctx *gin.Context) constant.Client {
 
 func (cf *contextFunc) GetUserCurrentClientInfo(ctx *gin.Context) (userModel.UserClientBaseInfo, error) {
 	return userModel.NewDao().SelectUserClientBaseInfo(cf.GetUserId(ctx), cf.GetClient(ctx))
+}
+
+func (cf *contextFunc) GetId(ctx *gin.Context) uint {
+	id, err := strconv.Atoi(ctx.Param("id"))
+	if err != nil {
+		panic(err)
+	}
+	return uint(id)
 }
 
 func (cf *contextFunc) GetUintParamByKey(key string, ctx *gin.Context) (uint, bool) {

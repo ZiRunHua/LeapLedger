@@ -1,29 +1,29 @@
 package v1
 
 import (
-	v1 "KeepAccount/api/v1"
-	"github.com/gin-gonic/gin"
+	"KeepAccount/router/group"
 )
 
-type TransactionRouter struct{}
-
-func (c *TransactionRouter) InitTransactionRouter(sRouter *gin.RouterGroup, accountAccountRoute *gin.RouterGroup) {
-	router := sRouter.Group("transaction")
-	baseApi := v1.ApiGroupApp.TransactionApi
+func init() {
+	// base path: /account/{accountId}/transaction
+	readRouter := group.AccountReader.Group("transaction")
+	editRouter := group.AccountOwnEditor.Group("transaction")
+	baseApi := apiApp.TransactionApi
 	{
-		router.GET("/:id", baseApi.GetOne)
-		router.POST("", baseApi.CreateOne)
-		router.PUT("/:id", baseApi.Update)
-		router.DELETE("/:id", baseApi.Delete)
-		router.GET("/list", baseApi.GetList)
-		router.GET("/total", baseApi.GetTotal)
-		router.GET("/month/statistic", baseApi.GetMonthStatistic)
-		router.GET("/day/statistic", baseApi.GetDayStatistic)
-		router.GET("/category/amount/rank", baseApi.GetCategoryAmountRank)
-		router.GET("/amount/rank", baseApi.GetAmountRank)
+		readRouter.GET("/:id", baseApi.GetOne)
+		editRouter.POST("", baseApi.CreateOne)
+		editRouter.PUT("/:id", baseApi.Update)
+		editRouter.DELETE("/:id", baseApi.Delete)
+
+		readRouter.GET("/list", baseApi.GetList)
+		readRouter.GET("/total", baseApi.GetTotal)
+		readRouter.GET("/month/statistic", baseApi.GetMonthStatistic)
+		readRouter.GET("/day/statistic", baseApi.GetDayStatistic)
+		readRouter.GET("/category/amount/rank", baseApi.GetCategoryAmountRank)
+		readRouter.GET("/amount/rank", baseApi.GetAmountRank)
 		// timing
-		accountAccountRoute.GET("/transaction/timing/list", baseApi.GetTimingList)
-		accountAccountRoute.POST("/transaction/timing", baseApi.CreateTiming)
-		accountAccountRoute.PUT("/transaction/timing/:id", baseApi.UpdateTiming)
+		editRouter.GET("/timing/list", baseApi.GetTimingList)
+		editRouter.POST("/timing", baseApi.CreateTiming)
+		editRouter.PUT("/timing/:id", baseApi.UpdateTiming)
 	}
 }
