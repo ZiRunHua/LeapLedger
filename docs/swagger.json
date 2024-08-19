@@ -1227,7 +1227,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "Product/TransCategory/Mapping"
+                    "/Product/TransCategory/Mapping"
                 ],
                 "parameters": [
                     {
@@ -1368,7 +1368,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "Product/Bill/Import"
+                    "/Product/Bill/Import"
                 ],
                 "parameters": [
                     {
@@ -3461,13 +3461,6 @@
                 "Invitee": {
                     "type": "integer"
                 },
-                "Limit": {
-                    "type": "integer"
-                },
-                "Offset": {
-                    "type": "integer",
-                    "minimum": 0
-                },
                 "Role": {
                     "$ref": "#/definitions/accountModel.UserRole"
                 }
@@ -3826,7 +3819,7 @@
         "CategoryOne": {
             "type": "object",
             "properties": {
-                "AccountId": {
+                "FatherId": {
                     "type": "integer"
                 },
                 "Icon": {
@@ -4658,16 +4651,7 @@
             }
         },
         "UserGetAccountInvitationList": {
-            "type": "object",
-            "properties": {
-                "Limit": {
-                    "type": "integer"
-                },
-                "Offset": {
-                    "type": "integer",
-                    "minimum": 0
-                }
-            }
+            "type": "object"
         },
         "UserHome": {
             "type": "object",
@@ -4799,13 +4783,6 @@
             "properties": {
                 "Id": {
                     "type": "integer"
-                },
-                "Limit": {
-                    "type": "integer"
-                },
-                "Offset": {
-                    "type": "integer",
-                    "minimum": 0
                 },
                 "Username": {
                     "type": "string"

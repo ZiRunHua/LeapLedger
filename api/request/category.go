@@ -50,6 +50,5 @@ type CategoryMapping struct {
 }
 
 type CategoryGetMappingTree struct {
-	ParentAccountId uint `binding:"required"`
-	ChildAccountId  uint `binding:"required"`
+	MappingAccountId uint `binding:"required"`
 }

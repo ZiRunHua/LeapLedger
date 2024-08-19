@@ -48,11 +48,6 @@ definitions:
         type: integer
       Invitee:
         type: integer
-      Limit:
-        type: integer
-      Offset:
-        minimum: 0
-        type: integer
       Role:
         $ref: '#/definitions/accountModel.UserRole'
     required:
@@ -286,7 +281,7 @@ definitions:
     type: object
   CategoryOne:
     properties:
-      AccountId:
+      FatherId:
         type: integer
       Icon:
         type: string
@@ -822,12 +817,6 @@ definitions:
         $ref: '#/definitions/UserInfo'
     type: object
   UserGetAccountInvitationList:
-    properties:
-      Limit:
-        type: integer
-      Offset:
-        minimum: 0
-        type: integer
     type: object
   UserHome:
     properties:
@@ -913,11 +902,6 @@ definitions:
   UserSearch:
     properties:
       Id:
-        type: integer
-      Limit:
-        type: integer
-      Offset:
-        minimum: 0
         type: integer
       Username:
         type: string
@@ -1609,7 +1593,7 @@ paths:
           schema:
             $ref: '#/definitions/NoContent'
       tags:
-      - Product/Bill/Import
+      - /Product/Bill/Import
   /account/{accountID}/product/transCategory/{id}/mapping:
     delete:
       consumes:
@@ -1698,7 +1682,7 @@ paths:
                   $ref: '#/definitions/ProductMappingTree'
               type: object
       tags:
-      - Product/TransCategory/Mapping
+      - /Product/TransCategory/Mapping
   /account/{accountID}/transaction/{id}:
     delete:
       consumes:

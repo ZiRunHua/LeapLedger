@@ -517,13 +517,12 @@ func (catApi *CategoryApi) GetMappingTree(ctx *gin.Context) {
 		response.FailToParameter(ctx, err)
 		return
 	}
-	parentAccountId, childAccountId := requestData.ParentAccountId, requestData.ChildAccountId
-	if !checkFunc.AccountBelong(parentAccountId, ctx) || !checkFunc.AccountBelong(childAccountId, ctx) {
+	if !checkFunc.AccountBelong(requestData.MappingAccountId, ctx) {
 		return
 	}
 
 	list, err := categoryModel.NewDao().GetMappingByAccountMappingOrderByParentCategory(
-		parentAccountId, childAccountId,
+		contextFunc.GetAccountId(ctx), requestData.MappingAccountId,
 	)
 	if responseError(err, ctx) {
 		return

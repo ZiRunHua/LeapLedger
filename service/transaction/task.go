@@ -27,7 +27,7 @@ func init() {
 		gTask.Publish[taskTransactionTimingTaskAssign](gTask.TaskTransactionTimingTaskAssign,
 			taskTransactionTimingTaskAssign{
 				Deadline: time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.Local),
-				taskSize: 50,
+				TaskSize: 50,
 			})
 	}
 	_, err := gTask.Scheduler.Every(1).Day().At("00:00").Do(tingEveryCron)
@@ -37,7 +37,7 @@ func init() {
 
 	gTask.Subscribe[taskTransactionTimingTaskAssign](
 		gTask.TaskTransactionTimingTaskAssign, func(assign taskTransactionTimingTaskAssign, ctx context.Context) error {
-			return GroupApp.Timing.Exec.GenerateAndPublishTasks(assign.Deadline, assign.taskSize, ctx)
+			return GroupApp.Timing.Exec.GenerateAndPublishTasks(assign.Deadline, assign.TaskSize, ctx)
 		},
 	)
 
@@ -66,7 +66,7 @@ func (t *_task) syncToMappingAccount(trans transactionModel.Transaction, ctx con
 
 type taskTransactionTimingTaskAssign struct {
 	Deadline time.Time
-	taskSize int
+	TaskSize int
 }
 
 type transactionTimingExecTask struct {

@@ -31,7 +31,7 @@ func (tc *TransactionCategory) Exits(query interface{}, args ...interface{}) (bo
 	return queryFunc.Exist[*TransactionCategory](query, args)
 }
 
-func (tc *TransactionCategory) GetMap(productKey string) (map[uint]TransactionCategory, error) {
+func (tc *TransactionCategory) GetMap(productKey KeyValue) (map[uint]TransactionCategory, error) {
 	transCategoryMap := make(map[uint]TransactionCategory)
 	var prodTransCategory TransactionCategory
 	rows, err := global.GvaDb.Model(&prodTransCategory).Where(

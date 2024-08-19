@@ -1235,7 +1235,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Product/TransCategory/Mapping"
+                    "/Product/TransCategory/Mapping"
                 ],
                 "parameters": [
                     {
@@ -1376,7 +1376,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Product/Bill/Import"
+                    "/Product/Bill/Import"
                 ],
                 "parameters": [
                     {
@@ -3469,13 +3469,6 @@ const docTemplate = `{
                 "Invitee": {
                     "type": "integer"
                 },
-                "Limit": {
-                    "type": "integer"
-                },
-                "Offset": {
-                    "type": "integer",
-                    "minimum": 0
-                },
                 "Role": {
                     "$ref": "#/definitions/accountModel.UserRole"
                 }
@@ -3759,11 +3752,11 @@ const docTemplate = `{
         "CategoryGetMappingTree": {
             "type": "object",
             "required": [
-                "ChildAccountId",
+                "MappingAccountId",
                 "ParentAccountId"
             ],
             "properties": {
-                "ChildAccountId": {
+                "MappingAccountId": {
                     "type": "integer"
                 },
                 "ParentAccountId": {
@@ -3834,7 +3827,7 @@ const docTemplate = `{
         "CategoryOne": {
             "type": "object",
             "properties": {
-                "AccountId": {
+                "FatherId": {
                     "type": "integer"
                 },
                 "Icon": {
@@ -4666,16 +4659,7 @@ const docTemplate = `{
             }
         },
         "UserGetAccountInvitationList": {
-            "type": "object",
-            "properties": {
-                "Limit": {
-                    "type": "integer"
-                },
-                "Offset": {
-                    "type": "integer",
-                    "minimum": 0
-                }
-            }
+            "type": "object"
         },
         "UserHome": {
             "type": "object",
@@ -4807,13 +4791,6 @@ const docTemplate = `{
             "properties": {
                 "Id": {
                     "type": "integer"
-                },
-                "Limit": {
-                    "type": "integer"
-                },
-                "Offset": {
-                    "type": "integer",
-                    "minimum": 0
                 },
                 "Username": {
                     "type": "string"

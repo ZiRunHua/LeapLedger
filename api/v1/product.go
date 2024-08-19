@@ -168,18 +168,14 @@ func (p *ProductApi) DeleteTransactionCategoryMapping(ctx *gin.Context) {
 //	@Accept		json
 //	@Produce	json
 //	@Param		accountID	path		int								true	"Account ID"
+//	@Param		key	path		string								true	"Product unique key"
 //	@Param		body		body		request.ProductGetMappingTree	true	"query condition"
 //	@Success	200			{object}	response.Data{Data=response.ProductMappingTree}
-//	@Router		/account/{accountID}/product/transCategory/mapping/tree [get]
+//	@Router		/account/{accountID}/product/{key}/transCategory/mapping/tree [get]
 func (p *ProductApi) GetMappingTree(ctx *gin.Context) {
-	var requestData request.ProductGetMappingTree
-	if err := ctx.ShouldBindJSON(&requestData); err != nil {
-		response.FailToParameter(ctx, err)
-		return
-	}
-	requestData.AccountId = contextFunc.GetAccountId(ctx)
+	accountId, productKey := contextFunc.GetAccountId(ctx), ctx.MustGet("key").(productModel.KeyValue)
 	var prodTransCategory productModel.TransactionCategory
-	transCategoryMap, err := prodTransCategory.GetMap(requestData.ProductKey)
+	transCategoryMap, err := prodTransCategory.GetMap(productKey)
 	if err != nil {
 		response.FailToError(ctx, err)
 		return
@@ -190,7 +186,7 @@ func (p *ProductApi) GetMappingTree(ctx *gin.Context) {
 	}
 	var prodTransCategoryMapping productModel.TransactionCategoryMapping
 	rows, err := db.Db.Model(&productModel.TransactionCategoryMapping{}).Preload("TransCategory").Where(
-		"account_id = ? AND product_key = ?", requestData.AccountId, requestData.ProductKey,
+		"account_id = ? AND product_key = ?", accountId, productKey,
 	).Order("category_id desc").Rows()
 	if err != nil {
 		response.FailToError(ctx, err)
