@@ -11,16 +11,12 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Set up Docker Compose
-        uses: docker/compose-action@v3
+      - name: Run docker-compose
+        uses: hoverkraft-tech/compose-action@v2.0.1
         with:
-          compose-file: docker-compose.yml
-          args: up --build -d leap-ledger-server
+          compose-file: "./docker/docker-compose.yml"
 
       - name: Execute updateDocs.sh in container
         run: docker exec -it leap-ledger-server sh "./docs/updateDocs.sh"
