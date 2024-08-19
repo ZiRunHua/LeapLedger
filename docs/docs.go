@@ -3469,13 +3469,6 @@ const docTemplate = `{
                 "Invitee": {
                     "type": "integer"
                 },
-                "Limit": {
-                    "type": "integer"
-                },
-                "Offset": {
-                    "type": "integer",
-                    "minimum": 0
-                },
                 "Role": {
                     "$ref": "#/definitions/accountModel.UserRole"
                 }
@@ -3501,8 +3494,20 @@ const docTemplate = `{
         "AccountMapping": {
             "type": "object",
             "properties": {
-                "AccountId": {
+                "CreateTime": {
+                    "type": "string"
+                },
+                "Id": {
                     "type": "integer"
+                },
+                "MainAccount": {
+                    "$ref": "#/definitions/AccountOne"
+                },
+                "RelatedAccount": {
+                    "$ref": "#/definitions/AccountDetail"
+                },
+                "UpdateTime": {
+                    "type": "string"
                 }
             }
         },
@@ -3834,7 +3839,7 @@ const docTemplate = `{
         "CategoryOne": {
             "type": "object",
             "properties": {
-                "FatherId": {
+                "AccountId": {
                     "type": "integer"
                 },
                 "Icon": {
@@ -3961,12 +3966,15 @@ const docTemplate = `{
             }
         },
         "IncomeExpense": {
-            "type": "object",
-            "properties": {
-                "Income_expense": {
-                    "$ref": "#/definitions/IncomeExpense"
-                }
-            }
+            "type": "string",
+            "enum": [
+                "income",
+                "expense"
+            ],
+            "x-enum-varnames": [
+                "Income",
+                "Expense"
+            ]
         },
         "List-AccountDetail": {
             "type": "object",
@@ -4297,7 +4305,15 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "IncomeExpense": {
-                    "$ref": "#/definitions/IncomeExpense"
+                    "enum": [
+                        "income",
+                        "expense"
+                    ],
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/IncomeExpense"
+                        }
+                    ]
                 },
                 "StartTime": {
                     "type": "string"
@@ -4306,25 +4322,15 @@ const docTemplate = `{
         },
         "TransactionCategoryAmountRank": {
             "type": "object",
-            "required": [
-                "AccountId",
-                "IncomeExpense"
-            ],
             "properties": {
-                "AccountId": {
+                "Amount": {
                     "type": "integer"
                 },
-                "EndTime": {
-                    "type": "string"
+                "Category": {
+                    "$ref": "#/definitions/CategoryOne"
                 },
-                "IncomeExpense": {
-                    "$ref": "#/definitions/IncomeExpense"
-                },
-                "Limit": {
+                "Count": {
                     "type": "integer"
-                },
-                "StartTime": {
-                    "type": "string"
                 }
             }
         },
@@ -4350,26 +4356,14 @@ const docTemplate = `{
         },
         "TransactionDayStatistic": {
             "type": "object",
-            "required": [
-                "AccountId"
-            ],
             "properties": {
-                "AccountId": {
+                "Amount": {
                     "type": "integer"
                 },
-                "CategoryIds": {
-                    "type": "array",
-                    "items": {
-                        "type": "integer"
-                    }
+                "Count": {
+                    "type": "integer"
                 },
-                "EndTime": {
-                    "type": "string"
-                },
-                "IncomeExpense": {
-                    "$ref": "#/definitions/IncomeExpense"
-                },
-                "StartTime": {
+                "Date": {
                     "type": "string"
                 }
             }
@@ -4487,7 +4481,15 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "IncomeExpense": {
-                    "$ref": "#/definitions/IncomeExpense"
+                    "enum": [
+                        "income",
+                        "expense"
+                    ],
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/IncomeExpense"
+                        }
+                    ]
                 },
                 "MaximumAmount": {
                     "type": "integer",
@@ -4539,6 +4541,12 @@ const docTemplate = `{
         "TransactionTimingConfig": {
             "type": "object",
             "properties": {
+                "CreatedAt": {
+                    "type": "string"
+                },
+                "Id": {
+                    "type": "integer"
+                },
                 "NextTime": {
                     "type": "string"
                 },
@@ -4548,8 +4556,11 @@ const docTemplate = `{
                 "Type": {
                     "$ref": "#/definitions/transactionModel.TimingType"
                 },
-                "UserId": {
-                    "type": "integer"
+                "UpdatedAt": {
+                    "type": "string"
+                },
+                "Username": {
+                    "type": "string"
                 }
             }
         },
@@ -4631,16 +4642,7 @@ const docTemplate = `{
             }
         },
         "UserGetAccountInvitationList": {
-            "type": "object",
-            "properties": {
-                "Limit": {
-                    "type": "integer"
-                },
-                "Offset": {
-                    "type": "integer",
-                    "minimum": 0
-                }
-            }
+            "type": "object"
         },
         "UserHome": {
             "type": "object",
@@ -4772,13 +4774,6 @@ const docTemplate = `{
             "properties": {
                 "Id": {
                     "type": "integer"
-                },
-                "Limit": {
-                    "type": "integer"
-                },
-                "Offset": {
-                    "type": "integer",
-                    "minimum": 0
                 },
                 "Username": {
                     "type": "string"

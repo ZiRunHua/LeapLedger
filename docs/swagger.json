@@ -3461,13 +3461,6 @@
                 "Invitee": {
                     "type": "integer"
                 },
-                "Limit": {
-                    "type": "integer"
-                },
-                "Offset": {
-                    "type": "integer",
-                    "minimum": 0
-                },
                 "Role": {
                     "$ref": "#/definitions/accountModel.UserRole"
                 }
@@ -3493,8 +3486,20 @@
         "AccountMapping": {
             "type": "object",
             "properties": {
-                "AccountId": {
+                "CreateTime": {
+                    "type": "string"
+                },
+                "Id": {
                     "type": "integer"
+                },
+                "MainAccount": {
+                    "$ref": "#/definitions/AccountOne"
+                },
+                "RelatedAccount": {
+                    "$ref": "#/definitions/AccountDetail"
+                },
+                "UpdateTime": {
+                    "type": "string"
                 }
             }
         },
@@ -3826,7 +3831,7 @@
         "CategoryOne": {
             "type": "object",
             "properties": {
-                "FatherId": {
+                "AccountId": {
                     "type": "integer"
                 },
                 "Icon": {
@@ -3953,12 +3958,15 @@
             }
         },
         "IncomeExpense": {
-            "type": "object",
-            "properties": {
-                "Income_expense": {
-                    "$ref": "#/definitions/IncomeExpense"
-                }
-            }
+            "type": "string",
+            "enum": [
+                "income",
+                "expense"
+            ],
+            "x-enum-varnames": [
+                "Income",
+                "Expense"
+            ]
         },
         "List-AccountDetail": {
             "type": "object",
@@ -4289,7 +4297,15 @@
                     "type": "string"
                 },
                 "IncomeExpense": {
-                    "$ref": "#/definitions/IncomeExpense"
+                    "enum": [
+                        "income",
+                        "expense"
+                    ],
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/IncomeExpense"
+                        }
+                    ]
                 },
                 "StartTime": {
                     "type": "string"
@@ -4298,25 +4314,15 @@
         },
         "TransactionCategoryAmountRank": {
             "type": "object",
-            "required": [
-                "AccountId",
-                "IncomeExpense"
-            ],
             "properties": {
-                "AccountId": {
+                "Amount": {
                     "type": "integer"
                 },
-                "EndTime": {
-                    "type": "string"
+                "Category": {
+                    "$ref": "#/definitions/CategoryOne"
                 },
-                "IncomeExpense": {
-                    "$ref": "#/definitions/IncomeExpense"
-                },
-                "Limit": {
+                "Count": {
                     "type": "integer"
-                },
-                "StartTime": {
-                    "type": "string"
                 }
             }
         },
@@ -4342,26 +4348,14 @@
         },
         "TransactionDayStatistic": {
             "type": "object",
-            "required": [
-                "AccountId"
-            ],
             "properties": {
-                "AccountId": {
+                "Amount": {
                     "type": "integer"
                 },
-                "CategoryIds": {
-                    "type": "array",
-                    "items": {
-                        "type": "integer"
-                    }
+                "Count": {
+                    "type": "integer"
                 },
-                "EndTime": {
-                    "type": "string"
-                },
-                "IncomeExpense": {
-                    "$ref": "#/definitions/IncomeExpense"
-                },
-                "StartTime": {
+                "Date": {
                     "type": "string"
                 }
             }
@@ -4479,7 +4473,15 @@
                     "type": "string"
                 },
                 "IncomeExpense": {
-                    "$ref": "#/definitions/IncomeExpense"
+                    "enum": [
+                        "income",
+                        "expense"
+                    ],
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/IncomeExpense"
+                        }
+                    ]
                 },
                 "MaximumAmount": {
                     "type": "integer",
@@ -4531,6 +4533,12 @@
         "TransactionTimingConfig": {
             "type": "object",
             "properties": {
+                "CreatedAt": {
+                    "type": "string"
+                },
+                "Id": {
+                    "type": "integer"
+                },
                 "NextTime": {
                     "type": "string"
                 },
@@ -4540,8 +4548,11 @@
                 "Type": {
                     "$ref": "#/definitions/transactionModel.TimingType"
                 },
-                "UserId": {
-                    "type": "integer"
+                "UpdatedAt": {
+                    "type": "string"
+                },
+                "Username": {
+                    "type": "string"
                 }
             }
         },
@@ -4623,16 +4634,7 @@
             }
         },
         "UserGetAccountInvitationList": {
-            "type": "object",
-            "properties": {
-                "Limit": {
-                    "type": "integer"
-                },
-                "Offset": {
-                    "type": "integer",
-                    "minimum": 0
-                }
-            }
+            "type": "object"
         },
         "UserHome": {
             "type": "object",
@@ -4764,13 +4766,6 @@
             "properties": {
                 "Id": {
                     "type": "integer"
-                },
-                "Limit": {
-                    "type": "integer"
-                },
-                "Offset": {
-                    "type": "integer",
-                    "minimum": 0
                 },
                 "Username": {
                     "type": "string"
