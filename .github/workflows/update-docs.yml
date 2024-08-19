@@ -19,7 +19,7 @@ jobs:
           compose-file: "./docker-compose.yaml"
 
       - name: Execute updateDocs.sh in container
-        run: docker exec -it leap-ledger-server sh "./docs/updateDocs.sh"
+        run: docker exec leap-ledger-server sh "./docs/updateDocs.sh"
 
       - name: Commit and push changes
         # https://github.com/actions/checkout/discussions/479
