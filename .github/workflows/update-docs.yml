@@ -31,7 +31,4 @@ jobs:
           git push origin ${{ github.ref }}
 
       - name: Stop and remove container
-        uses: docker/compose-action@v3
-        with:
-          compose-file: docker-compose.yml
-          args: down
+        run: docker-compose down
