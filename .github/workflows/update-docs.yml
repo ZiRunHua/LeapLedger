@@ -1,4 +1,4 @@
-name: Update Docs
+name: update docs
 
 on:
   workflow_dispatch:
@@ -27,8 +27,14 @@ jobs:
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           git add docs/
-          git commit -m "Update docs"
-          git push origin ${{ github.ref }}
+          if git diff-index --quiet HEAD --; then
+            echo "No changes to commit."
+          else
+            git commit -m "Update docs"
+            git push origin ${{ github.ref }}
+          fi
 
-      - name: Stop and remove container
-        run: docker-compose down
+      - name: Docker Compose Down
+        uses: hoverkraft-tech/compose-action@v2.0.1
+        with:
+          command: down
