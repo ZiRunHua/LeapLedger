@@ -12,6 +12,29 @@ definitions:
     - Name
     - Type
     type: object
+  AccountDetail:
+    properties:
+      CreateTime:
+        type: string
+      CreatorId:
+        type: integer
+      CreatorName:
+        type: string
+      Icon:
+        type: string
+      Id:
+        type: integer
+      JoinTime:
+        type: string
+      Name:
+        type: string
+      Role:
+        $ref: '#/definitions/accountModel.UserRole'
+      Type:
+        $ref: '#/definitions/accountModel.Type'
+      UpdateTime:
+        type: string
+    type: object
   AccountGetUserInfo:
     properties:
       Types:
@@ -35,10 +58,54 @@ definitions:
     required:
     - AccountId
     type: object
+  AccountInfo:
+    properties:
+      CurrentMonthTransTotal:
+        $ref: '#/definitions/global.IEStatisticWithTime'
+      RecentTrans:
+        items:
+          $ref: '#/definitions/TransactionDetail'
+        type: array
+      TodayTransTotal:
+        $ref: '#/definitions/global.IEStatisticWithTime'
+    type: object
   AccountMapping:
     properties:
       AccountId:
         type: integer
+    type: object
+  AccountOne:
+    properties:
+      CreateTime:
+        type: string
+      Icon:
+        type: string
+      Id:
+        type: integer
+      Name:
+        type: string
+      Type:
+        $ref: '#/definitions/accountModel.Type'
+      UpdateTime:
+        type: string
+    type: object
+  AccountTemplateList:
+    properties:
+      List:
+        items:
+          $ref: '#/definitions/AccountTemplateOne'
+        type: array
+    type: object
+  AccountTemplateOne:
+    properties:
+      Icon:
+        type: string
+      Id:
+        type: integer
+      Name:
+        type: string
+      Type:
+        $ref: '#/definitions/accountModel.Type'
     type: object
   AccountTransCategoryInit:
     properties:
@@ -63,24 +130,430 @@ definitions:
     required:
     - Role
     type: object
+  AccountUser:
+    properties:
+      AccountId:
+        type: integer
+      CreateTime:
+        type: string
+      Id:
+        type: integer
+      Info:
+        $ref: '#/definitions/UserInfo'
+      Role:
+        $ref: '#/definitions/accountModel.UserRole'
+      UserId:
+        type: integer
+    type: object
+  AccountUserConfig:
+    properties:
+      AccountId:
+        type: integer
+      CreateTime:
+        type: string
+      Id:
+        type: integer
+      Trans:
+        properties:
+          SyncMappingAccount:
+            type: boolean
+        type: object
+      UpdateTime:
+        type: string
+      UserId:
+        type: integer
+    type: object
   AccountUserConfigFlagUpdate:
     properties:
       Status:
         type: boolean
     type: object
+  AccountUserInfo:
+    properties:
+      CurrentMonthTransTotal:
+        $ref: '#/definitions/global.IEStatisticWithTime'
+      RecentTrans:
+        items:
+          $ref: '#/definitions/TransactionDetail'
+        type: array
+      TodayTransTotal:
+        $ref: '#/definitions/global.IEStatisticWithTime'
+    type: object
+  AccountUserInvitation:
+    properties:
+      Account:
+        $ref: '#/definitions/AccountOne'
+      CreateTime:
+        type: string
+      Id:
+        type: integer
+      Invitee:
+        $ref: '#/definitions/UserInfo'
+      Inviter:
+        $ref: '#/definitions/UserInfo'
+      Role:
+        $ref: '#/definitions/accountModel.UserRole'
+      Status:
+        $ref: '#/definitions/accountModel.UserInvitationStatus'
+    type: object
+  CategoryCreateOne:
+    properties:
+      FatherId:
+        type: integer
+      Icon:
+        type: string
+      Name:
+        type: string
+    required:
+    - FatherId
+    - Icon
+    - Name
+    type: object
+  CategoryCreateOneFather:
+    properties:
+      IncomeExpense:
+        $ref: '#/definitions/IncomeExpense'
+      Name:
+        type: string
+    type: object
+  CategoryDetail:
+    properties:
+      FatherId:
+        type: integer
+      FatherName:
+        type: string
+      Icon:
+        type: string
+      Id:
+        type: integer
+      IncomeExpense:
+        $ref: '#/definitions/IncomeExpense'
+      Name:
+        type: string
+    type: object
+  CategoryGetList:
+    properties:
+      IncomeExpense:
+        $ref: '#/definitions/IncomeExpense'
+    type: object
+  CategoryGetMappingTree:
+    properties:
+      ChildAccountId:
+        type: integer
+      ParentAccountId:
+        type: integer
+    required:
+    - ChildAccountId
+    - ParentAccountId
+    type: object
+  CategoryGetTree:
+    properties:
+      IncomeExpense:
+        $ref: '#/definitions/IncomeExpense'
+    type: object
+  CategoryMapping:
+    properties:
+      ChildCategoryId:
+        type: integer
+    type: object
+  CategoryMappingTree:
+    properties:
+      Tree:
+        items:
+          $ref: '#/definitions/CategoryMappingTreeFather'
+        type: array
+    type: object
+  CategoryMappingTreeFather:
+    properties:
+      ChildrenIds:
+        items:
+          type: integer
+        type: array
+      FatherId:
+        type: integer
+    type: object
+  CategoryMove:
+    properties:
+      FatherId:
+        type: integer
+      Previous:
+        type: integer
+    type: object
+  CategoryMoveFather:
+    properties:
+      Previous:
+        type: integer
+    type: object
+  CategoryOne:
+    properties:
+      FatherId:
+        type: integer
+      Icon:
+        type: string
+      Id:
+        type: integer
+      IncomeExpense:
+        $ref: '#/definitions/IncomeExpense'
+      Name:
+        type: string
+    type: object
+  CategoryTree:
+    properties:
+      Tree:
+        items:
+          $ref: '#/definitions/FatherOne'
+        type: array
+    type: object
+  CategoryUpdateOne:
+    properties:
+      Icon:
+        type: string
+      Name:
+        type: string
+    type: object
+  CommonCaptcha:
+    properties:
+      CaptchaId:
+        type: string
+      CaptchaLength:
+        type: integer
+      OpenCaptcha:
+        type: boolean
+      PicBase64:
+        type: string
+    type: object
+  CommonSendEmailCaptcha:
+    properties:
+      Captcha:
+        type: string
+      CaptchaId:
+        type: string
+      Email:
+        type: string
+      Type:
+        allOf:
+        - $ref: '#/definitions/constant.UserAction'
+        enum:
+        - register
+        - forgetPassword
+    required:
+    - Captcha
+    - CaptchaId
+    - Email
+    - Type
+    type: object
+  ExpirationTime:
+    properties:
+      ExpirationTime:
+        type: integer
+    type: object
+  FatherOne:
+    properties:
+      AccountId:
+        type: integer
+      Children:
+        items:
+          $ref: '#/definitions/CategoryOne'
+        type: array
+      Id:
+        type: integer
+      IncomeExpense:
+        $ref: '#/definitions/IncomeExpense'
+      Name:
+        type: string
+    type: object
+  Id:
+    properties:
+      Id:
+        type: integer
+    type: object
   IncomeExpense:
-    enum:
-    - income
-    - expense
-    type: string
-    x-enum-varnames:
-    - Income
-    - Expense
+    properties:
+      Income_expense:
+        $ref: '#/definitions/IncomeExpense'
+    type: object
+  List-AccountDetail:
+    properties:
+      List:
+        items:
+          $ref: '#/definitions/AccountDetail'
+        type: array
+    type: object
+  List-AccountMapping:
+    properties:
+      List:
+        items:
+          $ref: '#/definitions/AccountMapping'
+        type: array
+    type: object
+  List-AccountUser:
+    properties:
+      List:
+        items:
+          $ref: '#/definitions/AccountUser'
+        type: array
+    type: object
+  List-AccountUserInvitation:
+    properties:
+      List:
+        items:
+          $ref: '#/definitions/AccountUserInvitation'
+        type: array
+    type: object
+  List-CategoryDetail:
+    properties:
+      List:
+        items:
+          $ref: '#/definitions/CategoryDetail'
+        type: array
+    type: object
+  List-TransactionCategoryAmountRank:
+    properties:
+      List:
+        items:
+          $ref: '#/definitions/TransactionCategoryAmountRank'
+        type: array
+    type: object
+  List-TransactionDayStatistic:
+    properties:
+      List:
+        items:
+          $ref: '#/definitions/TransactionDayStatistic'
+        type: array
+    type: object
+  List-TransactionDetail:
+    properties:
+      List:
+        items:
+          $ref: '#/definitions/TransactionDetail'
+        type: array
+    type: object
+  List-TransactionStatistic:
+    properties:
+      List:
+        items:
+          $ref: '#/definitions/TransactionStatistic'
+        type: array
+    type: object
+  List-TransactionTiming:
+    properties:
+      List:
+        items:
+          $ref: '#/definitions/TransactionTiming'
+        type: array
+    type: object
+  List-UserFriendInvitation:
+    properties:
+      List:
+        items:
+          $ref: '#/definitions/UserFriendInvitation'
+        type: array
+    type: object
+  List-UserInfo:
+    properties:
+      List:
+        items:
+          $ref: '#/definitions/UserInfo'
+        type: array
+    type: object
+  List-response_TransactionDetailList:
+    properties:
+      List:
+        items:
+          items:
+            $ref: '#/definitions/TransactionDetail'
+          type: array
+        type: array
+    type: object
+  Login:
+    properties:
+      CurrentAccount:
+        $ref: '#/definitions/AccountDetail'
+      CurrentShareAccount:
+        $ref: '#/definitions/AccountDetail'
+      Token:
+        type: string
+      TokenExpirationTime:
+        type: string
+      User:
+        $ref: '#/definitions/UserOne'
+    type: object
+  Name:
+    properties:
+      Name:
+        type: string
+    type: object
   NoContent:
     properties:
       Data: {}
       Msg:
         type: string
+    type: object
+  PageData:
+    properties:
+      Limit:
+        type: integer
+      Offset:
+        minimum: 0
+        type: integer
+    type: object
+  ProductGetMappingTree:
+    properties:
+      AccountId:
+        type: integer
+      ProductKey:
+        type: string
+    type: object
+  ProductList:
+    properties:
+      List:
+        items:
+          $ref: '#/definitions/ProductOne'
+        type: array
+    type: object
+  ProductMappingTransactionCategory:
+    properties:
+      CategoryId:
+        type: integer
+    type: object
+  ProductMappingTree:
+    properties:
+      Tree:
+        items:
+          $ref: '#/definitions/ProductMappingTreeFather'
+        type: array
+    type: object
+  ProductMappingTreeFather:
+    properties:
+      Children:
+        items:
+          type: integer
+        type: array
+      FatherId:
+        type: integer
+    type: object
+  ProductOne:
+    properties:
+      Name:
+        type: string
+      UniqueKey:
+        type: string
+    type: object
+  ProductTransactionCategory:
+    properties:
+      Id:
+        type: integer
+      IncomeExpense:
+        $ref: '#/definitions/IncomeExpense'
+      Name:
+        type: string
+    type: object
+  ProductTransactionCategoryList:
+    properties:
+      List:
+        items:
+          $ref: '#/definitions/ProductTransactionCategory'
+        type: array
     type: object
   Response:
     properties:
@@ -89,10 +562,399 @@ definitions:
         example: success
         type: string
     type: object
+  Token:
+    properties:
+      Token:
+        type: string
+      TokenExpirationTime:
+        type: string
+    type: object
+  TourApply:
+    properties:
+      DeviceNumber:
+        type: string
+    type: object
+  TransactionAmountRank:
+    properties:
+      AccountId:
+        type: integer
+      EndTime:
+        type: string
+      IncomeExpense:
+        $ref: '#/definitions/IncomeExpense'
+      StartTime:
+        type: string
+    required:
+    - AccountId
+    - IncomeExpense
+    type: object
+  TransactionCategoryAmountRank:
+    properties:
+      AccountId:
+        type: integer
+      EndTime:
+        type: string
+      IncomeExpense:
+        $ref: '#/definitions/IncomeExpense'
+      Limit:
+        type: integer
+      StartTime:
+        type: string
+    required:
+    - AccountId
+    - IncomeExpense
+    type: object
+  TransactionCreateOne:
+    properties:
+      Amount:
+        type: integer
+      CategoryId:
+        type: integer
+      IncomeExpense:
+        $ref: '#/definitions/IncomeExpense'
+      Remark:
+        type: string
+      TradeTime:
+        type: string
+    type: object
+  TransactionDayStatistic:
+    properties:
+      AccountId:
+        type: integer
+      CategoryIds:
+        items:
+          type: integer
+        type: array
+      EndTime:
+        type: string
+      IncomeExpense:
+        $ref: '#/definitions/IncomeExpense'
+      StartTime:
+        type: string
+    required:
+    - AccountId
+    type: object
+  TransactionDetail:
+    properties:
+      AccountId:
+        type: integer
+      AccountName:
+        type: string
+      Amount:
+        type: integer
+      CategoryFatherName:
+        type: string
+      CategoryIcon:
+        type: string
+      CategoryId:
+        type: integer
+      CategoryName:
+        type: string
+      CreateTime:
+        type: string
+      Id:
+        type: integer
+      IncomeExpense:
+        $ref: '#/definitions/IncomeExpense'
+      Remark:
+        type: string
+      TradeTime:
+        type: string
+      UpdateTime:
+        type: string
+      UserId:
+        type: integer
+      UserName:
+        type: string
+    type: object
+  TransactionInfo:
+    properties:
+      AccountId:
+        type: integer
+      AccountName:
+        type: string
+      Amount:
+        type: integer
+      CategoryFatherName:
+        type: string
+      CategoryIcon:
+        type: string
+      CategoryId:
+        type: integer
+      CategoryName:
+        type: string
+      Id:
+        type: integer
+      IncomeExpense:
+        $ref: '#/definitions/IncomeExpense'
+      Remark:
+        type: string
+      TradeTime:
+        type: string
+      UserId:
+        type: integer
+      UserName:
+        type: string
+    type: object
+  TransactionMonthStatistic:
+    properties:
+      AccountId:
+        type: integer
+      CategoryIds:
+        items:
+          type: integer
+        type: array
+      EndTime:
+        type: string
+      IncomeExpense:
+        $ref: '#/definitions/IncomeExpense'
+      MaximumAmount:
+        minimum: 0
+        type: integer
+      MinimumAmount:
+        minimum: 0
+        type: integer
+      StartTime:
+        type: string
+      UserIds:
+        items:
+          type: integer
+        type: array
+    required:
+    - AccountId
+    type: object
+  TransactionStatistic:
+    properties:
+      EndTime:
+        type: string
+      Expense:
+        $ref: '#/definitions/global.AmountCount'
+      Income:
+        $ref: '#/definitions/global.AmountCount'
+      StartTime:
+        type: string
+    type: object
+  TransactionTiming:
+    properties:
+      Config:
+        $ref: '#/definitions/TransactionTimingConfig'
+      Trans:
+        $ref: '#/definitions/TransactionInfo'
+    type: object
+  TransactionTimingConfig:
+    properties:
+      NextTime:
+        type: string
+      OffsetDays:
+        type: integer
+      Type:
+        $ref: '#/definitions/transactionModel.TimingType'
+      UserId:
+        type: integer
+    type: object
+  TransactionTotal:
+    properties:
+      Expense:
+        $ref: '#/definitions/global.AmountCount'
+      Income:
+        $ref: '#/definitions/global.AmountCount'
+    type: object
   UpdateAccountMapping:
     properties:
       RelatedAccountId:
         type: integer
+    type: object
+  UserCreateFriendInvitation:
+    properties:
+      Invitee:
+        type: integer
+    type: object
+  UserCurrentClientInfo:
+    properties:
+      CurrentAccount:
+        $ref: '#/definitions/AccountDetail'
+      CurrentShareAccount:
+        $ref: '#/definitions/AccountDetail'
+      LoginTime:
+        type: string
+    type: object
+  UserForgetPassword:
+    properties:
+      Captcha:
+        type: string
+      Email:
+        type: string
+      Password:
+        type: string
+    required:
+    - Captcha
+    - Email
+    - Password
+    type: object
+  UserFriendInvitation:
+    properties:
+      CreateTime:
+        type: string
+      Id:
+        type: integer
+      Invitee:
+        $ref: '#/definitions/UserInfo'
+      Inviter:
+        $ref: '#/definitions/UserInfo'
+    type: object
+  UserGetAccountInvitationList:
+    properties:
+      Limit:
+        type: integer
+      Offset:
+        minimum: 0
+        type: integer
+    type: object
+  UserHome:
+    properties:
+      HeaderCard:
+        $ref: '#/definitions/UserHomeHeaderCard'
+      TimePeriodStatistics:
+        $ref: '#/definitions/UserHomeTimePeriodStatistics'
+    type: object
+  UserHomeHeaderCard:
+    properties:
+      EndTime:
+        type: string
+      Expense:
+        $ref: '#/definitions/global.AmountCount'
+      Income:
+        $ref: '#/definitions/global.AmountCount'
+      StartTime:
+        type: string
+    type: object
+  UserHomeTimePeriodStatistics:
+    properties:
+      TodayData:
+        $ref: '#/definitions/TransactionStatistic'
+      WeekData:
+        $ref: '#/definitions/TransactionStatistic'
+      YearData:
+        $ref: '#/definitions/TransactionStatistic'
+      YesterdayData:
+        $ref: '#/definitions/TransactionStatistic'
+    type: object
+  UserInfo:
+    properties:
+      Email:
+        type: string
+      Id:
+        type: integer
+      Username:
+        type: string
+    type: object
+  UserLogin:
+    properties:
+      Captcha:
+        type: string
+      CaptchaId:
+        type: string
+      Email:
+        type: string
+      Password:
+        type: string
+    required:
+    - Captcha
+    - CaptchaId
+    - Email
+    - Password
+    type: object
+  UserOne:
+    properties:
+      CreateTime:
+        type: string
+      Email:
+        type: string
+      Id:
+        type: integer
+      Username:
+        type: string
+    type: object
+  UserRegister:
+    properties:
+      Captcha:
+        type: string
+      Email:
+        type: string
+      Password:
+        type: string
+      Username:
+        type: string
+    required:
+    - Captcha
+    - Email
+    - Password
+    - Username
+    type: object
+  UserSearch:
+    properties:
+      Id:
+        type: integer
+      Limit:
+        type: integer
+      Offset:
+        minimum: 0
+        type: integer
+      Username:
+        type: string
+    required:
+    - Username
+    type: object
+  UserSendEmail:
+    properties:
+      Captcha:
+        type: string
+      CaptchaId:
+        type: string
+      Type:
+        allOf:
+        - $ref: '#/definitions/constant.UserAction'
+        enum:
+        - updatePassword
+    required:
+    - Captcha
+    - CaptchaId
+    - Type
+    type: object
+  UserTransactionShareConfig:
+    properties:
+      Account:
+        type: boolean
+      CreateTime:
+        type: boolean
+      Remark:
+        type: boolean
+      UpdateTime:
+        type: boolean
+    type: object
+  UserTransactionShareConfigUpdate:
+    properties:
+      Flag:
+        $ref: '#/definitions/request.TransactionShareConfigName'
+      Status:
+        type: boolean
+    type: object
+  UserUpdateInfo:
+    properties:
+      Username:
+        type: string
+    required:
+    - Username
+    type: object
+  UserUpdatePassword:
+    properties:
+      Captcha:
+        type: string
+      Password:
+        type: string
+    required:
+    - Captcha
+    - Password
     type: object
   accountModel.Type:
     enum:
@@ -154,228 +1016,6 @@ definitions:
       StartTime:
         type: string
     type: object
-  request.CategoryCreateOne:
-    properties:
-      FatherId:
-        type: integer
-      Icon:
-        type: string
-      Name:
-        type: string
-    required:
-    - FatherId
-    - Icon
-    - Name
-    type: object
-  request.CategoryCreateOneFather:
-    properties:
-      IncomeExpense:
-        $ref: '#/definitions/IncomeExpense'
-      Name:
-        type: string
-    type: object
-  request.CategoryGetList:
-    properties:
-      IncomeExpense:
-        $ref: '#/definitions/IncomeExpense'
-    type: object
-  request.CategoryGetMappingTree:
-    properties:
-      ChildAccountId:
-        type: integer
-      ParentAccountId:
-        type: integer
-    required:
-    - ChildAccountId
-    - ParentAccountId
-    type: object
-  request.CategoryGetTree:
-    properties:
-      IncomeExpense:
-        $ref: '#/definitions/IncomeExpense'
-    type: object
-  request.CategoryMapping:
-    properties:
-      ChildCategoryId:
-        type: integer
-    type: object
-  request.CategoryMove:
-    properties:
-      FatherId:
-        type: integer
-      Previous:
-        type: integer
-    type: object
-  request.CategoryMoveFather:
-    properties:
-      Previous:
-        type: integer
-    type: object
-  request.CategoryUpdateOne:
-    properties:
-      Icon:
-        type: string
-      Name:
-        type: string
-    type: object
-  request.CommonSendEmailCaptcha:
-    properties:
-      Captcha:
-        type: string
-      CaptchaId:
-        type: string
-      Email:
-        type: string
-      Type:
-        allOf:
-        - $ref: '#/definitions/constant.UserAction'
-        enum:
-        - register
-        - forgetPassword
-    required:
-    - Captcha
-    - CaptchaId
-    - Email
-    - Type
-    type: object
-  request.Id:
-    properties:
-      Id:
-        type: integer
-    type: object
-  request.Name:
-    properties:
-      Name:
-        type: string
-    type: object
-  request.PageData:
-    properties:
-      Limit:
-        type: integer
-      Offset:
-        minimum: 0
-        type: integer
-    type: object
-  request.ProductGetMappingTree:
-    properties:
-      AccountId:
-        type: integer
-      ProductKey:
-        type: string
-    type: object
-  request.ProductMappingTransactionCategory:
-    properties:
-      CategoryId:
-        type: integer
-    type: object
-  request.TourApply:
-    properties:
-      DeviceNumber:
-        type: string
-    type: object
-  request.TransactionAmountRank:
-    properties:
-      AccountId:
-        type: integer
-      EndTime:
-        type: string
-      IncomeExpense:
-        allOf:
-        - $ref: '#/definitions/IncomeExpense'
-        enum:
-        - income
-        - expense
-      StartTime:
-        type: string
-    required:
-    - AccountId
-    - IncomeExpense
-    type: object
-  request.TransactionCategoryAmountRank:
-    properties:
-      AccountId:
-        type: integer
-      EndTime:
-        type: string
-      IncomeExpense:
-        allOf:
-        - $ref: '#/definitions/IncomeExpense'
-        enum:
-        - income
-        - expense
-      Limit:
-        type: integer
-      StartTime:
-        type: string
-    required:
-    - AccountId
-    - IncomeExpense
-    type: object
-  request.TransactionCreateOne:
-    properties:
-      Amount:
-        type: integer
-      CategoryId:
-        type: integer
-      IncomeExpense:
-        $ref: '#/definitions/IncomeExpense'
-      Remark:
-        type: string
-      TradeTime:
-        type: string
-    type: object
-  request.TransactionDayStatistic:
-    properties:
-      AccountId:
-        type: integer
-      CategoryIds:
-        items:
-          type: integer
-        type: array
-      EndTime:
-        type: string
-      IncomeExpense:
-        allOf:
-        - $ref: '#/definitions/IncomeExpense'
-        enum:
-        - income
-        - expense
-      StartTime:
-        type: string
-    required:
-    - AccountId
-    type: object
-  request.TransactionMonthStatistic:
-    properties:
-      AccountId:
-        type: integer
-      CategoryIds:
-        items:
-          type: integer
-        type: array
-      EndTime:
-        type: string
-      IncomeExpense:
-        allOf:
-        - $ref: '#/definitions/IncomeExpense'
-        enum:
-        - income
-        - expense
-      MaximumAmount:
-        minimum: 0
-        type: integer
-      MinimumAmount:
-        minimum: 0
-        type: integer
-      StartTime:
-        type: string
-      UserIds:
-        items:
-          type: integer
-        type: array
-    required:
-    - AccountId
-    type: object
   request.TransactionShareConfigName:
     enum:
     - account
@@ -388,756 +1028,6 @@ definitions:
     - FLAG_CREATE_TIME
     - FLAG_UPDATE_TIME
     - FLAG_REMARK
-  request.TransactionTiming:
-    properties:
-      Config:
-        $ref: '#/definitions/request.TransactionTimingConfig'
-      Trans:
-        $ref: '#/definitions/transactionModel.Info'
-    type: object
-  request.TransactionTimingConfig:
-    properties:
-      NextTime:
-        type: string
-      OffsetDays:
-        type: integer
-      Type:
-        $ref: '#/definitions/transactionModel.TimingType'
-      UserId:
-        type: integer
-    type: object
-  request.TransactionTotal:
-    properties:
-      AccountId:
-        type: integer
-      CategoryIds:
-        items:
-          type: integer
-        type: array
-      EndTime:
-        type: string
-      IncomeExpense:
-        allOf:
-        - $ref: '#/definitions/IncomeExpense'
-        enum:
-        - income
-        - expense
-      MaximumAmount:
-        minimum: 0
-        type: integer
-      MinimumAmount:
-        minimum: 0
-        type: integer
-      StartTime:
-        type: string
-      UserIds:
-        items:
-          type: integer
-        type: array
-    required:
-    - AccountId
-    type: object
-  request.UserCreateFriendInvitation:
-    properties:
-      Invitee:
-        type: integer
-    type: object
-  request.UserForgetPassword:
-    properties:
-      Captcha:
-        type: string
-      Email:
-        type: string
-      Password:
-        type: string
-    required:
-    - Captcha
-    - Email
-    - Password
-    type: object
-  request.UserGetAccountInvitationList:
-    properties:
-      Limit:
-        type: integer
-      Offset:
-        minimum: 0
-        type: integer
-    type: object
-  request.UserHome:
-    properties:
-      AccountId:
-        type: integer
-    type: object
-  request.UserLogin:
-    properties:
-      Captcha:
-        type: string
-      CaptchaId:
-        type: string
-      Email:
-        type: string
-      Password:
-        type: string
-    required:
-    - Captcha
-    - CaptchaId
-    - Email
-    - Password
-    type: object
-  request.UserRegister:
-    properties:
-      Captcha:
-        type: string
-      Email:
-        type: string
-      Password:
-        type: string
-      Username:
-        type: string
-    required:
-    - Captcha
-    - Email
-    - Password
-    - Username
-    type: object
-  request.UserSearch:
-    properties:
-      Id:
-        type: integer
-      Limit:
-        type: integer
-      Offset:
-        minimum: 0
-        type: integer
-      Username:
-        type: string
-    required:
-    - Username
-    type: object
-  request.UserSendEmail:
-    properties:
-      Captcha:
-        type: string
-      CaptchaId:
-        type: string
-      Type:
-        allOf:
-        - $ref: '#/definitions/constant.UserAction'
-        enum:
-        - updatePassword
-    required:
-    - Captcha
-    - CaptchaId
-    - Type
-    type: object
-  request.UserTransactionShareConfigUpdate:
-    properties:
-      Flag:
-        $ref: '#/definitions/request.TransactionShareConfigName'
-      Status:
-        type: boolean
-    type: object
-  request.UserUpdateInfo:
-    properties:
-      Username:
-        type: string
-    required:
-    - Username
-    type: object
-  request.UserUpdatePassword:
-    properties:
-      Captcha:
-        type: string
-      Password:
-        type: string
-    required:
-    - Captcha
-    - Password
-    type: object
-  response.AccountDetail:
-    properties:
-      CreateTime:
-        type: string
-      CreatorId:
-        type: integer
-      CreatorName:
-        type: string
-      Icon:
-        type: string
-      Id:
-        type: integer
-      JoinTime:
-        type: string
-      Name:
-        type: string
-      Role:
-        $ref: '#/definitions/accountModel.UserRole'
-      Type:
-        $ref: '#/definitions/accountModel.Type'
-      UpdateTime:
-        type: string
-    type: object
-  response.AccountInfo:
-    properties:
-      CurrentMonthTransTotal:
-        $ref: '#/definitions/global.IEStatisticWithTime'
-      RecentTrans:
-        items:
-          $ref: '#/definitions/response.TransactionDetail'
-        type: array
-      TodayTransTotal:
-        $ref: '#/definitions/global.IEStatisticWithTime'
-    type: object
-  response.AccountMapping:
-    properties:
-      CreateTime:
-        type: string
-      Id:
-        type: integer
-      MainAccount:
-        $ref: '#/definitions/response.AccountOne'
-      RelatedAccount:
-        $ref: '#/definitions/response.AccountDetail'
-      UpdateTime:
-        type: string
-    type: object
-  response.AccountOne:
-    properties:
-      CreateTime:
-        type: string
-      Icon:
-        type: string
-      Id:
-        type: integer
-      Name:
-        type: string
-      Type:
-        $ref: '#/definitions/accountModel.Type'
-      UpdateTime:
-        type: string
-    type: object
-  response.AccountTemplateList:
-    properties:
-      List:
-        items:
-          $ref: '#/definitions/response.AccountTemplateOne'
-        type: array
-    type: object
-  response.AccountTemplateOne:
-    properties:
-      Icon:
-        type: string
-      Id:
-        type: integer
-      Name:
-        type: string
-      Type:
-        $ref: '#/definitions/accountModel.Type'
-    type: object
-  response.AccountUser:
-    properties:
-      AccountId:
-        type: integer
-      CreateTime:
-        type: string
-      Id:
-        type: integer
-      Info:
-        $ref: '#/definitions/response.UserInfo'
-      Role:
-        $ref: '#/definitions/accountModel.UserRole'
-      UserId:
-        type: integer
-    type: object
-  response.AccountUserConfig:
-    properties:
-      AccountId:
-        type: integer
-      CreateTime:
-        type: string
-      Id:
-        type: integer
-      Trans:
-        properties:
-          SyncMappingAccount:
-            type: boolean
-        type: object
-      UpdateTime:
-        type: string
-      UserId:
-        type: integer
-    type: object
-  response.AccountUserInfo:
-    properties:
-      CurrentMonthTransTotal:
-        $ref: '#/definitions/global.IEStatisticWithTime'
-      RecentTrans:
-        items:
-          $ref: '#/definitions/response.TransactionDetail'
-        type: array
-      TodayTransTotal:
-        $ref: '#/definitions/global.IEStatisticWithTime'
-    type: object
-  response.AccountUserInvitation:
-    properties:
-      Account:
-        $ref: '#/definitions/response.AccountOne'
-      CreateTime:
-        type: string
-      Id:
-        type: integer
-      Invitee:
-        $ref: '#/definitions/response.UserInfo'
-      Inviter:
-        $ref: '#/definitions/response.UserInfo'
-      Role:
-        $ref: '#/definitions/accountModel.UserRole'
-      Status:
-        $ref: '#/definitions/accountModel.UserInvitationStatus'
-    type: object
-  response.CategoryDetail:
-    properties:
-      FatherId:
-        type: integer
-      FatherName:
-        type: string
-      Icon:
-        type: string
-      Id:
-        type: integer
-      IncomeExpense:
-        $ref: '#/definitions/IncomeExpense'
-      Name:
-        type: string
-    type: object
-  response.CategoryMappingTree:
-    properties:
-      Tree:
-        items:
-          $ref: '#/definitions/response.CategoryMappingTreeFather'
-        type: array
-    type: object
-  response.CategoryMappingTreeFather:
-    properties:
-      ChildrenIds:
-        items:
-          type: integer
-        type: array
-      FatherId:
-        type: integer
-    type: object
-  response.CategoryOne:
-    properties:
-      AccountId:
-        type: integer
-      Icon:
-        type: string
-      Id:
-        type: integer
-      IncomeExpense:
-        $ref: '#/definitions/IncomeExpense'
-      Name:
-        type: string
-    type: object
-  response.CategoryTree:
-    properties:
-      Tree:
-        items:
-          $ref: '#/definitions/response.FatherOne'
-        type: array
-    type: object
-  response.CommonCaptcha:
-    properties:
-      CaptchaId:
-        type: string
-      CaptchaLength:
-        type: integer
-      OpenCaptcha:
-        type: boolean
-      PicBase64:
-        type: string
-    type: object
-  response.ExpirationTime:
-    properties:
-      ExpirationTime:
-        type: integer
-    type: object
-  response.FatherOne:
-    properties:
-      AccountId:
-        type: integer
-      Children:
-        items:
-          $ref: '#/definitions/response.CategoryOne'
-        type: array
-      Id:
-        type: integer
-      IncomeExpense:
-        $ref: '#/definitions/IncomeExpense'
-      Name:
-        type: string
-    type: object
-  response.List-response_AccountDetail:
-    properties:
-      List:
-        items:
-          $ref: '#/definitions/response.AccountDetail'
-        type: array
-    type: object
-  response.List-response_AccountMapping:
-    properties:
-      List:
-        items:
-          $ref: '#/definitions/response.AccountMapping'
-        type: array
-    type: object
-  response.List-response_AccountUser:
-    properties:
-      List:
-        items:
-          $ref: '#/definitions/response.AccountUser'
-        type: array
-    type: object
-  response.List-response_AccountUserInvitation:
-    properties:
-      List:
-        items:
-          $ref: '#/definitions/response.AccountUserInvitation'
-        type: array
-    type: object
-  response.List-response_CategoryDetail:
-    properties:
-      List:
-        items:
-          $ref: '#/definitions/response.CategoryDetail'
-        type: array
-    type: object
-  response.List-response_TransactionCategoryAmountRank:
-    properties:
-      List:
-        items:
-          $ref: '#/definitions/response.TransactionCategoryAmountRank'
-        type: array
-    type: object
-  response.List-response_TransactionDayStatistic:
-    properties:
-      List:
-        items:
-          $ref: '#/definitions/response.TransactionDayStatistic'
-        type: array
-    type: object
-  response.List-response_TransactionDetail:
-    properties:
-      List:
-        items:
-          $ref: '#/definitions/response.TransactionDetail'
-        type: array
-    type: object
-  response.List-response_TransactionDetailList:
-    properties:
-      List:
-        items:
-          items:
-            $ref: '#/definitions/response.TransactionDetail'
-          type: array
-        type: array
-    type: object
-  response.List-response_TransactionStatistic:
-    properties:
-      List:
-        items:
-          $ref: '#/definitions/response.TransactionStatistic'
-        type: array
-    type: object
-  response.List-response_TransactionTiming:
-    properties:
-      List:
-        items:
-          $ref: '#/definitions/response.TransactionTiming'
-        type: array
-    type: object
-  response.List-response_UserFriendInvitation:
-    properties:
-      List:
-        items:
-          $ref: '#/definitions/response.UserFriendInvitation'
-        type: array
-    type: object
-  response.List-response_UserInfo:
-    properties:
-      List:
-        items:
-          $ref: '#/definitions/response.UserInfo'
-        type: array
-    type: object
-  response.Login:
-    properties:
-      CurrentAccount:
-        $ref: '#/definitions/response.AccountDetail'
-      CurrentShareAccount:
-        $ref: '#/definitions/response.AccountDetail'
-      Token:
-        type: string
-      TokenExpirationTime:
-        type: string
-      User:
-        $ref: '#/definitions/response.UserOne'
-    type: object
-  response.ProductList:
-    properties:
-      List:
-        items:
-          $ref: '#/definitions/response.ProductOne'
-        type: array
-    type: object
-  response.ProductMappingTree:
-    properties:
-      Tree:
-        items:
-          $ref: '#/definitions/response.ProductMappingTreeFather'
-        type: array
-    type: object
-  response.ProductMappingTreeFather:
-    properties:
-      Children:
-        items:
-          type: integer
-        type: array
-      FatherId:
-        type: integer
-    type: object
-  response.ProductOne:
-    properties:
-      Name:
-        type: string
-      UniqueKey:
-        type: string
-    type: object
-  response.ProductTransactionCategory:
-    properties:
-      Id:
-        type: integer
-      IncomeExpense:
-        $ref: '#/definitions/IncomeExpense'
-      Name:
-        type: string
-    type: object
-  response.ProductTransactionCategoryList:
-    properties:
-      List:
-        items:
-          $ref: '#/definitions/response.ProductTransactionCategory'
-        type: array
-    type: object
-  response.Token:
-    properties:
-      Token:
-        type: string
-      TokenExpirationTime:
-        type: string
-    type: object
-  response.TransactionCategoryAmountRank:
-    properties:
-      Amount:
-        type: integer
-      Category:
-        $ref: '#/definitions/response.CategoryOne'
-      Count:
-        type: integer
-    type: object
-  response.TransactionDayStatistic:
-    properties:
-      Amount:
-        type: integer
-      Count:
-        type: integer
-      Date:
-        type: string
-    type: object
-  response.TransactionDetail:
-    properties:
-      AccountId:
-        type: integer
-      AccountName:
-        type: string
-      Amount:
-        type: integer
-      CategoryFatherName:
-        type: string
-      CategoryIcon:
-        type: string
-      CategoryId:
-        type: integer
-      CategoryName:
-        type: string
-      CreateTime:
-        type: string
-      Id:
-        type: integer
-      IncomeExpense:
-        $ref: '#/definitions/IncomeExpense'
-      Remark:
-        type: string
-      TradeTime:
-        type: string
-      UpdateTime:
-        type: string
-      UserId:
-        type: integer
-      UserName:
-        type: string
-    type: object
-  response.TransactionInfo:
-    properties:
-      AccountId:
-        type: integer
-      AccountName:
-        type: string
-      Amount:
-        type: integer
-      CategoryFatherName:
-        type: string
-      CategoryIcon:
-        type: string
-      CategoryId:
-        type: integer
-      CategoryName:
-        type: string
-      Id:
-        type: integer
-      IncomeExpense:
-        $ref: '#/definitions/IncomeExpense'
-      Remark:
-        type: string
-      TradeTime:
-        type: string
-      UserId:
-        type: integer
-      UserName:
-        type: string
-    type: object
-  response.TransactionStatistic:
-    properties:
-      EndTime:
-        type: string
-      Expense:
-        $ref: '#/definitions/global.AmountCount'
-      Income:
-        $ref: '#/definitions/global.AmountCount'
-      StartTime:
-        type: string
-    type: object
-  response.TransactionTiming:
-    properties:
-      Config:
-        $ref: '#/definitions/response.TransactionTimingConfig'
-      Trans:
-        $ref: '#/definitions/response.TransactionInfo'
-    type: object
-  response.TransactionTimingConfig:
-    properties:
-      CreatedAt:
-        type: string
-      Id:
-        type: integer
-      NextTime:
-        type: string
-      OffsetDays:
-        type: integer
-      Type:
-        $ref: '#/definitions/transactionModel.TimingType'
-      UpdatedAt:
-        type: string
-      Username:
-        type: string
-    type: object
-  response.TransactionTotal:
-    properties:
-      Expense:
-        $ref: '#/definitions/global.AmountCount'
-      Income:
-        $ref: '#/definitions/global.AmountCount'
-    type: object
-  response.UserCurrentClientInfo:
-    properties:
-      CurrentAccount:
-        $ref: '#/definitions/response.AccountDetail'
-      CurrentShareAccount:
-        $ref: '#/definitions/response.AccountDetail'
-      LoginTime:
-        type: string
-    type: object
-  response.UserFriendInvitation:
-    properties:
-      CreateTime:
-        type: string
-      Id:
-        type: integer
-      Invitee:
-        $ref: '#/definitions/response.UserInfo'
-      Inviter:
-        $ref: '#/definitions/response.UserInfo'
-    type: object
-  response.UserHome:
-    properties:
-      HeaderCard:
-        $ref: '#/definitions/response.UserHomeHeaderCard'
-      TimePeriodStatistics:
-        $ref: '#/definitions/response.UserHomeTimePeriodStatistics'
-    type: object
-  response.UserHomeHeaderCard:
-    properties:
-      EndTime:
-        type: string
-      Expense:
-        $ref: '#/definitions/global.AmountCount'
-      Income:
-        $ref: '#/definitions/global.AmountCount'
-      StartTime:
-        type: string
-    type: object
-  response.UserHomeTimePeriodStatistics:
-    properties:
-      TodayData:
-        $ref: '#/definitions/response.TransactionStatistic'
-      WeekData:
-        $ref: '#/definitions/response.TransactionStatistic'
-      YearData:
-        $ref: '#/definitions/response.TransactionStatistic'
-      YesterdayData:
-        $ref: '#/definitions/response.TransactionStatistic'
-    type: object
-  response.UserInfo:
-    properties:
-      Email:
-        type: string
-      Id:
-        type: integer
-      Username:
-        type: string
-    type: object
-  response.UserOne:
-    properties:
-      CreateTime:
-        type: string
-      Email:
-        type: string
-      Id:
-        type: integer
-      Username:
-        type: string
-    type: object
-  response.UserTransactionShareConfig:
-    properties:
-      Account:
-        type: boolean
-      CreateTime:
-        type: boolean
-      Remark:
-        type: boolean
-      UpdateTime:
-        type: boolean
-    type: object
   transactionModel.Info:
     properties:
       Amount:
@@ -1201,7 +1091,7 @@ paths:
             - $ref: '#/definitions/Response'
             - properties:
                 Data:
-                  $ref: '#/definitions/response.AccountDetail'
+                  $ref: '#/definitions/AccountDetail'
               type: object
       tags:
       - Account
@@ -1220,7 +1110,7 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/request.CategoryCreateOne'
+          $ref: '#/definitions/CategoryCreateOne'
       produces:
       - application/json
       responses:
@@ -1231,7 +1121,7 @@ paths:
             - $ref: '#/definitions/Response'
             - properties:
                 Data:
-                  $ref: '#/definitions/response.CategoryOne'
+                  $ref: '#/definitions/CategoryOne'
               type: object
       tags:
       - Category
@@ -1276,7 +1166,7 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/request.CategoryUpdateOne'
+          $ref: '#/definitions/CategoryUpdateOne'
       produces:
       - application/json
       responses:
@@ -1306,7 +1196,7 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/request.CategoryMapping'
+          $ref: '#/definitions/CategoryMapping'
       produces:
       - application/json
       responses:
@@ -1335,7 +1225,7 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/request.CategoryMapping'
+          $ref: '#/definitions/CategoryMapping'
       produces:
       - application/json
       responses:
@@ -1365,7 +1255,7 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/request.CategoryMove'
+          $ref: '#/definitions/CategoryMove'
       produces:
       - application/json
       responses:
@@ -1390,7 +1280,7 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/request.CategoryCreateOneFather'
+          $ref: '#/definitions/CategoryCreateOneFather'
       produces:
       - application/json
       responses:
@@ -1401,7 +1291,7 @@ paths:
             - $ref: '#/definitions/Response'
             - properties:
                 Data:
-                  $ref: '#/definitions/response.FatherOne'
+                  $ref: '#/definitions/FatherOne'
               type: object
       tags:
       - Category/Father
@@ -1446,7 +1336,7 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/request.Name'
+          $ref: '#/definitions/Name'
       produces:
       - application/json
       responses:
@@ -1457,7 +1347,7 @@ paths:
             - $ref: '#/definitions/Response'
             - properties:
                 Data:
-                  $ref: '#/definitions/response.FatherOne'
+                  $ref: '#/definitions/FatherOne'
               type: object
       tags:
       - Category/Father
@@ -1481,7 +1371,7 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/request.CategoryMoveFather'
+          $ref: '#/definitions/CategoryMoveFather'
       produces:
       - application/json
       responses:
@@ -1506,7 +1396,7 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/request.CategoryGetMappingTree'
+          $ref: '#/definitions/CategoryGetMappingTree'
       produces:
       - application/json
       responses:
@@ -1517,7 +1407,7 @@ paths:
             - $ref: '#/definitions/Response'
             - properties:
                 Data:
-                  $ref: '#/definitions/response.CategoryMappingTree'
+                  $ref: '#/definitions/CategoryMappingTree'
               type: object
       tags:
       - Category
@@ -1536,7 +1426,7 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/request.CategoryGetList'
+          $ref: '#/definitions/CategoryGetList'
       produces:
       - application/json
       responses:
@@ -1547,7 +1437,7 @@ paths:
             - $ref: '#/definitions/Response'
             - properties:
                 Data:
-                  $ref: '#/definitions/response.List-response_CategoryDetail'
+                  $ref: '#/definitions/List-CategoryDetail'
               type: object
       tags:
       - Category
@@ -1569,7 +1459,7 @@ paths:
             - $ref: '#/definitions/Response'
             - properties:
                 Data:
-                  $ref: '#/definitions/response.AccountInfo'
+                  $ref: '#/definitions/AccountInfo'
               type: object
       tags:
       - Account
@@ -1595,7 +1485,7 @@ paths:
             - $ref: '#/definitions/Response'
             - properties:
                 Data:
-                  $ref: '#/definitions/response.AccountInfo'
+                  $ref: '#/definitions/AccountInfo'
               type: object
       tags:
       - Account
@@ -1617,7 +1507,7 @@ paths:
             - $ref: '#/definitions/Response'
             - properties:
                 Data:
-                  $ref: '#/definitions/response.AccountMapping'
+                  $ref: '#/definitions/AccountMapping'
               type: object
       tags:
       - Account/Mapping
@@ -1646,7 +1536,7 @@ paths:
             - $ref: '#/definitions/Response'
             - properties:
                 Data:
-                  $ref: '#/definitions/response.AccountMapping'
+                  $ref: '#/definitions/AccountMapping'
               type: object
       tags:
       - Account/Mapping
@@ -1668,7 +1558,7 @@ paths:
             - $ref: '#/definitions/Response'
             - properties:
                 Data:
-                  $ref: '#/definitions/response.List-response_AccountMapping'
+                  $ref: '#/definitions/List-AccountMapping'
               type: object
       tags:
       - Account/Mapping
@@ -1700,7 +1590,7 @@ paths:
           schema:
             $ref: '#/definitions/NoContent'
       tags:
-      - /Product/Bill/Import
+      - Product/Bill/Import
   /account/{accountID}/product/transCategory/{id}/mapping:
     delete:
       consumes:
@@ -1721,7 +1611,7 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/request.ProductMappingTransactionCategory'
+          $ref: '#/definitions/ProductMappingTransactionCategory'
       produces:
       - application/json
       responses:
@@ -1750,7 +1640,7 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/request.ProductMappingTransactionCategory'
+          $ref: '#/definitions/ProductMappingTransactionCategory'
       produces:
       - application/json
       responses:
@@ -1775,7 +1665,7 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/request.ProductGetMappingTree'
+          $ref: '#/definitions/ProductGetMappingTree'
       produces:
       - application/json
       responses:
@@ -1786,10 +1676,10 @@ paths:
             - $ref: '#/definitions/Response'
             - properties:
                 Data:
-                  $ref: '#/definitions/response.ProductMappingTree'
+                  $ref: '#/definitions/ProductMappingTree'
               type: object
       tags:
-      - /Product/TransCategory/Mapping
+      - Product/TransCategory/Mapping
   /account/{accountID}/transaction/{id}:
     delete:
       consumes:
@@ -1838,7 +1728,7 @@ paths:
             - $ref: '#/definitions/Response'
             - properties:
                 Data:
-                  $ref: '#/definitions/response.TransactionDetail'
+                  $ref: '#/definitions/TransactionDetail'
               type: object
       tags:
       - Transaction
@@ -1861,7 +1751,7 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/request.TransactionCreateOne'
+          $ref: '#/definitions/TransactionCreateOne'
       produces:
       - application/json
       responses:
@@ -1872,7 +1762,7 @@ paths:
             - $ref: '#/definitions/Response'
             - properties:
                 Data:
-                  $ref: '#/definitions/response.TransactionDetail'
+                  $ref: '#/definitions/TransactionDetail'
               type: object
       tags:
       - Transaction
@@ -1895,7 +1785,7 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/request.TransactionCreateOne'
+          $ref: '#/definitions/TransactionCreateOne'
       produces:
       - application/json
       responses:
@@ -1906,7 +1796,7 @@ paths:
             - $ref: '#/definitions/Response'
             - properties:
                 Data:
-                  $ref: '#/definitions/response.TransactionDetail'
+                  $ref: '#/definitions/TransactionDetail'
               type: object
       tags:
       - Transaction
@@ -1925,7 +1815,7 @@ paths:
         name: data
         required: true
         schema:
-          $ref: '#/definitions/request.TransactionAmountRank'
+          $ref: '#/definitions/TransactionAmountRank'
       produces:
       - application/json
       responses:
@@ -1936,7 +1826,7 @@ paths:
             - $ref: '#/definitions/Response'
             - properties:
                 Data:
-                  $ref: '#/definitions/response.List-response_TransactionDetailList'
+                  $ref: '#/definitions/List-response_TransactionDetailList'
               type: object
       tags:
       - Transaction
@@ -1955,7 +1845,7 @@ paths:
         name: data
         required: true
         schema:
-          $ref: '#/definitions/request.TransactionCategoryAmountRank'
+          $ref: '#/definitions/TransactionCategoryAmountRank'
       produces:
       - application/json
       responses:
@@ -1966,7 +1856,7 @@ paths:
             - $ref: '#/definitions/Response'
             - properties:
                 Data:
-                  $ref: '#/definitions/response.List-response_TransactionCategoryAmountRank'
+                  $ref: '#/definitions/List-TransactionCategoryAmountRank'
               type: object
       tags:
       - Transaction
@@ -1996,7 +1886,7 @@ paths:
             - $ref: '#/definitions/Response'
             - properties:
                 Data:
-                  $ref: '#/definitions/response.AccountDetail'
+                  $ref: '#/definitions/AccountDetail'
               type: object
       tags:
       - Account/Template
@@ -2015,7 +1905,7 @@ paths:
         name: data
         required: true
         schema:
-          $ref: '#/definitions/request.TransactionDayStatistic'
+          $ref: '#/definitions/TransactionDayStatistic'
       produces:
       - application/json
       responses:
@@ -2026,7 +1916,7 @@ paths:
             - $ref: '#/definitions/Response'
             - properties:
                 Data:
-                  $ref: '#/definitions/response.List-response_TransactionDayStatistic'
+                  $ref: '#/definitions/List-TransactionDayStatistic'
               type: object
       tags:
       - Transaction
@@ -2050,7 +1940,7 @@ paths:
             - $ref: '#/definitions/Response'
             - properties:
                 Data:
-                  $ref: '#/definitions/response.List-response_TransactionDetail'
+                  $ref: '#/definitions/List-TransactionDetail'
               type: object
       tags:
       - Transaction
@@ -2069,7 +1959,7 @@ paths:
         name: data
         required: true
         schema:
-          $ref: '#/definitions/request.TransactionMonthStatistic'
+          $ref: '#/definitions/TransactionMonthStatistic'
       produces:
       - application/json
       responses:
@@ -2080,7 +1970,7 @@ paths:
             - $ref: '#/definitions/Response'
             - properties:
                 Data:
-                  $ref: '#/definitions/response.List-response_TransactionStatistic'
+                  $ref: '#/definitions/List-TransactionStatistic'
               type: object
       tags:
       - Transaction
@@ -2099,7 +1989,7 @@ paths:
         name: data
         required: true
         schema:
-          $ref: '#/definitions/request.TransactionTiming'
+          $ref: '#/definitions/TransactionTiming'
       produces:
       - application/json
       responses:
@@ -2110,7 +2000,7 @@ paths:
             - $ref: '#/definitions/Response'
             - properties:
                 Data:
-                  $ref: '#/definitions/response.TransactionTiming'
+                  $ref: '#/definitions/TransactionTiming'
               type: object
       tags:
       - Transaction/Timing
@@ -2134,7 +2024,7 @@ paths:
         name: data
         required: true
         schema:
-          $ref: '#/definitions/request.TransactionTiming'
+          $ref: '#/definitions/TransactionTiming'
       produces:
       - application/json
       responses:
@@ -2145,7 +2035,7 @@ paths:
             - $ref: '#/definitions/Response'
             - properties:
                 Data:
-                  $ref: '#/definitions/response.TransactionTiming'
+                  $ref: '#/definitions/TransactionTiming'
               type: object
       tags:
       - Transaction/Timing
@@ -2164,7 +2054,7 @@ paths:
         name: data
         required: true
         schema:
-          $ref: '#/definitions/request.PageData'
+          $ref: '#/definitions/PageData'
       produces:
       - application/json
       responses:
@@ -2175,7 +2065,7 @@ paths:
             - $ref: '#/definitions/Response'
             - properties:
                 Data:
-                  $ref: '#/definitions/response.List-response_TransactionTiming'
+                  $ref: '#/definitions/List-TransactionTiming'
               type: object
       tags:
       - Transaction/Timing
@@ -2194,7 +2084,7 @@ paths:
         name: data
         required: true
         schema:
-          $ref: '#/definitions/request.TransactionTotal'
+          $ref: '#/definitions/TransactionTotal'
       produces:
       - application/json
       responses:
@@ -2205,7 +2095,7 @@ paths:
             - $ref: '#/definitions/Response'
             - properties:
                 Data:
-                  $ref: '#/definitions/response.TransactionTotal'
+                  $ref: '#/definitions/TransactionTotal'
               type: object
       tags:
       - Transaction
@@ -2240,7 +2130,7 @@ paths:
             - $ref: '#/definitions/Response'
             - properties:
                 Data:
-                  $ref: '#/definitions/response.AccountUser'
+                  $ref: '#/definitions/AccountUser'
               type: object
       tags:
       - Account/User
@@ -2262,7 +2152,7 @@ paths:
             - $ref: '#/definitions/Response'
             - properties:
                 Data:
-                  $ref: '#/definitions/response.AccountUserConfig'
+                  $ref: '#/definitions/AccountUserConfig'
               type: object
       tags:
       - Account/User/Config
@@ -2292,7 +2182,7 @@ paths:
             - $ref: '#/definitions/Response'
             - properties:
                 Data:
-                  $ref: '#/definitions/response.AccountUserConfig'
+                  $ref: '#/definitions/AccountUserConfig'
               type: object
       tags:
       - Account/User/Config
@@ -2322,7 +2212,7 @@ paths:
             - $ref: '#/definitions/Response'
             - properties:
                 Data:
-                  $ref: '#/definitions/response.AccountUserInvitation'
+                  $ref: '#/definitions/AccountUserInvitation'
               type: object
       tags:
       - Account/User/Invitation
@@ -2346,7 +2236,7 @@ paths:
             - $ref: '#/definitions/Response'
             - properties:
                 Data:
-                  $ref: '#/definitions/response.List-response_AccountUser'
+                  $ref: '#/definitions/List-AccountUser'
               type: object
       tags:
       - Account/User
@@ -2368,7 +2258,7 @@ paths:
             - $ref: '#/definitions/Response'
             - properties:
                 Data:
-                  $ref: '#/definitions/response.UserCurrentClientInfo'
+                  $ref: '#/definitions/UserCurrentClientInfo'
               type: object
       tags:
       - Account
@@ -2391,7 +2281,7 @@ paths:
             - $ref: '#/definitions/Response'
             - properties:
                 Data:
-                  $ref: '#/definitions/response.AccountDetail'
+                  $ref: '#/definitions/AccountDetail'
               type: object
       tags:
       - Account
@@ -2420,7 +2310,7 @@ paths:
             - $ref: '#/definitions/Response'
             - properties:
                 Data:
-                  $ref: '#/definitions/response.AccountDetail'
+                  $ref: '#/definitions/AccountDetail'
               type: object
       tags:
       - Account
@@ -2442,7 +2332,7 @@ paths:
             - $ref: '#/definitions/Response'
             - properties:
                 Data:
-                  $ref: '#/definitions/response.AccountDetail'
+                  $ref: '#/definitions/AccountDetail'
               type: object
       tags:
       - Account/Template
@@ -2458,7 +2348,7 @@ paths:
             - $ref: '#/definitions/Response'
             - properties:
                 Data:
-                  $ref: '#/definitions/response.List-response_AccountDetail'
+                  $ref: '#/definitions/List-AccountDetail'
               type: object
       tags:
       - Account
@@ -2480,7 +2370,7 @@ paths:
             - $ref: '#/definitions/Response'
             - properties:
                 Data:
-                  $ref: '#/definitions/response.List-response_AccountDetail'
+                  $ref: '#/definitions/List-AccountDetail'
               type: object
       tags:
       - Account
@@ -2510,7 +2400,7 @@ paths:
             - $ref: '#/definitions/Response'
             - properties:
                 Data:
-                  $ref: '#/definitions/response.AccountMapping'
+                  $ref: '#/definitions/AccountMapping'
               type: object
       tags:
       - Account/Mapping
@@ -2543,7 +2433,7 @@ paths:
             - $ref: '#/definitions/Response'
             - properties:
                 Data:
-                  $ref: '#/definitions/response.AccountTemplateList'
+                  $ref: '#/definitions/AccountTemplateList'
               type: object
       tags:
       - Account/Template
@@ -2573,7 +2463,7 @@ paths:
             - $ref: '#/definitions/Response'
             - properties:
                 Data:
-                  $ref: '#/definitions/response.AccountUserInfo'
+                  $ref: '#/definitions/AccountUserInfo'
               type: object
       tags:
       - Account/User
@@ -2595,7 +2485,7 @@ paths:
             - $ref: '#/definitions/Response'
             - properties:
                 Data:
-                  $ref: '#/definitions/response.AccountUserInvitation'
+                  $ref: '#/definitions/AccountUserInvitation'
               type: object
       tags:
       - Account/User/Invitation
@@ -2617,7 +2507,7 @@ paths:
             - $ref: '#/definitions/Response'
             - properties:
                 Data:
-                  $ref: '#/definitions/response.AccountUserInvitation'
+                  $ref: '#/definitions/AccountUserInvitation'
               type: object
       tags:
       - Account/User/Invitation
@@ -2642,7 +2532,7 @@ paths:
             - $ref: '#/definitions/Response'
             - properties:
                 Data:
-                  $ref: '#/definitions/response.List-response_AccountUserInvitation'
+                  $ref: '#/definitions/List-AccountUserInvitation'
               type: object
       tags:
       - Account/User/Invitation
@@ -2668,7 +2558,7 @@ paths:
             - $ref: '#/definitions/Response'
             - properties:
                 Data:
-                  $ref: '#/definitions/response.ProductTransactionCategoryList'
+                  $ref: '#/definitions/ProductTransactionCategoryList'
               type: object
       tags:
       - Product/TransCategory
@@ -2688,7 +2578,7 @@ paths:
             - $ref: '#/definitions/Response'
             - properties:
                 Data:
-                  $ref: '#/definitions/response.ProductList'
+                  $ref: '#/definitions/ProductList'
               type: object
       tags:
       - Product
@@ -2704,7 +2594,7 @@ paths:
             - $ref: '#/definitions/Response'
             - properties:
                 Data:
-                  $ref: '#/definitions/response.CommonCaptcha'
+                  $ref: '#/definitions/CommonCaptcha'
               type: object
       tags:
       - Common
@@ -2718,7 +2608,7 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/request.CommonSendEmailCaptcha'
+          $ref: '#/definitions/CommonSendEmailCaptcha'
       produces:
       - application/json
       responses:
@@ -2729,7 +2619,7 @@ paths:
             - $ref: '#/definitions/Response'
             - properties:
                 Data:
-                  $ref: '#/definitions/response.ExpirationTime'
+                  $ref: '#/definitions/ExpirationTime'
               type: object
       tags:
       - Common
@@ -2743,7 +2633,7 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/request.UserLogin'
+          $ref: '#/definitions/UserLogin'
       produces:
       - application/json
       responses:
@@ -2754,7 +2644,7 @@ paths:
             - $ref: '#/definitions/Response'
             - properties:
                 Data:
-                  $ref: '#/definitions/response.Login'
+                  $ref: '#/definitions/Login'
               type: object
       tags:
       - User
@@ -2768,7 +2658,7 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/request.UserForgetPassword'
+          $ref: '#/definitions/UserForgetPassword'
       produces:
       - application/json
       responses:
@@ -2788,7 +2678,7 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/request.UserRegister'
+          $ref: '#/definitions/UserRegister'
       produces:
       - application/json
       responses:
@@ -2799,7 +2689,7 @@ paths:
             - $ref: '#/definitions/Response'
             - properties:
                 Data:
-                  $ref: '#/definitions/response.Login'
+                  $ref: '#/definitions/Login'
               type: object
       tags:
       - User
@@ -2813,7 +2703,7 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/request.TourApply'
+          $ref: '#/definitions/TourApply'
       produces:
       - application/json
       responses:
@@ -2824,7 +2714,7 @@ paths:
             - $ref: '#/definitions/Response'
             - properties:
                 Data:
-                  $ref: '#/definitions/response.Login'
+                  $ref: '#/definitions/Login'
               type: object
       tags:
       - User
@@ -2838,7 +2728,7 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/request.UserGetAccountInvitationList'
+          $ref: '#/definitions/UserGetAccountInvitationList'
       produces:
       - application/json
       responses:
@@ -2849,7 +2739,7 @@ paths:
             - $ref: '#/definitions/Response'
             - properties:
                 Data:
-                  $ref: '#/definitions/response.AccountUserInvitation'
+                  $ref: '#/definitions/AccountUserInvitation'
               type: object
       tags:
       - User/Friend/Invitation
@@ -2863,7 +2753,7 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/request.Id'
+          $ref: '#/definitions/Id'
       produces:
       - application/json
       responses:
@@ -2883,7 +2773,7 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/request.UserSendEmail'
+          $ref: '#/definitions/UserSendEmail'
       produces:
       - application/json
       responses:
@@ -2894,7 +2784,7 @@ paths:
             - $ref: '#/definitions/Response'
             - properties:
                 Data:
-                  $ref: '#/definitions/response.ExpirationTime'
+                  $ref: '#/definitions/ExpirationTime'
               type: object
       tags:
       - User
@@ -2907,7 +2797,7 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/request.Id'
+          $ref: '#/definitions/Id'
       produces:
       - application/json
       responses:
@@ -2927,7 +2817,7 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/request.UserUpdateInfo'
+          $ref: '#/definitions/UserUpdateInfo'
       produces:
       - application/json
       responses:
@@ -2949,7 +2839,7 @@ paths:
             - $ref: '#/definitions/Response'
             - properties:
                 Data:
-                  $ref: '#/definitions/response.List-response_UserFriendInvitation'
+                  $ref: '#/definitions/List-UserFriendInvitation'
               type: object
       tags:
       - User/Friend/Invitation
@@ -2962,7 +2852,7 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/request.UserCreateFriendInvitation'
+          $ref: '#/definitions/UserCreateFriendInvitation'
       produces:
       - application/json
       responses:
@@ -2973,7 +2863,7 @@ paths:
             - $ref: '#/definitions/Response'
             - properties:
                 Data:
-                  $ref: '#/definitions/response.UserFriendInvitation'
+                  $ref: '#/definitions/UserFriendInvitation'
               type: object
       tags:
       - User/Friend/Invitation
@@ -2995,7 +2885,7 @@ paths:
             - $ref: '#/definitions/Response'
             - properties:
                 Data:
-                  $ref: '#/definitions/response.UserFriendInvitation'
+                  $ref: '#/definitions/UserFriendInvitation'
               type: object
       tags:
       - User/Friend/Invitation
@@ -3017,7 +2907,7 @@ paths:
             - $ref: '#/definitions/Response'
             - properties:
                 Data:
-                  $ref: '#/definitions/response.UserFriendInvitation'
+                  $ref: '#/definitions/UserFriendInvitation'
               type: object
       tags:
       - User/Friend/Invitation
@@ -3033,7 +2923,7 @@ paths:
             - $ref: '#/definitions/Response'
             - properties:
                 Data:
-                  $ref: '#/definitions/response.List-response_UserInfo'
+                  $ref: '#/definitions/List-UserInfo'
               type: object
       tags:
       - User/Friend
@@ -3047,7 +2937,7 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/request.UserHome'
+          $ref: '#/definitions/UserHome'
       produces:
       - application/json
       responses:
@@ -3058,7 +2948,7 @@ paths:
             - $ref: '#/definitions/Response'
             - properties:
                 Data:
-                  $ref: '#/definitions/response.UserHome'
+                  $ref: '#/definitions/UserHome'
               type: object
       tags:
       - User
@@ -3072,7 +2962,7 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/request.UserUpdatePassword'
+          $ref: '#/definitions/UserUpdatePassword'
       produces:
       - application/json
       responses:
@@ -3092,7 +2982,7 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/request.UserSearch'
+          $ref: '#/definitions/UserSearch'
       produces:
       - application/json
       responses:
@@ -3103,7 +2993,7 @@ paths:
             - $ref: '#/definitions/Response'
             - properties:
                 Data:
-                  $ref: '#/definitions/response.List-response_UserInfo'
+                  $ref: '#/definitions/List-UserInfo'
               type: object
       tags:
       - User
@@ -3121,7 +3011,7 @@ paths:
             - $ref: '#/definitions/Response'
             - properties:
                 Data:
-                  $ref: '#/definitions/response.Token'
+                  $ref: '#/definitions/Token'
               type: object
       tags:
       - User
@@ -3137,7 +3027,7 @@ paths:
             - $ref: '#/definitions/Response'
             - properties:
                 Data:
-                  $ref: '#/definitions/response.UserTransactionShareConfig'
+                  $ref: '#/definitions/UserTransactionShareConfig'
               type: object
       tags:
       - User/Config
@@ -3150,7 +3040,7 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/request.UserTransactionShareConfigUpdate'
+          $ref: '#/definitions/UserTransactionShareConfigUpdate'
       produces:
       - application/json
       responses:
@@ -3161,7 +3051,7 @@ paths:
             - $ref: '#/definitions/Response'
             - properties:
                 Data:
-                  $ref: '#/definitions/response.UserTransactionShareConfig'
+                  $ref: '#/definitions/UserTransactionShareConfig'
               type: object
       tags:
       - User/Config
