@@ -22,10 +22,10 @@ type CategoryApi struct {
 //	@Tags		Category
 //	@Accept		json
 //	@Produce	json
-//	@Param		accountID	path		int							true	"Account ID"
+//	@Param		accountId	path		int							true	"Account ID"
 //	@Param		body		body		request.CategoryCreateOne	true	"category data"
 //	@Success	200			{object}	response.Data{Data=response.CategoryOne}
-//	@Router		/account/{accountID}/category [post]
+//	@Router		/account/{accountId}/category [post]
 func (catApi *CategoryApi) CreateOne(ctx *gin.Context) {
 	var requestData request.CategoryCreateOne
 	if err := ctx.ShouldBindJSON(&requestData); err != nil {
@@ -70,10 +70,10 @@ func (catApi *CategoryApi) CreateOne(ctx *gin.Context) {
 //	@Tags		Category/Father
 //	@Accept		json
 //	@Produce	json
-//	@Param		accountID	path		int								true	"Account ID"
+//	@Param		accountId	path		int								true	"Account ID"
 //	@Param		body		body		request.CategoryCreateOneFather	true	"father category data"
 //	@Success	200			{object}	response.Data{Data=response.FatherOne}
-//	@Router		/account/{accountID}/category/father [post]
+//	@Router		/account/{accountId}/category/father [post]
 func (catApi *CategoryApi) CreateOneFather(ctx *gin.Context) {
 	var requestData request.CategoryCreateOneFather
 	if err := ctx.ShouldBindJSON(&requestData); err != nil {
@@ -106,11 +106,11 @@ func (catApi *CategoryApi) CreateOneFather(ctx *gin.Context) {
 //	@Tags		Category
 //	@Accept		json
 //	@Produce	json
-//	@Param		accountID	path		int						true	"Account ID"
+//	@Param		accountId	path		int						true	"Account ID"
 //	@Param		id			path		int						true	"Category ID"
 //	@Param		body		body		request.CategoryMove	true	"move data"
 //	@Success	204			{object}	response.NoContent
-//	@Router		/account/{accountID}/category/{id}/move [put]
+//	@Router		/account/{accountId}/category/{id}/move [put]
 func (catApi *CategoryApi) MoveCategory(ctx *gin.Context) {
 	var requestData request.CategoryMove
 	if err := ctx.ShouldBindJSON(&requestData); err != nil {
@@ -163,11 +163,11 @@ func (catApi *CategoryApi) MoveCategory(ctx *gin.Context) {
 //	@Tags		Category/Father
 //	@Accept		json
 //	@Produce	json
-//	@Param		accountID	path		int							true	"Account ID"
+//	@Param		accountId	path		int							true	"Account ID"
 //	@Param		id			path		int							true	"Father ID"
 //	@Param		body		body		request.CategoryMoveFather	true	"move data"
 //	@Success	204			{object}	response.NoContent
-//	@Router		/account/{accountID}/category/father/{id}/move [put]
+//	@Router		/account/{accountId}/category/father/{id}/move [put]
 func (catApi *CategoryApi) MoveFather(ctx *gin.Context) {
 	var requestData request.CategoryMoveFather
 	if err := ctx.ShouldBindJSON(&requestData); err != nil {
@@ -208,11 +208,11 @@ func (catApi *CategoryApi) MoveFather(ctx *gin.Context) {
 //	@Tags		Category
 //	@Accept		json
 //	@Produce	json
-//	@Param		accountID	path		int							true	"Account ID"
+//	@Param		accountId	path		int							true	"Account ID"
 //	@Param		id			path		int							true	"Category ID"
 //	@Param		body		body		request.CategoryUpdateOne	true	"update data"
 //	@Success	204			{object}	response.NoContent
-//	@Router		/account/{accountID}/category/{id} [put]
+//	@Router		/account/{accountId}/category/{id} [put]
 func (catApi *CategoryApi) Update(ctx *gin.Context) {
 	var requestData request.CategoryUpdateOne
 	if err := ctx.ShouldBindJSON(&requestData); err != nil {
@@ -246,11 +246,11 @@ func (catApi *CategoryApi) Update(ctx *gin.Context) {
 //	@Tags		Category/Father
 //	@Accept		json
 //	@Produce	json
-//	@Param		accountID	path		int				true	"Account ID"
+//	@Param		accountId	path		int				true	"Account ID"
 //	@Param		id			path		int				true	"Father ID"
 //	@Param		body		body		request.Name	true	"update data"
 //	@Success	200			{object}	response.Data{Data=response.FatherOne}
-//	@Router		/account/{accountID}/category/father/{id} [put]
+//	@Router		/account/{accountId}/category/father/{id} [put]
 func (catApi *CategoryApi) UpdateFather(ctx *gin.Context) {
 	var requestData request.Name
 	if err := ctx.ShouldBindJSON(&requestData); err != nil {
@@ -278,10 +278,10 @@ func (catApi *CategoryApi) UpdateFather(ctx *gin.Context) {
 //	@Tags		Category
 //	@Accept		json
 //	@Produce	json
-//	@Param		accountID	path		int						true	"Account ID"
+//	@Param		accountId	path		int						true	"Account ID"
 //	@Param		body		body		request.CategoryGetTree	true	"query condition"
 //	@Success	200			{object}	response.Data{Data=response.CategoryTree}
-//	@Router		/account/{accountID}/category/tree [get]
+//	@Router		/account/{accountId}/category/tree [get]
 func (catApi *CategoryApi) GetTree(ctx *gin.Context) {
 	var requestData request.CategoryGetTree
 	var err error
@@ -317,10 +317,10 @@ func (catApi *CategoryApi) GetTree(ctx *gin.Context) {
 //	@Tags		Category
 //	@Accept		json
 //	@Produce	json
-//	@Param		accountID	path		int						true	"Account ID"
+//	@Param		accountId	path		int						true	"Account ID"
 //	@Param		body		body		request.CategoryGetList	true	"query condition"
 //	@Success	200			{object}	response.Data{Data=response.List[response.CategoryDetail]{}}
-//	@Router		/account/{accountID}/category/tree [get]
+//	@Router		/account/{accountId}/category/tree [get]
 func (catApi *CategoryApi) GetList(ctx *gin.Context) {
 	var requestData request.CategoryGetList
 	var err error
@@ -354,10 +354,10 @@ func (catApi *CategoryApi) GetList(ctx *gin.Context) {
 //
 //	@Tags		Category
 //	@Produce	json
-//	@Param		accountID	path		int	true	"Account ID"
+//	@Param		accountId	path		int	true	"Account ID"
 //	@Param		id			path		int	true	"Category ID"
 //	@Success	204			{object}	response.NoContent
-//	@Router		/account/{accountID}/category/{id} [delete]
+//	@Router		/account/{accountId}/category/{id} [delete]
 func (catApi *CategoryApi) Delete(ctx *gin.Context) {
 	var category categoryModel.Category
 	err := db.Db.First(&category, ctx.Param("id")).Error
@@ -380,10 +380,10 @@ func (catApi *CategoryApi) Delete(ctx *gin.Context) {
 //
 //	@Tags		Category/Father
 //	@Produce	json
-//	@Param		accountID	path		int	true	"Account ID"
+//	@Param		accountId	path		int	true	"Account ID"
 //	@Param		id			path		int	true	"Father ID"
 //	@Success	204			{object}	response.NoContent
-//	@Router		/account/{accountID}/category/father/{id} [delete]
+//	@Router		/account/{accountId}/category/father/{id} [delete]
 func (catApi *CategoryApi) DeleteFather(ctx *gin.Context) {
 	var father categoryModel.Father
 	err := db.Db.First(&father, ctx.Param("id")).Error
@@ -411,11 +411,11 @@ func (catApi *CategoryApi) DeleteFather(ctx *gin.Context) {
 //	@Tags		Category
 //	@Accept		json
 //	@Produce	json
-//	@Param		accountID	path		int						true	"Account ID"
+//	@Param		accountId	path		int						true	"Account ID"
 //	@Param		id			path		int						true	"Category ID"
 //	@Param		body		body		request.CategoryMapping	true	"data"
 //	@Success	204			{object}	response.NoContent
-//	@Router		/account/{accountID}/category/{id}/mapping [post]
+//	@Router		/account/{accountId}/category/{id}/mapping [post]
 func (catApi *CategoryApi) MappingCategory(ctx *gin.Context) {
 	// 获取数据
 	var requestData request.CategoryMapping
@@ -461,11 +461,11 @@ func (catApi *CategoryApi) MappingCategory(ctx *gin.Context) {
 //	@Tags		Category
 //	@Accept		json
 //	@Produce	json
-//	@Param		accountID	path		int						true	"Account ID"
+//	@Param		accountId	path		int						true	"Account ID"
 //	@Param		id			path		int						true	"Category ID"
 //	@Param		body		body		request.CategoryMapping	true	"data"
 //	@Success	204			{object}	response.NoContent
-//	@Router		/account/{accountID}/category/{id}/mapping [delete]
+//	@Router		/account/{accountId}/category/{id}/mapping [delete]
 func (catApi *CategoryApi) DeleteCategoryMapping(ctx *gin.Context) {
 	// 获取数据
 	var requestData request.CategoryMapping
@@ -507,10 +507,10 @@ func (catApi *CategoryApi) DeleteCategoryMapping(ctx *gin.Context) {
 //	@Tags		Category
 //	@Accept		json
 //	@Produce	json
-//	@Param		accountID	path		int								true	"Account ID"
+//	@Param		accountId	path		int								true	"Account ID"
 //	@Param		body		body		request.CategoryGetMappingTree	true	"query condition"
 //	@Success	200			{object}	response.Data{Data=response.CategoryMappingTree}
-//	@Router		/account/{accountID}/category/mapping/tree [get]
+//	@Router		/account/{accountId}/category/mapping/tree [get]
 func (catApi *CategoryApi) GetMappingTree(ctx *gin.Context) {
 	var requestData request.CategoryGetMappingTree
 	if err := ctx.ShouldBindJSON(&requestData); err != nil {

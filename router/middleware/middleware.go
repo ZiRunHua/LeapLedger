@@ -38,7 +38,7 @@ func NoTourist() gin.HandlerFunc {
 func JWTAuth() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		token := apiUtil.ContextFunc.GetToken(ctx)
-		if token == "" {
+		if len(token) == 0 {
 			response.TokenExpired(ctx)
 			return
 		}

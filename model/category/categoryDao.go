@@ -49,7 +49,7 @@ func (cd *CategoryDao) Update(categoryId uint, data CategoryUpdateData) error {
 			return err
 		}
 	}
-	err := cd.db.Model(&updateData).Where("category_id = ?", categoryId).Updates(updateData).Error
+	err := cd.db.Model(&updateData).Where("id = ?", categoryId).Updates(updateData).Error
 	if errors.Is(err, gorm.ErrDuplicatedKey) {
 		return global.ErrCategorySameName
 	}

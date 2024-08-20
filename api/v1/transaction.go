@@ -25,10 +25,10 @@ type TransactionApi struct {
 //	@Tags		Transaction
 //	@Accept		json
 //	@Produce	json
-//	@Param		accountID	path		int	true	"Account ID"
+//	@Param		accountId	path		int	true	"Account ID"
 //	@Param		id			path		int	true	"Transaction ID"
 //	@Success	200			{object}	response.Data{Data=response.TransactionDetail}
-//	@Router		/account/{accountID}/transaction/{id} [get]
+//	@Router		/account/{accountId}/transaction/{id} [get]
 func (t *TransactionApi) GetOne(ctx *gin.Context) {
 	trans, ok := contextFunc.GetTransByParam(ctx)
 	if false == ok {
@@ -47,11 +47,11 @@ func (t *TransactionApi) GetOne(ctx *gin.Context) {
 //	@Tags		Transaction
 //	@Accept		json
 //	@Produce	json
-//	@Param		accountID	path		int								true	"Account ID"
+//	@Param		accountId	path		int								true	"Account ID"
 //	@Param		id			path		int								true	"Transaction ID"
 //	@Param		body		body		request.TransactionCreateOne	true	"transaction data"
 //	@Success	200			{object}	response.Data{Data=response.TransactionDetail}
-//	@Router		/account/{accountID}/transaction/{id} [post]
+//	@Router		/account/{accountId}/transaction/{id} [post]
 func (t *TransactionApi) CreateOne(ctx *gin.Context) {
 	var requestData request.TransactionCreateOne
 	if err := ctx.ShouldBindJSON(&requestData); err != nil {
@@ -98,11 +98,11 @@ func (t *TransactionApi) CreateOne(ctx *gin.Context) {
 //	@Tags		Transaction
 //	@Accept		json
 //	@Produce	json
-//	@Param		accountID	path		int								true	"Account ID"
+//	@Param		accountId	path		int								true	"Account ID"
 //	@Param		id			path		int								true	"Transaction ID"
 //	@Param		body		body		request.TransactionCreateOne	true	"Transaction data"
 //	@Success	200			{object}	response.Data{Data=response.TransactionDetail}
-//	@Router		/account/{accountID}/transaction/{id} [put]
+//	@Router		/account/{accountId}/transaction/{id} [put]
 func (t *TransactionApi) Update(ctx *gin.Context) {
 	var requestData request.TransactionUpdateOne
 	if err := ctx.ShouldBindJSON(&requestData); err != nil {
@@ -149,10 +149,10 @@ func (t *TransactionApi) Update(ctx *gin.Context) {
 //	@Tags		Transaction
 //	@Accept		json
 //	@Produce	json
-//	@Param		accountID	path		int	true	"Account ID"
+//	@Param		accountId	path		int	true	"Account ID"
 //	@Param		id			path		int	true	"Transaction ID"
 //	@Success	200			{object}	response.NoContent
-//	@Router		/account/{accountID}/transaction/{id} [delete]
+//	@Router		/account/{accountId}/transaction/{id} [delete]
 func (t *TransactionApi) Delete(ctx *gin.Context) {
 	trans, pass := contextFunc.GetTransByParam(ctx)
 	if false == pass {
@@ -179,9 +179,9 @@ func (t *TransactionApi) Delete(ctx *gin.Context) {
 //	@Tags		Transaction
 //	@Accept		json
 //	@Produce	json
-//	@Param		accountID	path		int	true	"Account ID"
+//	@Param		accountId	path		int	true	"Account ID"
 //	@Success	200			{object}	response.Data{Data=response.List[response.TransactionDetail]{}}
-//	@Router		/account/{accountID}/transaction/list [get]
+//	@Router		/account/{accountId}/transaction/list [get]
 func (t *TransactionApi) GetList(ctx *gin.Context) {
 	var requestData request.TransactionGetList
 	if err := ctx.ShouldBindJSON(&requestData); err != nil {
@@ -220,10 +220,10 @@ func (t *TransactionApi) GetList(ctx *gin.Context) {
 //	@Tags		Transaction
 //	@Accept		json
 //	@Produce	json
-//	@Param		accountID	path		int							true	"Account ID"
+//	@Param		accountId	path		int							true	"Account ID"
 //	@Param		data		body		request.TransactionTotal	true	"Transaction total data"
 //	@Success	200			{object}	response.Data{Data=response.TransactionTotal{}}
-//	@Router		/account/{accountID}/transaction/total [get]
+//	@Router		/account/{accountId}/transaction/total [get]
 func (t *TransactionApi) GetTotal(ctx *gin.Context) {
 	var requestData request.TransactionTotal
 	if err := ctx.ShouldBindJSON(&requestData); err != nil {
@@ -253,10 +253,10 @@ func (t *TransactionApi) GetTotal(ctx *gin.Context) {
 //	@Tags		Transaction
 //	@Accept		json
 //	@Produce	json
-//	@Param		accountID	path		int									true	"Account ID"
+//	@Param		accountId	path		int									true	"Account ID"
 //	@Param		data		body		request.TransactionMonthStatistic	true	"condition"
 //	@Success	200			{object}	response.Data{Data=response.List[response.TransactionStatistic]{}}
-//	@Router		/account/{accountID}/transaction/month/statistic [get]
+//	@Router		/account/{accountId}/transaction/month/statistic [get]
 func (t *TransactionApi) GetMonthStatistic(ctx *gin.Context) {
 	var requestData request.TransactionMonthStatistic
 	if err := ctx.ShouldBindJSON(&requestData); err != nil {
@@ -300,10 +300,10 @@ func (t *TransactionApi) GetMonthStatistic(ctx *gin.Context) {
 //	@Tags		Transaction
 //	@Accept		json
 //	@Produce	json
-//	@Param		accountID	path		int								true	"Account ID"
+//	@Param		accountId	path		int								true	"Account ID"
 //	@Param		data		body		request.TransactionDayStatistic	true	"condition"
 //	@Success	200			{object}	response.Data{Data=response.List[response.TransactionDayStatistic]{}}
-//	@Router		/account/{accountID}/transaction/day/statistic [get]
+//	@Router		/account/{accountId}/transaction/day/statistic [get]
 func (t *TransactionApi) GetDayStatistic(ctx *gin.Context) {
 	var requestData request.TransactionDayStatistic
 	if err := ctx.ShouldBindJSON(&requestData); err != nil {
@@ -368,10 +368,10 @@ func (t *TransactionApi) GetDayStatistic(ctx *gin.Context) {
 //	@Tags		Transaction
 //	@Accept		json
 //	@Produce	json
-//	@Param		accountID	path		int										true	"Account ID"
+//	@Param		accountId	path		int										true	"Account ID"
 //	@Param		data		body		request.TransactionCategoryAmountRank	true	"condition"
 //	@Success	200			{object}	response.Data{Data=response.List[response.TransactionCategoryAmountRank]{}}
-//	@Router		/account/{accountID}/transaction/category/amount/rank [get]
+//	@Router		/account/{accountId}/transaction/category/amount/rank [get]
 func (t *TransactionApi) GetCategoryAmountRank(ctx *gin.Context) {
 	var requestData request.TransactionCategoryAmountRank
 	if err := ctx.ShouldBindJSON(&requestData); err != nil {
@@ -452,10 +452,10 @@ func (t *TransactionApi) GetCategoryAmountRank(ctx *gin.Context) {
 //	@Tags		Transaction
 //	@Accept		json
 //	@Produce	json
-//	@Param		accountID	path		int								true	"Account ID"
+//	@Param		accountId	path		int								true	"Account ID"
 //	@Param		data		body		request.TransactionAmountRank	true	"condition"
 //	@Success	200			{object}	response.Data{Data=response.List[response.TransactionDetailList]{}}
-//	@Router		/account/{accountID}/transaction/amount/rank [get]
+//	@Router		/account/{accountId}/transaction/amount/rank [get]
 func (t *TransactionApi) GetAmountRank(ctx *gin.Context) {
 	var requestData request.TransactionAmountRank
 	if err := ctx.ShouldBindJSON(&requestData); err != nil {
@@ -490,10 +490,10 @@ func (t *TransactionApi) GetAmountRank(ctx *gin.Context) {
 //	@Tags		Transaction/Timing
 //	@Accept		json
 //	@Produce	json
-//	@Param		accountID	path		int							true	"Account ID"
+//	@Param		accountId	path		int							true	"Account ID"
 //	@Param		data		body		request.TransactionTiming	true	"timing config"
 //	@Success	200			{object}	response.Data{Data=response.TransactionTiming}
-//	@Router		/account/{accountID}/transaction/timing [post]
+//	@Router		/account/{accountId}/transaction/timing [post]
 func (t *TransactionApi) CreateTiming(ctx *gin.Context) {
 	var requestData request.TransactionTiming
 	if err := ctx.ShouldBindJSON(&requestData); err != nil {
@@ -531,11 +531,11 @@ func (t *TransactionApi) CreateTiming(ctx *gin.Context) {
 //	@Tags		Transaction/Timing
 //	@Accept		json
 //	@Produce	json
-//	@Param		accountID	path		int							true	"Account ID"
+//	@Param		accountId	path		int							true	"Account ID"
 //	@Param		id			path		int							true	"Transaction ID"
 //	@Param		data		body		request.TransactionTiming	true	"timing config"
 //	@Success	200			{object}	response.Data{Data=response.TransactionTiming}
-//	@Router		/account/{accountID}/transaction/timing/{id} [put]
+//	@Router		/account/{accountId}/transaction/timing/{id} [put]
 func (t *TransactionApi) UpdateTiming(ctx *gin.Context) {
 	var requestData request.TransactionTiming
 	if err := ctx.ShouldBindJSON(&requestData); err != nil {
@@ -571,10 +571,10 @@ func (t *TransactionApi) UpdateTiming(ctx *gin.Context) {
 //	@Tags		Transaction/Timing
 //	@Accept		json
 //	@Produce	json
-//	@Param		accountID	path		int					true	"Account ID"
+//	@Param		accountId	path		int					true	"Account ID"
 //	@Param		data		body		request.PageData	true	"Page data"
 //	@Success	200			{object}	response.Data{Data=response.List[response.TransactionTiming]}
-//	@Router		/account/{accountID}/transaction/timing/list [get]
+//	@Router		/account/{accountId}/transaction/timing/list [get]
 func (t *TransactionApi) GetTimingList(ctx *gin.Context) {
 	var requestData request.PageData
 	if err := ctx.ShouldBindJSON(&requestData); err != nil {

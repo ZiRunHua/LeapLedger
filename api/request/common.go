@@ -34,21 +34,21 @@ type CommonSendEmailCaptcha struct {
 }
 
 type TimeFrame struct {
-	StartTime time.Time `binding:"gt=0"`
-	EndTime   time.Time `binding:"gt=0"`
+	StartTime time.Time
+	EndTime   time.Time
 }
 
 func (t *TimeFrame) CheckTimeFrame() error {
 	if t.EndTime.Before(t.StartTime) {
 		return errors.New("时间范围错误")
 	}
-	if t.StartTime.AddDate(2, 2, 2).After(t.EndTime) {
+	if t.StartTime.AddDate(2, 2, 2).Before(t.EndTime) {
 		return global.ErrTimeFrameIsTooLong
 	}
 	return nil
 }
 
-// 格式化日时间 将时间转为time.Time类型 并将StartTime置为当日第一秒 endTime置为当日最后一秒
+// 格式化日时间 将StartTime置为当日第一秒 endTime置为当日最后一秒
 func (t *TimeFrame) FormatDayTime() (startTime time.Time, endTime time.Time) {
 	startTime = time.Date(t.StartTime.Year(), t.StartTime.Month(), t.StartTime.Day(), 0, 0, 0, 0, time.Local)
 	endTime = time.Date(t.EndTime.Year(), t.EndTime.Month(), t.EndTime.Day(), 23, 59, 59, 0, time.Local)

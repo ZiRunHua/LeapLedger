@@ -1,16 +1,16 @@
 package cusCtx
 
-type ContextKey string
+type Key string
 
-const Claims ContextKey = "claims"
+const Claims Key = "claims"
 
-const UserId ContextKey = "userID"
-const User ContextKey = "user"
+const UserId Key = "userId"
+const User Key = "user"
 
-const Account ContextKey = "account"
-const AccountUser ContextKey = "accountUser"
-const AccountId ContextKey = "accountID"
+const Account Key = "account"
+const AccountUser Key = "accountUser"
+const AccountId Key = "accountId"
 
-const Db ContextKey = "Db"
-const Tx ContextKey = "Tx"
-const TxCommit ContextKey = "TxCommit"
+const Db Key = "Db"
+const Tx Key = "Tx"
+const TxCommit Key = "TxCommit"

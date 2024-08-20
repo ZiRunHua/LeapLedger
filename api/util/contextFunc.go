@@ -26,7 +26,7 @@ func (cf *contextFunc) SetClaims(claims *util.CustomClaims, ctx *gin.Context) {
 }
 
 func (cf *contextFunc) GetClaims(ctx *gin.Context) util.CustomClaims {
-	return ctx.MustGet(string(cusCtx.Claims)).(util.CustomClaims)
+	return ctx.Value(string(cusCtx.Claims)).(util.CustomClaims)
 }
 
 func (cf *contextFunc) SetUserId(id uint, ctx *gin.Context) {
@@ -34,17 +34,17 @@ func (cf *contextFunc) SetUserId(id uint, ctx *gin.Context) {
 }
 
 func (cf *contextFunc) GetUserId(ctx *gin.Context) uint {
-	return ctx.MustGet(string(cusCtx.UserId)).(uint)
+	return cf.GetUint(cusCtx.UserId, ctx)
 }
 
 func (cf *contextFunc) GetUser(ctx *gin.Context) (userModel.User, error) {
-	value, exits := ctx.Get(string(cusCtx.UserId))
+	value, exits := ctx.Get(string(cusCtx.User))
 	if exits {
 		return value.(userModel.User), nil
 	}
 	var user userModel.User
 	err := db.Db.First(&user, cf.GetUserId(ctx)).Error
-	ctx.Set(string(cusCtx.UserId), user)
+	ctx.Set(string(cusCtx.User), user)
 	return user, err
 }
 
@@ -53,7 +53,7 @@ func (cf *contextFunc) SetAccountId(id uint, ctx *gin.Context) {
 }
 
 func (cf *contextFunc) GetAccountId(ctx *gin.Context) uint {
-	return ctx.MustGet(string(cusCtx.AccountId)).(uint)
+	return cf.GetUint(cusCtx.AccountId, ctx)
 }
 
 func (cf *contextFunc) GetAccount(ctx *gin.Context) accountModel.Account {
@@ -99,11 +99,7 @@ func (cf *contextFunc) GetUserCurrentClientInfo(ctx *gin.Context) (userModel.Use
 }
 
 func (cf *contextFunc) GetId(ctx *gin.Context) uint {
-	id, err := strconv.Atoi(ctx.Param("id"))
-	if err != nil {
-		panic(err)
-	}
-	return uint(id)
+	return cf.GetUint("id", ctx)
 }
 
 func (cf *contextFunc) GetUintParamByKey(key string, ctx *gin.Context) (uint, bool) {
@@ -149,4 +145,29 @@ func (cf *contextFunc) GetParamId(ctx *gin.Context) (uint, bool) {
 
 func (cf *contextFunc) GetCacheKey(t constant.CacheTab, ctx *gin.Context) string {
 	return string(t) + "_" + ctx.ClientIP()
+}
+
+func (cf *contextFunc) GetUint(key cusCtx.Key, ctx *gin.Context) uint {
+	param := ctx.Param(string(key))
+	if len(param) != 0 {
+		id, err := strconv.Atoi(param)
+		if err != nil {
+			panic(err)
+		}
+		return uint(id)
+	}
+	switch value := ctx.Value(string(key)).(type) {
+	case uint:
+		return value
+	case int:
+		return uint(value)
+	case string:
+		id, err := strconv.Atoi(value)
+		if err != nil {
+			panic(err)
+		}
+		return uint(id)
+	default:
+		return value.(uint)
+	}
 }

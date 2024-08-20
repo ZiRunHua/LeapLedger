@@ -14,7 +14,7 @@ func init() {
 	{
 		router.GET("/list", baseApi.GetList)
 		router.GET("/:key/transCategory", baseApi.GetTransactionCategory)
-		accountRouter.GET("/transCategory/mapping/tree", baseApi.GetMappingTree)
+		accountRouter.GET("/:key/transCategory/mapping/tree", baseApi.GetMappingTree)
 		editRouter.POST("/transCategory/:id/mapping", baseApi.MappingTransactionCategory)
 		editRouter.DELETE("/transCategory/:id/mapping", baseApi.DeleteTransactionCategoryMapping)
 		editRouter.POST("/:key/bill/import", baseApi.ImportProductBill)

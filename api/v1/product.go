@@ -25,7 +25,7 @@ type ProductApi struct {
 //	@Router		/product/list [get]
 func (p *ProductApi) GetList(ctx *gin.Context) {
 	var product productModel.Product
-	rows, err := db.Db.Model(&product).Where("hide = ?", 0).Order("weight desc").Rows()
+	rows, err := db.Db.Model(&product).Where("hide = ?", 0).Rows()
 	if err != nil {
 		response.FailToError(ctx, err)
 		return
@@ -59,7 +59,7 @@ func (p *ProductApi) GetTransactionCategory(ctx *gin.Context) {
 	var transactionCategory productModel.TransactionCategory
 	rows, err := db.Db.Model(&transactionCategory).Where(
 		"product_key = ?", ctx.Param("key"),
-	).Order("income_expense DESC,weight DESC").Rows()
+	).Order("income_expense DESC").Rows()
 	if err != nil {
 		response.FailToError(ctx, err)
 		return
@@ -90,11 +90,11 @@ func (p *ProductApi) GetTransactionCategory(ctx *gin.Context) {
 //	@Tags		Product/TransCategory/Mapping
 //	@Accept		json
 //	@Produce	json
-//	@Param		accountID	path		int											true	"Account ID"
+//	@Param		accountId	path		int											true	"Account ID"
 //	@Param		id			path		int											true	"Product transaction category ID"
 //	@Param		body		body		request.ProductMappingTransactionCategory	true	"data"
 //	@Success	204			{object}	response.NoContent
-//	@Router		/account/{accountID}/product/transCategory/{id}/mapping [post]
+//	@Router		/account/{accountId}/product/transCategory/{id}/mapping [post]
 func (p *ProductApi) MappingTransactionCategory(ctx *gin.Context) {
 	var transactionCategory productModel.TransactionCategory
 	err := db.Db.Model(&transactionCategory).First(&transactionCategory, ctx.Param("id")).Error
@@ -131,11 +131,11 @@ func (p *ProductApi) MappingTransactionCategory(ctx *gin.Context) {
 //	@Tags		Product/TransCategory/Mapping
 //	@Accept		json
 //	@Produce	json
-//	@Param		accountID	path		int											true	"Account ID"
+//	@Param		accountId	path		int											true	"Account ID"
 //	@Param		id			path		int											true	"Product transaction category ID"
 //	@Param		body		body		request.ProductMappingTransactionCategory	true	"data"
 //	@Success	204			{object}	response.NoContent
-//	@Router		/account/{accountID}/product/transCategory/{id}/mapping [delete]
+//	@Router		/account/{accountId}/product/transCategory/{id}/mapping [delete]
 func (p *ProductApi) DeleteTransactionCategoryMapping(ctx *gin.Context) {
 	var ptc productModel.TransactionCategory
 	err := db.Db.Model(&ptc).First(&ptc, ctx.Param("id")).Error
@@ -167,13 +167,12 @@ func (p *ProductApi) DeleteTransactionCategoryMapping(ctx *gin.Context) {
 //	@Tags		Product/TransCategory/Mapping
 //	@Accept		json
 //	@Produce	json
-//	@Param		accountID	path		int								true	"Account ID"
-//	@Param		key	path		string								true	"Product unique key"
-//	@Param		body		body		request.ProductGetMappingTree	true	"query condition"
+//	@Param		accountId	path		int		true	"Account ID"
+//	@Param		key			path		string	true	"Product unique key"
 //	@Success	200			{object}	response.Data{Data=response.ProductMappingTree}
-//	@Router		/account/{accountID}/product/{key}/transCategory/mapping/tree [get]
+//	@Router		/account/{accountId}/product/{key}/transCategory/mapping/tree [get]
 func (p *ProductApi) GetMappingTree(ctx *gin.Context) {
-	accountId, productKey := contextFunc.GetAccountId(ctx), ctx.MustGet("key").(productModel.KeyValue)
+	accountId, productKey := contextFunc.GetAccountId(ctx), productModel.KeyValue(ctx.Param("key"))
 	var prodTransCategory productModel.TransactionCategory
 	transCategoryMap, err := prodTransCategory.GetMap(productKey)
 	if err != nil {
@@ -226,11 +225,11 @@ func (p *ProductApi) GetMappingTree(ctx *gin.Context) {
 //	@Tags		Product/Bill/Import
 //	@Accept		multipart/form-data
 //	@Produce	json
-//	@Param		accountID	path		int		true	"Account ID"
+//	@Param		accountId	path		int		true	"Account ID"
 //	@Param		key			path		int		true	"Product unique key"
 //	@Param		file		formData	file	true	"file to upload"
 //	@Success	200			{object}	response.NoContent
-//	@Router		/account/{accountID}/product/{key}/bill/import [post]
+//	@Router		/account/{accountId}/product/{key}/bill/import [post]
 func (p *ProductApi) ImportProductBill(ctx *gin.Context) {
 	fileHeader, err := ctx.FormFile("File")
 	if responseError(err, ctx) {
