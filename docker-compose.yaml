@@ -5,12 +5,11 @@ services:
     image: registry.cn-hangzhou.aliyuncs.com/xiaozirun/leap-ledger:latest
     build:
       context: .
-      dockerfile: docker/Dockerfile.debug
+      dockerfile: docker/Dockerfile
     ports:
-      - "8080:8080"
-      - "2345:2345"
-    #    environment:
-    #      - CONFIG_FILE_NAME=production_config.yaml
+      - "80:8080"
+#    environment:
+#      - CONFIG_FILE_NAME=production_config.yaml
     volumes:
       - ./log:/go/LeapLedger/log
       - ./docs:/go/LeapLedger/docs
@@ -19,8 +18,8 @@ services:
       - leap-ledger-network
     depends_on:
       - leap-ledger-mysql
-      - leap-ledger-redis
       - leap-ledger-nats
+      - leap-ledger-redis
   leap-ledger-mysql:
     container_name: leap-ledger-mysql
     image: mysql:8.0.22
@@ -47,8 +46,7 @@ services:
     command: ["redis-server", "/redis.conf"]
   leap-ledger-nats:
     container_name: leap-ledger-nats
-    image: nats:latest
-    #Enable JetStream and set the persistent storage address
+    image: nats:2.10.18-alpine
     command: -js -sd /data -http_port 8222
     ports:
       - "4222:4222"

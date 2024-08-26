@@ -12,9 +12,7 @@ type AccountDao struct {
 
 func NewDao(db ...*gorm.DB) *AccountDao {
 	if len(db) > 0 {
-		return &AccountDao{
-			db: db[0],
-		}
+		return &AccountDao{db: db[0]}
 	}
 	return &AccountDao{global.GvaDb}
 }

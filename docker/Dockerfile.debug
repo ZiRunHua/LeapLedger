@@ -1,4 +1,4 @@
-FROM golang:1.22.6-alpine
+FROM golang:1.20.8-alpine
 
 # 设置环境变量
 ENV GO111MODULE=on
@@ -16,10 +16,11 @@ RUN go mod download
 # 拷贝源代码
 COPY . .
 
+RUN go install github.com/go-delve/delve/cmd/dlv@v1.22.1
 # 构建Go应用程序
-RUN go build -o leapledger
+RUN go build -gcflags="-N -l" -o leapledger .
 
 # 声明服务端口
-EXPOSE 8080
-
-CMD ["/bin/sh", "-c", "./leapledger"]
+EXPOSE 8080 2345
+# 指定容器启动命令
+CMD ["dlv", "--listen=:2345", "--headless=true", "--api-version=2", "exec", "./leapledger"]

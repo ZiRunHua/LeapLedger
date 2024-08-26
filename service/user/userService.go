@@ -4,7 +4,7 @@ import (
 	"KeepAccount/global"
 	"KeepAccount/global/constant"
 	"KeepAccount/global/db"
-	globalTask "KeepAccount/global/task"
+	"KeepAccount/global/nats"
 	accountModel "KeepAccount/model/account"
 	"KeepAccount/model/common/query"
 	userModel "KeepAccount/model/user"
@@ -233,7 +233,7 @@ func (userSvc *User) EnableTourist(
 	if err != nil {
 		return
 	}
-	globalTask.Publish[any](globalTask.TaskCreateTourist, struct{}{})
+	nats.Publish[any](nats.TaskCreateTourist, struct{}{})
 	return
 }
 

@@ -1,7 +1,7 @@
 package categoryService
 
 import (
-	gTask "KeepAccount/global/task"
+	"KeepAccount/global/nats"
 	accountModel "KeepAccount/model/account"
 	categoryModel "KeepAccount/model/category"
 )
@@ -9,21 +9,21 @@ import (
 type _task struct{}
 
 func init() {
-	gTask.Subscribe[accountModel.Mapping](gTask.TaskMappingCategoryToAccountMapping,
+	nats.Subscribe[accountModel.Mapping](nats.TaskMappingCategoryToAccountMapping,
 		GroupApp.MappingCategoryToAccountMapping,
 	)
 
-	gTask.Subscribe[categoryModel.Category](gTask.TaskUpdateCategoryMapping,
+	nats.Subscribe[categoryModel.Category](nats.TaskUpdateCategoryMapping,
 		GroupApp.UpdateCategoryMapping,
 	)
 }
 
 func (t *_task) UpdateCategoryMapping(category categoryModel.Category) error {
-	_ = gTask.Publish[categoryModel.Category](gTask.TaskUpdateCategoryMapping, category)
+	_ = nats.Publish[categoryModel.Category](nats.TaskUpdateCategoryMapping, category)
 	return nil
 }
 
 func (t *_task) MappingCategoryToAccountMapping(mappingAccount accountModel.Mapping) error {
-	_ = gTask.Publish[accountModel.Mapping](gTask.TaskMappingCategoryToAccountMapping, mappingAccount)
+	_ = nats.Publish[accountModel.Mapping](nats.TaskMappingCategoryToAccountMapping, mappingAccount)
 	return nil
 }

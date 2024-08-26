@@ -3,6 +3,8 @@ package initialize
 import (
 	"KeepAccount/global"
 	"KeepAccount/global/constant"
+	"KeepAccount/global/db"
+	_ "KeepAccount/global/nats"
 	_ "KeepAccount/initialize"
 	_ "KeepAccount/initialize/database"
 )
@@ -24,7 +26,7 @@ func init() {
 	if err != nil {
 		panic(err)
 	}
-	userInfo, err := User.GetUserClient(constant.Web)
+	userInfo, err := User.GetUserClient(constant.Web, db.Db)
 	if err != nil {
 		panic(err)
 	}

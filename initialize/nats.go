@@ -2,7 +2,6 @@ package initialize
 
 import (
 	"KeepAccount/global/constant"
-	"github.com/nats-io/nats-server/v2/server"
 	"github.com/nats-io/nats.go"
 )
 
@@ -18,30 +17,10 @@ type _nats struct {
 
 const nastStoreDir = constant.RUNTIME_DATA_PATH + "/nats"
 
-func (n *_nats) do(mode constant.ServerMode) error {
+func (n *_nats) do() error {
 	err := n.init()
 	if err != nil {
 		return err
-	}
-	if mode == constant.Debug {
-		opts := &server.Options{
-			JetStream:    true,
-			Trace:        true,
-			Debug:        true,
-			Logtime:      true,
-			LogFile:      _natsServerLogPath,
-			LogSizeLimit: 20480,
-			LogMaxFiles:  1,
-			StoreDir:     nastStoreDir,
-		}
-		NatsServer, err = server.NewServer(opts)
-		if err != nil {
-			return err
-		}
-		//If you don't call ConfigureLogger, there will be no logging, even if has been set up in the options
-		NatsServer.ConfigureLogger()
-		NatsServer.Start()
-		n.ServerUrl = nats.DefaultURL
 	}
 	Nats, err = nats.Connect(n.ServerUrl)
 	if err != nil {

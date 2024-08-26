@@ -75,3 +75,7 @@ func GetFirstSecondOfYear(currentTime time.Time) time.Time {
 	firstSecondOfYear := time.Date(year, time.January, 1, 0, 0, 0, 0, currentTime.Location())
 	return firstSecondOfYear
 }
+
+func ToDay(t time.Time) time.Time {
+	return time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, t.Location())
+}

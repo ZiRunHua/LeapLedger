@@ -222,7 +222,7 @@ func (p *PublicApi) TourRequest(ctx *gin.Context) {
 	if responseError(err, ctx) {
 		return
 	}
-	clientInfo, err := user.GetUserClient(contextFunc.GetClient(ctx))
+	clientInfo, err := user.GetUserClient(contextFunc.GetClient(ctx), db.Db)
 	if responseError(err, ctx) {
 		return
 	}

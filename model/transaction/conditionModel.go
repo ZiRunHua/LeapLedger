@@ -2,6 +2,7 @@ package transactionModel
 
 import (
 	"KeepAccount/global/constant"
+	"KeepAccount/util/timeTool"
 	"gorm.io/gorm"
 	"time"
 )
@@ -27,11 +28,16 @@ func (f *ForeignKeyCondition) addConditionToQuery(db *gorm.DB) *gorm.DB {
 // GetStatisticTableName 根据查询条件返回合适的查询表格
 // gorm的Model方法视乎有问题 只会在第一次执行Model时更新查询的表格 故返回表名而不是模型
 func (f *ForeignKeyCondition) GetStatisticTableName(ie constant.IncomeExpense) string {
+	var model statisticModel
 	if ie == constant.Income {
-		return f.getIncomeStatisticModel().TableName()
+		model = f.getIncomeStatisticModel()
 	} else {
-		return f.getExpendStatisticModel().TableName()
+		model = f.getExpendStatisticModel()
 	}
+	if model == nil {
+		return "transaction"
+	}
+	return model.TableName()
 }
 
 func (f *ForeignKeyCondition) getIncomeStatisticModel() statisticModel {
@@ -43,8 +49,9 @@ func (f *ForeignKeyCondition) getIncomeStatisticModel() statisticModel {
 		}
 	} else if f.UserIds == nil {
 		return &IncomeCategoryStatistic{}
+	} else {
+		return &IncomeAccountUserStatistic{}
 	}
-	return nil
 }
 
 func (f *ForeignKeyCondition) getExpendStatisticModel() statisticModel {
@@ -56,8 +63,9 @@ func (f *ForeignKeyCondition) getExpendStatisticModel() statisticModel {
 		}
 	} else if f.UserIds == nil {
 		return &ExpenseCategoryStatistic{}
+	} else {
+		return &ExpenseAccountUserStatistic{}
 	}
-	return nil
 }
 
 // Condition 交易记录查询条件 用于交易记录和统计的查询
@@ -132,7 +140,7 @@ type StatisticCondition struct {
 // addConditionToQuery 通过条件获取附带查询条件的gorm.db
 func (s *StatisticCondition) addConditionToQuery(db *gorm.DB) *gorm.DB {
 	query := s.ForeignKeyCondition.addConditionToQuery(db)
-	query = query.Where("date BETWEEN ? AND ?", s.StartTime.Truncate(24*time.Hour), s.EndTime.Truncate(24*time.Hour))
+	query = query.Where("date BETWEEN ? AND ?", timeTool.ToDay(s.StartTime), timeTool.ToDay(s.EndTime))
 	return query
 }
 
@@ -152,7 +160,7 @@ type StatisticConditionBuilder struct {
 }
 
 // NewStatisticConditionBuilder 返回一个新的 StatisticConditionBuilder 实例
-func _(accountId uint) *StatisticConditionBuilder {
+func NewStatisticConditionBuilder(accountId uint) *StatisticConditionBuilder {
 	return &StatisticConditionBuilder{
 		condition: StatisticCondition{
 			ForeignKeyCondition: ForeignKeyCondition{AccountId: accountId},

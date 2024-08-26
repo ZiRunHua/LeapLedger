@@ -1,8 +1,9 @@
 package transactionService
 
 import (
+	"KeepAccount/global/cron"
 	"KeepAccount/global/db"
-	gTask "KeepAccount/global/task"
+	"KeepAccount/global/nats"
 	transactionModel "KeepAccount/model/transaction"
 	"context"
 	"gorm.io/gorm"
@@ -12,44 +13,44 @@ import (
 type _task struct{}
 
 func init() {
-	gTask.Subscribe[transactionModel.StatisticData](
-		gTask.TaskStatisticUpdate, func(data transactionModel.StatisticData, ctx context.Context) error {
+	nats.Subscribe[transactionModel.StatisticData](
+		nats.TaskStatisticUpdate, func(data transactionModel.StatisticData, ctx context.Context) error {
 			return GroupApp.Transaction.updateStatistic(data, db.Get(ctx))
 		},
 	)
 
-	gTask.Subscribe[transactionModel.Transaction](
-		gTask.TaskTransactionSync, GroupApp.Transaction.SyncToMappingAccount,
+	nats.Subscribe[transactionModel.Transaction](
+		nats.TaskTransactionSync, GroupApp.Transaction.SyncToMappingAccount,
 	)
 	// timing
 	tingEveryCron := func() {
 		now := time.Now()
-		gTask.Publish[taskTransactionTimingTaskAssign](gTask.TaskTransactionTimingTaskAssign,
+		nats.Publish[taskTransactionTimingTaskAssign](nats.TaskTransactionTimingTaskAssign,
 			taskTransactionTimingTaskAssign{
 				Deadline: time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.Local),
 				TaskSize: 50,
 			})
 	}
-	_, err := gTask.Scheduler.Every(1).Day().At("00:00").Do(tingEveryCron)
+	_, err := cron.Scheduler.Every(1).Day().At("00:00").Do(tingEveryCron)
 	if err != nil {
 		panic(err)
 	}
 
-	gTask.Subscribe[taskTransactionTimingTaskAssign](
-		gTask.TaskTransactionTimingTaskAssign, func(assign taskTransactionTimingTaskAssign, ctx context.Context) error {
+	nats.Subscribe[taskTransactionTimingTaskAssign](
+		nats.TaskTransactionTimingTaskAssign, func(assign taskTransactionTimingTaskAssign, ctx context.Context) error {
 			return GroupApp.Timing.Exec.GenerateAndPublishTasks(assign.Deadline, assign.TaskSize, ctx)
 		},
 	)
 
-	gTask.Subscribe[transactionTimingExecTask](
-		gTask.TaskTransactionTimingExec, func(execTask transactionTimingExecTask, ctx context.Context) error {
+	nats.Subscribe[transactionTimingExecTask](
+		nats.TaskTransactionTimingExec, func(execTask transactionTimingExecTask, ctx context.Context) error {
 			return GroupApp.Timing.Exec.ProcessWaitExecByStartId(execTask.StartId, execTask.Size, ctx)
 		},
 	)
 }
 
 func (t *_task) updateStatistic(data transactionModel.StatisticData, tx *gorm.DB) error {
-	isSuccess := gTask.Publish[transactionModel.StatisticData](gTask.TaskStatisticUpdate, data)
+	isSuccess := nats.Publish[transactionModel.StatisticData](nats.TaskStatisticUpdate, data)
 	if false == isSuccess {
 		return server.updateStatistic(data, tx)
 	}
@@ -57,7 +58,7 @@ func (t *_task) updateStatistic(data transactionModel.StatisticData, tx *gorm.DB
 }
 
 func (t *_task) syncToMappingAccount(trans transactionModel.Transaction, ctx context.Context) error {
-	isSuccess := gTask.Publish[transactionModel.Transaction](gTask.TaskTransactionSync, trans)
+	isSuccess := nats.Publish[transactionModel.Transaction](nats.TaskTransactionSync, trans)
 	if false == isSuccess {
 		return server.SyncToMappingAccount(trans, ctx)
 	}
@@ -75,11 +76,11 @@ type transactionTimingExecTask struct {
 }
 
 func (t *_task) execTransactionTiming(startId uint, size int) error {
-	isSuccess := gTask.Publish[transactionTimingExecTask](gTask.TaskTransactionTimingExec, transactionTimingExecTask{
+	isSuccess := nats.Publish[transactionTimingExecTask](nats.TaskTransactionTimingExec, transactionTimingExecTask{
 		StartId: startId, Size: size,
 	})
 	if !isSuccess {
-		return gTask.ErrNatsNotWork
+		return nats.ErrNatsNotWork
 	}
 	return nil
 }

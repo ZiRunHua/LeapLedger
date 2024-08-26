@@ -8,7 +8,6 @@ import (
 import (
 	"KeepAccount/global"
 	"KeepAccount/global/constant"
-	GvaTask "KeepAccount/global/task"
 	"context"
 	"fmt"
 	"log"
@@ -60,7 +59,6 @@ func shutDown() {
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 	<-quit
 	log.Println("Shutting down server...")
-	GvaTask.Shutdown()
 
 	if err := httpServer.Shutdown(context.TODO()); err != nil {
 		log.Fatal("Server forced to shutdown:", err)

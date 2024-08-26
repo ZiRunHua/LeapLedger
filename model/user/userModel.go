@@ -31,15 +31,10 @@ func (u *User) SelectById(id uint, selects ...interface{}) error {
 	return query.First(u).Error
 }
 
-func (u *User) GetUserClient(client constant.Client) (clientInfo UserClientBaseInfo, err error) {
-	var clientModel Client
-	clientModel = GetUserClientModel(client)
-	err = clientModel.GetByUser(*u)
-	if err != nil {
-		return
-	}
-	clientInfo = *GetUserClientBaseInfo(clientModel)
-	return
+func (u *User) GetUserClient(client constant.Client, db *gorm.DB) (clientInfo UserClientBaseInfo, err error) {
+	var data UserClientBaseInfo
+	err = db.Model(GetUserClientModel(client)).Where("user_id = ?", u.ID).First(&data).Error
+	return data, err
 }
 
 func (u *User) IsTourist(db *gorm.DB) (bool, error) {

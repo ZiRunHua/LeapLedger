@@ -17,5 +17,6 @@ docker/*
 !docker/docker-compose.yaml
 !docker/Dockerfile
 !docker/redis.conf
+!docker/Dockerfile.debug
 
 production_config.yaml

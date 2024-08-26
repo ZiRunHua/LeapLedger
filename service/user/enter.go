@@ -2,7 +2,7 @@ package userService
 
 import (
 	"KeepAccount/global/db"
-	globalTask "KeepAccount/global/task"
+	nats "KeepAccount/global/nats"
 	"context"
 )
 
@@ -14,8 +14,8 @@ type Group struct {
 var GroupApp = new(Group)
 
 func init() {
-	globalTask.Subscribe[any](
-		globalTask.TaskCreateTourist, func(data any, ctx context.Context) error {
+	nats.Subscribe[any](
+		nats.TaskCreateTourist, func(data any, ctx context.Context) error {
 			_, err := GroupApp.CreateTourist(db.Get(ctx))
 			return err
 		},

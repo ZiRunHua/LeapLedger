@@ -39,8 +39,9 @@ func (i *IncomeAccountStatistic) Accumulate(
 
 type IncomeAccountUserStatistic struct {
 	Statistic
-	AccountId uint `gorm:"primaryKey"`
-	UserId    uint `gorm:"primaryKey"`
+	AccountId  uint `gorm:"primaryKey"`
+	UserId     uint `gorm:"primaryKey"`
+	CategoryId uint `gorm:"primaryKey"`
 }
 
 func (i *IncomeAccountUserStatistic) TableName() string {
@@ -48,11 +49,11 @@ func (i *IncomeAccountUserStatistic) TableName() string {
 }
 
 func (i *IncomeAccountUserStatistic) Accumulate(
-	tradeTime time.Time, accountId uint, userId uint, amount int, count int, tx *gorm.DB,
+	tradeTime time.Time, accountId uint, userId uint, categoryId uint, amount int, count int, tx *gorm.DB,
 ) error {
 	tradeTime = i.GetDate(tradeTime)
 	where := tx.Model(i).Where(
-		"date = ? AND account_id = ? AND user_id = ?", tradeTime, accountId, userId,
+		"date = ? AND account_id = ? AND user_id = ? AND category_id", tradeTime, accountId, userId, categoryId,
 	)
 	updatesValue := i.GetUpdatesValue(amount, count)
 	update := where.Updates(updatesValue)
@@ -60,8 +61,9 @@ func (i *IncomeAccountUserStatistic) Accumulate(
 
 	if update.RowsAffected == 0 {
 		i.Date = tradeTime
-		i.UserId = userId
 		i.AccountId = accountId
+		i.UserId = userId
+		i.CategoryId = categoryId
 		i.Amount = amount
 		i.Count = count
 		err = tx.Create(i).Error

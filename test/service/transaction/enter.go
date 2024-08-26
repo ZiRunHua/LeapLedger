@@ -1,6 +1,7 @@
 package transaction
 
 import (
+	"KeepAccount/global/db"
 	_ "KeepAccount/test/initialize"
 )
 import (
@@ -25,7 +26,7 @@ func init() {
 	if err != nil {
 		panic(err)
 	}
-	userInfo, err := testUser.GetUserClient(constant.Web)
+	userInfo, err := testUser.GetUserClient(constant.Web, db.Db)
 	if err != nil {
 		panic(err)
 	}

@@ -35,7 +35,6 @@ const (
 )
 
 func init() {
-
 	var err error
 	// init template User
 	err = db.Transaction(context.Background(), initTemplateUser)

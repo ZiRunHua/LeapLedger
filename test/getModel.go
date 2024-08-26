@@ -10,6 +10,11 @@ import (
 func getCategory() categoryModel.Category {
 	return ExpenseCategoryList[0]
 }
+func NewTransaction() transactionModel.Transaction {
+	return transactionModel.Transaction{
+		Info: NewTransInfo(),
+	}
+}
 
 func NewTransTime() transactionModel.Timing {
 	transInfo := NewTransInfo()

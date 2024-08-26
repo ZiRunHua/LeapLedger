@@ -94,6 +94,7 @@ func (s *StatisticDao) GetIeStatisticByCondition(ie *constant.IncomeExpense, con
 	}
 	query := condition.addConditionToQuery(s.db)
 	if ie.QueryIncome() {
+
 		err = query.Table(condition.GetStatisticTableName(constant.Income)).Select("SUM(amount) as amount,SUM(count) as count").Scan(&result.Income).Error
 		if err != nil {
 			return
