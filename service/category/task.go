@@ -9,21 +9,23 @@ import (
 type _task struct{}
 
 func init() {
-	nats.Subscribe[accountModel.Mapping](nats.TaskMappingCategoryToAccountMapping,
+	nats.SubscribeTaskWithPayload[accountModel.Mapping](
+		nats.TaskMappingCategoryToAccountMapping,
 		GroupApp.MappingCategoryToAccountMapping,
 	)
 
-	nats.Subscribe[categoryModel.Category](nats.TaskUpdateCategoryMapping,
+	nats.SubscribeTaskWithPayload[categoryModel.Category](
+		nats.TaskUpdateCategoryMapping,
 		GroupApp.UpdateCategoryMapping,
 	)
 }
 
 func (t *_task) UpdateCategoryMapping(category categoryModel.Category) error {
-	_ = nats.Publish[categoryModel.Category](nats.TaskUpdateCategoryMapping, category)
+	_ = nats.PublishTaskWithPayload[categoryModel.Category](nats.TaskUpdateCategoryMapping, category)
 	return nil
 }
 
 func (t *_task) MappingCategoryToAccountMapping(mappingAccount accountModel.Mapping) error {
-	_ = nats.Publish[accountModel.Mapping](nats.TaskMappingCategoryToAccountMapping, mappingAccount)
+	_ = nats.PublishTaskWithPayload[accountModel.Mapping](nats.TaskMappingCategoryToAccountMapping, mappingAccount)
 	return nil
 }

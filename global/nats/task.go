@@ -27,7 +27,23 @@ const TaskUpdateCategoryMapping Task = "updateCategoryMapping"
 type PayloadType interface{}
 type txHandle[Data any] func(Data, context.Context) error
 
-func Subscribe[T PayloadType](task Task, handleTransaction txHandle[T]) {
+func PublishTask(task Task) (isSuccess bool) {
+	return taskManage.publish(task, []byte{})
+}
+
+func SubscribeTask(task Task, handler func() error) {
+	taskManage.subscribe(task, func(msg jetstream.Msg) error { return handler() })
+}
+
+func PublishTaskWithPayload[T PayloadType](task Task, payload T) (isSuccess bool) {
+	str, err := json.Marshal(&payload)
+	if err != nil {
+		return false
+	}
+	return taskManage.publish(task, str)
+}
+
+func SubscribeTaskWithPayload[T PayloadType](task Task, handleTransaction txHandle[T]) {
 	handler := func(msg jetstream.Msg) error {
 		var data T
 		if err := json.Unmarshal(msg.Data(), &data); err != nil {
@@ -36,14 +52,6 @@ func Subscribe[T PayloadType](task Task, handleTransaction txHandle[T]) {
 		return handleTransaction(data, context.TODO())
 	}
 	taskManage.subscribe(task, handler)
-}
-
-func Publish[T PayloadType](task Task, payload T) (isSuccess bool) {
-	str, err := json.Marshal(&payload)
-	if err != nil {
-		return false
-	}
-	return taskManage.publish(task, str)
 }
 
 const (

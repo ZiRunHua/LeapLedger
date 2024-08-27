@@ -15,6 +15,10 @@ import (
 	"encoding/json"
 )
 
+func RepublishDieMsg(batch int, ctx context.Context) error {
+	return dlqManage.republishBatch(batch, ctx)
+}
+
 const dlqName = "dlq"
 const dlqPrefix = "dlq"
 const dlqLogPath = natsLogPath + "dlq.log"
@@ -52,7 +56,8 @@ func (dm *dlqManager) init(js jetstream.JetStream, registerStream []jetstream.St
 	if err != nil {
 		return err
 	}
-	err = dm.pullCustomer.updateConfig(js, streamConfig.Name,
+	err = dm.pullCustomer.updateConfig(
+		js, streamConfig.Name,
 		jetstream.ConsumerConfig{
 			Name:       dlqPrefix + "_pull_customer",
 			Durable:    dlqPrefix + "_pull_customer",

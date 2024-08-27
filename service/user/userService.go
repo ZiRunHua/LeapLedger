@@ -20,7 +20,8 @@ import (
 type User struct{}
 
 func (userSvc *User) Login(email string, password string, clientType constant.Client, tx *gorm.DB) (
-	user userModel.User, clientBaseInfo userModel.UserClientBaseInfo, token string, customClaims util.CustomClaims, err error,
+	user userModel.User, clientBaseInfo userModel.UserClientBaseInfo, token string, customClaims util.CustomClaims,
+	err error,
 ) {
 	password = commonService.Common.HashPassword(email, password)
 	err = global.GvaDb.Where("email = ? And password = ?", email, password).First(&user).Error
@@ -68,7 +69,9 @@ func (ro *RegisterOption) WithTour(Tour bool) *RegisterOption {
 
 func (userSvc *User) NewRegisterOption() *RegisterOption { return &RegisterOption{} }
 
-func (userSvc *User) Register(addData userModel.AddData, tx *gorm.DB, option ...RegisterOption) (user userModel.User, err error) {
+func (userSvc *User) Register(addData userModel.AddData, tx *gorm.DB, option ...RegisterOption) (
+	user userModel.User, err error,
+) {
 	addData.Password = commonService.Common.HashPassword(addData.Email, addData.Password)
 	exist, err := query.Exist[*userModel.User]("email = ?", addData.Email)
 	if err != nil {
@@ -218,7 +221,9 @@ func (userSvc *User) EnableTourist(
 	if err != nil {
 		return
 	}
-	err = tx.Model(userModel.GetUserClientModel(client)).Where("user_id = ?", user.ID).Update("device_number", deviceNumber).Error
+	err = tx.Model(userModel.GetUserClientModel(client)).Where("user_id = ?", user.ID).Update(
+		"device_number", deviceNumber,
+	).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrDuplicatedKey) {
 			err = global.ErrOperationTooFrequent
@@ -233,7 +238,7 @@ func (userSvc *User) EnableTourist(
 	if err != nil {
 		return
 	}
-	nats.Publish[any](nats.TaskCreateTourist, struct{}{})
+	nats.PublishTaskWithPayload[any](nats.TaskCreateTourist, struct{}{})
 	return
 }
 
@@ -243,7 +248,9 @@ func (userSvc *User) CreateTourist(tx *gorm.DB) (user userModel.User, err error)
 	return userSvc.Register(addData, tx, *option)
 }
 
-func (userSvc *User) ProcessAllClient(user userModel.User, processFunc func(userModel.Client) error, ctx context.Context) error {
+func (userSvc *User) ProcessAllClient(
+	user userModel.User, processFunc func(userModel.Client) error, ctx context.Context,
+) error {
 	tx := db.Get(ctx)
 	var clientInfo userModel.Client
 	var err error

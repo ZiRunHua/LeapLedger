@@ -11,18 +11,38 @@ import (
 	"go.uber.org/zap"
 )
 
-func SubscribeEvent[EventDataType PayloadType, TriggerTaskDataType PayloadType](event Event, triggerTask Task, fetchTaskData func(eventData EventDataType) (TriggerTaskDataType, error)) {
-	eventManage.subscribe(event, triggerTask, func(eventData []byte) ([]byte, error) {
-		var data EventDataType
-		if err := json.Unmarshal(eventData, &data); err != nil {
-			return nil, err
-		}
-		taskData, err := fetchTaskData(data)
-		if err != nil {
-			return nil, err
-		}
-		return json.Marshal(taskData)
-	})
+func PublishEvent(event Event) (isSuccess bool) {
+	return eventManage.publish(event, []byte{})
+}
+
+func SubscribeEvent(event Event, triggerTask Task) {
+	eventManage.subscribe(event, triggerTask, func(eventData []byte) ([]byte, error) { return []byte{}, nil })
+}
+
+func PublishEventWithPayload[EventDataType PayloadType](event Event, fetchTaskData EventDataType) (isSuccess bool) {
+	str, err := json.Marshal(&fetchTaskData)
+	if err != nil {
+		return false
+	}
+	return eventManage.publish(event, str)
+}
+
+func SubscribeEventWithPayload[EventDataType PayloadType, TriggerTaskDataType PayloadType](
+	event Event, triggerTask Task, fetchTaskData func(eventData EventDataType) (TriggerTaskDataType, error),
+) {
+	eventManage.subscribe(
+		event, triggerTask, func(eventData []byte) ([]byte, error) {
+			var data EventDataType
+			if err := json.Unmarshal(eventData, &data); err != nil {
+				return nil, err
+			}
+			taskData, err := fetchTaskData(data)
+			if err != nil {
+				return nil, err
+			}
+			return json.Marshal(taskData)
+		},
+	)
 }
 
 const (
@@ -41,7 +61,6 @@ func (t Event) queue() string {
 	return fmt.Sprintf("%s.queue_%s", NatsEventPrefix, t)
 }
 
-const EventTest Event = "test"
 const EventRetryTriggerTask Event = "retry_trigger_task"
 
 type RetryTriggerTask struct {

@@ -14,7 +14,7 @@ type Group struct {
 var GroupApp = new(Group)
 
 func init() {
-	nats.Subscribe[any](
+	nats.SubscribeTaskWithPayload[any](
 		nats.TaskCreateTourist, func(data any, ctx context.Context) error {
 			_, err := GroupApp.CreateTourist(db.Get(ctx))
 			return err
