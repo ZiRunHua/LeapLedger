@@ -38,7 +38,6 @@ func TestTaskPublishAndSubscribe(t *testing.T) {
 			if !success {
 				t.Fail()
 			}
-
 		},
 	)
 	t.Run(
@@ -64,19 +63,27 @@ func TestTaskPublishAndSubscribe(t *testing.T) {
 }
 
 func TestEventPublishAndSubscribe(t *testing.T) {
-	tasks, event := make(map[Task]int), Event(uuid.NewString())
+	taskMap, event := make(map[Task]int), Event(uuid.NewString())
 	for i := 0; i < 10; i++ {
 		task := Task("task_" + uuid.NewString())
-		tasks[task] = 0
+		taskMap[task] = 0
 		SubscribeTask(
 			task, func() error {
-				tasks[task]++
+				taskMap[task]++
 				return nil
 			},
 		)
 	}
 	time.Sleep(time.Second)
-	for task, _ := range tasks {
+	for task, _ := range taskMap {
 		SubscribeEvent(event, task)
 	}
+	PublishEvent(event)
+	time.Sleep(time.Second * 20)
+	for task, value := range taskMap {
+		if value != 1 {
+			t.Log(task, "fail trigger count", value)
+		}
+	}
+	t.Log("task trigger info", taskMap)
 }

@@ -110,9 +110,9 @@ func (em *eventManager) subscribe(event Event, triggerTask Task, fetchTaskData f
 	defer em.lock.Unlock()
 	if em.eventToTask == nil {
 		em.eventToTask = make(map[Event]map[Task]MessageHandler)
-		if em.eventToTask[event] == nil {
-			em.eventToTask[event] = make(map[Task]MessageHandler)
-		}
+	}
+	if em.eventToTask[event] == nil {
+		em.eventToTask[event] = make(map[Task]MessageHandler)
 	}
 	em.eventToTask[event][triggerTask] = func(msg jetstream.Msg) error {
 		data, err := fetchTaskData(msg.Data())
