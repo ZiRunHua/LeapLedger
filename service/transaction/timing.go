@@ -112,11 +112,10 @@ func (te *TimingExec) makeAndSplitExecTask(deadline time.Time, size int, ctx con
 
 func (te *TimingExec) ProcessWaitExecByStartId(startId uint, limit int, ctx context.Context) error {
 	var (
-		accountUser          accountModel.User
-		createOption         Option
-		trans                transactionModel.Transaction
-		tx                   = db.Get(ctx)
-		transDao, accountDao = transactionModel.NewDao(tx), accountModel.NewDao(tx)
+		accountUser accountModel.User
+		trans       transactionModel.Transaction
+		tx          = db.Get(ctx)
+		transDao    = transactionModel.NewDao(tx)
 	)
 	list, err := transDao.SelectWaitTimingExec(startId, limit)
 	if err != nil {
@@ -124,16 +123,7 @@ func (te *TimingExec) ProcessWaitExecByStartId(startId uint, limit int, ctx cont
 	}
 	for _, timingExec := range list {
 		err = db.Transaction(ctx, func(ctx *cusCtx.TxContext) error {
-			accountUser, err = accountDao.SelectUser(timingExec.TransInfo.AccountId, timingExec.TransInfo.UserId)
-			if err != nil {
-				return err
-			}
-			createOption, err = server.NewOptionFormConfig(timingExec.TransInfo, ctx)
-			if err != nil {
-				return err
-			}
-			createOption.WithSyncUpdateStatistic(true)
-			trans, err = server.Create(timingExec.TransInfo, accountUser, createOption, ctx)
+			trans, err = server.Create(timingExec.TransInfo, accountUser, server.NewDefaultOption(), ctx)
 			return err
 		})
 		if err != nil {

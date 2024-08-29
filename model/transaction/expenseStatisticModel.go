@@ -23,7 +23,9 @@ func (e *ExpenseAccountStatistic) Accumulate(
 	updatesValue := e.GetUpdatesValue(amount, count)
 	update := where.Updates(updatesValue)
 	err := update.Error
-
+	if err != nil {
+		return err
+	}
 	if update.RowsAffected == 0 {
 		e.Date = tradeTime
 		e.AccountId = accountId
@@ -53,12 +55,14 @@ func (e *ExpenseAccountUserStatistic) Accumulate(
 ) error {
 	tradeTime = e.GetDate(tradeTime)
 	where := tx.Model(e).Where(
-		"date = ? AND account_id = ? AND user_id = ? AND category_id", tradeTime, accountId, userId, categoryId,
+		"date = ? AND account_id = ? AND user_id = ? AND category_id = ?", tradeTime, accountId, userId, categoryId,
 	)
 	updatesValue := e.GetUpdatesValue(amount, count)
 	update := where.Updates(updatesValue)
 	err := update.Error
-
+	if err != nil {
+		return err
+	}
 	if update.RowsAffected == 0 {
 		e.Date = tradeTime
 		e.AccountId = accountId
@@ -92,7 +96,9 @@ func (e *ExpenseCategoryStatistic) Accumulate(
 	updatesValue := e.GetUpdatesValue(amount, count)
 	update := where.Updates(updatesValue)
 	err := update.Error
-
+	if err != nil {
+		return err
+	}
 	if update.RowsAffected == 0 {
 		e.Date = tradeTime
 		e.CategoryId = categoryId

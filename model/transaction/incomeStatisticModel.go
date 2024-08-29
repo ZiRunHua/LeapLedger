@@ -23,7 +23,9 @@ func (i *IncomeAccountStatistic) Accumulate(
 	updatesValue := i.GetUpdatesValue(amount, count)
 	update := where.Updates(updatesValue)
 	err := update.Error
-
+	if err != nil {
+		return err
+	}
 	if update.RowsAffected == 0 {
 		i.Date = tradeTime
 		i.AccountId = accountId
@@ -58,7 +60,9 @@ func (i *IncomeAccountUserStatistic) Accumulate(
 	updatesValue := i.GetUpdatesValue(amount, count)
 	update := where.Updates(updatesValue)
 	err := update.Error
-
+	if err != nil {
+		return err
+	}
 	if update.RowsAffected == 0 {
 		i.Date = tradeTime
 		i.AccountId = accountId
@@ -92,7 +96,9 @@ func (i *IncomeCategoryStatistic) Accumulate(
 	updatesValue := i.GetUpdatesValue(amount, count)
 	update := where.Updates(updatesValue)
 	err := update.Error
-
+	if err != nil {
+		return err
+	}
 	if update.RowsAffected == 0 {
 		i.Date = tradeTime
 		i.CategoryId = categoryId

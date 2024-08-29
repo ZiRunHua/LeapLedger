@@ -32,7 +32,7 @@ func TestTaskPublishAndSubscribe(t *testing.T) {
 			)
 			time.Sleep(time.Second)
 			if !PublishTask(task) {
-				t.Error("publish fail")
+				t.Error("Publish fail")
 			}
 			time.Sleep(time.Second)
 			if !success {
@@ -52,7 +52,7 @@ func TestTaskPublishAndSubscribe(t *testing.T) {
 			)
 			time.Sleep(time.Second)
 			if !PublishTaskWithPayload[taskData](task, data) {
-				t.Error("publish fail")
+				t.Error("Publish fail")
 			}
 			time.Sleep(time.Second * 3)
 			if !success {
@@ -75,8 +75,8 @@ func TestEventPublishAndSubscribe(t *testing.T) {
 		)
 	}
 	time.Sleep(time.Second)
-	for task, _ := range taskMap {
-		SubscribeEvent(event, task)
+	for task := range taskMap {
+		BindTaskToEvent(event, task)
 	}
 	PublishEvent(event)
 	time.Sleep(time.Second * 20)

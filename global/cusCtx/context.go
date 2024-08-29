@@ -68,7 +68,22 @@ func (t *TxCommitContext) AddCallback(callback ...TxCommitCallback) error {
 }
 
 func (t *TxCommitContext) ExecCallback() {
+	if len(t.callbacks) == 0 {
+		return
+	}
+	parent := t.Context.Value(TxCommit)
+	if parent != nil {
+		err := parent.(*TxCommitContext).AddCallback(t.callbacks...)
+		if err != nil {
+			panic(err)
+		}
+		return
+	}
 	for _, callback := range t.callbacks {
 		callback()
 	}
+}
+
+func (t *TxCommitContext) CallbacksNumber() int {
+	return len(t.callbacks)
 }

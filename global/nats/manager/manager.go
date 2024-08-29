@@ -1,4 +1,4 @@
-package nats
+package manager
 
 import (
 	"context"
@@ -19,11 +19,8 @@ type MsgType interface {
 	subject() string
 	queue() string
 }
-type MessageHandler func(msg jetstream.Msg) error
 
-type Publisher interface {
-	publish(task MsgType, payload []byte) bool
-}
+type MessageHandler func(msg jetstream.Msg) error
 
 var backOff = []time.Duration{
 	time.Millisecond * 250,
@@ -71,21 +68,15 @@ func (mi *manageInitializers) updateCustomerConfig(
 	return err
 }
 
-type pullCustomer struct {
-	consumer jetstream.Consumer
+func (mi *manageInitializers) getCustomerConfig(ctx context.Context) (config jetstream.ConsumerConfig, err error) {
+	info, err := mi.consumer.Info(ctx)
+	if err != nil {
+		return config, err
+	}
+	config = info.Config
+	return config, err
 }
 
-func (mi *pullCustomer) updateConfig(
-	js jetstream.JetStream,
-	streamName string,
-	config jetstream.ConsumerConfig,
-) (err error) {
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*30)
-	defer cancel()
-	mi.consumer, err = js.CreateOrUpdateConsumer(ctx, streamName, config)
-	return err
-}
-
-func (mi *pullCustomer) fetchMsg(batch int) (jetstream.MessageBatch, error) {
-	return mi.consumer.Fetch(batch)
+func (mi *manageInitializers) newCustomer(ctx context.Context, config jetstream.ConsumerConfig) (jetstream.Consumer, error) {
+	return mi.js.CreateOrUpdateConsumer(ctx, mi.stream.CachedInfo().Config.Name, config)
 }

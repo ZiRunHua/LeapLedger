@@ -13,7 +13,6 @@ import (
 	"KeepAccount/util/timeTool"
 	"context"
 	"github.com/gin-gonic/gin"
-	"gorm.io/gorm"
 	"time"
 )
 
@@ -73,12 +72,8 @@ func (t *TransactionApi) CreateOne(ctx *gin.Context) {
 	}
 	err := db.Transaction(
 		ctx, func(ctx *cusCtx.TxContext) error {
-			createOption, err := transactionService.NewOptionFormConfig(transaction.Info, ctx)
-			if err != nil {
-				return err
-			}
-			createOption.WithSyncUpdateStatistic(false)
-			transaction, err = transactionService.Create(transaction.Info, accountUser, createOption, ctx)
+			var err error
+			transaction, err = transactionService.Create(transaction.Info, accountUser, transactionService.NewDefaultOption(), ctx)
 			return err
 		},
 	)
@@ -126,13 +121,7 @@ func (t *TransactionApi) Update(ctx *gin.Context) {
 	}
 	transaction.ID = oldTrans.ID
 
-	txCtx := context.WithValue(ctx, cusCtx.Db, db.Db)
-	option, err := transactionService.NewOptionFormConfig(transaction.Info, txCtx)
-	if responseError(err, ctx) {
-		return
-	}
-	option.WithSyncUpdateStatistic(true)
-	err = transactionService.Update(transaction, contextFunc.GetAccountUser(ctx), option, txCtx)
+	err := transactionService.Update(transaction, contextFunc.GetAccountUser(ctx), transactionService.NewOption(), ctx)
 	if responseError(err, ctx) {
 		return
 	}
@@ -162,11 +151,7 @@ func (t *TransactionApi) Delete(ctx *gin.Context) {
 	if responseError(err, ctx) {
 		return
 	}
-	err = db.Db.Transaction(
-		func(tx *gorm.DB) error {
-			return transactionService.Delete(trans, accountUser, tx)
-		},
-	)
+	err = transactionService.Delete(trans, accountUser, ctx)
 	if err != nil {
 		response.FailToError(ctx, err)
 		return

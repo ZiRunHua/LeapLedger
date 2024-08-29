@@ -2,29 +2,24 @@ package transactionService
 
 import (
 	"KeepAccount/global/cron"
-	"KeepAccount/global/db"
 	"KeepAccount/global/nats"
 	transactionModel "KeepAccount/model/transaction"
 	"context"
-	"gorm.io/gorm"
+	"github.com/pkg/errors"
 	"time"
 )
 
 type _task struct{}
 
 func init() {
-	nats.SubscribeTaskWithPayload[transactionModel.StatisticData](
-		nats.TaskStatisticUpdate, func(data transactionModel.StatisticData, ctx context.Context) error {
-			return GroupApp.Transaction.updateStatistic(data, db.Get(ctx))
-		},
-	)
+	//update statistic
+	nats.SubscribeTaskWithPayload(nats.TaskStatisticUpdate, GroupApp.Transaction.updateStatistic)
 
-	nats.SubscribeTaskWithPayload[transactionModel.Transaction](
-		nats.TaskTransactionSync, GroupApp.Transaction.SyncToMappingAccount,
-	)
+	//sync trans
+	nats.SubscribeTaskWithPayload(nats.TaskTransactionSync, GroupApp.Transaction.SyncToMappingAccount)
 	// timing
 	_, err := cron.Scheduler.Every(1).Day().At("00:00").Do(
-		cron.PublishTaskWithMakePayload[taskTransactionTimingTaskAssign](
+		cron.PublishTaskWithMakePayload(
 			nats.TaskTransactionTimingTaskAssign, func() (taskTransactionTimingTaskAssign, error) {
 				now := time.Now()
 				return taskTransactionTimingTaskAssign{
@@ -38,25 +33,17 @@ func init() {
 		panic(err)
 	}
 
-	nats.SubscribeTaskWithPayload[taskTransactionTimingTaskAssign](
+	nats.SubscribeTaskWithPayload(
 		nats.TaskTransactionTimingTaskAssign, func(assign taskTransactionTimingTaskAssign, ctx context.Context) error {
 			return GroupApp.Timing.Exec.GenerateAndPublishTasks(assign.Deadline, assign.TaskSize, ctx)
 		},
 	)
 
-	nats.SubscribeTaskWithPayload[transactionTimingExecTask](
+	nats.SubscribeTaskWithPayload(
 		nats.TaskTransactionTimingExec, func(execTask transactionTimingExecTask, ctx context.Context) error {
 			return GroupApp.Timing.Exec.ProcessWaitExecByStartId(execTask.StartId, execTask.Size, ctx)
 		},
 	)
-}
-
-func (t *_task) updateStatistic(data transactionModel.StatisticData, tx *gorm.DB) error {
-	isSuccess := nats.PublishTaskWithPayload[transactionModel.StatisticData](nats.TaskStatisticUpdate, data)
-	if false == isSuccess {
-		return server.updateStatistic(data, tx)
-	}
-	return nil
 }
 
 func (t *_task) syncToMappingAccount(trans transactionModel.Transaction, ctx context.Context) error {
@@ -84,7 +71,7 @@ func (t *_task) execTransactionTiming(startId uint, size int) error {
 		},
 	)
 	if !isSuccess {
-		return nats.ErrNatsNotWork
+		return errors.New("nats not work")
 	}
 	return nil
 }

@@ -1,4 +1,4 @@
-package nats
+package manager
 
 import (
 	"context"
@@ -13,29 +13,11 @@ import (
 	"github.com/nats-io/nats.go/jetstream"
 )
 
-func getTaskManage() *taskManager {
-	var m taskManager
-	err := m.init(js, taskLogger)
-	if err != nil {
-		panic(err)
-	}
-	return &m
-}
-
-func getEventManage(t *taskManager) *eventManager {
-	var m eventManager
-	err := m.init(js, t, eventLogger)
-	if err != nil {
-		panic(err)
-	}
-	return &m
-}
-
 func TestSubscribeAndPublish(t *testing.T) {
 	var task = Task(t.Name())
 	var count int
 	manager := taskManage
-	manager.subscribe(
+	manager.Subscribe(
 		task, func(msg jetstream.Msg) error {
 			if !reflect.DeepEqual(msg.Data(), []byte("1")) {
 				t.Fail()
@@ -45,7 +27,7 @@ func TestSubscribeAndPublish(t *testing.T) {
 		},
 	)
 	time.Sleep(time.Second * 3)
-	isSuccess := manager.publish(task, []byte("1"))
+	isSuccess := manager.Publish(task, []byte("1"))
 	time.Sleep(time.Second * 3)
 	if !isSuccess || count != 1 {
 		t.Fail()
@@ -57,14 +39,14 @@ func TestManager(t *testing.T) {
 	var handleCount int
 
 	m := taskManage
-	m.subscribe(
+	m.Subscribe(
 		task, func(msg jetstream.Msg) error {
 			fmt.Printf("%s %s\n", msg.Subject(), msg.Data())
 			handleCount++
 			return errors.New("test")
 		},
 	)
-	m.publish(task, []byte("test"))
+	m.Publish(task, []byte("test"))
 	time.Sleep(time.Second * 10)
 	t.Log(handleCount)
 }
@@ -81,20 +63,19 @@ func TestEventSubscribeAndPublish(t *testing.T) {
 		taskMap[taskPrefix+Task("_"+strconv.FormatInt(int64(i), 10))] = false
 	}
 
-	for ts, _ := range taskMap {
-		var task = ts
+	for task := range taskMap {
 		// 订阅任务
-		taskM.subscribe(
+		taskM.Subscribe(
 			task, func(msg jetstream.Msg) error {
 				taskMap[task] = true
 				return nil
 			},
 		)
 		// 订阅事件触发任务
-		eventM.subscribe(event, task, func(eventData []byte) ([]byte, error) { return eventData, nil })
+		eventM.Subscribe(event, task, func(eventData []byte) ([]byte, error) { return eventData, nil })
 	}
 	// 发布事件
-	eventM.publish(event, []byte("test"))
+	eventM.Publish(event, []byte("test"))
 	time.Sleep(time.Second * 10)
 	for task, b := range taskMap {
 		if !b {
@@ -108,14 +89,14 @@ func TestDql(t *testing.T) {
 	taskM := taskManage
 	var task Task = Task(t.Name())
 	var count = 1
-	taskM.subscribe(
+	taskM.Subscribe(
 		task, func(msg jetstream.Msg) error {
 			count++
 			return errors.New("test dql")
 		},
 	)
 	time.Sleep(time.Second)
-	taskM.publish(task, []byte("test"))
+	taskM.Publish(task, []byte("test"))
 	time.Sleep(time.Second * 30)
 	batch, err := dlqManage.consumer.Fetch(10)
 	if err != nil {
@@ -133,7 +114,7 @@ func TestDqlRepublish(t *testing.T) {
 	taskM := taskManage
 	var task Task = Task(t.Name())
 	var count = 1
-	taskM.subscribe(
+	taskM.Subscribe(
 		task, func(msg jetstream.Msg) error {
 			count++
 			return errors.New("test dql")
@@ -141,18 +122,18 @@ func TestDqlRepublish(t *testing.T) {
 	)
 	time.Sleep(time.Second)
 	for i := 0; i < 100; i++ {
-		taskM.publish(task, []byte("test_"+strconv.FormatInt(int64(i), 10)))
+		taskM.Publish(task, []byte("test_"+strconv.FormatInt(int64(i), 10)))
 	}
 	time.Sleep(time.Second * 10)
 	t.Run(
 		"republish die msg", func(t *testing.T) {
-			taskM.subscribe(
+			taskM.Subscribe(
 				task, func(msg jetstream.Msg) error {
 					count--
 					return nil
 				},
 			)
-			err := dlqManage.republishBatch(10, context.TODO())
+			err := dlqManage.RepublishBatch(10, context.TODO())
 			if err != nil {
 				t.Error(err)
 			}
@@ -165,26 +146,26 @@ func BenchmarkDql(b *testing.B) {
 	taskM := taskManage
 	var task Task = Task(uuid.NewString())
 	var count = b.N
-	taskM.subscribe(
+	taskM.Subscribe(
 		task, func(msg jetstream.Msg) error {
 			return errors.New("test dql")
 		},
 	)
 	time.Sleep(time.Second * 5)
 	for i := 0; i < b.N; i++ {
-		taskM.publish(task, []byte("test_"+strconv.FormatInt(int64(i), 10)))
+		taskM.Publish(task, []byte("test_"+strconv.FormatInt(int64(i), 10)))
 	}
 	time.Sleep(time.Second * 20)
 	b.Run(
 		"republish", func(b *testing.B) {
-			taskM.subscribe(
+			taskM.Subscribe(
 				task, func(msg jetstream.Msg) error {
 					count--
 					return nil
 				},
 			)
 
-			err := dlqManage.republishBatch(b.N, context.Background())
+			err := dlqManage.RepublishBatch(b.N, context.Background())
 			if err != nil {
 				b.Error(err)
 			}
@@ -192,6 +173,6 @@ func BenchmarkDql(b *testing.B) {
 	)
 	time.Sleep(time.Second * 20)
 	if count != 0 {
-		b.Fatal("msg lose publish:", b.N, " republish:", count)
+		b.Fatal("msg lose Publish:", b.N, " republish:", count)
 	}
 }

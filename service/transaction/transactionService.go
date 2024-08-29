@@ -5,6 +5,7 @@ import (
 	"KeepAccount/global/constant"
 	"KeepAccount/global/cusCtx"
 	"KeepAccount/global/db"
+	"KeepAccount/global/nats"
 	accountModel "KeepAccount/model/account"
 	categoryModel "KeepAccount/model/category"
 	transactionModel "KeepAccount/model/transaction"
@@ -12,7 +13,6 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	"go.uber.org/zap"
 	"golang.org/x/sync/errgroup"
 	"gorm.io/gorm"
 )
@@ -43,47 +43,15 @@ func (txnService *Transaction) Create(
 		if err != nil {
 			return errors.WithStack(err)
 		}
-		// other
-		if option.syncUpdateStatistic {
-			err = txnService.updateStatistic(transInfo.GetStatisticData(true), tx)
-		}
-		return nil
+		return db.AddCommitCallback(ctx, func() {
+			if !option.isSyncTrans {
+				nats.PublishTaskWithPayload(nats.TaskTransactionSync, trans)
+			}
+			nats.PublishEventWithPayload(nats.EventTransactionCreate, trans)
+		})
 	})
 
-	if err != nil {
-		return trans, err
-	}
-	return trans, txnService.onCreateSuccess(trans, option, ctx)
-}
-
-func (txnService *Transaction) onCreateSuccess(trans transactionModel.Transaction, option Option, ctx context.Context) error {
-	var err error
-
-	if option.transSyncToMappingAccount {
-		err = db.AddCommitCallback(ctx, func() {
-			err = task.syncToMappingAccount(trans, ctx)
-			if err != nil {
-				errorLog.Error("onCreateSuccess=>syncToMappingAccount", zap.Error(err))
-			}
-		})
-		if err != nil {
-			errorLog.Error("onCreateSuccess=>syncToMappingAccount", zap.Error(err))
-		}
-	}
-
-	if false == option.syncUpdateStatistic {
-		err = db.AddCommitCallback(ctx, func() {
-			err = task.updateStatistic(trans.GetStatisticData(true), db.Get(ctx))
-			if err != nil {
-				errorLog.Error("onCreateSuccess=>updateStatistic", zap.Error(err))
-			}
-		})
-		if err != nil {
-			errorLog.Error("onCreateSuccess=>updateStatistic", zap.Error(err))
-		}
-	}
-
-	return nil
+	return trans, err
 }
 
 // Update only "user_id,income_expense,category_id,amount,remark,trade_time" can be changed
@@ -114,60 +82,34 @@ func (txnService *Transaction) Update(
 		if err != nil {
 			return errors.WithStack(err)
 		}
-		// other
-		if option.syncUpdateStatistic {
-			if err = txnService.updateStatistic(oldTrans.GetStatisticData(false), tx); err != nil {
-				return err
+		return db.AddCommitCallback(ctx, func() {
+			if !option.isSyncTrans {
+				nats.PublishTaskWithPayload(nats.TaskTransactionSync, trans)
 			}
-			if err = txnService.updateStatistic(trans.GetStatisticData(true), tx); err != nil {
-				return err
-			}
-		}
-		return nil
+			nats.PublishEventWithPayload(nats.EventTransactionUpdate,
+				nats.EventTransactionUpdatePayload{OldTrans: oldTrans, NewTrans: trans},
+			)
+		})
 	})
-	if err != nil {
-		return err
-	}
-	return txnService.onUpdateSuccess(oldTrans, trans, option, ctx)
-}
-
-func (txnService *Transaction) onUpdateSuccess(
-	_, trans transactionModel.Transaction, option Option, ctx context.Context,
-) error {
-	var err error
-	if option.transSyncToMappingAccount {
-		err = task.syncToMappingAccount(trans, ctx)
-		if err != nil {
-			errorLog.Error("onUpdateSuccess=>syncToMappingAccount", zap.Error(err))
-		}
-	}
-
-	if false == option.syncUpdateStatistic {
-		err = task.updateStatistic(trans.GetStatisticData(true), db.Get(ctx))
-		if err != nil {
-			errorLog.Error("onUpdateSuccess=>updateStatistic", zap.Error(err))
-		}
-	}
-	return nil
+	return err
 }
 
 func (txnService *Transaction) Delete(
-	txn transactionModel.Transaction, accountUser accountModel.User, tx *gorm.DB,
+	txn transactionModel.Transaction, accountUser accountModel.User, ctx context.Context,
 ) error {
-	err := accountUser.CheckTransEditByUserId(txn.UserId)
-	if err != nil {
-		return err
-	}
-	err = txnService.updateStatisticAfterDelete(txn, tx)
-	if err != nil {
-		return err
-	}
-	return tx.Delete(&txn).Error
-}
-
-func (txnService *Transaction) updateStatisticAfterDelete(txn transactionModel.Transaction, tx *gorm.DB) error {
-	updateStatisticData := txn.GetStatisticData(false)
-	return task.updateStatistic(updateStatisticData, tx)
+	err := db.Transaction(ctx, func(ctx *cusCtx.TxContext) error {
+		tx := ctx.GetDb()
+		err := accountUser.CheckTransEditByUserId(txn.UserId)
+		if err != nil {
+			return err
+		}
+		err = tx.Delete(&txn).Error
+		if err != nil {
+			return err
+		}
+		return db.AddCommitCallback(ctx, func() { nats.PublishEventWithPayload(nats.EventTransactionDelete, txn) })
+	})
+	return err
 }
 
 func (txnService *Transaction) checkTransaction(trans transactionModel.Transaction, accountUser accountModel.User, tx *gorm.DB) error {
@@ -181,24 +123,24 @@ func (txnService *Transaction) checkTransaction(trans transactionModel.Transacti
 	return nil
 }
 
-func (txnService *Transaction) updateStatistic(data transactionModel.StatisticData, tx *gorm.DB) error {
+func (txnService *Transaction) updateStatistic(data transactionModel.StatisticData, ctx context.Context) (err error) {
 	switch data.IncomeExpense {
 	case constant.Income:
-		if err := transactionModel.IncomeAccumulate(
-			data.TradeTime, data.AccountId, data.UserId, data.CategoryId, data.Amount, data.Count, tx,
-		); err != nil {
-			return errors.Wrap(err, "transactionModel.IncomeAccumulate")
-		}
+		err = db.Transaction(ctx, func(ctx *cusCtx.TxContext) error {
+			return transactionModel.IncomeAccumulate(
+				data.TradeTime, data.AccountId, data.UserId, data.CategoryId, data.Amount, data.Count, ctx.GetDb(),
+			)
+		})
 	case constant.Expense:
-		if err := transactionModel.ExpenseAccumulate(
-			data.TradeTime, data.AccountId, data.UserId, data.CategoryId, data.Amount, data.Count, tx,
-		); err != nil {
-			return errors.Wrap(err, "transactionModel.ExpenseAccumulate")
-		}
+		err = db.Transaction(ctx, func(ctx *cusCtx.TxContext) error {
+			return transactionModel.ExpenseAccumulate(
+				data.TradeTime, data.AccountId, data.UserId, data.CategoryId, data.Amount, data.Count, ctx.GetDb(),
+			)
+		})
 	default:
-		panic("income Expense error")
+		panic("income expense error")
 	}
-	return nil
+	return err
 }
 
 func (txnService *Transaction) SyncToMappingAccount(trans transactionModel.Transaction, ctx context.Context) error {
@@ -240,27 +182,8 @@ func (txnService *Transaction) syncToShareAccount(indAccountTrans transactionMod
 		syncTrans.CategoryId = categoryMapping.ParentCategoryId
 		transMapping, err = transactionModel.NewDao(tx).SelectMappingByTrans(indAccountTrans, syncTrans)
 		if err == nil {
-			err = transMapping.ForShare(tx)
-			if err != nil {
-				return err
-			}
-			if false == transMapping.CanSyncTrans(indAccountTrans) {
-				return nil
-			}
-
 			syncTrans.ID = transMapping.RelatedId
-			var accountUser accountModel.User
-			accountUser, err = accountDao.SelectUser(syncTrans.AccountId, syncTrans.UserId)
-			if err != nil {
-				return err
-			}
-			option := txnService.NewDefaultOption()
-			option.WithTransSyncToMappingAccount(false)
-			err = txnService.Update(syncTrans, accountUser, option, context.WithValue(ctx, cusCtx.Db, tx))
-			if err != nil {
-				return err
-			}
-			err = transMapping.OnSyncSuccess(tx, indAccountTrans)
+			err = txnService.syncUpdate(transMapping, indAccountTrans, syncTrans, ctx)
 			if err != nil {
 				return err
 			}
@@ -295,27 +218,8 @@ func (txnService *Transaction) syncToIndependentAccount(shareAccountTrans transa
 	syncTrans.CategoryId = categoryMapping.ChildCategoryId
 	transMapping, err := transactionModel.NewDao(tx).SelectMappingByTrans(shareAccountTrans, syncTrans)
 	if err == nil {
-		err = transMapping.ForShare(tx)
-		if err != nil {
-			return err
-		}
-		if false == transMapping.CanSyncTrans(shareAccountTrans) {
-			return nil
-		}
-
 		syncTrans.ID = transMapping.MainId
-		var accountUser accountModel.User
-		accountUser, err = accountModel.NewDao(tx).SelectUser(syncTrans.AccountId, syncTrans.UserId)
-		if err != nil {
-			return err
-		}
-		option := txnService.NewDefaultOption()
-		option.WithTransSyncToMappingAccount(false)
-		err = txnService.Update(syncTrans, accountUser, option, ctx)
-		if err != nil {
-			return err
-		}
-		err = transMapping.OnSyncSuccess(tx, shareAccountTrans)
+		err = txnService.syncUpdate(transMapping, shareAccountTrans, syncTrans, ctx)
 		if err != nil {
 			return err
 		}
@@ -331,6 +235,34 @@ func (txnService *Transaction) syncToIndependentAccount(shareAccountTrans transa
 	return nil
 }
 
+func (txnService *Transaction) syncUpdate(mapping transactionModel.Mapping, origin, target transactionModel.Transaction, ctx context.Context) error {
+	tx := db.Get(ctx)
+	err := mapping.ForShare(tx)
+	if err != nil {
+		return err
+	}
+	if false == mapping.CanSyncTrans(origin) {
+		return nil
+	}
+
+	var accountUser accountModel.User
+	accountUser, err = accountModel.NewDao(tx).SelectUser(target.AccountId, target.UserId)
+	if err != nil {
+		return err
+	}
+	option := txnService.NewDefaultOption()
+	option.IsSyncTrans()
+	err = txnService.Update(target, accountUser, option, ctx)
+	if err != nil {
+		return err
+	}
+	err = mapping.OnSyncSuccess(tx, origin)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 func (txnService *Transaction) CreateSyncTrans(trans, syncTrans transactionModel.Transaction, ctx context.Context) (mapping transactionModel.Mapping, err error) {
 	tx := db.Get(ctx)
 	accountUser, err := accountModel.NewDao(tx).SelectUser(syncTrans.AccountId, syncTrans.UserId)
@@ -338,7 +270,7 @@ func (txnService *Transaction) CreateSyncTrans(trans, syncTrans transactionModel
 		return
 	}
 	option := txnService.NewDefaultOption()
-	option.WithTransSyncToMappingAccount(false)
+	option.IsSyncTrans()
 	newTrans, err := txnService.Create(syncTrans.Info, accountUser, option, ctx)
 	if err != nil {
 		return
@@ -464,6 +396,7 @@ func (txnService *Transaction) addStatisticAfterCreateMultiple(
 	account accountModel.Account, accountUser accountModel.User, incomeExpense constant.IncomeExpense,
 	amountList map[string]map[uint]int, countList map[string]map[uint]int, tx *gorm.DB,
 ) error {
+	ctx := context.WithValue(context.Background(), cusCtx.Tx, tx)
 	var err error
 	var tradeTime time.Time
 	for date, categoryList := range amountList {
@@ -476,7 +409,7 @@ func (txnService *Transaction) addStatisticAfterCreateMultiple(
 					AccountId: account.ID, UserId: accountUser.UserId, IncomeExpense: incomeExpense,
 					CategoryId: categoryId,
 					TradeTime:  tradeTime, Amount: amount, Count: countList[date][categoryId],
-				}, tx,
+				}, ctx,
 			); err != nil {
 				return err
 			}
@@ -486,12 +419,12 @@ func (txnService *Transaction) addStatisticAfterCreateMultiple(
 }
 
 type Option struct {
-	syncUpdateStatistic       bool // syncUpdateStatistic 同步/异步更新统计数据
-	transSyncToMappingAccount bool // transSyncToMappingAccount 交易数据至同步关联账本
+	syncUpdateStatistic bool // syncUpdateStatistic 同步/异步更新统计数据
+	isSyncTrans         bool // isSyncTrans 交易数据至同步关联账本
 }
 
 func (txnService *Transaction) NewDefaultOption() Option {
-	return Option{syncUpdateStatistic: true, transSyncToMappingAccount: true}
+	return Option{isSyncTrans: false}
 }
 
 func (txnService *Transaction) NewOption() Option {
@@ -504,7 +437,7 @@ func (txnService *Transaction) NewOptionFormConfig(trans transactionModel.Info, 
 		return
 	}
 	option = txnService.NewDefaultOption()
-	option.transSyncToMappingAccount = userConfig.GetFlagStatus(accountModel.Flag_Trans_Sync_Mapping_Account)
+	option.isSyncTrans = userConfig.GetFlagStatus(accountModel.Flag_Trans_Sync_Mapping_Account)
 	return
 }
 
@@ -513,8 +446,8 @@ func (o *Option) WithSyncUpdateStatistic(val bool) *Option {
 	return o
 }
 
-func (o *Option) WithTransSyncToMappingAccount(val bool) *Option {
-	o.transSyncToMappingAccount = val
+func (o *Option) IsSyncTrans() *Option {
+	o.isSyncTrans = true
 	return o
 }
 
