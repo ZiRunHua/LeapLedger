@@ -14,7 +14,6 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
 	"github.com/songzhibin97/gkit/egroup"
-	"gorm.io/gorm"
 	"time"
 )
 
@@ -62,7 +61,7 @@ type _userConfig interface {
 func (p *PublicApi) Login(ctx *gin.Context) {
 	var requestData request.UserLogin
 	var err error
-	// 处理错误方法
+	// handle error
 	var loginFailResponseFunc = func() {
 		if err != nil {
 			key := global.Cache.GetKey(constant.LoginFailCount, requestData.Email)
@@ -86,7 +85,7 @@ func (p *PublicApi) Login(ctx *gin.Context) {
 		}
 	}
 	defer loginFailResponseFunc()
-	// 请求数据获取与校验
+	// check
 	if err = ctx.ShouldBindJSON(&requestData); err != nil {
 		return
 	}
@@ -96,28 +95,21 @@ func (p *PublicApi) Login(ctx *gin.Context) {
 	}
 
 	client := contextFunc.GetClient(ctx)
-	// 开始处理
+	// handler
 	var user userModel.User
 	var clientBaseInfo userModel.UserClientBaseInfo
 	var responseData response.Login
-	transactionFunc := func(tx *gorm.DB) error {
-		var customClaims util.CustomClaims
-		user, clientBaseInfo, responseData.Token, customClaims, err = userService.Login(
-			requestData.Email, requestData.Password, client, tx,
-		)
-		if err != nil {
-			return err
-		}
-		responseData.TokenExpirationTime = customClaims.ExpiresAt
-		err = responseData.User.SetData(user)
-		if err != nil {
-			return err
-		}
-		return err
-	}
-
-	if err = db.Db.Transaction(transactionFunc); err != nil {
+	var customClaims util.CustomClaims
+	user, clientBaseInfo, responseData.Token, customClaims, err = userService.Login(
+		requestData.Email, requestData.Password, client, ctx,
+	)
+	if err != nil {
 		err = errors.New("用户名不存在或者密码错误")
+		return
+	}
+	responseData.TokenExpirationTime = customClaims.ExpiresAt
+	err = responseData.User.SetData(user)
+	if err != nil {
 		return
 	}
 	err = responseData.SetDataFormClientInto(clientBaseInfo)
@@ -154,24 +146,16 @@ func (p *PublicApi) Register(ctx *gin.Context) {
 	}
 
 	data := userModel.AddData{Username: requestData.Username, Password: requestData.Password, Email: requestData.Email}
-	var user userModel.User
+
 	var token string
 	var customClaims util.CustomClaims
-	err = db.Db.Transaction(
-		func(tx *gorm.DB) error {
-			user, err = userService.Register(data, tx)
-			if err != nil {
-				return err
-			}
-			//注册成功 获取token
-			customClaims = commonService.MakeCustomClaims(user.ID)
-			token, err = commonService.GenerateJWT(customClaims)
-			if err != nil {
-				return err
-			}
-			return err
-		},
-	)
+	user, err := userService.Register(data, ctx)
+	if responseError(err, ctx) {
+		return
+	}
+	//注册成功 获取token
+	customClaims = commonService.MakeCustomClaims(user.ID)
+	token, err = commonService.GenerateJWT(customClaims)
 	if responseError(err, ctx) {
 		return
 	}
@@ -200,14 +184,7 @@ func (p *PublicApi) TourRequest(ctx *gin.Context) {
 		response.FailToParameter(ctx, err)
 		return
 	}
-	var user userModel.User
-	err := db.Db.Transaction(
-		func(tx *gorm.DB) error {
-			var err error
-			user, err = userService.EnableTourist(requestData.DeviceNumber, contextFunc.GetClient(ctx), tx)
-			return err
-		},
-	)
+	user, err := userService.EnableTourist(requestData.DeviceNumber, contextFunc.GetClient(ctx), ctx)
 	if responseError(err, ctx) {
 		return
 	}
@@ -256,11 +233,7 @@ func (p *PublicApi) UpdatePassword(ctx *gin.Context) {
 	if responseError(err, ctx) {
 		return
 	}
-	err = db.Db.Transaction(
-		func(tx *gorm.DB) error {
-			return userService.UpdatePassword(user, requestData.Password, tx)
-		},
-	)
+	err = userService.UpdatePassword(user, requestData.Password, ctx)
 	// 发送不成功不影响主流程
 	_ = thirdpartyService.SendNotificationEmail(constant.NotificationOfUpdatePassword, &user)
 	if responseError(err, ctx) {
@@ -324,11 +297,7 @@ func (u *UserApi) UpdatePassword(ctx *gin.Context) {
 		return
 	}
 
-	err = db.Db.Transaction(
-		func(tx *gorm.DB) error {
-			return userService.UpdatePassword(user, requestData.Password, tx)
-		},
-	)
+	err = userService.UpdatePassword(user, requestData.Password, ctx)
 	// 发送不成功不影响主流程
 	_ = thirdpartyService.SendNotificationEmail(constant.NotificationOfUpdatePassword, &user)
 	if responseError(err, ctx) {
@@ -357,7 +326,7 @@ func (u *UserApi) UpdateInfo(ctx *gin.Context) {
 	if responseError(err, ctx) {
 		return
 	}
-	err = db.Db.Model(&user).Update("username", requestData.Username).Error
+	err = userService.UpdateInfo(user, requestData.Username, ctx)
 	if responseError(err, ctx) {
 		return
 	}
@@ -414,11 +383,7 @@ func (u *UserApi) SetCurrentAccount(ctx *gin.Context) {
 		return
 	}
 
-	err := db.Db.Transaction(
-		func(tx *gorm.DB) error {
-			return userService.SetClientAccount(accountUser, contextFunc.GetClient(ctx), account, tx)
-		},
-	)
+	err := userService.SetClientAccount(accountUser, contextFunc.GetClient(ctx), account, ctx)
 	if responseError(err, ctx) {
 		return
 	}
@@ -448,11 +413,7 @@ func (u *UserApi) SetCurrentShareAccount(ctx *gin.Context) {
 		return
 	}
 
-	err := db.Db.Transaction(
-		func(tx *gorm.DB) error {
-			return userService.SetClientShareAccount(accountUser, contextFunc.GetClient(ctx), account, tx)
-		},
-	)
+	err := userService.SetClientShareAccount(accountUser, contextFunc.GetClient(ctx), account, ctx)
 	if responseError(err, ctx) {
 		return
 	}
@@ -745,19 +706,12 @@ func (u *UserApi) CreateFriendInvitation(ctx *gin.Context) {
 	}
 	// 处理
 	var invitation userModel.FriendInvitation
-	txFunc := func(tx *gorm.DB) error {
-		var invitee userModel.User
-		invitee, err = userModel.NewDao(tx).SelectById(requestData.Invitee)
-		if err != nil {
-			return err
-		}
-		invitation, err = userService.Friend.CreateInvitation(user, invitee, tx)
-		if err != nil {
-			return err
-		}
-		return nil
+	var invitee userModel.User
+	invitee, err = userModel.NewDao().SelectById(requestData.Invitee)
+	if responseError(err, ctx) {
+		return
 	}
-	err = db.Db.Transaction(txFunc)
+	invitation, err = userService.Friend.CreateInvitation(user, invitee, ctx)
 	if responseError(err, ctx) {
 		return
 	}
@@ -798,11 +752,7 @@ func (u *UserApi) AcceptFriendInvitation(ctx *gin.Context) {
 		response.FailToError(ctx, errors.New("非被邀请者！"))
 		return
 	}
-	txFunc := func(tx *gorm.DB) error {
-		_, _, err := userService.Friend.AcceptInvitation(&invitation, tx)
-		return err
-	}
-	err := db.Db.Transaction(txFunc)
+	_, _, err := userService.Friend.AcceptInvitation(&invitation, ctx)
 	if responseError(err, ctx) {
 		return
 	}
@@ -830,11 +780,7 @@ func (u *UserApi) RefuseFriendInvitation(ctx *gin.Context) {
 		response.FailToError(ctx, errors.New("非被邀请者！"))
 		return
 	}
-	txFunc := func(tx *gorm.DB) error {
-		err := userService.Friend.RefuseInvitation(&invitation, tx)
-		return err
-	}
-	err := db.Db.Transaction(txFunc)
+	err := userService.Friend.RefuseInvitation(&invitation, ctx)
 	if responseError(err, ctx) {
 		return
 	}

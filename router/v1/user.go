@@ -22,7 +22,7 @@ func init() {
 		router.PUT("/client/current/account", baseApi.SetCurrentAccount)
 		router.PUT("/client/current/share/account", baseApi.SetCurrentShareAccount)
 		noTouristRouter.PUT("/current/password", baseApi.UpdatePassword)
-		router.PUT("/current", baseApi.UpdateInfo)
+		noTouristRouter.PUT("/current", baseApi.UpdateInfo)
 		router.GET("/home", baseApi.Home)
 		// all user
 		router.GET("/search", baseApi.SearchUser)

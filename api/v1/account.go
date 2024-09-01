@@ -66,7 +66,7 @@ func (a *AccountApi) CreateOne(ctx *gin.Context) {
 	var _ accountModel.Account
 	var aUser accountModel.User
 	txFunc := func(tx *gorm.DB) error {
-		_, aUser, err = accountService.Base.CreateOne(
+		_, aUser, err = accountService.CreateOne(
 			user, requestData.Name, requestData.Icon, requestData.Type, context.WithValue(ctx, cusCtx.Db, tx),
 		)
 		return err
@@ -102,13 +102,10 @@ func (a *AccountApi) Update(ctx *gin.Context) {
 		return
 	}
 
-	txFunc := func(tx *gorm.DB) error {
-		return accountService.Base.Update(
-			account, accountUser,
-			accountModel.AccountUpdateData{Name: requestData.Name, Icon: requestData.Icon, Type: requestData.Type}, tx,
-		)
-	}
-	err := db.Db.Transaction(txFunc)
+	err := accountService.Update(
+		account, accountUser,
+		accountModel.AccountUpdateData{Name: requestData.Name, Icon: requestData.Icon, Type: requestData.Type}, ctx,
+	)
 	if responseError(err, ctx) {
 		return
 	}
@@ -138,7 +135,7 @@ func (a *AccountApi) Delete(ctx *gin.Context) {
 		return
 	}
 	txFunc := func(tx *gorm.DB) error {
-		return accountService.Base.Delete(account, accountUser, context.WithValue(ctx, cusCtx.Db, tx))
+		return accountService.Delete(account, accountUser, context.WithValue(ctx, cusCtx.Db, tx))
 	}
 
 	if err := db.Db.Transaction(txFunc); responseError(err, ctx) {
@@ -290,11 +287,7 @@ func (a *AccountApi) InitCategoryByTemplate(ctx *gin.Context) {
 		return
 	}
 
-	txFunc := func(tx *gorm.DB) error {
-		err = templateService.CreateCategory(account, template, context.WithValue(ctx, cusCtx.Db, tx))
-		return err
-	}
-	err = db.Db.Transaction(txFunc)
+	err = templateService.CreateCategory(account, template, ctx)
 	if responseError(err, ctx) {
 		return
 	}
@@ -382,21 +375,17 @@ func (a *AccountApi) CreateAccountUserInvitation(ctx *gin.Context) {
 	}
 	// handle
 	var invitation accountModel.UserInvitation
-	txFunc := func(tx *gorm.DB) error {
-		// 不为创建者不可设置角色 只能取默认值
-		if requestData.Role == nil || inviter.GetRole() != accountModel.Creator {
-			invitation, err = accountService.Share.CreateUserInvitation(
-				account, inviter, invitee, nil, tx,
-			)
-			return err
-		}
+	// 不为创建者不可设置角色 只能取默认值
+	if requestData.Role == nil || inviter.GetRole() != accountModel.Creator {
+		invitation, err = accountService.Share.CreateUserInvitation(
+			account, inviter, invitee, nil, ctx,
+		)
+	} else {
 		rolePermission := requestData.Role.ToUserPermission()
 		invitation, err = accountService.Share.CreateUserInvitation(
-			account, inviter, invitee, &rolePermission, tx,
+			account, inviter, invitee, &rolePermission, ctx,
 		)
-		return err
 	}
-	err = db.Db.Transaction(txFunc)
 	if responseError(err, ctx) {
 		return
 	}
@@ -522,13 +511,8 @@ func (a *AccountApi) UpdateUser(ctx *gin.Context) {
 	if responseError(err, ctx) {
 		return
 	}
-
 	var result accountModel.User
-	txFunc := func(tx *gorm.DB) error {
-		result, err = accountService.Base.UpdateUser(accountUser, operator, requestData.GetUpdateData(), tx)
-		return err
-	}
-	err = db.Db.Transaction(txFunc)
+	result, err = accountService.UpdateUser(accountUser, operator, requestData.GetUpdateData(), ctx)
 	if responseError(err, ctx) {
 		return
 	}
@@ -838,13 +822,7 @@ func (a *AccountApi) CreateAccountMapping(ctx *gin.Context) {
 		return
 	}
 	// handle
-	var mapping accountModel.Mapping
-	err = db.Db.Transaction(
-		func(tx *gorm.DB) error {
-			mapping, err = accountService.Share.MappingAccount(user, mainAccount, mappingAccount, tx)
-			return err
-		},
-	)
+	mapping, err := accountService.Share.MappingAccount(user, mainAccount, mappingAccount, ctx)
 	if responseError(err, ctx) {
 		return
 	}
@@ -882,18 +860,11 @@ func (a *AccountApi) DeleteAccountMapping(ctx *gin.Context) {
 	}
 	// handle
 	var mapping accountModel.Mapping
-	txFunc := func(tx *gorm.DB) error {
-		mapping, err = accountModel.NewDao(tx).SelectMappingById(id)
-		if err != nil {
-			return err
-		}
-		err = accountService.Share.DeleteAccountMapping(user, mapping, tx)
-		if err != nil {
-			return err
-		}
-		return err
+	mapping, err = accountModel.NewDao().SelectMappingById(id)
+	if responseError(err, ctx) {
+		return
 	}
-	err = db.Db.Transaction(txFunc)
+	err = accountService.Share.DeleteAccountMapping(user, mapping, ctx)
 	if responseError(err, ctx) {
 		return
 	}
@@ -935,8 +906,8 @@ func (a *AccountApi) UpdateAccountMapping(ctx *gin.Context) {
 	// handle
 	var mapping accountModel.Mapping
 	var relatedAccount accountModel.Account
-	txFunc := func(tx *gorm.DB) error {
-		dao := accountModel.NewDao(tx)
+	err = db.Transaction(ctx, func(ctx *cusCtx.TxContext) error {
+		dao := accountModel.NewDao(ctx.GetDb())
 		mapping, err = dao.SelectMappingById(id)
 		if err != nil {
 			return err
@@ -945,13 +916,12 @@ func (a *AccountApi) UpdateAccountMapping(ctx *gin.Context) {
 		if err != nil {
 			return err
 		}
-		mapping, err = accountService.Share.UpdateAccountMapping(user, mapping, relatedAccount, tx)
+		mapping, err = accountService.Share.UpdateAccountMapping(user, mapping, relatedAccount, ctx)
 		if err != nil {
 			return err
 		}
 		return err
-	}
-	err = db.Db.Transaction(txFunc)
+	})
 	if responseError(err, ctx) {
 		return
 	}

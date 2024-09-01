@@ -410,24 +410,24 @@ func (t *TransactionApi) GetCategoryAmountRank(ctx *gin.Context) {
 			return
 		}
 	}
-	// 数量不足时补足响应数量
-	if requestData.Limit != nil && len(rankingList) < *requestData.Limit {
-		categoryList = []categoryModel.Category{}
-		limit := *requestData.Limit - len(rankingList)
-		query := db.Db.Where("account_id = ?", account.ID)
-		query = query.Where("income_expense = ?", requestData.IncomeExpense)
-		err = query.Where("id NOT IN (?)", categoryIds).Limit(limit).Find(&categoryList).Error
+
+	categoryList = []categoryModel.Category{}
+	query := db.Db.Where("account_id = ?", account.ID)
+	query = query.Where("income_expense = ?", requestData.IncomeExpense)
+	if len(categoryIds) > 0 {
+		query = query.Where("id NOT IN (?)", categoryIds)
+	}
+	err = query.Find(&categoryList).Error
+	if responseError(err, ctx) {
+		return
+	}
+	for _, category := range categoryList {
+		responseCategory := response.TransactionCategoryAmountRank{}
+		err = responseCategory.Category.SetData(category)
 		if responseError(err, ctx) {
 			return
 		}
-		for _, category := range categoryList {
-			responseCategory := response.TransactionCategoryAmountRank{}
-			err = responseCategory.Category.SetData(category)
-			if responseError(err, ctx) {
-				return
-			}
-			responseData = append(responseData, responseCategory)
-		}
+		responseData = append(responseData, responseCategory)
 	}
 	response.OkWithData(response.List[response.TransactionCategoryAmountRank]{List: responseData}, ctx)
 }

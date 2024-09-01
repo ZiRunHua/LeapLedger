@@ -3,7 +3,6 @@ package transactionService
 import (
 	"KeepAccount/global/cron"
 	"KeepAccount/global/nats"
-	transactionModel "KeepAccount/model/transaction"
 	"context"
 	"github.com/pkg/errors"
 	"time"
@@ -12,11 +11,10 @@ import (
 type _task struct{}
 
 func init() {
-	//update statistic
+	// update statistic
 	nats.SubscribeTaskWithPayload(nats.TaskStatisticUpdate, GroupApp.Transaction.updateStatistic)
-
-	//sync trans
-	nats.SubscribeTaskWithPayload(nats.TaskTransactionSync, GroupApp.Transaction.SyncToMappingAccount)
+	// sync trans
+	nats.SubscribeTaskWithPayloadAndProcessInTransaction(nats.TaskTransactionSync, GroupApp.Transaction.SyncToMappingAccount)
 	// timing
 	_, err := cron.Scheduler.Every(1).Day().At("00:00").Do(
 		cron.PublishTaskWithMakePayload(
@@ -33,25 +31,17 @@ func init() {
 		panic(err)
 	}
 
-	nats.SubscribeTaskWithPayload(
+	nats.SubscribeTaskWithPayloadAndProcessInTransaction(
 		nats.TaskTransactionTimingTaskAssign, func(assign taskTransactionTimingTaskAssign, ctx context.Context) error {
 			return GroupApp.Timing.Exec.GenerateAndPublishTasks(assign.Deadline, assign.TaskSize, ctx)
 		},
 	)
 
-	nats.SubscribeTaskWithPayload(
+	nats.SubscribeTaskWithPayloadAndProcessInTransaction(
 		nats.TaskTransactionTimingExec, func(execTask transactionTimingExecTask, ctx context.Context) error {
 			return GroupApp.Timing.Exec.ProcessWaitExecByStartId(execTask.StartId, execTask.Size, ctx)
 		},
 	)
-}
-
-func (t *_task) syncToMappingAccount(trans transactionModel.Transaction, ctx context.Context) error {
-	isSuccess := nats.PublishTaskWithPayload[transactionModel.Transaction](nats.TaskTransactionSync, trans)
-	if false == isSuccess {
-		return server.SyncToMappingAccount(trans, ctx)
-	}
-	return nil
 }
 
 type taskTransactionTimingTaskAssign struct {

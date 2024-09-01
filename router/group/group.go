@@ -38,6 +38,7 @@ func init() {
 	AccountAdministrator = createAccountRoleGroup(accountModel.UserPermissionAdministrator)
 	AccountCreator = createAccountRoleGroup(accountModel.UserPermissionCreator)
 }
+
 func createAccountRoleGroup(permission accountModel.UserPermission) *gin.RouterGroup {
 	group := Account.Group("", middleware.AccountAuth(permission))
 	return group

@@ -276,14 +276,15 @@ func (txnService *Transaction) CreateSyncTrans(trans, syncTrans transactionModel
 		return
 	}
 
-	mapping, err = txnService.CreateMapping(trans, newTrans, tx)
+	mapping, err = txnService.CreateMapping(trans, newTrans, ctx)
 	if err != nil {
 		return
 	}
 	return
 }
 
-func (txnService *Transaction) CreateMapping(trans1, trans2 transactionModel.Transaction, tx *gorm.DB) (mapping transactionModel.Mapping, err error) {
+func (txnService *Transaction) CreateMapping(trans1, trans2 transactionModel.Transaction, ctx context.Context) (mapping transactionModel.Mapping, err error) {
+	tx := db.Get(ctx)
 	accountType, err := accountModel.NewDao(tx).GetAccountType(trans1.AccountId)
 	if err != nil {
 		return

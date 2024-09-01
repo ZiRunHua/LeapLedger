@@ -9,7 +9,7 @@ import (
 type _task struct{}
 
 func init() {
-	nats.SubscribeTaskWithPayload[accountModel.Mapping](
+	nats.SubscribeTaskWithPayloadAndProcessInTransaction[accountModel.Mapping](
 		nats.TaskMappingCategoryToAccountMapping,
 		GroupApp.MappingCategoryToAccountMapping,
 	)

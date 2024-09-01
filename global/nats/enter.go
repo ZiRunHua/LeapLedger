@@ -7,7 +7,7 @@ import (
 
 type PayloadType interface{}
 
-type txHandle[Data any] func(Data, context.Context) error
+type handle[Data any] func(Data, context.Context) error
 
 var (
 	taskManage  = manager.TaskManage

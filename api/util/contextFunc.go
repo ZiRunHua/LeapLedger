@@ -115,20 +115,12 @@ func (cf *contextFunc) GetAccountIdByParam(ctx *gin.Context) (uint, bool) {
 	return cf.GetUintParamByKey(string(cusCtx.AccountId), ctx)
 }
 
-func (cf *contextFunc) CheckAccountPermissionFromParam(ctx *gin.Context, permission accountModel.UserPermission) (pass bool) {
+func (cf *contextFunc) CheckAccountPermissionFromParam(permission accountModel.UserPermission, ctx *gin.Context) (pass bool) {
 	accountId, pass := cf.GetAccountIdByParam(ctx)
 	if !pass {
 		return
 	}
-	pass, err := accountModel.NewDao().CheckUserPermission(permission, accountId, cf.GetUserId(ctx))
-	if err != nil {
-		response.FailToError(ctx, err)
-		return
-	}
-	if !pass {
-		response.Forbidden(ctx)
-	}
-	return true
+	return CheckFunc.AccountPermission(accountId, permission, ctx)
 }
 
 func (cf *contextFunc) GetInfoTypeFormParam(ctx *gin.Context) request.InfoType {

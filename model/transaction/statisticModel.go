@@ -37,17 +37,17 @@ func ExpenseAccumulate(
 	var accountSta ExpenseAccountStatistic
 	err = accountSta.Accumulate(tradeTime, accountId, amount, count, tx)
 	if err != nil {
-		return nil
+		return err
 	}
 	var accountUserSta ExpenseAccountUserStatistic
 	err = accountUserSta.Accumulate(tradeTime, accountId, userId, categoryId, amount, count, tx)
 	if err != nil {
-		return nil
+		return err
 	}
 	var categorySta ExpenseCategoryStatistic
 	err = categorySta.Accumulate(tradeTime, accountId, categoryId, amount, count, tx)
 	if err != nil {
-		return nil
+		return err
 	}
 	return err
 }
@@ -59,17 +59,17 @@ func IncomeAccumulate(
 	var accountSta IncomeAccountStatistic
 	err = accountSta.Accumulate(tradeTime, accountId, amount, count, tx)
 	if err != nil {
-		return nil
+		return err
 	}
 	var accountUserSta IncomeAccountUserStatistic
 	err = accountUserSta.Accumulate(tradeTime, accountId, userId, categoryId, amount, count, tx)
 	if err != nil {
-		return nil
+		return err
 	}
 	var categorySta IncomeCategoryStatistic
 	err = categorySta.Accumulate(tradeTime, accountId, categoryId, amount, count, tx)
 	if err != nil {
-		return nil
+		return err
 	}
 	return err
 }

@@ -8,6 +8,10 @@ import (
 	"time"
 )
 
+func init() {
+
+}
+
 type taskData struct {
 	Time int64
 	Name string
@@ -25,7 +29,7 @@ func TestTaskPublishAndSubscribe(t *testing.T) {
 			task := Task(uuid.NewString())
 			success := false
 			SubscribeTask(
-				task, func() error {
+				task, func(ctx context.Context) error {
 					success = true
 					return nil
 				},
@@ -44,7 +48,7 @@ func TestTaskPublishAndSubscribe(t *testing.T) {
 		"Publish task With payload", func(t *testing.T) {
 			task, data := Task(uuid.NewString()), newTaskData()
 			var success bool
-			SubscribeTaskWithPayload[taskData](
+			SubscribeTaskWithPayloadAndProcessInTransaction[taskData](
 				task, func(pushData taskData, ctx context.Context) error {
 					success = reflect.DeepEqual(data, pushData)
 					return nil
@@ -68,7 +72,7 @@ func TestEventPublishAndSubscribe(t *testing.T) {
 		task := Task("task_" + uuid.NewString())
 		taskMap[task] = 0
 		SubscribeTask(
-			task, func() error {
+			task, func(ctx context.Context) error {
 				taskMap[task]++
 				return nil
 			},

@@ -5,6 +5,7 @@ import (
 	userModel "KeepAccount/model/user"
 	"KeepAccount/util"
 	"KeepAccount/util/rand"
+	"context"
 	"gorm.io/gorm"
 )
 
@@ -14,16 +15,16 @@ type _user struct {
 var User = _user{}
 
 // Create("template@gmail.com","1999123456","template")
-func (u *_user) Create(email, password, username string, tx *gorm.DB) (userModel.User, error) {
+func (u *_user) Create(email, password, username string, ctx context.Context) (userModel.User, error) {
 	addData := userModel.AddData{
 		Email:    email,
 		Password: util.ClientPasswordHash(email, password),
 		Username: username,
 	}
-	return userService.Register(addData, tx)
+	return userService.Register(addData, ctx)
 }
 
-func (u *_user) CreateTourist(db *gorm.DB) (user userModel.User, err error) {
+func (u *_user) CreateTourist(ctx context.Context) (user userModel.User, err error) {
 	email := rand.String(12)
 	password := rand.String(8)
 	username := rand.String(8)
@@ -33,7 +34,7 @@ func (u *_user) CreateTourist(db *gorm.DB) (user userModel.User, err error) {
 		Username: username,
 	}
 	option := userService.NewRegisterOption().WithTour(true)
-	user, err = userService.Register(addData, db, *option)
+	user, err = userService.Register(addData, ctx, *option)
 	if err != nil {
 		return
 	}

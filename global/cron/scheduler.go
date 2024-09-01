@@ -1,13 +1,20 @@
 package cron
 
 import (
+	"KeepAccount/global/lock"
 	"KeepAccount/global/nats"
+	"context"
 	"errors"
 	"go.uber.org/zap"
 )
 
+const lockKeyPrefix = "cron:"
+const publishLockKeyPrefix = lockKeyPrefix + "publish:"
+const taskPublishLockKeyPrefix = publishLockKeyPrefix + "task:"
+
 func PublishTask(task nats.Task) func() {
-	return MakeJobFunc(
+	return MakeOnceJob(
+		lock.Key(taskPublishLockKeyPrefix+string(task)),
 		func() error {
 			isSuccess := nats.PublishTask(task)
 			if !isSuccess {
@@ -19,7 +26,8 @@ func PublishTask(task nats.Task) func() {
 }
 
 func PublishTaskWithPayload[T nats.PayloadType](task nats.Task, payload T) func() {
-	return MakeJobFunc(
+	return MakeOnceJob(
+		lock.Key(taskPublishLockKeyPrefix+string(task)),
 		func() error {
 			isSuccess := nats.PublishTaskWithPayload[T](task, payload)
 			if !isSuccess {
@@ -31,7 +39,8 @@ func PublishTaskWithPayload[T nats.PayloadType](task nats.Task, payload T) func(
 }
 
 func PublishTaskWithMakePayload[T nats.PayloadType](task nats.Task, makePayload func() (T, error)) func() {
-	return MakeJobFunc(
+	return MakeOnceJob(
+		lock.Key(taskPublishLockKeyPrefix+string(task)),
 		func() error {
 			payload, err := makePayload()
 			if err != nil {
@@ -42,6 +51,23 @@ func PublishTaskWithMakePayload[T nats.PayloadType](task nats.Task, makePayload 
 				return errors.New("publish fail")
 			}
 			return nil
+		},
+	)
+}
+
+func MakeOnceJob(key lock.Key, f func() error) func() {
+	return MakeJobFunc(
+		func() error {
+			l := lock.New(key)
+			err := l.Lock(context.Background())
+			if err != nil {
+				if errors.Is(err, lock.ErrLockOccupied) {
+					return nil
+				}
+				return err
+			}
+			defer l.Release(context.Background())
+			return f()
 		},
 	)
 }

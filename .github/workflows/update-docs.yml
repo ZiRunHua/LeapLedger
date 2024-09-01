@@ -2,8 +2,8 @@ name: update docs
 
 on:
   workflow_dispatch:
-  schedule:
-    - cron: '0 19 * * *'
+  push:
+    branches: [ "bug_account_v2" ]
 
 jobs:
   update-docs:

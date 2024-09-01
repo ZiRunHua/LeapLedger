@@ -3,7 +3,9 @@ package categoryService
 import (
 	"KeepAccount/global"
 	"KeepAccount/global/constant"
+	"KeepAccount/global/cusCtx"
 	"KeepAccount/global/db"
+	"KeepAccount/global/nats"
 	accountModel "KeepAccount/model/account"
 	categoryModel "KeepAccount/model/category"
 	transactionModel "KeepAccount/model/transaction"
@@ -27,8 +29,8 @@ func (catSvc *Category) NewCategoryData(name, icon string) CreateData {
 	return CreateData{Name: name, Icon: icon}
 }
 
-func (catSvc *Category) CreateOne(father categoryModel.Father, data CreateData, ctx context.Context) (category categoryModel.Category, err error) {
-	category = categoryModel.Category{
+func (catSvc *Category) CreateOne(father categoryModel.Father, data CreateData, ctx context.Context) (categoryModel.Category, error) {
+	category := categoryModel.Category{
 		AccountId:      father.AccountId,
 		FatherId:       father.ID,
 		IncomeExpense:  father.IncomeExpense,
@@ -37,78 +39,86 @@ func (catSvc *Category) CreateOne(father categoryModel.Father, data CreateData, 
 		Previous:       0,
 		OrderUpdatedAt: time.Now(),
 	}
-	tx := db.Get(ctx)
-	if err = category.CheckName(tx); err != nil {
-		return
-	}
-	err = tx.Create(&category).Error
-	if errors.Is(err, gorm.ErrDuplicatedKey) {
-		//存在重复名称 则尝试恢复已软删除的交易类型
-		err = tx.Where("account_id = ? AND name = ? AND deleted_at IS NOT NULL", category.AccountId, category.Name).First(&category).Error
-		if err == nil {
-			err = tx.Model(&category).Update("deleted_at", nil).Error
-			if err != nil {
-				return
-			}
-		} else if errors.Is(err, gorm.ErrRecordNotFound) {
-			return category, global.ErrCategorySameName
-		} else {
-			return
+	return category, db.Transaction(ctx, func(ctx *cusCtx.TxContext) error {
+		tx := db.Get(ctx)
+		if err := category.CheckName(tx); err != nil {
+			return err
 		}
-	} else if err != nil {
-		return category, errors.Wrap(err, "category.CreateOne()")
-	}
-	// other
-	_ = task.UpdateCategoryMapping(category)
-	return
+		err := tx.Create(&category).Error
+		if errors.Is(err, gorm.ErrDuplicatedKey) {
+			//存在重复名称 则尝试恢复已软删除的交易类型
+			err = tx.Where("account_id = ? AND name = ? AND deleted_at IS NOT NULL", category.AccountId, category.Name).First(&category).Error
+			if err == nil {
+				err = tx.Model(&category).Update("deleted_at", nil).Error
+				if err != nil {
+					return err
+				}
+			} else if errors.Is(err, gorm.ErrRecordNotFound) {
+				return global.ErrCategorySameName
+			} else {
+				return err
+			}
+		} else if err != nil {
+			return errors.Wrap(err, "category.CreateOne()")
+		}
+		return db.AddCommitCallback(ctx, func() {
+			nats.PublishTaskWithPayload[categoryModel.Category](nats.TaskUpdateCategoryMapping, category)
+		})
+	})
+
 }
 
 func (catSvc *Category) UpdateCategoryMapping(category categoryModel.Category, ctx context.Context) error {
 	if !aiService.IsOpen() {
 		return nil
 	}
-	tx := db.Get(ctx)
-	accountDao, categoryDao := accountModel.NewDao(tx), categoryModel.NewDao(tx)
-	accountMapping, err := accountDao.SelectMultipleMapping(*accountModel.NewMappingCondition().WithRelatedId(category.AccountId))
-	if err != nil {
-		return err
-	}
-	var mainAccount accountModel.Account
-	for _, mapping := range accountMapping {
-		mainAccount, err = accountDao.SelectById(mapping.MainId)
+	return db.Transaction(ctx, func(ctx *cusCtx.TxContext) error {
+		tx := db.Get(ctx)
+		accountDao, categoryDao := accountModel.NewDao(tx), categoryModel.NewDao(tx)
+		accountMapping, err := accountDao.SelectMultipleMapping(*accountModel.NewMappingCondition().WithRelatedId(category.AccountId))
 		if err != nil {
 			return err
 		}
-		var mainCategoryList dataTool.Slice[string, categoryModel.Category]
-		mainCategoryList, err = categoryDao.GetListByAccount(mainAccount, &category.IncomeExpense)
-		if err != nil {
-			return err
-		}
-		mainNameList := mainCategoryList.ExtractValues(func(category categoryModel.Category) string {
-			return category.Name
-		})
-		// 匹配交易类型
-		var target string
-		target, err = aiService.ChineseSimilarityMatching(category.Name, mainNameList, ctx)
-		if err != nil {
-			return err
-		}
-		for _, mainCategory := range mainCategoryList {
-			if target == mainCategory.Name {
-				_, err = categoryDao.CreateMapping(mainCategory, category)
-				if err != nil && !errors.Is(err, gorm.ErrDuplicatedKey) {
-					return err
+		var mainAccount accountModel.Account
+		for _, mapping := range accountMapping {
+			mainAccount, err = accountDao.SelectById(mapping.MainId)
+			if err != nil {
+				return err
+			}
+			var mainCategoryList dataTool.Slice[string, categoryModel.Category]
+			mainCategoryList, err = categoryDao.GetListByAccount(mainAccount, &category.IncomeExpense)
+			if err != nil {
+				return err
+			}
+			mainNameList := mainCategoryList.ExtractValues(func(category categoryModel.Category) string {
+				return category.Name
+			})
+			// 匹配交易类型
+			var target string
+			target, err = aiService.ChineseSimilarityMatching(category.Name, mainNameList, ctx)
+			if err != nil {
+				return err
+			}
+			for _, mainCategory := range mainCategoryList {
+				if target == mainCategory.Name {
+					_, err = categoryDao.CreateMapping(mainCategory, category)
+					if err != nil && !errors.Is(err, gorm.ErrDuplicatedKey) {
+						return err
+					}
+					break
 				}
-				break
 			}
 		}
-	}
-	return nil
+		return nil
+	})
 }
 
 func (catSvc *Category) CreateList(
-	father categoryModel.Father, list []CreateData, tx *gorm.DB,
+	father categoryModel.Father, list []CreateData, ctx context.Context,
 ) ([]categoryModel.Category, error) {
+	if len(list) == 0 {
+		return nil, nil
+	}
 	categoryList := make([]categoryModel.Category, len(list), len(list))
 	for i, data := range list {
 		categoryList[i] = categoryModel.Category{
@@ -122,15 +132,17 @@ func (catSvc *Category) CreateList(
 		}
 
 	}
-	var err error
-	if len(categoryList) > 0 {
-		err = tx.Create(&categoryList).Error
+	err := db.Transaction(ctx, func(ctx *cusCtx.TxContext) error {
+		return ctx.GetDb().Create(&categoryList).Error
+	})
+	if err != nil {
+		err = errors.Wrap(err, "category.CreateOne()")
 	}
-	return categoryList, errors.Wrap(err, "category.CreateOne()")
+	return categoryList, err
 }
 
 func (catSvc *Category) CreateOneFather(
-	account accountModel.Account, InEx constant.IncomeExpense, name string, tx *gorm.DB,
+	account accountModel.Account, InEx constant.IncomeExpense, name string, ctx context.Context,
 ) (categoryModel.Father, error) {
 	father := categoryModel.Father{
 		AccountId:      account.ID,
@@ -139,106 +151,114 @@ func (catSvc *Category) CreateOneFather(
 		Previous:       0,
 		OrderUpdatedAt: time.Now(),
 	}
-	err := tx.Create(&father).Error
-	return father, errors.Wrap(err, "father.CreateOne()")
+	return father, db.Transaction(ctx, func(ctx *cusCtx.TxContext) error {
+		err := ctx.GetDb().Create(&father).Error
+		if err != nil {
+			return errors.Wrap(err, "father.CreateOne()")
+		}
+		return nil
+	})
 }
 
 func (catSvc *Category) MoveCategory(
 	category categoryModel.Category, previous *categoryModel.Category, father *categoryModel.Father,
-	operator userModel.User, tx *gorm.DB,
+	operator userModel.User, ctx context.Context,
 ) error {
-	// 数据校验
-	if previous != nil && (category.ID == previous.ID || previous.AccountId != category.AccountId || previous.IncomeExpense != category.IncomeExpense) {
-		return errors.Wrap(global.ErrInvalidParameter, "categoryService.MoveCategory")
-	}
-	if father != nil && (father.AccountId != category.AccountId || father.IncomeExpense != category.IncomeExpense) {
-		return errors.Wrap(global.ErrInvalidParameter, "categoryService.MoveCategory")
-	}
-	if previous != nil && father != nil && previous.FatherId != father.ID || previous == nil && father == nil {
-		return errors.Wrap(global.ErrInvalidParameter, "categoryService.MoveCategory")
-	}
-	accountUser, err := accountModel.NewDao(tx).SelectUser(category.AccountId, operator.ID)
-	if err != nil {
-		return err
-	} else if false == accountUser.HavePermission(accountModel.UserPermissionCreator) {
-		return global.ErrNoPermission
-	}
-
-	// 处理
-	categoryDao := categoryModel.NewDao(tx)
-	firstChild, err := categoryDao.SelectFirstChild(category.ID)
-	if err == nil {
-		// 将排头的子更新为当前所有子的父
-		err = tx.Model(&firstChild).Select("previous", "order_updated_at").Updates(category).Error
+	return db.Transaction(ctx, func(ctx *cusCtx.TxContext) error {
+		tx := ctx.GetDb()
+		// 数据校验
+		if previous != nil && (category.ID == previous.ID || previous.AccountId != category.AccountId || previous.IncomeExpense != category.IncomeExpense) {
+			return errors.Wrap(global.ErrInvalidParameter, "categoryService.MoveCategory")
+		}
+		if father != nil && (father.AccountId != category.AccountId || father.IncomeExpense != category.IncomeExpense) {
+			return errors.Wrap(global.ErrInvalidParameter, "categoryService.MoveCategory")
+		}
+		if previous != nil && father != nil && previous.FatherId != father.ID || previous == nil && father == nil {
+			return errors.Wrap(global.ErrInvalidParameter, "categoryService.MoveCategory")
+		}
+		accountUser, err := accountModel.NewDao(tx).SelectUser(category.AccountId, operator.ID)
 		if err != nil {
 			return err
+		} else if false == accountUser.HavePermission(accountModel.UserPermissionCreator) {
+			return global.ErrNoPermission
 		}
-		err = categoryDao.UpdateChildPrevious(category.ID, firstChild.ID)
-		if err != nil {
+
+		// 处理
+		categoryDao := categoryModel.NewDao(tx)
+		firstChild, err := categoryDao.SelectFirstChild(category.ID)
+		if err == nil {
+			// 将排头的子更新为当前所有子的父
+			err = tx.Model(&firstChild).Select("previous", "order_updated_at").Updates(category).Error
+			if err != nil {
+				return err
+			}
+			err = categoryDao.UpdateChildPrevious(category.ID, firstChild.ID)
+			if err != nil {
+				return err
+			}
+		} else if false == errors.Is(err, gorm.ErrRecordNotFound) {
 			return err
 		}
-	} else if false == errors.Is(err, gorm.ErrRecordNotFound) {
-		return err
-	}
 
-	// 最后更新当前交易类型的位置
-	if previous != nil {
-		err = tx.Model(&category).Select("previous", "father_id", "order_updated_at").Updates(
-			categoryModel.Category{
-				Previous:       previous.ID,
-				FatherId:       previous.FatherId,
-				OrderUpdatedAt: time.Now(),
-			},
-		).Error
-	} else {
-		err = tx.Model(&category).Select("previous", "father_id", "order_updated_at").Updates(
-			categoryModel.Category{
-				Previous:       0,
-				FatherId:       father.ID,
-				OrderUpdatedAt: time.Now(),
-			},
-		).Error
-	}
-	if err != nil {
+		// 最后更新当前交易类型的位置
+		if previous != nil {
+			err = tx.Model(&category).Select("previous", "father_id", "order_updated_at").Updates(
+				categoryModel.Category{
+					Previous:       previous.ID,
+					FatherId:       previous.FatherId,
+					OrderUpdatedAt: time.Now(),
+				},
+			).Error
+		} else {
+			err = tx.Model(&category).Select("previous", "father_id", "order_updated_at").Updates(
+				categoryModel.Category{
+					Previous:       0,
+					FatherId:       father.ID,
+					OrderUpdatedAt: time.Now(),
+				},
+			).Error
+		}
 		return err
-	}
-	return nil
+	})
 }
 
-func (catSvc *Category) MoveFather(father categoryModel.Father, previous *categoryModel.Father, tx *gorm.DB) error {
-	if previous != nil && (previous.AccountId != father.AccountId || previous.IncomeExpense != father.IncomeExpense || father.ID == previous.ID) {
-		return errors.Wrap(global.ErrInvalidParameter, "categoryService.MoveFather")
-	}
+func (catSvc *Category) MoveFather(father categoryModel.Father, previous *categoryModel.Father, ctx context.Context) error {
+	return db.Transaction(ctx, func(ctx *cusCtx.TxContext) error {
+		tx := ctx.GetDb()
+		if previous != nil && (previous.AccountId != father.AccountId || previous.IncomeExpense != father.IncomeExpense || father.ID == previous.ID) {
+			return errors.Wrap(global.ErrInvalidParameter, "categoryService.MoveFather")
+		}
 
-	categoryDao := categoryModel.NewDao(tx)
-	firstChild, err := categoryDao.SelectFatherFirstChild(father.ID)
-	if err == nil {
-		// 将排头的子更新为当前所有子的父
-		err = tx.Model(&firstChild).Select("previous", "order_updated_at").Updates(father).Error
-		if err != nil {
+		categoryDao := categoryModel.NewDao(tx)
+		firstChild, err := categoryDao.SelectFatherFirstChild(father.ID)
+		if err == nil {
+			// 将排头的子更新为当前所有子的父
+			err = tx.Model(&firstChild).Select("previous", "order_updated_at").Updates(father).Error
+			if err != nil {
+				return err
+			}
+			err = categoryDao.UpdateFatherChildPrevious(father.ID, firstChild.ID)
+			if err != nil {
+				return err
+			}
+		} else if false == errors.Is(err, gorm.ErrRecordNotFound) {
 			return err
 		}
-		err = categoryDao.UpdateFatherChildPrevious(father.ID, firstChild.ID)
-		if err != nil {
-			return err
+		// 最后更新father的位置
+		var previousId uint
+		if previous != nil {
+			previousId = previous.ID
+		} else {
+			// 未传入previous则移动到头部
+			previousId = 0
 		}
-	} else if false == errors.Is(err, gorm.ErrRecordNotFound) {
-		return err
-	}
-	// 最后更新father的位置
-	var previousId uint
-	if previous != nil {
-		previousId = previous.ID
-	} else {
-		// 未传入previous则移动到头部
-		previousId = 0
-	}
-	return tx.Model(&father).Select("previous", "order_updated_at").Updates(
-		categoryModel.Father{
-			Previous:       previousId,
-			OrderUpdatedAt: time.Now(),
-		},
-	).Error
+		return tx.Model(&father).Select("previous", "order_updated_at").Updates(
+			categoryModel.Father{
+				Previous:       previousId,
+				OrderUpdatedAt: time.Now(),
+			},
+		).Error
+	})
 }
 
 // GetSequenceCategoryByFather 返回排序后的category
@@ -264,13 +284,17 @@ func (catSvc *Category) GetSequenceFather(
 	return
 }
 
-func (catSvc *Category) Update(categoryId uint, data categoryModel.CategoryUpdateData, tx *gorm.DB) (category categoryModel.Category, err error) {
-	dao := categoryModel.NewDao(tx)
-	err = dao.Update(categoryId, data)
-	if err != nil {
-		return category, err
-	}
-	return dao.SelectById(categoryId)
+func (catSvc *Category) Update(categoryId uint, data categoryModel.CategoryUpdateData, ctx context.Context) (category categoryModel.Category, err error) {
+	err = db.Transaction(ctx, func(ctx *cusCtx.TxContext) error {
+		dao := categoryModel.NewDao(ctx.GetDb())
+		err = dao.Update(categoryId, data)
+		if err != nil {
+			return err
+		}
+		category, err = dao.SelectById(categoryId)
+		return err
+	})
+	return
 }
 
 func (catSvc *Category) UpdateFather(father categoryModel.Father, name string) (categoryModel.Father, error) {
@@ -281,40 +305,45 @@ func (catSvc *Category) UpdateFather(father categoryModel.Father, name string) (
 	return father, err
 }
 
-func (catSvc *Category) Delete(category categoryModel.Category, tx *gorm.DB) error {
-	exits, err := catSvc.existTransaction(category)
-	if err != nil {
-		return err
-	}
-	if exits {
-		return errors.Wrap(ErrExistTransaction, "delete category")
-	}
-	return tx.Delete(&category).Error
+func (catSvc *Category) Delete(category categoryModel.Category, ctx context.Context) error {
+	return db.Transaction(ctx, func(ctx *cusCtx.TxContext) error {
+		exits, err := catSvc.existTransaction(category)
+		if err != nil {
+			return err
+		}
+		if exits {
+			return errors.Wrap(ErrExistTransaction, "delete category")
+		}
+		return ctx.GetDb().Delete(&category).Error
+	})
 }
 
-func (catSvc *Category) DeleteFather(father categoryModel.Father, tx *gorm.DB) error {
-	var categoryList []categoryModel.Category
-	err := global.GvaDb.Select("id").Where("father_id = ?", father.ID).Find(&categoryList).Error
-	if err != nil {
-		return errors.Wrap(err, "")
-	}
-	exits, err := catSvc.existTransaction(categoryList...)
-	if err != nil {
-		return err
-	} else if exits {
-		return errors.Wrap(ErrExistTransaction, "delete category")
-	}
+func (catSvc *Category) DeleteFather(father categoryModel.Father, ctx context.Context) error {
+	return db.Transaction(ctx, func(ctx *cusCtx.TxContext) error {
+		tx := ctx.GetDb()
+		var categoryList []categoryModel.Category
+		err := global.GvaDb.Select("id").Where("father_id = ?", father.ID).Find(&categoryList).Error
+		if err != nil {
+			return errors.Wrap(err, "")
+		}
+		exits, err := catSvc.existTransaction(categoryList...)
+		if err != nil {
+			return err
+		} else if exits {
+			return errors.Wrap(ErrExistTransaction, "delete category")
+		}
 
-	err = tx.Where("father_id = ?", father.ID).Delete(&categoryModel.Category{}).Error
-	if err != nil {
-		return errors.Wrap(err, "")
-	}
+		err = tx.Where("father_id = ?", father.ID).Delete(&categoryModel.Category{}).Error
+		if err != nil {
+			return errors.Wrap(err, "")
+		}
 
-	err = tx.Delete(&father).Error
-	if err != nil {
-		return errors.Wrap(err, "")
-	}
-	return nil
+		err = tx.Delete(&father).Error
+		if err != nil {
+			return errors.Wrap(err, "")
+		}
+		return nil
+	})
 }
 
 func (catSvc *Category) existTransaction(categoryList ...categoryModel.Category) (bool, error) {
@@ -346,24 +375,30 @@ func (catSvc *Category) checkMappingParam(parent, child categoryModel.Category, 
 	return nil
 }
 
-func (catSvc *Category) MappingCategory(parent, child categoryModel.Category, operator userModel.User, tx *gorm.DB) (mapping categoryModel.Mapping, err error) {
-	err = catSvc.checkMappingParam(parent, child, operator, tx)
-	if err != nil {
-		return
-	}
-	mapping, err = categoryModel.NewDao(tx).CreateMapping(parent, child)
+func (catSvc *Category) MappingCategory(parent, child categoryModel.Category, operator userModel.User, ctx context.Context) (mapping categoryModel.Mapping, err error) {
+	err = db.Transaction(ctx, func(ctx *cusCtx.TxContext) error {
+		tx := ctx.GetDb()
+		err = catSvc.checkMappingParam(parent, child, operator, tx)
+		if err != nil {
+			return err
+		}
+		mapping, err = categoryModel.NewDao(tx).CreateMapping(parent, child)
+		return err
+	})
 	return
 }
 
-func (catSvc *Category) DeleteMapping(parent, child categoryModel.Category, operator userModel.User, tx *gorm.DB) error {
-	err := catSvc.checkMappingParam(parent, child, operator, tx)
-	if err != nil {
-		return err
-	}
-	err = tx.Where(
-		"parent_category_id = ? AND child_category_id = ?", parent.ID, child.ID,
-	).Delete(&categoryModel.Mapping{}).Error
-	return err
+func (catSvc *Category) DeleteMapping(parent, child categoryModel.Category, operator userModel.User, ctx context.Context) error {
+	return db.Transaction(ctx, func(ctx *cusCtx.TxContext) error {
+		tx := ctx.GetDb()
+		err := catSvc.checkMappingParam(parent, child, operator, tx)
+		if err != nil {
+			return err
+		}
+		return tx.Where(
+			"parent_category_id = ? AND child_category_id = ?", parent.ID, child.ID,
+		).Delete(&categoryModel.Mapping{}).Error
+	})
 }
 
 func (catSvc *Category) MappingCategoryToAccountMapping(mappingAccount accountModel.Mapping, ctx context.Context) error {

@@ -105,7 +105,7 @@ func RequestLogger(logger *zap.Logger) gin.HandlerFunc {
 }
 func AccountAuth(permission accountModel.UserPermission) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
-		if !apiUtil.ContextFunc.CheckAccountPermissionFromParam(ctx, permission) {
+		if !apiUtil.ContextFunc.CheckAccountPermissionFromParam(permission, ctx) {
 			return
 		}
 		ctx.Next()

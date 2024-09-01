@@ -4,7 +4,7 @@ import "KeepAccount/service"
 
 var (
 	userService        = service.GroupApp.UserServiceGroup
-	accountService     = service.GroupApp.AccountServiceGroup.Base
+	accountService     = service.GroupApp.AccountServiceGroup
 	categoryService    = service.GroupApp.CategoryServiceGroup
 	transactionService = service.GroupApp.TransactionServiceGroup
 	productService     = service.GroupApp.ProductServiceGroup

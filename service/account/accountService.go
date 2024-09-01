@@ -2,12 +2,12 @@ package accountService
 
 import (
 	"KeepAccount/global"
+	"KeepAccount/global/cusCtx"
 	"KeepAccount/global/db"
 	accountModel "KeepAccount/model/account"
 	userModel "KeepAccount/model/user"
 	"context"
 	"github.com/pkg/errors"
-	"gorm.io/gorm"
 )
 
 type base struct{}
@@ -30,7 +30,7 @@ func (b *base) CreateOne(
 	if err != nil {
 		err = errors.WithStack(err)
 	}
-	aUser, err = ServiceGroupApp.Share.AddAccountUser(account, user, accountModel.UserPermissionCreator, tx)
+	aUser, err = ServiceGroupApp.Share.AddAccountUser(account, user, accountModel.UserPermissionCreator, ctx)
 	if err != nil {
 		err = errors.WithStack(err)
 	}
@@ -147,7 +147,7 @@ func (b *base) getNewCurrentAccount(user userModel.User, ctx context.Context) (a
 	return current, currentShare, err
 }
 func (b *base) Update(
-	account accountModel.Account, accountUser accountModel.User, updateData accountModel.AccountUpdateData, tx *gorm.DB,
+	account accountModel.Account, accountUser accountModel.User, updateData accountModel.AccountUpdateData, ctx context.Context,
 ) (err error) {
 	if accountUser.AccountId != account.ID {
 		return global.ErrAccountId
@@ -155,15 +155,13 @@ func (b *base) Update(
 	if false == accountUser.HavePermission(accountModel.UserPermissionEditAccount) {
 		return global.ErrNoPermission
 	}
-	err = accountModel.NewDao(tx).Update(account, updateData)
-	if err != nil {
-		return err
-	}
-	return
+	return db.Transaction(ctx, func(ctx *cusCtx.TxContext) error {
+		return accountModel.NewDao(ctx.GetDb()).Update(account, updateData)
+	})
 }
 
 func (b *base) UpdateUser(
-	accountUser accountModel.User, operator accountModel.User, updateData accountModel.UserUpdateData, tx *gorm.DB,
+	accountUser accountModel.User, operator accountModel.User, updateData accountModel.UserUpdateData, ctx context.Context,
 ) (result accountModel.User, err error) {
 	if accountUser.AccountId != operator.AccountId {
 		return result, global.ErrAccountId
@@ -171,6 +169,6 @@ func (b *base) UpdateUser(
 	if false == operator.HavePermission(accountModel.UserPermissionEditUser) {
 		return result, global.ErrNoPermission
 	}
-	result, err = accountModel.NewDao(tx).UpdateUser(accountUser, updateData)
+	result, err = accountModel.NewDao(db.Get(ctx)).UpdateUser(accountUser, updateData)
 	return
 }

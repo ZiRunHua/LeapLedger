@@ -27,16 +27,8 @@ func Get(ctx context.Context) *gorm.DB {
 type TxFunc func(ctx *cusCtx.TxContext) error
 
 func Transaction(parent context.Context, fc TxFunc) error {
-	value := parent.Value(cusCtx.Tx)
-	if value != nil {
-		return value.(*gorm.DB).Transaction(
-			func(tx *gorm.DB) error {
-				return fc(cusCtx.WithTx(parent, tx))
-			},
-		)
-	}
 	ctx := cusCtx.WithTxCommitContext(parent)
-	err := Db.Transaction(
+	err := Get(ctx).Transaction(
 		func(tx *gorm.DB) error {
 			return fc(cusCtx.WithTx(ctx, tx))
 		},

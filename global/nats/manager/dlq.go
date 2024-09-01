@@ -2,6 +2,7 @@ package manager
 
 // dead letter queue
 import (
+	"errors"
 	"fmt"
 	natsServer "github.com/nats-io/nats-server/v2/server"
 	"github.com/nats-io/nats.go"
@@ -77,6 +78,9 @@ func (dm *dlqManager) init(js jetstream.JetStream, registerStream []jetstream.St
 func (dm *dlqManager) RepublishBatch(batch int, ctx context.Context) error {
 	msgBatch, err := dm.pullCustomer.fetchMsg(batch)
 	if err != nil {
+		if errors.Is(err, nats.ErrMsgNotFound) {
+			return nil
+		}
 		return err
 	}
 	for msg := range msgBatch.Messages() {

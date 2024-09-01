@@ -6,6 +6,7 @@ import (
 	"KeepAccount/util"
 	"KeepAccount/util/gormFunc"
 	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
 	"os"
 )
 
@@ -31,6 +32,7 @@ func CurrentInit(db *gorm.DB) error {
 	}
 	return global.GvaDb.Transaction(
 		func(tx *gorm.DB) error {
+			tx = tx.Session(&gorm.Session{Logger: tx.Logger.LogMode(logger.Silent)})
 			return util.File.ExecSqlFile(sqlFile, tx)
 		},
 	)

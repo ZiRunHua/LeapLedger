@@ -2,6 +2,7 @@ package templateService
 
 import (
 	"KeepAccount/global"
+	"KeepAccount/global/cusCtx"
 	"KeepAccount/global/db"
 	accountModel "KeepAccount/model/account"
 	categoryModel "KeepAccount/model/category"
@@ -20,7 +21,7 @@ type template struct{}
 var TemplateApp = &template{}
 
 func (t *template) GetList() ([]accountModel.Account, error) {
-	list := []accountModel.Account{}
+	var list []accountModel.Account
 	err := global.GvaDb.Where("user_id = ?", TmplUserId).Find(&list).Error
 	return list, err
 }
@@ -49,55 +50,55 @@ func (t *template) CreateAccount(
 	if tmplAccount.UserId != TmplUserId {
 		return account, ErrNotBelongTemplate
 	}
-	account, _, err = accountService.ServiceGroupApp.Base.CreateOne(
-		user, tmplAccount.Name, tmplAccount.Icon, tmplAccount.Type, ctx,
-	)
-	if err != nil {
-		return
-	}
-	err = t.CreateCategory(account, tmplAccount, ctx)
-	if err != nil {
-		return
-	}
-	return
+	return account, db.Transaction(ctx, func(ctx *cusCtx.TxContext) error {
+		account, _, err = accountService.ServiceGroupApp.CreateOne(
+			user, tmplAccount.Name, tmplAccount.Icon, tmplAccount.Type, ctx,
+		)
+		if err != nil {
+			return err
+		}
+		return t.CreateCategory(account, tmplAccount, ctx)
+	})
 }
 
 func (t *template) CreateCategory(account accountModel.Account, tmplAccount accountModel.Account, ctx context.Context) error {
-	tx := db.Get(ctx)
-	var err error
-	if err = account.ForShare(tx); err != nil {
-		return err
-	}
-	var existCategory bool
-	existCategory, err = categoryModel.NewDao(tx).Exist(account)
-	if existCategory == true {
-		return errors.WithStack(errors.New("交易类型已存在"))
-	}
-	var tmplFatherList []categoryModel.Father
-	categoryDao := categoryModel.NewDao(tx)
-	tmplFatherList, err = categoryDao.GetFatherList(tmplAccount, nil)
-	if err != nil {
-		return err
-	}
-	categoryDao.OrderFather(tmplFatherList)
-	for _, tmplFather := range tmplFatherList {
-		if err = t.CreateFatherCategory(account, tmplFather, ctx); err != nil {
+	return db.Transaction(ctx, func(ctx *cusCtx.TxContext) error {
+		tx := db.Get(ctx)
+		var err error
+		if err = account.ForShare(tx); err != nil {
 			return err
 		}
-	}
-	err = t.rankOnceIncr(account.UserId, tmplAccount, ctx)
-	if err != nil {
-		errorLog.Error("CreateAccount => rankOnceIncr", zap.Error(err))
-		err = nil
-	}
-	return nil
+		var existCategory bool
+		existCategory, err = categoryModel.NewDao(tx).Exist(account)
+		if existCategory == true {
+			return errors.WithStack(errors.New("交易类型已存在"))
+		}
+		var tmplFatherList []categoryModel.Father
+		categoryDao := categoryModel.NewDao(tx)
+		tmplFatherList, err = categoryDao.GetFatherList(tmplAccount, nil)
+		if err != nil {
+			return err
+		}
+		categoryDao.OrderFather(tmplFatherList)
+		for _, tmplFather := range tmplFatherList {
+			if err = t.createFatherCategory(account, tmplFather, ctx); err != nil {
+				return err
+			}
+		}
+		err = t.rankOnceIncr(account.UserId, tmplAccount, ctx)
+		if err != nil {
+			errorLog.Error("CreateAccount => rankOnceIncr", zap.Error(err))
+			err = nil
+		}
+		return nil
+	})
 }
 
-func (t *template) CreateFatherCategory(
+func (t *template) createFatherCategory(
 	account accountModel.Account, tmplFather categoryModel.Father, ctx context.Context,
 ) error {
 	tx := db.Get(ctx)
-	father, err := categoryService.CreateOneFather(account, tmplFather.IncomeExpense, tmplFather.Name, tx)
+	father, err := categoryService.CreateOneFather(account, tmplFather.IncomeExpense, tmplFather.Name, ctx)
 	if err != nil {
 		return err
 	}

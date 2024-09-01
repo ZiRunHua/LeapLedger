@@ -8,7 +8,7 @@ import (
 var ServiceGroupApp = &Group{}
 
 type Group struct {
-	Base  base
+	base
 	Share share
 }
 

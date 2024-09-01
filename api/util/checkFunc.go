@@ -2,6 +2,7 @@ package util
 
 import (
 	"KeepAccount/api/response"
+	"KeepAccount/global"
 	"KeepAccount/global/db"
 	accountModel "KeepAccount/model/account"
 	categoryModel "KeepAccount/model/category"
@@ -13,7 +14,17 @@ import (
 
 type checkFunc struct{}
 
-var CheckFunc = new(checkFunc)
+var CheckFunc Checker = new(checkFunc)
+
+type Checker interface {
+	AccountBelong(id uint, ctx *gin.Context) bool
+	AccountBelongAndGet(accountId uint, ctx *gin.Context) (accountModel.Account, accountModel.User, bool)
+	AccountPermission(accountId uint, permission accountModel.UserPermission, ctx *gin.Context) bool
+	CategoryBelongAndGet(categoryId uint, accountId uint, ctx *gin.Context) (categoryModel.Category, bool)
+	CategoryFatherBelongAndGet(fatherId uint, accountId uint, ctx *gin.Context) (categoryModel.Father, bool)
+	TransactionCategoryBelongAndGet(id interface{}, ctx *gin.Context) (bool, categoryModel.Category, accountModel.Account)
+	FriendInvitationBelongAndGet(id interface{}, ctx *gin.Context) (bool, userModel.FriendInvitation)
+}
 
 func (ckf *checkFunc) AccountBelong(id uint, ctx *gin.Context) bool {
 	exist, err := accountModel.NewDao().ExistUser(id, ContextFunc.GetUserId(ctx))
@@ -40,6 +51,48 @@ func (ckf *checkFunc) AccountBelongAndGet(accountId uint, ctx *gin.Context) (
 		return
 	}
 	return account, accountUser, true
+}
+
+func (ckf *checkFunc) AccountPermission(accountId uint, permission accountModel.UserPermission, ctx *gin.Context) bool {
+	pass, err := accountModel.NewDao().CheckUserPermission(permission, accountId, ContextFunc.GetUserId(ctx))
+	if err != nil {
+		response.FailToError(ctx, err)
+		return false
+	}
+	if !pass {
+		response.Forbidden(ctx)
+	}
+	return pass
+}
+
+// CategoryBelongAndGet
+// Check whether the category belongs to account
+func (ckf *checkFunc) CategoryBelongAndGet(categoryId uint, accountId uint, ctx *gin.Context) (category categoryModel.Category, pass bool) {
+	err := db.Db.First(&category, categoryId).Error
+	if err != nil {
+		response.FailToError(ctx, err)
+		return
+	}
+	if category.AccountId != accountId {
+		response.FailToError(ctx, global.ErrAccountId)
+		return
+	}
+	return category, true
+}
+
+// CategoryFatherBelongAndGet
+// Check whether the category father belongs to account
+func (ckf *checkFunc) CategoryFatherBelongAndGet(fatherId uint, accountId uint, ctx *gin.Context) (father categoryModel.Father, pass bool) {
+	err := db.Db.First(&father, fatherId).Error
+	if err != nil {
+		response.FailToError(ctx, err)
+		return
+	}
+	if father.AccountId != accountId {
+		response.FailToError(ctx, global.ErrAccountId)
+		return
+	}
+	return father, true
 }
 
 func (ckf *checkFunc) TransactionCategoryBelongAndGet(id interface{}, ctx *gin.Context) (

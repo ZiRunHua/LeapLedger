@@ -1,11 +1,10 @@
 package user
 
 import (
-	"KeepAccount/global"
 	userModel "KeepAccount/model/user"
 	userService "KeepAccount/service/user"
 	"KeepAccount/util"
-	"gorm.io/gorm"
+	"context"
 )
 
 // Create("template@gmail.com","1999123456","template")
@@ -15,14 +14,7 @@ func Create(email, password, username string) userModel.User {
 		Password: util.ClientPasswordHash(email, password),
 		Username: username,
 	}
-	var user userModel.User
-	err := global.GvaDb.Transaction(
-		func(tx *gorm.DB) error {
-			var err error
-			user, err = userService.GroupApp.Register(addData, tx)
-			return err
-		},
-	)
+	user, err := userService.GroupApp.Register(addData, context.Background())
 	if err != nil {
 		panic(err)
 	}

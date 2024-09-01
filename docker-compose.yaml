@@ -7,6 +7,7 @@ services:
       dockerfile: docker/Dockerfile
     ports:
       - "8080:8080"
+      - "2345:2345"
 #    environment:
 #      - CONFIG_FILE_NAME=production_config.yaml
     volumes:

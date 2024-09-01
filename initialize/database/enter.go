@@ -56,8 +56,9 @@ func init() {
 }
 
 func initTemplateUser(ctx *cusCtx.TxContext) (err error) {
-	tx := ctx.GetDb()
+	tx := db.Get(ctx)
 	tx = tx.Session(&gorm.Session{Logger: tx.Logger.LogMode(logger.Silent)})
+	ctx = cusCtx.WithTx(ctx, tx)
 	var user userModel.User
 	// find user
 	err = tx.First(&user, tmplUserId).Error
@@ -67,7 +68,7 @@ func initTemplateUser(ctx *cusCtx.TxContext) (err error) {
 		return
 	}
 	// create user
-	user, err = script.User.Create(tmplUserEmail, tmplUserPassword, tmplUserName, tx)
+	user, err = script.User.Create(tmplUserEmail, tmplUserPassword, tmplUserName, ctx)
 	if err != nil {
 		return
 	}
@@ -76,7 +77,7 @@ func initTemplateUser(ctx *cusCtx.TxContext) (err error) {
 
 	}
 	// create account
-	_, _, err = script.Account.CreateExample(user, tx)
+	_, _, err = script.Account.CreateExample(user, ctx)
 	if err != nil {
 		return
 	}
@@ -88,7 +89,7 @@ func initTestUser(ctx *cusCtx.TxContext) (err error) {
 	tx := ctx.GetDb()
 	tx = tx.Session(&gorm.Session{Logger: tx.Logger.LogMode(logger.Silent)})
 	var user userModel.User
-	user, err = script.User.CreateTourist(tx)
+	user, err = script.User.CreateTourist(ctx)
 	if err != nil {
 		return
 	}
@@ -101,11 +102,11 @@ func initTestUser(ctx *cusCtx.TxContext) (err error) {
 	if err != nil {
 		return
 	}
-	err = userService.UpdatePassword(user, util.ClientPasswordHash(user.Email, tmplUserPassword), tx)
+	err = userService.UpdatePassword(user, util.ClientPasswordHash(user.Email, tmplUserPassword), ctx)
 	if err != nil {
 		return
 	}
-	_, _, err = script.Account.CreateExample(user, tx)
+	_, _, err = script.Account.CreateExample(user, ctx)
 	if err != nil {
 		return
 	}
@@ -123,11 +124,11 @@ func initTourist(ctx *cusCtx.TxContext) error {
 	} else if !errors.Is(err, gorm.ErrRecordNotFound) {
 		return err
 	}
-	user, err := script.User.CreateTourist(tx)
+	user, err := script.User.CreateTourist(ctx)
 	if err != nil {
 		return err
 	}
-	_, accountUser, err := script.Account.CreateExample(user, tx)
+	_, accountUser, err := script.Account.CreateExample(user, ctx)
 	if err != nil {
 		return err
 	}

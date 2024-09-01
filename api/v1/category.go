@@ -4,11 +4,10 @@ import (
 	"KeepAccount/api/request"
 	"KeepAccount/api/response"
 	"KeepAccount/global"
-	"KeepAccount/global/cusCtx"
 	"KeepAccount/global/db"
+	accountModel "KeepAccount/model/account"
 	categoryModel "KeepAccount/model/category"
 	userModel "KeepAccount/model/user"
-	"context"
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
 	"gorm.io/gorm"
@@ -43,15 +42,10 @@ func (catApi *CategoryApi) CreateOne(ctx *gin.Context) {
 	}
 
 	var category categoryModel.Category
-	err = db.Db.Transaction(
-		func(tx *gorm.DB) error {
-			category, err = categoryService.CreateOne(
-				father,
-				categoryService.NewCategoryData(requestData.Name, requestData.Icon),
-				context.WithValue(ctx, cusCtx.Db, tx),
-			)
-			return err
-		},
+	category, err = categoryService.CreateOne(
+		father,
+		categoryService.NewCategoryData(requestData.Name, requestData.Icon),
+		ctx,
 	)
 	if responseError(err, ctx) {
 		return
@@ -81,14 +75,7 @@ func (catApi *CategoryApi) CreateOneFather(ctx *gin.Context) {
 		return
 	}
 
-	var father categoryModel.Father
-	var err error
-	err = db.Db.Transaction(
-		func(tx *gorm.DB) error {
-			father, err = categoryService.CreateOneFather(contextFunc.GetAccount(ctx), requestData.IncomeExpense, requestData.Name, tx)
-			return err
-		},
-	)
+	father, err := categoryService.CreateOneFather(contextFunc.GetAccount(ctx), requestData.IncomeExpense, requestData.Name, ctx)
 	if responseError(err, ctx) {
 		return
 	}
@@ -121,37 +108,29 @@ func (catApi *CategoryApi) MoveCategory(ctx *gin.Context) {
 	if !pass {
 		return
 	}
-	txFunc := func(tx *gorm.DB) error {
-		user, err := contextFunc.GetUser(ctx)
-		if err != nil {
-			return err
+	var (
+		pPrevious *categoryModel.Category
+		pFather   *categoryModel.Father
+	)
+	if requestData.Previous != nil {
+		previous, pass := checkFunc.CategoryBelongAndGet(*requestData.Previous, contextFunc.GetAccountId(ctx), ctx)
+		if !pass {
+			return
 		}
-		var previous *categoryModel.Category
-		if requestData.Previous != nil {
-			previous = &categoryModel.Category{}
-			err = tx.First(previous, requestData.Previous).Error
-			if err != nil {
-				return err
-			}
-			if previous.AccountId != contextFunc.GetAccountId(ctx) {
-				return global.ErrAccountId
-			}
-		}
-
-		var father *categoryModel.Father
-		if requestData.FatherId != nil {
-			father = &categoryModel.Father{}
-			err = tx.First(father, requestData.FatherId).Error
-			if err != nil {
-				return err
-			}
-			if father.AccountId != contextFunc.GetAccountId(ctx) {
-				return global.ErrAccountId
-			}
-		}
-		return categoryService.MoveCategory(category, previous, father, user, tx)
+		pPrevious = &previous
 	}
-	err := db.Db.Transaction(txFunc)
+	if requestData.FatherId != nil {
+		father, pass := checkFunc.CategoryFatherBelongAndGet(*requestData.FatherId, contextFunc.GetAccountId(ctx), ctx)
+		if !pass {
+			return
+		}
+		pFather = &father
+	}
+	user, err := contextFunc.GetUser(ctx)
+	if responseError(err, ctx) {
+		return
+	}
+	err = categoryService.MoveCategory(category, pPrevious, pFather, user, ctx)
 	if responseError(err, ctx) {
 		return
 	}
@@ -174,29 +153,22 @@ func (catApi *CategoryApi) MoveFather(ctx *gin.Context) {
 		response.FailToParameter(ctx, err)
 		return
 	}
-	txFunc := func(tx *gorm.DB) error {
-		var father categoryModel.Father
-		err := tx.First(&father, ctx.Param("id")).Error
-		if err != nil {
-			return err
-		}
-		if father.AccountId != contextFunc.GetAccountId(ctx) {
-			return global.ErrAccountId
-		}
-		var previous *categoryModel.Father
-		if requestData.Previous != nil {
-			previous = &categoryModel.Father{}
-			err = tx.First(previous, requestData.Previous).Error
-			if err != nil {
-				return err
-			}
-			if previous.AccountId != contextFunc.GetAccountId(ctx) {
-				return global.ErrAccountId
-			}
-		}
-		return categoryService.MoveFather(father, previous, tx)
+	var (
+		father    categoryModel.Father
+		pPrevious *categoryModel.Father
+	)
+	father, pass := checkFunc.CategoryFatherBelongAndGet(contextFunc.GetId(ctx), contextFunc.GetAccountId(ctx), ctx)
+	if !pass {
+		return
 	}
-	err := db.Db.Transaction(txFunc)
+	if requestData.Previous != nil {
+		previous, pass := checkFunc.CategoryFatherBelongAndGet(*requestData.Previous, contextFunc.GetAccountId(ctx), ctx)
+		if !pass {
+			return
+		}
+		pPrevious = &previous
+	}
+	err := categoryService.MoveFather(father, pPrevious, ctx)
 	if handelError(err, ctx) {
 		return
 	}
@@ -224,13 +196,10 @@ func (catApi *CategoryApi) Update(ctx *gin.Context) {
 		return
 	}
 	var err error
-	txFunc := func(tx *gorm.DB) error {
-		category, err = categoryService.Update(
-			contextFunc.GetId(ctx), categoryModel.CategoryUpdateData{Name: requestData.Name, Icon: requestData.Icon}, tx,
-		)
-		return err
-	}
-	if err = db.Db.Transaction(txFunc); responseError(err, ctx) {
+	category, err = categoryService.Update(
+		contextFunc.GetId(ctx), categoryModel.CategoryUpdateData{Name: requestData.Name, Icon: requestData.Icon}, ctx,
+	)
+	if responseError(err, ctx) {
 		return
 	}
 	var responseData response.CategoryOne
@@ -364,12 +333,11 @@ func (catApi *CategoryApi) Delete(ctx *gin.Context) {
 	if responseError(err, ctx) {
 		return
 	}
-	if pass := checkFunc.AccountBelong(category.AccountId, ctx); pass == false {
+	if contextFunc.GetAccountId(ctx) != category.AccountId {
+		response.FailToParameter(ctx, global.ErrAccountId)
 		return
 	}
-	err = db.Db.Transaction(
-		func(tx *gorm.DB) error { return categoryService.Delete(category, tx) },
-	)
+	err = categoryService.Delete(category, ctx)
 	if responseError(err, ctx) {
 		return
 	}
@@ -390,16 +358,7 @@ func (catApi *CategoryApi) DeleteFather(ctx *gin.Context) {
 	if responseError(err, ctx) {
 		return
 	}
-
-	err = db.Db.Transaction(
-		func(tx *gorm.DB) error {
-			err = categoryService.DeleteFather(father, tx)
-			if err != nil {
-				return err
-			}
-			return nil
-		},
-	)
+	err = categoryService.DeleteFather(father, ctx)
 	if responseError(err, ctx) {
 		return
 	}
@@ -431,11 +390,7 @@ func (catApi *CategoryApi) MappingCategory(ctx *gin.Context) {
 	if responseError(err, ctx) {
 		return
 	}
-	if childCategory.AccountId != contextFunc.GetAccountId(ctx) {
-		response.FailToError(ctx, global.ErrAccountId)
-		return
-	}
-	if responseError(err, ctx) {
+	if !checkFunc.AccountPermission(childCategory.AccountId, accountModel.UserPermissionAddOwn, ctx) {
 		return
 	}
 	// 执行
@@ -444,11 +399,7 @@ func (catApi *CategoryApi) MappingCategory(ctx *gin.Context) {
 	if responseError(err, ctx) {
 		return
 	}
-	txFunc := func(tx *gorm.DB) error {
-		_, err = categoryService.MappingCategory(parentCategory, childCategory, operator, tx)
-		return err
-	}
-	err = db.Db.Transaction(txFunc)
+	_, err = categoryService.MappingCategory(parentCategory, childCategory, operator, ctx)
 	if errors.Is(err, gorm.ErrDuplicatedKey) {
 	} else if responseError(err, ctx) {
 		return
@@ -481,8 +432,7 @@ func (catApi *CategoryApi) DeleteCategoryMapping(ctx *gin.Context) {
 	if responseError(err, ctx) {
 		return
 	}
-	if childCategory.AccountId != contextFunc.GetAccountId(ctx) {
-		response.FailToError(ctx, global.ErrAccountId)
+	if !checkFunc.AccountPermission(childCategory.AccountId, accountModel.UserPermissionAddOwn, ctx) {
 		return
 	}
 	// 执行
@@ -491,11 +441,7 @@ func (catApi *CategoryApi) DeleteCategoryMapping(ctx *gin.Context) {
 	if responseError(err, ctx) {
 		return
 	}
-	txFunc := func(tx *gorm.DB) error {
-		err = categoryService.DeleteMapping(parentCategory, childCategory, operator, tx)
-		return err
-	}
-	err = db.Db.Transaction(txFunc)
+	err = categoryService.DeleteMapping(parentCategory, childCategory, operator, ctx)
 	if responseError(err, ctx) {
 		return
 	}

@@ -18,14 +18,14 @@ type accountScripts struct {
 
 var Account = accountScripts{}
 
-func (as *accountScripts) CreateByTemplate(tmpl AccountTmpl, user userModel.User, tx *gorm.DB) (account accountModel.Account, accountUser accountModel.User, err error) {
-	account, accountUser, err = accountService.CreateOne(user, tmpl.Name, tmpl.Icon, tmpl.Type, cusCtx.WithDb(context.TODO(), tx))
+func (as *accountScripts) CreateByTemplate(tmpl AccountTmpl, user userModel.User, ctx context.Context) (account accountModel.Account, accountUser accountModel.User, err error) {
+	account, accountUser, err = accountService.CreateOne(user, tmpl.Name, tmpl.Icon, tmpl.Type, ctx)
 	if err != nil {
 		return
 	}
 	var list dataTool.Slice[any, fatherTmpl] = tmpl.Category
 	for _, f := range list.CopyReverse() {
-		err = f.create(account, tx)
+		err = f.create(account, ctx)
 		if err != nil {
 			return
 		}
@@ -33,13 +33,13 @@ func (as *accountScripts) CreateByTemplate(tmpl AccountTmpl, user userModel.User
 	return
 }
 
-func (as *accountScripts) CreateExample(user userModel.User, tx *gorm.DB) (account accountModel.Account, accountUser accountModel.User, err error) {
+func (as *accountScripts) CreateExample(user userModel.User, ctx context.Context) (account accountModel.Account, accountUser accountModel.User, err error) {
 	var accountTmpl AccountTmpl
 	err = accountTmpl.ReadFromJson(constant.ExampleAccountJsonPath)
 	if err != nil {
 		return
 	}
-	return as.CreateByTemplate(accountTmpl, user, tx)
+	return as.CreateByTemplate(accountTmpl, user, ctx)
 }
 
 type AccountTmpl struct {

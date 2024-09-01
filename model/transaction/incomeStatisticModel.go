@@ -55,7 +55,7 @@ func (i *IncomeAccountUserStatistic) Accumulate(
 ) error {
 	tradeTime = i.GetDate(tradeTime)
 	where := tx.Model(i).Where(
-		"date = ? AND account_id = ? AND user_id = ? AND category_id", tradeTime, accountId, userId, categoryId,
+		"date = ? AND account_id = ? AND user_id = ? AND category_id = ?", tradeTime, accountId, userId, categoryId,
 	)
 	updatesValue := i.GetUpdatesValue(amount, count)
 	update := where.Updates(updatesValue)

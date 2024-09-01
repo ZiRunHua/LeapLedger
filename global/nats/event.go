@@ -33,7 +33,7 @@ func PublishEventWithPayload[EventDataType PayloadType](event Event, fetchTaskDa
 	return eventManage.Publish(manager.Event(event), str)
 }
 
-func SubscribeEvent[EventDataType PayloadType](event Event, name string, handleTransaction txHandle[EventDataType]) {
+func SubscribeEvent[EventDataType PayloadType](event Event, name string, handleTransaction handle[EventDataType]) {
 	handler := func(msg jetstream.Msg) error {
 		var data EventDataType
 		if err := json.Unmarshal(msg.Data(), &data); err != nil {

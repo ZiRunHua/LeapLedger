@@ -28,8 +28,8 @@ func PublishTask(task Task) (isSuccess bool) {
 	return taskManage.Publish(manager.Task(task), []byte{})
 }
 
-func SubscribeTask(task Task, handler func() error) {
-	taskManage.Subscribe(manager.Task(task), func(msg jetstream.Msg) error { return handler() })
+func SubscribeTask(task Task, handler func(ctx context.Context) error) {
+	taskManage.Subscribe(manager.Task(task), func(msg jetstream.Msg) error { return handler(context.Background()) })
 }
 
 func PublishTaskWithPayload[T PayloadType](task Task, payload T) (isSuccess bool) {
@@ -40,7 +40,18 @@ func PublishTaskWithPayload[T PayloadType](task Task, payload T) (isSuccess bool
 	return taskManage.Publish(manager.Task(task), str)
 }
 
-func SubscribeTaskWithPayload[T PayloadType](task Task, handleTransaction txHandle[T]) {
+func SubscribeTaskWithPayload[T PayloadType](task Task, handle handle[T]) {
+	msgHandler := func(msg jetstream.Msg) error {
+		var data T
+		if err := json.Unmarshal(msg.Data(), &data); err != nil {
+			return err
+		}
+		return handle(data, context.Background())
+	}
+	taskManage.Subscribe(manager.Task(task), msgHandler)
+}
+
+func SubscribeTaskWithPayloadAndProcessInTransaction[T PayloadType](task Task, handleTransaction handle[T]) {
 	handler := func(msg jetstream.Msg) error {
 		var data T
 		if err := json.Unmarshal(msg.Data(), &data); err != nil {

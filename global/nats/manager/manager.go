@@ -25,12 +25,6 @@ type MessageHandler func(msg jetstream.Msg) error
 var backOff = []time.Duration{
 	time.Millisecond * 250,
 	time.Millisecond * 500,
-	time.Second * 3,
-	time.Second * 30,
-	time.Second * 300,
-	time.Hour,
-	time.Hour * 7,
-	time.Hour * 24,
 }
 
 type manageInitializers struct {

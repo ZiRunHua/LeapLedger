@@ -73,6 +73,7 @@ func (t *TxCommitContext) ExecCallback() {
 	}
 	parent := t.Context.Value(TxCommit)
 	if parent != nil {
+		// The parent transaction decides to commit last, so the callback is handed over to the parent transaction
 		err := parent.(*TxCommitContext).AddCallback(t.callbacks...)
 		if err != nil {
 			panic(err)
@@ -82,8 +83,4 @@ func (t *TxCommitContext) ExecCallback() {
 	for _, callback := range t.callbacks {
 		callback()
 	}
-}
-
-func (t *TxCommitContext) CallbacksNumber() int {
-	return len(t.callbacks)
 }
