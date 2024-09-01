@@ -180,84 +180,6 @@ const docTemplate = `{
                 }
             }
         },
-        "/account/mapping/:id": {
-            "put": {
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Account/Mapping"
-                ],
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "Mapping ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "mapping data",
-                        "name": "body",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/UpdateAccountMapping"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "allOf": [
-                                {
-                                    "$ref": "#/definitions/Response"
-                                },
-                                {
-                                    "type": "object",
-                                    "properties": {
-                                        "Data": {
-                                            "$ref": "#/definitions/AccountMapping"
-                                        }
-                                    }
-                                }
-                            ]
-                        }
-                    }
-                }
-            }
-        },
-        "/account/mapping/{id}": {
-            "delete": {
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Account/Mapping"
-                ],
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "Mapping ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "204": {
-                        "description": "No Content",
-                        "schema": {
-                            "$ref": "#/definitions/NoContent"
-                        }
-                    }
-                }
-            }
-        },
         "/account/template/list": {
             "get": {
                 "produces": [
@@ -461,7 +383,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/account/{accountID}/category": {
+        "/account/{accountId}/category": {
             "post": {
                 "consumes": [
                     "application/json"
@@ -476,7 +398,7 @@ const docTemplate = `{
                     {
                         "type": "integer",
                         "description": "Account ID",
-                        "name": "accountID",
+                        "name": "accountId",
                         "in": "path",
                         "required": true
                     },
@@ -512,7 +434,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/account/{accountID}/category/father": {
+        "/account/{accountId}/category/father": {
             "post": {
                 "consumes": [
                     "application/json"
@@ -527,7 +449,7 @@ const docTemplate = `{
                     {
                         "type": "integer",
                         "description": "Account ID",
-                        "name": "accountID",
+                        "name": "accountId",
                         "in": "path",
                         "required": true
                     },
@@ -563,7 +485,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/account/{accountID}/category/father/{id}": {
+        "/account/{accountId}/category/father/{id}": {
             "put": {
                 "consumes": [
                     "application/json"
@@ -578,7 +500,7 @@ const docTemplate = `{
                     {
                         "type": "integer",
                         "description": "Account ID",
-                        "name": "accountID",
+                        "name": "accountId",
                         "in": "path",
                         "required": true
                     },
@@ -631,7 +553,7 @@ const docTemplate = `{
                     {
                         "type": "integer",
                         "description": "Account ID",
-                        "name": "accountID",
+                        "name": "accountId",
                         "in": "path",
                         "required": true
                     },
@@ -653,7 +575,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/account/{accountID}/category/father/{id}/move": {
+        "/account/{accountId}/category/father/{id}/move": {
             "put": {
                 "consumes": [
                     "application/json"
@@ -668,7 +590,7 @@ const docTemplate = `{
                     {
                         "type": "integer",
                         "description": "Account ID",
-                        "name": "accountID",
+                        "name": "accountId",
                         "in": "path",
                         "required": true
                     },
@@ -699,7 +621,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/account/{accountID}/category/mapping/tree": {
+        "/account/{accountId}/category/mapping/tree": {
             "get": {
                 "consumes": [
                     "application/json"
@@ -714,7 +636,7 @@ const docTemplate = `{
                     {
                         "type": "integer",
                         "description": "Account ID",
-                        "name": "accountID",
+                        "name": "accountId",
                         "in": "path",
                         "required": true
                     },
@@ -750,7 +672,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/account/{accountID}/category/tree": {
+        "/account/{accountId}/category/tree": {
             "get": {
                 "consumes": [
                     "application/json"
@@ -765,7 +687,7 @@ const docTemplate = `{
                     {
                         "type": "integer",
                         "description": "Account ID",
-                        "name": "accountID",
+                        "name": "accountId",
                         "in": "path",
                         "required": true
                     },
@@ -801,7 +723,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/account/{accountID}/category/{id}": {
+        "/account/{accountId}/category/{id}": {
             "put": {
                 "consumes": [
                     "application/json"
@@ -816,7 +738,7 @@ const docTemplate = `{
                     {
                         "type": "integer",
                         "description": "Account ID",
-                        "name": "accountID",
+                        "name": "accountId",
                         "in": "path",
                         "required": true
                     },
@@ -857,7 +779,7 @@ const docTemplate = `{
                     {
                         "type": "integer",
                         "description": "Account ID",
-                        "name": "accountID",
+                        "name": "accountId",
                         "in": "path",
                         "required": true
                     },
@@ -879,7 +801,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/account/{accountID}/category/{id}/mapping": {
+        "/account/{accountId}/category/{id}/mapping": {
             "post": {
                 "consumes": [
                     "application/json"
@@ -894,7 +816,7 @@ const docTemplate = `{
                     {
                         "type": "integer",
                         "description": "Account ID",
-                        "name": "accountID",
+                        "name": "accountId",
                         "in": "path",
                         "required": true
                     },
@@ -938,7 +860,7 @@ const docTemplate = `{
                     {
                         "type": "integer",
                         "description": "Account ID",
-                        "name": "accountID",
+                        "name": "accountId",
                         "in": "path",
                         "required": true
                     },
@@ -969,7 +891,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/account/{accountID}/category/{id}/move": {
+        "/account/{accountId}/category/{id}/move": {
             "put": {
                 "consumes": [
                     "application/json"
@@ -984,7 +906,7 @@ const docTemplate = `{
                     {
                         "type": "integer",
                         "description": "Account ID",
-                        "name": "accountID",
+                        "name": "accountId",
                         "in": "path",
                         "required": true
                     },
@@ -1015,7 +937,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/account/{accountID}/info": {
+        "/account/{accountId}/info": {
             "get": {
                 "produces": [
                     "application/json"
@@ -1027,7 +949,7 @@ const docTemplate = `{
                     {
                         "type": "integer",
                         "description": "Account ID",
-                        "name": "accountID",
+                        "name": "accountId",
                         "in": "path",
                         "required": true
                     }
@@ -1054,7 +976,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/account/{accountID}/info/:type": {
+        "/account/{accountId}/info/:type": {
             "get": {
                 "produces": [
                     "application/json"
@@ -1066,7 +988,7 @@ const docTemplate = `{
                     {
                         "type": "integer",
                         "description": "Account ID",
-                        "name": "accountID",
+                        "name": "accountId",
                         "in": "path",
                         "required": true
                     },
@@ -1099,7 +1021,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/account/{accountID}/mapping": {
+        "/account/{accountId}/mapping": {
             "get": {
                 "produces": [
                     "application/json"
@@ -1111,7 +1033,7 @@ const docTemplate = `{
                     {
                         "type": "integer",
                         "description": "Account ID",
-                        "name": "accountID",
+                        "name": "accountId",
                         "in": "path",
                         "required": true
                     }
@@ -1151,7 +1073,7 @@ const docTemplate = `{
                     {
                         "type": "integer",
                         "description": "Account ID",
-                        "name": "accountID",
+                        "name": "accountId",
                         "in": "path",
                         "required": true
                     },
@@ -1187,7 +1109,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/account/{accountID}/mapping/list": {
+        "/account/{accountId}/mapping/list": {
             "get": {
                 "produces": [
                     "application/json"
@@ -1199,7 +1121,7 @@ const docTemplate = `{
                     {
                         "type": "integer",
                         "description": "Account ID",
-                        "name": "accountID",
+                        "name": "accountId",
                         "in": "path",
                         "required": true
                     }
@@ -1226,8 +1148,8 @@ const docTemplate = `{
                 }
             }
         },
-        "/account/{accountID}/product/transCategory/mapping/tree": {
-            "get": {
+        "/account/{accountId}/mapping/{id}": {
+            "put": {
                 "consumes": [
                     "application/json"
                 ],
@@ -1235,23 +1157,30 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "/Product/TransCategory/Mapping"
+                    "Account/Mapping"
                 ],
                 "parameters": [
                     {
                         "type": "integer",
                         "description": "Account ID",
-                        "name": "accountID",
+                        "name": "accountId",
                         "in": "path",
                         "required": true
                     },
                     {
-                        "description": "query condition",
+                        "type": "integer",
+                        "description": "Mapping ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "mapping data",
                         "name": "body",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/ProductGetMappingTree"
+                            "$ref": "#/definitions/UpdateAccountMapping"
                         }
                     }
                 ],
@@ -1267,7 +1196,7 @@ const docTemplate = `{
                                     "type": "object",
                                     "properties": {
                                         "Data": {
-                                            "$ref": "#/definitions/ProductMappingTree"
+                                            "$ref": "#/definitions/AccountMapping"
                                         }
                                     }
                                 }
@@ -1275,9 +1204,41 @@ const docTemplate = `{
                         }
                     }
                 }
+            },
+            "delete": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Account/Mapping"
+                ],
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Account ID",
+                        "name": "accountId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Mapping ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content",
+                        "schema": {
+                            "$ref": "#/definitions/NoContent"
+                        }
+                    }
+                }
             }
         },
-        "/account/{accountID}/product/transCategory/{id}/mapping": {
+        "/account/{accountId}/product/transCategory/{id}/mapping": {
             "post": {
                 "consumes": [
                     "application/json"
@@ -1292,7 +1253,7 @@ const docTemplate = `{
                     {
                         "type": "integer",
                         "description": "Account ID",
-                        "name": "accountID",
+                        "name": "accountId",
                         "in": "path",
                         "required": true
                     },
@@ -1336,7 +1297,7 @@ const docTemplate = `{
                     {
                         "type": "integer",
                         "description": "Account ID",
-                        "name": "accountID",
+                        "name": "accountId",
                         "in": "path",
                         "required": true
                     },
@@ -1367,7 +1328,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/account/{accountID}/product/{key}/bill/import": {
+        "/account/{accountId}/product/{key}/bill/import": {
             "post": {
                 "consumes": [
                     "multipart/form-data"
@@ -1376,13 +1337,13 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "/Product/Bill/Import"
+                    "Product/Bill/Import"
                 ],
                 "parameters": [
                     {
                         "type": "integer",
                         "description": "Account ID",
-                        "name": "accountID",
+                        "name": "accountId",
                         "in": "path",
                         "required": true
                     },
@@ -1411,7 +1372,56 @@ const docTemplate = `{
                 }
             }
         },
-        "/account/{accountID}/transaction/amount/rank": {
+        "/account/{accountId}/product/{key}/transCategory/mapping/tree": {
+            "get": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Product/TransCategory/Mapping"
+                ],
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Account ID",
+                        "name": "accountId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Product unique key",
+                        "name": "key",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "Data": {
+                                            "$ref": "#/definitions/ProductMappingTree"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/account/{accountId}/transaction/amount/rank": {
             "get": {
                 "consumes": [
                     "application/json"
@@ -1426,7 +1436,7 @@ const docTemplate = `{
                     {
                         "type": "integer",
                         "description": "Account ID",
-                        "name": "accountID",
+                        "name": "accountId",
                         "in": "path",
                         "required": true
                     },
@@ -1462,7 +1472,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/account/{accountID}/transaction/category/amount/rank": {
+        "/account/{accountId}/transaction/category/amount/rank": {
             "get": {
                 "consumes": [
                     "application/json"
@@ -1477,7 +1487,7 @@ const docTemplate = `{
                     {
                         "type": "integer",
                         "description": "Account ID",
-                        "name": "accountID",
+                        "name": "accountId",
                         "in": "path",
                         "required": true
                     },
@@ -1513,7 +1523,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/account/{accountID}/transaction/category/init": {
+        "/account/{accountId}/transaction/category/init": {
             "post": {
                 "consumes": [
                     "application/json"
@@ -1528,7 +1538,7 @@ const docTemplate = `{
                     {
                         "type": "integer",
                         "description": "Account ID",
-                        "name": "accountID",
+                        "name": "accountId",
                         "in": "path",
                         "required": true
                     },
@@ -1564,7 +1574,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/account/{accountID}/transaction/day/statistic": {
+        "/account/{accountId}/transaction/day/statistic": {
             "get": {
                 "consumes": [
                     "application/json"
@@ -1579,7 +1589,7 @@ const docTemplate = `{
                     {
                         "type": "integer",
                         "description": "Account ID",
-                        "name": "accountID",
+                        "name": "accountId",
                         "in": "path",
                         "required": true
                     },
@@ -1615,7 +1625,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/account/{accountID}/transaction/list": {
+        "/account/{accountId}/transaction/list": {
             "get": {
                 "consumes": [
                     "application/json"
@@ -1630,7 +1640,7 @@ const docTemplate = `{
                     {
                         "type": "integer",
                         "description": "Account ID",
-                        "name": "accountID",
+                        "name": "accountId",
                         "in": "path",
                         "required": true
                     }
@@ -1657,7 +1667,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/account/{accountID}/transaction/month/statistic": {
+        "/account/{accountId}/transaction/month/statistic": {
             "get": {
                 "consumes": [
                     "application/json"
@@ -1672,7 +1682,7 @@ const docTemplate = `{
                     {
                         "type": "integer",
                         "description": "Account ID",
-                        "name": "accountID",
+                        "name": "accountId",
                         "in": "path",
                         "required": true
                     },
@@ -1708,7 +1718,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/account/{accountID}/transaction/timing": {
+        "/account/{accountId}/transaction/timing": {
             "post": {
                 "consumes": [
                     "application/json"
@@ -1723,7 +1733,7 @@ const docTemplate = `{
                     {
                         "type": "integer",
                         "description": "Account ID",
-                        "name": "accountID",
+                        "name": "accountId",
                         "in": "path",
                         "required": true
                     },
@@ -1759,7 +1769,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/account/{accountID}/transaction/timing/list": {
+        "/account/{accountId}/transaction/timing/list": {
             "get": {
                 "consumes": [
                     "application/json"
@@ -1774,7 +1784,7 @@ const docTemplate = `{
                     {
                         "type": "integer",
                         "description": "Account ID",
-                        "name": "accountID",
+                        "name": "accountId",
                         "in": "path",
                         "required": true
                     },
@@ -1810,7 +1820,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/account/{accountID}/transaction/timing/{id}": {
+        "/account/{accountId}/transaction/timing/{id}": {
             "put": {
                 "consumes": [
                     "application/json"
@@ -1825,7 +1835,7 @@ const docTemplate = `{
                     {
                         "type": "integer",
                         "description": "Account ID",
-                        "name": "accountID",
+                        "name": "accountId",
                         "in": "path",
                         "required": true
                     },
@@ -1868,7 +1878,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/account/{accountID}/transaction/total": {
+        "/account/{accountId}/transaction/total": {
             "get": {
                 "consumes": [
                     "application/json"
@@ -1883,7 +1893,7 @@ const docTemplate = `{
                     {
                         "type": "integer",
                         "description": "Account ID",
-                        "name": "accountID",
+                        "name": "accountId",
                         "in": "path",
                         "required": true
                     },
@@ -1919,7 +1929,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/account/{accountID}/transaction/{id}": {
+        "/account/{accountId}/transaction/{id}": {
             "get": {
                 "consumes": [
                     "application/json"
@@ -1934,7 +1944,7 @@ const docTemplate = `{
                     {
                         "type": "integer",
                         "description": "Account ID",
-                        "name": "accountID",
+                        "name": "accountId",
                         "in": "path",
                         "required": true
                     },
@@ -1981,7 +1991,7 @@ const docTemplate = `{
                     {
                         "type": "integer",
                         "description": "Account ID",
-                        "name": "accountID",
+                        "name": "accountId",
                         "in": "path",
                         "required": true
                     },
@@ -2037,7 +2047,7 @@ const docTemplate = `{
                     {
                         "type": "integer",
                         "description": "Account ID",
-                        "name": "accountID",
+                        "name": "accountId",
                         "in": "path",
                         "required": true
                     },
@@ -2093,7 +2103,7 @@ const docTemplate = `{
                     {
                         "type": "integer",
                         "description": "Account ID",
-                        "name": "accountID",
+                        "name": "accountId",
                         "in": "path",
                         "required": true
                     },
@@ -2115,7 +2125,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/account/{accountID}/user/config": {
+        "/account/{accountId}/user/config": {
             "get": {
                 "produces": [
                     "application/json"
@@ -2127,7 +2137,7 @@ const docTemplate = `{
                     {
                         "type": "integer",
                         "description": "Account ID",
-                        "name": "accountID",
+                        "name": "accountId",
                         "in": "path",
                         "required": true
                     }
@@ -2154,7 +2164,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/account/{accountID}/user/config/{flag}": {
+        "/account/{accountId}/user/config/{flag}": {
             "put": {
                 "consumes": [
                     "application/json"
@@ -2169,7 +2179,7 @@ const docTemplate = `{
                     {
                         "type": "integer",
                         "description": "Account ID",
-                        "name": "accountID",
+                        "name": "accountId",
                         "in": "path",
                         "required": true
                     },
@@ -2205,7 +2215,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/account/{accountID}/user/invitation": {
+        "/account/{accountId}/user/invitation": {
             "post": {
                 "consumes": [
                     "application/json"
@@ -2220,7 +2230,7 @@ const docTemplate = `{
                     {
                         "type": "integer",
                         "description": "Account ID",
-                        "name": "accountID",
+                        "name": "accountId",
                         "in": "path",
                         "required": true
                     },
@@ -2256,7 +2266,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/account/{accountID}/user/list": {
+        "/account/{accountId}/user/list": {
             "get": {
                 "consumes": [
                     "application/json"
@@ -2271,7 +2281,7 @@ const docTemplate = `{
                     {
                         "type": "integer",
                         "description": "Account ID",
-                        "name": "accountID",
+                        "name": "accountId",
                         "in": "path",
                         "required": true
                     }
@@ -2298,7 +2308,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/account/{accountID}/user/{id}": {
+        "/account/{accountId}/user/{id}": {
             "put": {
                 "consumes": [
                     "application/json"
@@ -2313,7 +2323,7 @@ const docTemplate = `{
                     {
                         "type": "integer",
                         "description": "Account ID",
-                        "name": "accountID",
+                        "name": "accountId",
                         "in": "path",
                         "required": true
                     },
@@ -3752,14 +3762,10 @@ const docTemplate = `{
         "CategoryGetMappingTree": {
             "type": "object",
             "required": [
-                "MappingAccountId",
-                "ParentAccountId"
+                "MappingAccountId"
             ],
             "properties": {
                 "MappingAccountId": {
-                    "type": "integer"
-                },
-                "ParentAccountId": {
                     "type": "integer"
                 }
             }
@@ -3827,7 +3833,7 @@ const docTemplate = `{
         "CategoryOne": {
             "type": "object",
             "properties": {
-                "FatherId": {
+                "AccountId": {
                     "type": "integer"
                 },
                 "Icon": {
@@ -4156,17 +4162,6 @@ const docTemplate = `{
                 "Offset": {
                     "type": "integer",
                     "minimum": 0
-                }
-            }
-        },
-        "ProductGetMappingTree": {
-            "type": "object",
-            "properties": {
-                "AccountId": {
-                    "type": "integer"
-                },
-                "ProductKey": {
-                    "type": "string"
                 }
             }
         },

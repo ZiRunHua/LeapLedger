@@ -233,13 +233,10 @@ definitions:
     type: object
   CategoryGetMappingTree:
     properties:
-      ChildAccountId:
-        type: integer
-      ParentAccountId:
+      MappingAccountId:
         type: integer
     required:
-    - ChildAccountId
-    - ParentAccountId
+    - MappingAccountId
     type: object
   CategoryGetTree:
     properties:
@@ -281,7 +278,7 @@ definitions:
     type: object
   CategoryOne:
     properties:
-      FatherId:
+      AccountId:
         type: integer
       Icon:
         type: string
@@ -494,13 +491,6 @@ definitions:
       Offset:
         minimum: 0
         type: integer
-    type: object
-  ProductGetMappingTree:
-    properties:
-      AccountId:
-        type: integer
-      ProductKey:
-        type: string
     type: object
   ProductList:
     properties:
@@ -1098,14 +1088,14 @@ paths:
               type: object
       tags:
       - Account
-  /account/{accountID}/category:
+  /account/{accountId}/category:
     post:
       consumes:
       - application/json
       parameters:
       - description: Account ID
         in: path
-        name: accountID
+        name: accountId
         required: true
         type: integer
       - description: category data
@@ -1128,12 +1118,12 @@ paths:
               type: object
       tags:
       - Category
-  /account/{accountID}/category/{id}:
+  /account/{accountId}/category/{id}:
     delete:
       parameters:
       - description: Account ID
         in: path
-        name: accountID
+        name: accountId
         required: true
         type: integer
       - description: Category ID
@@ -1156,7 +1146,7 @@ paths:
       parameters:
       - description: Account ID
         in: path
-        name: accountID
+        name: accountId
         required: true
         type: integer
       - description: Category ID
@@ -1179,14 +1169,14 @@ paths:
             $ref: '#/definitions/NoContent'
       tags:
       - Category
-  /account/{accountID}/category/{id}/mapping:
+  /account/{accountId}/category/{id}/mapping:
     delete:
       consumes:
       - application/json
       parameters:
       - description: Account ID
         in: path
-        name: accountID
+        name: accountId
         required: true
         type: integer
       - description: Category ID
@@ -1215,7 +1205,7 @@ paths:
       parameters:
       - description: Account ID
         in: path
-        name: accountID
+        name: accountId
         required: true
         type: integer
       - description: Category ID
@@ -1238,14 +1228,14 @@ paths:
             $ref: '#/definitions/NoContent'
       tags:
       - Category
-  /account/{accountID}/category/{id}/move:
+  /account/{accountId}/category/{id}/move:
     put:
       consumes:
       - application/json
       parameters:
       - description: Account ID
         in: path
-        name: accountID
+        name: accountId
         required: true
         type: integer
       - description: Category ID
@@ -1268,14 +1258,14 @@ paths:
             $ref: '#/definitions/NoContent'
       tags:
       - Category
-  /account/{accountID}/category/father:
+  /account/{accountId}/category/father:
     post:
       consumes:
       - application/json
       parameters:
       - description: Account ID
         in: path
-        name: accountID
+        name: accountId
         required: true
         type: integer
       - description: father category data
@@ -1298,12 +1288,12 @@ paths:
               type: object
       tags:
       - Category/Father
-  /account/{accountID}/category/father/{id}:
+  /account/{accountId}/category/father/{id}:
     delete:
       parameters:
       - description: Account ID
         in: path
-        name: accountID
+        name: accountId
         required: true
         type: integer
       - description: Father ID
@@ -1326,7 +1316,7 @@ paths:
       parameters:
       - description: Account ID
         in: path
-        name: accountID
+        name: accountId
         required: true
         type: integer
       - description: Father ID
@@ -1354,14 +1344,14 @@ paths:
               type: object
       tags:
       - Category/Father
-  /account/{accountID}/category/father/{id}/move:
+  /account/{accountId}/category/father/{id}/move:
     put:
       consumes:
       - application/json
       parameters:
       - description: Account ID
         in: path
-        name: accountID
+        name: accountId
         required: true
         type: integer
       - description: Father ID
@@ -1384,14 +1374,14 @@ paths:
             $ref: '#/definitions/NoContent'
       tags:
       - Category/Father
-  /account/{accountID}/category/mapping/tree:
+  /account/{accountId}/category/mapping/tree:
     get:
       consumes:
       - application/json
       parameters:
       - description: Account ID
         in: path
-        name: accountID
+        name: accountId
         required: true
         type: integer
       - description: query condition
@@ -1414,14 +1404,14 @@ paths:
               type: object
       tags:
       - Category
-  /account/{accountID}/category/tree:
+  /account/{accountId}/category/tree:
     get:
       consumes:
       - application/json
       parameters:
       - description: Account ID
         in: path
-        name: accountID
+        name: accountId
         required: true
         type: integer
       - description: query condition
@@ -1444,12 +1434,12 @@ paths:
               type: object
       tags:
       - Category
-  /account/{accountID}/info:
+  /account/{accountId}/info:
     get:
       parameters:
       - description: Account ID
         in: path
-        name: accountID
+        name: accountId
         required: true
         type: integer
       produces:
@@ -1466,12 +1456,12 @@ paths:
               type: object
       tags:
       - Account
-  /account/{accountID}/info/:type:
+  /account/{accountId}/info/:type:
     get:
       parameters:
       - description: Account ID
         in: path
-        name: accountID
+        name: accountId
         required: true
         type: integer
       - description: Account type
@@ -1492,12 +1482,12 @@ paths:
               type: object
       tags:
       - Account
-  /account/{accountID}/mapping:
+  /account/{accountId}/mapping:
     get:
       parameters:
       - description: Account ID
         in: path
-        name: accountID
+        name: accountId
         required: true
         type: integer
       produces:
@@ -1520,7 +1510,7 @@ paths:
       parameters:
       - description: Account ID
         in: path
-        name: accountID
+        name: accountId
         required: true
         type: integer
       - description: mapping data
@@ -1543,12 +1533,68 @@ paths:
               type: object
       tags:
       - Account/Mapping
-  /account/{accountID}/mapping/list:
+  /account/{accountId}/mapping/{id}:
+    delete:
+      parameters:
+      - description: Account ID
+        in: path
+        name: accountId
+        required: true
+        type: integer
+      - description: Mapping ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+          schema:
+            $ref: '#/definitions/NoContent'
+      tags:
+      - Account/Mapping
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: Account ID
+        in: path
+        name: accountId
+        required: true
+        type: integer
+      - description: Mapping ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: mapping data
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/UpdateAccountMapping'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/Response'
+            - properties:
+                Data:
+                  $ref: '#/definitions/AccountMapping'
+              type: object
+      tags:
+      - Account/Mapping
+  /account/{accountId}/mapping/list:
     get:
       parameters:
       - description: Account ID
         in: path
-        name: accountID
+        name: accountId
         required: true
         type: integer
       produces:
@@ -1565,14 +1611,14 @@ paths:
               type: object
       tags:
       - Account/Mapping
-  /account/{accountID}/product/{key}/bill/import:
+  /account/{accountId}/product/{key}/bill/import:
     post:
       consumes:
       - multipart/form-data
       parameters:
       - description: Account ID
         in: path
-        name: accountID
+        name: accountId
         required: true
         type: integer
       - description: Product unique key
@@ -1593,15 +1639,44 @@ paths:
           schema:
             $ref: '#/definitions/NoContent'
       tags:
-      - /Product/Bill/Import
-  /account/{accountID}/product/transCategory/{id}/mapping:
+      - Product/Bill/Import
+  /account/{accountId}/product/{key}/transCategory/mapping/tree:
+    get:
+      consumes:
+      - application/json
+      parameters:
+      - description: Account ID
+        in: path
+        name: accountId
+        required: true
+        type: integer
+      - description: Product unique key
+        in: path
+        name: key
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/Response'
+            - properties:
+                Data:
+                  $ref: '#/definitions/ProductMappingTree'
+              type: object
+      tags:
+      - Product/TransCategory/Mapping
+  /account/{accountId}/product/transCategory/{id}/mapping:
     delete:
       consumes:
       - application/json
       parameters:
       - description: Account ID
         in: path
-        name: accountID
+        name: accountId
         required: true
         type: integer
       - description: Product transaction category ID
@@ -1630,7 +1705,7 @@ paths:
       parameters:
       - description: Account ID
         in: path
-        name: accountID
+        name: accountId
         required: true
         type: integer
       - description: Product transaction category ID
@@ -1653,44 +1728,14 @@ paths:
             $ref: '#/definitions/NoContent'
       tags:
       - Product/TransCategory/Mapping
-  /account/{accountID}/product/transCategory/mapping/tree:
-    get:
-      consumes:
-      - application/json
-      parameters:
-      - description: Account ID
-        in: path
-        name: accountID
-        required: true
-        type: integer
-      - description: query condition
-        in: body
-        name: body
-        required: true
-        schema:
-          $ref: '#/definitions/ProductGetMappingTree'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            allOf:
-            - $ref: '#/definitions/Response'
-            - properties:
-                Data:
-                  $ref: '#/definitions/ProductMappingTree'
-              type: object
-      tags:
-      - /Product/TransCategory/Mapping
-  /account/{accountID}/transaction/{id}:
+  /account/{accountId}/transaction/{id}:
     delete:
       consumes:
       - application/json
       parameters:
       - description: Account ID
         in: path
-        name: accountID
+        name: accountId
         required: true
         type: integer
       - description: Transaction ID
@@ -1713,7 +1758,7 @@ paths:
       parameters:
       - description: Account ID
         in: path
-        name: accountID
+        name: accountId
         required: true
         type: integer
       - description: Transaction ID
@@ -1741,7 +1786,7 @@ paths:
       parameters:
       - description: Account ID
         in: path
-        name: accountID
+        name: accountId
         required: true
         type: integer
       - description: Transaction ID
@@ -1775,7 +1820,7 @@ paths:
       parameters:
       - description: Account ID
         in: path
-        name: accountID
+        name: accountId
         required: true
         type: integer
       - description: Transaction ID
@@ -1803,14 +1848,14 @@ paths:
               type: object
       tags:
       - Transaction
-  /account/{accountID}/transaction/amount/rank:
+  /account/{accountId}/transaction/amount/rank:
     get:
       consumes:
       - application/json
       parameters:
       - description: Account ID
         in: path
-        name: accountID
+        name: accountId
         required: true
         type: integer
       - description: condition
@@ -1833,14 +1878,14 @@ paths:
               type: object
       tags:
       - Transaction
-  /account/{accountID}/transaction/category/amount/rank:
+  /account/{accountId}/transaction/category/amount/rank:
     get:
       consumes:
       - application/json
       parameters:
       - description: Account ID
         in: path
-        name: accountID
+        name: accountId
         required: true
         type: integer
       - description: condition
@@ -1863,14 +1908,14 @@ paths:
               type: object
       tags:
       - Transaction
-  /account/{accountID}/transaction/category/init:
+  /account/{accountId}/transaction/category/init:
     post:
       consumes:
       - application/json
       parameters:
       - description: Account ID
         in: path
-        name: accountID
+        name: accountId
         required: true
         type: integer
       - description: init data
@@ -1893,14 +1938,14 @@ paths:
               type: object
       tags:
       - Account/Template
-  /account/{accountID}/transaction/day/statistic:
+  /account/{accountId}/transaction/day/statistic:
     get:
       consumes:
       - application/json
       parameters:
       - description: Account ID
         in: path
-        name: accountID
+        name: accountId
         required: true
         type: integer
       - description: condition
@@ -1923,14 +1968,14 @@ paths:
               type: object
       tags:
       - Transaction
-  /account/{accountID}/transaction/list:
+  /account/{accountId}/transaction/list:
     get:
       consumes:
       - application/json
       parameters:
       - description: Account ID
         in: path
-        name: accountID
+        name: accountId
         required: true
         type: integer
       produces:
@@ -1947,14 +1992,14 @@ paths:
               type: object
       tags:
       - Transaction
-  /account/{accountID}/transaction/month/statistic:
+  /account/{accountId}/transaction/month/statistic:
     get:
       consumes:
       - application/json
       parameters:
       - description: Account ID
         in: path
-        name: accountID
+        name: accountId
         required: true
         type: integer
       - description: condition
@@ -1977,14 +2022,14 @@ paths:
               type: object
       tags:
       - Transaction
-  /account/{accountID}/transaction/timing:
+  /account/{accountId}/transaction/timing:
     post:
       consumes:
       - application/json
       parameters:
       - description: Account ID
         in: path
-        name: accountID
+        name: accountId
         required: true
         type: integer
       - description: timing config
@@ -2007,14 +2052,14 @@ paths:
               type: object
       tags:
       - Transaction/Timing
-  /account/{accountID}/transaction/timing/{id}:
+  /account/{accountId}/transaction/timing/{id}:
     put:
       consumes:
       - application/json
       parameters:
       - description: Account ID
         in: path
-        name: accountID
+        name: accountId
         required: true
         type: integer
       - description: Transaction ID
@@ -2042,14 +2087,14 @@ paths:
               type: object
       tags:
       - Transaction/Timing
-  /account/{accountID}/transaction/timing/list:
+  /account/{accountId}/transaction/timing/list:
     get:
       consumes:
       - application/json
       parameters:
       - description: Account ID
         in: path
-        name: accountID
+        name: accountId
         required: true
         type: integer
       - description: Page data
@@ -2072,14 +2117,14 @@ paths:
               type: object
       tags:
       - Transaction/Timing
-  /account/{accountID}/transaction/total:
+  /account/{accountId}/transaction/total:
     get:
       consumes:
       - application/json
       parameters:
       - description: Account ID
         in: path
-        name: accountID
+        name: accountId
         required: true
         type: integer
       - description: Transaction total data
@@ -2102,14 +2147,14 @@ paths:
               type: object
       tags:
       - Transaction
-  /account/{accountID}/user/{id}:
+  /account/{accountId}/user/{id}:
     put:
       consumes:
       - application/json
       parameters:
       - description: Account ID
         in: path
-        name: accountID
+        name: accountId
         required: true
         type: integer
       - description: Account User ID
@@ -2137,12 +2182,12 @@ paths:
               type: object
       tags:
       - Account/User
-  /account/{accountID}/user/config:
+  /account/{accountId}/user/config:
     get:
       parameters:
       - description: Account ID
         in: path
-        name: accountID
+        name: accountId
         required: true
         type: integer
       produces:
@@ -2159,14 +2204,14 @@ paths:
               type: object
       tags:
       - Account/User/Config
-  /account/{accountID}/user/config/{flag}:
+  /account/{accountId}/user/config/{flag}:
     put:
       consumes:
       - application/json
       parameters:
       - description: Account ID
         in: path
-        name: accountID
+        name: accountId
         required: true
         type: integer
       - description: config data
@@ -2189,14 +2234,14 @@ paths:
               type: object
       tags:
       - Account/User/Config
-  /account/{accountID}/user/invitation:
+  /account/{accountId}/user/invitation:
     post:
       consumes:
       - application/json
       parameters:
       - description: Account ID
         in: path
-        name: accountID
+        name: accountId
         required: true
         type: integer
       - description: invitation data
@@ -2219,14 +2264,14 @@ paths:
               type: object
       tags:
       - Account/User/Invitation
-  /account/{accountID}/user/list:
+  /account/{accountId}/user/list:
     get:
       consumes:
       - application/json
       parameters:
       - description: Account ID
         in: path
-        name: accountID
+        name: accountId
         required: true
         type: integer
       produces:
@@ -2377,53 +2422,6 @@ paths:
               type: object
       tags:
       - Account
-  /account/mapping/:id:
-    put:
-      consumes:
-      - application/json
-      parameters:
-      - description: Mapping ID
-        in: path
-        name: id
-        required: true
-        type: integer
-      - description: mapping data
-        in: body
-        name: body
-        required: true
-        schema:
-          $ref: '#/definitions/UpdateAccountMapping'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            allOf:
-            - $ref: '#/definitions/Response'
-            - properties:
-                Data:
-                  $ref: '#/definitions/AccountMapping'
-              type: object
-      tags:
-      - Account/Mapping
-  /account/mapping/{id}:
-    delete:
-      parameters:
-      - description: Mapping ID
-        in: path
-        name: id
-        required: true
-        type: integer
-      produces:
-      - application/json
-      responses:
-        "204":
-          description: No Content
-          schema:
-            $ref: '#/definitions/NoContent'
-      tags:
-      - Account/Mapping
   /account/template/list:
     get:
       produces:
