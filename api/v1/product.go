@@ -10,6 +10,7 @@ import (
 	productModel "KeepAccount/model/product"
 	"KeepAccount/util"
 	"github.com/gin-gonic/gin"
+	"github.com/gorilla/websocket"
 	"gorm.io/gorm"
 )
 
@@ -116,10 +117,12 @@ func (p *ProductApi) MappingTransactionCategory(ctx *gin.Context) {
 		response.FailToParameter(ctx, global.ErrAccountId)
 		return
 	}
-	err = db.Transaction(ctx, func(ctx *cusCtx.TxContext) error {
-		_, err = productService.MappingTransactionCategory(category, transactionCategory, ctx)
-		return err
-	})
+	err = db.Transaction(
+		ctx, func(ctx *cusCtx.TxContext) error {
+			_, err = productService.MappingTransactionCategory(category, transactionCategory, ctx)
+			return err
+		},
+	)
 	if responseError(err, ctx) {
 		return
 	}
@@ -153,9 +156,11 @@ func (p *ProductApi) DeleteTransactionCategoryMapping(ctx *gin.Context) {
 		return
 	}
 
-	err = db.Transaction(ctx, func(ctx *cusCtx.TxContext) error {
-		return productService.DeleteMappingTransactionCategory(category, ptc, ctx)
-	})
+	err = db.Transaction(
+		ctx, func(ctx *cusCtx.TxContext) error {
+			return productService.DeleteMappingTransactionCategory(category, ptc, ctx)
+		},
+	)
 	if responseError(err, ctx) {
 		return
 	}
@@ -230,7 +235,7 @@ func (p *ProductApi) GetMappingTree(ctx *gin.Context) {
 //	@Param		file		formData	file	true	"file to upload"
 //	@Success	200			{object}	response.NoContent
 //	@Router		/account/{accountId}/product/{key}/bill/import [post]
-func (p *ProductApi) ImportProductBill(ctx *gin.Context) {
+func (p *ProductApi) ImportProductBill(conn *websocket.Conn, ctx *gin.Context) {
 	fileHeader, err := ctx.FormFile("File")
 	if responseError(err, ctx) {
 		return
