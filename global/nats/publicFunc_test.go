@@ -8,10 +8,6 @@ import (
 	"time"
 )
 
-func init() {
-
-}
-
 type taskData struct {
 	Time int64
 	Name string

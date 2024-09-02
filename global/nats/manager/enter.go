@@ -77,16 +77,17 @@ func receiveMsg(msg jetstream.Msg, handle MessageHandler, logger *zap.Logger) {
 		r := recover()
 		if r == nil {
 			if err != nil {
+				logger.Error("receiveMsg err", zap.Error(err))
 				err = msg.Nak()
 			} else {
 				err = msg.Ack()
 			}
 		} else {
-			logger.Error("receiveMsg", zap.Any("panic", r))
+			logger.Error("receiveMsg panic", zap.Any("panic", r))
 			err = msg.Nak()
 		}
 		if err != nil {
-			logger.Error("receiveMsg", zap.Error(err))
+			logger.Error("receiveMsg ack err", zap.Error(err))
 		}
 	}()
 	err = handle(msg)

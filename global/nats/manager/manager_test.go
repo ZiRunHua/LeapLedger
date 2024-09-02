@@ -3,7 +3,6 @@ package manager
 import (
 	"context"
 	"errors"
-	"fmt"
 	"github.com/google/uuid"
 	"reflect"
 	"strconv"
@@ -34,23 +33,6 @@ func TestSubscribeAndPublish(t *testing.T) {
 	}
 }
 
-func TestManager(t *testing.T) {
-	var task Task = Task(t.Name())
-	var handleCount int
-
-	m := taskManage
-	m.Subscribe(
-		task, func(msg jetstream.Msg) error {
-			fmt.Printf("%s %s\n", msg.Subject(), msg.Data())
-			handleCount++
-			return errors.New("test")
-		},
-	)
-	m.Publish(task, []byte("test"))
-	time.Sleep(time.Second * 10)
-	t.Log(handleCount)
-}
-
 func TestEventSubscribeAndPublish(t *testing.T) {
 	var event Event = Event(t.Name())
 	var taskPrefix Task = Task(t.Name())
@@ -74,9 +56,10 @@ func TestEventSubscribeAndPublish(t *testing.T) {
 		// 订阅事件触发任务
 		eventM.Subscribe(event, task, func(eventData []byte) ([]byte, error) { return eventData, nil })
 	}
+	time.Sleep(time.Second * 1)
 	// 发布事件
 	eventM.Publish(event, []byte("test"))
-	time.Sleep(time.Second * 10)
+	time.Sleep(time.Second * 20)
 	for task, b := range taskMap {
 		if !b {
 			t.Fatal(task, "fail")

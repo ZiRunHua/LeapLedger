@@ -86,7 +86,9 @@ func initTemplateUser(ctx *cusCtx.TxContext) (err error) {
 }
 
 func initTestUser(ctx *cusCtx.TxContext) (err error) {
-	tx := ctx.GetDb()
+	tx := db.Get(ctx)
+	tx = tx.Session(&gorm.Session{Logger: tx.Logger.LogMode(logger.Silent)})
+	ctx = cusCtx.WithTx(ctx, tx)
 	tx = tx.Session(&gorm.Session{Logger: tx.Logger.LogMode(logger.Silent)})
 	var user userModel.User
 	user, err = script.User.CreateTourist(ctx)
@@ -116,7 +118,9 @@ func initTestUser(ctx *cusCtx.TxContext) (err error) {
 }
 
 func initTourist(ctx *cusCtx.TxContext) error {
-	tx := ctx.GetDb()
+	tx := db.Get(ctx)
+	tx = tx.Session(&gorm.Session{Logger: tx.Logger.LogMode(logger.Silent)})
+	ctx = cusCtx.WithTx(ctx, tx)
 	tx = tx.Session(&gorm.Session{Logger: tx.Logger.LogMode(logger.Silent)})
 	_, err := userModel.NewDao(tx).SelectByUnusedTour()
 	if err == nil {

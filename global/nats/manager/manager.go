@@ -23,8 +23,15 @@ type MsgType interface {
 type MessageHandler func(msg jetstream.Msg) error
 
 var backOff = []time.Duration{
+	time.Millisecond * 50,
 	time.Millisecond * 250,
 	time.Millisecond * 500,
+	time.Second * 3,
+	time.Second * 30,
+	time.Second * 300,
+	time.Hour,
+	time.Hour * 7,
+	time.Hour * 24,
 }
 
 type manageInitializers struct {
@@ -71,6 +78,8 @@ func (mi *manageInitializers) getCustomerConfig(ctx context.Context) (config jet
 	return config, err
 }
 
-func (mi *manageInitializers) newCustomer(ctx context.Context, config jetstream.ConsumerConfig) (jetstream.Consumer, error) {
+func (mi *manageInitializers) newCustomer(ctx context.Context, config jetstream.ConsumerConfig) (
+	jetstream.Consumer, error,
+) {
 	return mi.js.CreateOrUpdateConsumer(ctx, mi.stream.CachedInfo().Config.Name, config)
 }

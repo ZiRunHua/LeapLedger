@@ -17,6 +17,7 @@ services:
     networks:
       - leap-ledger-network
     depends_on:
+      - leap-ledger-mysql
       - leap-ledger-nats
       - leap-ledger-redis
   leap-ledger-mysql:

@@ -100,9 +100,6 @@ func (em *eventManager) Subscribe(event Event, triggerTask Task, fetchTaskData f
 	if em.msgHandlerMap == nil {
 		em.msgHandlerMap = make(map[string]MessageHandler)
 	}
-	if em.msgHandlerMap[event.subject()] != nil {
-		return
-	}
 	em.msgHandlerMap[event.subject()] = func(msg jetstream.Msg) error {
 		for _, handler := range em.eventToTask[event] {
 			_ = handler(msg)
@@ -122,9 +119,11 @@ func (em *eventManager) SubscribeToNewConsumer(event Event, name string, handler
 	if err != nil {
 		panic(err)
 	}
-	_, err = customer.Consume(func(msg jetstream.Msg) {
-		receiveMsg(msg, handler, em.logger)
-	})
+	_, err = customer.Consume(
+		func(msg jetstream.Msg) {
+			receiveMsg(msg, handler, em.logger)
+		},
+	)
 	if err != nil {
 		panic(err)
 	}
@@ -162,7 +161,9 @@ func (em *eventMsgHandler) getHandler(subject string) (MessageHandler, error) {
 	}
 	handler, exist := em.msgHandlerMap[subject]
 	if !exist {
-		return func(msg jetstream.Msg) error { return nil }, nil
+		return func(msg jetstream.Msg) error { return nil }, fmt.Errorf(
+			"subject: %s ,%w", subject, ErrMsgHandlerNotExist,
+		)
 	}
 	return handler, nil
 }

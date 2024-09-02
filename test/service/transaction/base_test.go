@@ -27,20 +27,24 @@ func TestCreate(t *testing.T) {
 		t.Error(err)
 	}
 	var trans transactionModel.Transaction
-	err = db.Transaction(context.TODO(), func(ctx *cusCtx.TxContext) error {
-		createOption, err := service.NewOptionFormConfig(transInfo, ctx)
-		if err != nil {
+	err = db.Transaction(
+		context.TODO(), func(ctx *cusCtx.TxContext) error {
+			createOption, err := service.NewOptionFormConfig(transInfo, ctx)
+			if err != nil {
+				return err
+			}
+			createOption.WithSyncUpdateStatistic(false)
+			trans, err = service.Create(transInfo, user, createOption, ctx)
 			return err
-		}
-		createOption.WithSyncUpdateStatistic(false)
-		trans, err = service.Create(transInfo, user, createOption, ctx)
-		return err
-	})
+		},
+	)
 	if err != nil {
 		t.Error(err)
 	}
 	time.Sleep(time.Second * 10)
-	newTotal, err := transactionModel.NewDao().GetIeStatisticByCondition(&transInfo.IncomeExpense, *builder.Build(), nil)
+	newTotal, err := transactionModel.NewDao().GetIeStatisticByCondition(
+		&transInfo.IncomeExpense, *builder.Build(), nil,
+	)
 	if err != nil {
 		t.Error(err)
 	}
@@ -54,5 +58,7 @@ func TestCreate(t *testing.T) {
 	}
 	if !reflect.DeepEqual(total, newTotal) {
 		t.Error("total not equal", total, newTotal)
+	} else {
+		t.Log("pass", total, newTotal)
 	}
 }
