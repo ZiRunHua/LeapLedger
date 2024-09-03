@@ -3,10 +3,12 @@ package commonService
 import (
 	"KeepAccount/global"
 	"KeepAccount/global/constant"
-	"KeepAccount/util"
+	utilJwt "KeepAccount/util/jwt"
 	"crypto/sha1"
 	"encoding/hex"
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/pkg/errors"
+	"strconv"
 	"time"
 )
 
@@ -45,30 +47,28 @@ func interfaceToInt(v interface{}) (i int) {
 
 const ExpiresAt time.Duration = 90 * 24 * time.Hour
 
-func (cm *common) MakeCustomClaims(userId uint) util.CustomClaims {
-	// 设置过期时间
+func (cm *common) MakeCustomClaims(userId uint) jwt.RegisteredClaims {
 	expirationTime := time.Now().Add(ExpiresAt)
-	return util.CustomClaims{
-		UserId:    userId,
-		ExpiresAt: expirationTime,
-		Issuer:    "server", // 可自定义
-		Subject:   "user",   // 可自定义
+	return jwt.RegisteredClaims{
+		ID:        strconv.Itoa(int(userId)),
+		ExpiresAt: &jwt.NumericDate{expirationTime},
+		Issuer:    "server",
+		Subject:   "user",
 	}
 }
 
-func (cm *common) GenerateJWT(custom util.CustomClaims) (string, error) {
-	jwt := util.NewJWT()
-	token, err := jwt.CreateToken(custom)
+func (cm *common) GenerateJWT(custom jwt.RegisteredClaims) (string, error) {
+	token, err := utilJwt.CreateToken(custom, global.Config.System.JwtKey)
 	if err != nil {
 		return "", errors.Wrap(err, "jwt.CreateToken")
 	}
 	return token, err
 }
 
-func (cm *common) RefreshJWT(custom util.CustomClaims) (token string, newCustom util.CustomClaims, err error) {
+func (cm *common) RefreshJWT(custom jwt.RegisteredClaims) (token string, newCustom jwt.RegisteredClaims, err error) {
 	newCustom = custom
 	if newCustom.ExpiresAt.Before(time.Now().Add(ExpiresAt / 3)) {
-		newCustom.ExpiresAt = time.Now().Add(ExpiresAt)
+		newCustom.ExpiresAt.Time = time.Now().Add(ExpiresAt)
 	}
 	token, err = cm.GenerateJWT(newCustom)
 	return
@@ -88,7 +88,7 @@ func (cm *common) SetEmailCaptchaCache(email string, emailCaptcha string, expira
 // 检查邮件验证码错误次数 如果该邮件验证码错误次数过多 则短时禁用该邮件以保护该邮件
 func (cm *common) CheckEmailCaptcha(email string, captcha string) error {
 	countKey := global.Cache.GetKey(constant.CaptchaEmailErrorCount, email)
-	//检查错误次数
+	// 检查错误次数
 	if global.Config.Captcha.EmailCaptcha > 0 {
 		count, ok := global.Cache.Get(countKey)
 		if false == ok {
@@ -109,7 +109,7 @@ func (cm *common) CheckEmailCaptcha(email string, captcha string) error {
 			}
 		}
 	}
-	//检查验证码
+	// 检查验证码
 	emailKey := global.Cache.GetKey(constant.EmailCaptcha, email)
 	cacheData, ok := global.Cache.Get(emailKey)
 	if false == ok {
@@ -122,9 +122,9 @@ func (cm *common) CheckEmailCaptcha(email string, captcha string) error {
 	} else {
 		panic("cache数据断言为字符串失败")
 	}
-	//成功
+	// 成功
 	_ = global.Cache.Delete(countKey)
-	//不清除cache 以此来限制频繁发送相同邮箱的验证码
-	//global.Cache.Delete(emailKey)
+	// 不清除cache 以此来限制频繁发送相同邮箱的验证码
+	// global.Cache.Delete(emailKey)
 	return nil
 }

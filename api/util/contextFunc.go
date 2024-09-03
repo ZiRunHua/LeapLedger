@@ -8,8 +8,8 @@ import (
 	"KeepAccount/global/db"
 	accountModel "KeepAccount/model/account"
 	userModel "KeepAccount/model/user"
-	"KeepAccount/util"
 	"github.com/gin-gonic/gin"
+	"github.com/golang-jwt/jwt/v5"
 	"strconv"
 )
 
@@ -21,12 +21,12 @@ func (cf *contextFunc) GetToken(ctx *gin.Context) string {
 	return ctx.Request.Header.Get("authorization")
 }
 
-func (cf *contextFunc) SetClaims(claims *util.CustomClaims, ctx *gin.Context) {
+func (cf *contextFunc) SetClaims(claims jwt.RegisteredClaims, ctx *gin.Context) {
 	ctx.Set(string(cusCtx.Claims), claims)
 }
 
-func (cf *contextFunc) GetClaims(ctx *gin.Context) util.CustomClaims {
-	return ctx.Value(string(cusCtx.Claims)).(util.CustomClaims)
+func (cf *contextFunc) GetClaims(ctx *gin.Context) jwt.RegisteredClaims {
+	return ctx.Value(string(cusCtx.Claims)).(jwt.RegisteredClaims)
 }
 
 func (cf *contextFunc) SetUserId(id uint, ctx *gin.Context) {
@@ -115,7 +115,9 @@ func (cf *contextFunc) GetAccountIdByParam(ctx *gin.Context) (uint, bool) {
 	return cf.GetUintParamByKey(string(cusCtx.AccountId), ctx)
 }
 
-func (cf *contextFunc) CheckAccountPermissionFromParam(permission accountModel.UserPermission, ctx *gin.Context) (pass bool) {
+func (cf *contextFunc) CheckAccountPermissionFromParam(
+	permission accountModel.UserPermission, ctx *gin.Context,
+) (pass bool) {
 	accountId, pass := cf.GetAccountIdByParam(ctx)
 	if !pass {
 		return

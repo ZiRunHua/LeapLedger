@@ -4,14 +4,13 @@ import (
 	"KeepAccount/api/response"
 	apiUtil "KeepAccount/api/util"
 	"KeepAccount/global"
-	"KeepAccount/global/constant"
 	accountModel "KeepAccount/model/account"
-	"KeepAccount/util"
+	"KeepAccount/util/jwt"
 	"bytes"
-	"errors"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 	"io"
+	"strconv"
 	"time"
 )
 
@@ -37,27 +36,18 @@ func NoTourist() gin.HandlerFunc {
 
 func JWTAuth() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
-		token := apiUtil.ContextFunc.GetToken(ctx)
-		if len(token) == 0 {
+		claims, err := jwt.ParseToken(apiUtil.ContextFunc.GetToken(ctx), global.Config.System.JwtKey)
+		if err != nil {
 			response.TokenExpired(ctx)
 			return
 		}
-		jwt := util.NewJWT()
-		// parseToken 解析token包含的信息
-		claims, err := jwt.ParseToken(token)
-		if err != nil {
-			if errors.Is(err, util.TokenExpired) {
-				if global.Config.Mode != constant.Debug {
-					response.TokenExpired(ctx)
-					return
-				}
-			} else {
-				response.FailToError(ctx, err)
-				return
-			}
-		}
-		apiUtil.ContextFunc.SetUserId(claims.UserId, ctx)
 		apiUtil.ContextFunc.SetClaims(claims, ctx)
+		id, err := strconv.Atoi(claims.ID)
+		if err != nil {
+			response.TokenExpired(ctx)
+			return
+		}
+		apiUtil.ContextFunc.SetUserId(uint(id), ctx)
 		ctx.Next()
 	}
 }

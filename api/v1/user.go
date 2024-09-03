@@ -12,6 +12,7 @@ import (
 	"KeepAccount/util"
 	"KeepAccount/util/timeTool"
 	"github.com/gin-gonic/gin"
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/pkg/errors"
 	"github.com/songzhibin97/gkit/egroup"
 	"time"
@@ -99,7 +100,7 @@ func (p *PublicApi) Login(ctx *gin.Context) {
 	var user userModel.User
 	var clientBaseInfo userModel.UserClientBaseInfo
 	var responseData response.Login
-	var customClaims util.CustomClaims
+	var customClaims jwt.RegisteredClaims
 	user, clientBaseInfo, responseData.Token, customClaims, err = userService.Login(
 		requestData.Email, requestData.Password, client, ctx,
 	)
@@ -107,7 +108,7 @@ func (p *PublicApi) Login(ctx *gin.Context) {
 		err = errors.New("用户名不存在或者密码错误")
 		return
 	}
-	responseData.TokenExpirationTime = customClaims.ExpiresAt
+	responseData.TokenExpirationTime = customClaims.ExpiresAt.Time
 	err = responseData.User.SetData(user)
 	if err != nil {
 		return
@@ -147,22 +148,20 @@ func (p *PublicApi) Register(ctx *gin.Context) {
 
 	data := userModel.AddData{Username: requestData.Username, Password: requestData.Password, Email: requestData.Email}
 
-	var token string
-	var customClaims util.CustomClaims
 	user, err := userService.Register(data, ctx)
 	if responseError(err, ctx) {
 		return
 	}
-	//注册成功 获取token
-	customClaims = commonService.MakeCustomClaims(user.ID)
-	token, err = commonService.GenerateJWT(customClaims)
+	// 注册成功 获取token
+	customClaims := commonService.MakeCustomClaims(user.ID)
+	token, err := commonService.GenerateJWT(customClaims)
 	if responseError(err, ctx) {
 		return
 	}
 	// 发送不成功不影响主流程
 	_ = thirdpartyService.SendNotificationEmail(constant.NotificationOfRegistrationSuccess, &user)
 
-	responseData := response.Register{Token: token, TokenExpirationTime: customClaims.ExpiresAt}
+	responseData := response.Register{Token: token, TokenExpirationTime: customClaims.ExpiresAt.Time}
 	err = responseData.User.SetData(user)
 	if responseError(err, ctx) {
 		return
@@ -188,13 +187,13 @@ func (p *PublicApi) TourRequest(ctx *gin.Context) {
 	if responseError(err, ctx) {
 		return
 	}
-	//response
+	// response
 	customClaims := commonService.MakeCustomClaims(user.ID)
 	token, err := commonService.GenerateJWT(customClaims)
 	if responseError(err, ctx) {
 		return
 	}
-	responseData := response.Login{Token: token, TokenExpirationTime: customClaims.ExpiresAt}
+	responseData := response.Login{Token: token, TokenExpirationTime: customClaims.ExpiresAt.Time}
 	err = responseData.User.SetData(user)
 	if responseError(err, ctx) {
 		return
@@ -250,26 +249,12 @@ func (p *PublicApi) UpdatePassword(ctx *gin.Context) {
 //	@Success	200	{object}	response.Data{Data=response.Token}
 //	@Router		/user/token/refresh [post]
 func (u *UserApi) RefreshToken(ctx *gin.Context) {
-	token := contextFunc.GetToken(ctx)
-	if token == "" {
-		response.TokenExpired(ctx)
-		return
-	}
-	claims, err := util.NewJWT().ParseToken(token)
-	if err != nil {
-		if err == util.TokenExpired {
-			response.TokenExpired(ctx)
-			return
-		}
-		response.FailToError(ctx, err)
-		return
-	}
-	var newClaims util.CustomClaims
-	token, newClaims, err = commonService.RefreshJWT(*claims)
+	claims := contextFunc.GetClaims(ctx)
+	token, newClaims, err := commonService.RefreshJWT(claims)
 	if responseError(err, ctx) {
 		return
 	}
-	responseData := response.Token{Token: token, TokenExpirationTime: newClaims.ExpiresAt}
+	responseData := response.Token{Token: token, TokenExpirationTime: newClaims.ExpiresAt.Time}
 	response.OkWithData(responseData, ctx)
 }
 
@@ -493,7 +478,7 @@ func (u *UserApi) Home(ctx *gin.Context) {
 	}
 	handelGoroutineOne := func() error {
 		var err error
-		//今日统计
+		// 今日统计
 		if err = handelOneTime(
 			&todayData,
 			time.Date(year, month, day, 0, 0, 0, 0, time.Local),
@@ -501,7 +486,7 @@ func (u *UserApi) Home(ctx *gin.Context) {
 		); err != nil {
 			return err
 		}
-		//昨日统计
+		// 昨日统计
 		if err = handelOneTime(
 			&yesterdayData,
 			time.Date(year, month, day-1, 0, 0, 0, 0, time.Local),
@@ -509,7 +494,7 @@ func (u *UserApi) Home(ctx *gin.Context) {
 		); err != nil {
 			return err
 		}
-		//周统计
+		// 周统计
 		if err = handelOneTime(
 			&weekData,
 			timeTool.GetFirstSecondOfMonday(nowTime),
@@ -522,7 +507,7 @@ func (u *UserApi) Home(ctx *gin.Context) {
 
 	handelGoroutineTwo := func() error {
 		var err error
-		//月统计
+		// 月统计
 		if err = handelOneTime(
 			&monthData,
 			timeTool.GetFirstSecondOfMonth(nowTime),
@@ -530,7 +515,7 @@ func (u *UserApi) Home(ctx *gin.Context) {
 		); err != nil {
 			return err
 		}
-		//年统计
+		// 年统计
 		if err = handelOneTime(
 			&yearData,
 			timeTool.GetFirstSecondOfYear(nowTime),
