@@ -3406,11 +3406,15 @@ const docTemplate = `{
             "type": "object",
             "required": [
                 "Icon",
+                "Location",
                 "Name",
                 "Type"
             ],
             "properties": {
                 "Icon": {
+                    "type": "string"
+                },
+                "Location": {
                     "type": "string"
                 },
                 "Name": {
@@ -3440,6 +3444,9 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "JoinTime": {
+                    "type": "string"
+                },
+                "Location": {
                     "type": "string"
                 },
                 "Name": {
@@ -3527,6 +3534,9 @@ const docTemplate = `{
                 },
                 "Id": {
                     "type": "integer"
+                },
+                "Location": {
+                    "type": "string"
                 },
                 "Name": {
                     "type": "string"
@@ -4312,15 +4322,33 @@ const docTemplate = `{
         },
         "TransactionCategoryAmountRank": {
             "type": "object",
+            "required": [
+                "AccountId",
+                "IncomeExpense"
+            ],
             "properties": {
-                "Amount": {
+                "AccountId": {
                     "type": "integer"
                 },
-                "Category": {
-                    "$ref": "#/definitions/CategoryOne"
+                "EndTime": {
+                    "type": "string"
                 },
-                "Count": {
+                "IncomeExpense": {
+                    "enum": [
+                        "income",
+                        "expense"
+                    ],
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/IncomeExpense"
+                        }
+                    ]
+                },
+                "Limit": {
                     "type": "integer"
+                },
+                "StartTime": {
+                    "type": "string"
                 }
             }
         },
@@ -4346,14 +4374,34 @@ const docTemplate = `{
         },
         "TransactionDayStatistic": {
             "type": "object",
+            "required": [
+                "AccountId"
+            ],
             "properties": {
-                "Amount": {
+                "AccountId": {
                     "type": "integer"
                 },
-                "Count": {
-                    "type": "integer"
+                "CategoryIds": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
                 },
-                "Date": {
+                "EndTime": {
+                    "type": "string"
+                },
+                "IncomeExpense": {
+                    "enum": [
+                        "income",
+                        "expense"
+                    ],
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/IncomeExpense"
+                        }
+                    ]
+                },
+                "StartTime": {
                     "type": "string"
                 }
             }
@@ -4531,12 +4579,6 @@ const docTemplate = `{
         "TransactionTimingConfig": {
             "type": "object",
             "properties": {
-                "CreatedAt": {
-                    "type": "string"
-                },
-                "Id": {
-                    "type": "integer"
-                },
                 "NextTime": {
                     "type": "string"
                 },
@@ -4546,11 +4588,8 @@ const docTemplate = `{
                 "Type": {
                     "$ref": "#/definitions/transactionModel.TimingType"
                 },
-                "UpdatedAt": {
-                    "type": "string"
-                },
-                "Username": {
-                    "type": "string"
+                "UserId": {
+                    "type": "integer"
                 }
             }
         },
