@@ -1,4 +1,4 @@
-package jwt
+package jwtTool
 
 import (
 	"errors"
@@ -14,14 +14,13 @@ var (
 	SignKey          string = "test"
 )
 
-func CreateToken(claims jwt.RegisteredClaims, key string) (string, error) {
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	return token.SignedString(key)
+func CreateToken(claims jwt.RegisteredClaims, key []byte) (string, error) {
+	return jwt.NewWithClaims(jwt.SigningMethodHS256, claims).SignedString(key)
 }
 
-func ParseToken(tokenStr, key string) (claims jwt.RegisteredClaims, err error) {
-	token, err := jwt.Parse(
-		tokenStr, func(token *jwt.Token) (interface{}, error) {
+func ParseToken(tokenStr string, key []byte) (claims jwt.RegisteredClaims, err error) {
+	token, err := jwt.ParseWithClaims(
+		tokenStr, &claims, func(token *jwt.Token) (interface{}, error) {
 			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 				return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 			}
@@ -31,8 +30,7 @@ func ParseToken(tokenStr, key string) (claims jwt.RegisteredClaims, err error) {
 	if err != nil {
 		return
 	}
-	claims, ok := token.Claims.(jwt.RegisteredClaims)
-	if !ok || !token.Valid {
+	if !token.Valid {
 		err = errors.New("parse token fail")
 	}
 	return

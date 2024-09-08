@@ -2,6 +2,7 @@ package logModel
 
 import (
 	"gorm.io/gorm"
+	"time"
 )
 
 type AccountLogMapping struct {
@@ -9,7 +10,9 @@ type AccountLogMapping struct {
 	AccountId uint `gorm:"index:idx_account_id"`
 	LogTable  string
 	LogId     uint
-	gorm.Model
+	CreatedAt time.Time      `gorm:"type:TIMESTAMP"`
+	UpdatedAt time.Time      `gorm:"type:TIMESTAMP"`
+	DeletedAt gorm.DeletedAt `gorm:"index;type:TIMESTAMP"`
 }
 
 func (a *AccountLogMapping) TableName() string {

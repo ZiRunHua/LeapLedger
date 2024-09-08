@@ -4,7 +4,7 @@ services:
     container_name: leap-ledger-server
     build:
       context: .
-      dockerfile: docker/Dockerfile
+      dockerfile: docker/Dockerfile.debug
     ports:
       - "8080:8080"
       - "2345:2345"

@@ -13,8 +13,8 @@ type TransactionCategoryMapping struct {
 	CategoryId uint `gorm:"uniqueIndex:category_ptc_mapping,priority:1"`
 	PtcId      uint `gorm:"uniqueIndex:account_ptc_mapping,priority:2;uniqueIndex:category_ptc_mapping,priority:2"`
 	ProductKey string
-	CreatedAt  time.Time
-	UpdatedAt  time.Time
+	CreatedAt  time.Time `gorm:"type:TIMESTAMP"`
+	UpdatedAt  time.Time `gorm:"type:TIMESTAMP"`
 	commonModel.BaseModel
 }
 

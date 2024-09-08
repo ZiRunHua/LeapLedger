@@ -5,7 +5,7 @@ import (
 	userService "KeepAccount/service/user"
 )
 
-var ServiceGroupApp = &Group{}
+var GroupApp = &Group{}
 
 type Group struct {
 	base

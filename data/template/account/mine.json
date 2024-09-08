@@ -2,6 +2,7 @@
   "Name": "我的账本",
   "Icon": "book",
   "Type": "independent",
+  "Location": "Asia/Shanghai",
   "Category": [
     {
       "Name": "日常消费",

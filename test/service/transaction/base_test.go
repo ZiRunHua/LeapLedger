@@ -1,9 +1,14 @@
 package transaction
 
 import (
+	_ "KeepAccount/test/initialize"
+)
+import (
+	"KeepAccount/global"
 	"KeepAccount/global/constant"
-	"KeepAccount/global/cusCtx"
+	"KeepAccount/global/cus"
 	"KeepAccount/global/db"
+	"KeepAccount/global/nats"
 	accountModel "KeepAccount/model/account"
 	transactionModel "KeepAccount/model/transaction"
 	"KeepAccount/test"
@@ -28,7 +33,7 @@ func TestCreate(t *testing.T) {
 	}
 	var trans transactionModel.Transaction
 	err = db.Transaction(
-		context.TODO(), func(ctx *cusCtx.TxContext) error {
+		context.TODO(), func(ctx *cus.TxContext) error {
 			createOption, err := service.NewOptionFormConfig(transInfo, ctx)
 			if err != nil {
 				return err
@@ -60,5 +65,21 @@ func TestCreate(t *testing.T) {
 		t.Error("total not equal", total, newTotal)
 	} else {
 		t.Log("pass", total, newTotal)
+	}
+}
+
+func TestAll(t *testing.T) {
+	var transaction transactionModel.Transaction
+	rows, err := global.GvaDb.Model(&transactionModel.Transaction{}).Rows()
+	defer rows.Close()
+	if err != nil {
+		t.Error(err)
+	}
+	for rows.Next() {
+		err = global.GvaDb.ScanRows(rows, &transaction)
+		if err != nil {
+			t.Error(err)
+		}
+		nats.PublishTaskWithPayload(nats.TaskStatisticUpdate, transaction.GetStatisticData(true))
 	}
 }

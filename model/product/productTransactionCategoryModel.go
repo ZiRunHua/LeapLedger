@@ -4,7 +4,6 @@ import (
 	"KeepAccount/global"
 	"KeepAccount/global/constant"
 	commonModel "KeepAccount/model/common"
-	queryFunc "KeepAccount/model/common/query"
 )
 
 type TransactionCategory struct {
@@ -25,10 +24,6 @@ func (tc *TransactionCategory) IsEmpty() bool {
 
 func (tc *TransactionCategory) SelectById(id uint) error {
 	return global.GvaDb.First(tc, id).Error
-}
-
-func (tc *TransactionCategory) Exits(query interface{}, args ...interface{}) (bool, error) {
-	return queryFunc.Exist[*TransactionCategory](query, args)
 }
 
 func (tc *TransactionCategory) GetMap(productKey KeyValue) (map[uint]TransactionCategory, error) {

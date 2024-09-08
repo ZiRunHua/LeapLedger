@@ -5,7 +5,7 @@ import (
 	"KeepAccount/api/response"
 	"KeepAccount/global"
 	"KeepAccount/global/constant"
-	"KeepAccount/global/cusCtx"
+	"KeepAccount/global/cus"
 	"KeepAccount/global/db"
 	accountModel "KeepAccount/model/account"
 	transactionModel "KeepAccount/model/transaction"
@@ -64,14 +64,15 @@ func (a *AccountApi) CreateOne(ctx *gin.Context) {
 		return
 	}
 	var _ accountModel.Account
-	var aUser accountModel.User
-	txFunc := func(tx *gorm.DB) error {
-		_, aUser, err = accountService.CreateOne(
-			user, requestData.Name, requestData.Icon, requestData.Type, context.WithValue(ctx, cusCtx.Db, tx),
-		)
-		return err
-	}
-	if err = db.Db.Transaction(txFunc); responseError(err, ctx) {
+	_, aUser, err := accountService.CreateOne(
+		user, accountService.NewCreateData(
+			requestData.Name,
+			requestData.Icon,
+			requestData.Type,
+			requestData.Location,
+		), ctx,
+	)
+	if responseError(err, ctx) {
 		return
 	}
 	var responseData response.AccountDetail
@@ -135,7 +136,7 @@ func (a *AccountApi) Delete(ctx *gin.Context) {
 		return
 	}
 	txFunc := func(tx *gorm.DB) error {
-		return accountService.Delete(account, accountUser, context.WithValue(ctx, cusCtx.Db, tx))
+		return accountService.Delete(account, accountUser, context.WithValue(ctx, cus.Db, tx))
 	}
 
 	if err := db.Db.Transaction(txFunc); responseError(err, ctx) {
@@ -220,7 +221,7 @@ func (a *AccountApi) CreateOneByTemplate(ctx *gin.Context) {
 	var account accountModel.Account
 	err = db.Db.Transaction(
 		func(tx *gorm.DB) error {
-			account, err = templateService.CreateAccount(user, tmpAccount, context.WithValue(ctx, cusCtx.Db, tx))
+			account, err = templateService.CreateAccount(user, tmpAccount, context.WithValue(ctx, cus.Db, tx))
 			return err
 		},
 	)
@@ -499,15 +500,11 @@ func (a *AccountApi) UpdateUser(ctx *gin.Context) {
 	if false == pass {
 		return
 	}
-	accountId, pass := contextFunc.GetAccountIdByParam(ctx)
-	if false == pass {
-		return
-	}
-	if accountId != accountUser.AccountId {
+	if contextFunc.GetAccountId(ctx) != accountUser.AccountId {
 		response.FailToParameter(ctx, global.ErrAccountId)
 		return
 	}
-	operator, err := accountModel.NewDao().SelectUser(accountId, contextFunc.GetUserId(ctx))
+	operator, err := accountModel.NewDao().SelectUser(accountUser.AccountId, contextFunc.GetUserId(ctx))
 	if responseError(err, ctx) {
 		return
 	}
@@ -533,11 +530,7 @@ func (a *AccountApi) UpdateUser(ctx *gin.Context) {
 //	@Success	200			{object}	response.Data{Data=response.List[response.AccountUser]{}}
 //	@Router		/account/{accountId}/user/list [get]
 func (a *AccountApi) GetUserList(ctx *gin.Context) {
-	account, _, pass := contextFunc.GetAccountByParam(ctx, true)
-	if false == pass {
-		return
-	}
-	list, err := accountModel.NewDao().SelectUserListByAccountId(account.ID)
+	list, err := accountModel.NewDao().SelectUserListByAccountId(contextFunc.GetAccountId(ctx))
 	// response
 	responseData := make([]response.AccountUser, len(list), len(list))
 	for i := 0; i < len(responseData); i++ {
@@ -567,17 +560,14 @@ func (a *AccountApi) GetUserInfo(ctx *gin.Context) {
 		response.FailToParameter(ctx, err)
 		return
 	}
-	accountUser, account, pass := contextFunc.GetAccountUserByParam(ctx)
-	if false == pass {
-		return
-	}
+	accountUser, account, nowTime := contextFunc.GetAccountUser(ctx), contextFunc.GetAccount(ctx), contextFunc.GetNowTime(ctx)
 	group := egroup.WithContext(ctx)
 	var todayTotal, monthTotal *global.IEStatisticWithTime
 	var recentTrans *response.TransactionDetailList
 	for _, infoType := range requestData.Types {
 		switch infoType {
 		case request.TodayTransTotal:
-			result, err := a.getTransTotal(account, &[]uint{accountUser.UserId}, time.Now(), time.Now())
+			result, err := a.getTransTotal(account, &[]uint{accountUser.UserId}, nowTime, nowTime)
 			todayTotal = &result
 			if responseError(err, ctx) {
 				return
@@ -585,7 +575,7 @@ func (a *AccountApi) GetUserInfo(ctx *gin.Context) {
 
 		case request.CurrentMonthTransTotal:
 			result, err := a.getTransTotal(
-				account, &[]uint{accountUser.UserId}, timeTool.GetFirstSecondOfMonth(time.Now()), time.Now(),
+				account, &[]uint{accountUser.UserId}, timeTool.GetFirstSecondOfMonth(nowTime), nowTime,
 			)
 			monthTotal = &result
 			if responseError(err, ctx) {
@@ -906,7 +896,7 @@ func (a *AccountApi) UpdateAccountMapping(ctx *gin.Context) {
 	// handle
 	var mapping accountModel.Mapping
 	var relatedAccount accountModel.Account
-	err = db.Transaction(ctx, func(ctx *cusCtx.TxContext) error {
+	err = db.Transaction(ctx, func(ctx *cus.TxContext) error {
 		dao := accountModel.NewDao(ctx.GetDb())
 		mapping, err = dao.SelectMappingById(id)
 		if err != nil {
@@ -944,7 +934,6 @@ func (a *AccountApi) UpdateAccountMapping(ctx *gin.Context) {
 //	@Router		/account/{accountId}/info/:type [get]
 //	@Router		/account/{accountId}/info [get]
 func (a *AccountApi) GetInfo(ctx *gin.Context) {
-	// 获取信息类型
 	var types []request.InfoType
 	infoType := contextFunc.GetInfoTypeFormParam(ctx)
 	if infoType == "" {
@@ -961,17 +950,18 @@ func (a *AccountApi) GetInfo(ctx *gin.Context) {
 	} else {
 		types = []request.InfoType{infoType}
 	}
-	// 查询
+	account, nowTime := contextFunc.GetAccount(ctx), contextFunc.GetNowTime(ctx)
+
 	var todayTotal, monthTotal *global.IEStatisticWithTime
 	var recentTrans *response.TransactionDetailList
 	typeHandleFunc := func(infoType request.InfoType, account accountModel.Account) error {
 		switch infoType {
 		case request.TodayTransTotal:
-			result, err := a.getTransTotal(account, nil, time.Now(), time.Now().Add(time.Hour*24-time.Second))
+			result, err := a.getTransTotal(account, nil, nowTime, nowTime.Add(time.Hour*24-time.Second))
 			todayTotal = &result
 			return err
 		case request.CurrentMonthTransTotal:
-			result, err := a.getTransTotal(account, nil, timeTool.GetFirstSecondOfMonth(time.Now()), time.Now())
+			result, err := a.getTransTotal(account, nil, timeTool.GetFirstSecondOfMonth(nowTime), nowTime)
 			monthTotal = &result
 			return err
 		case request.RecentTrans:
@@ -988,15 +978,9 @@ func (a *AccountApi) GetInfo(ctx *gin.Context) {
 		}
 		return nil
 	}
-	// handle response
-	account, _, pass := contextFunc.GetAccountByParam(ctx, true)
-	if false == pass {
-		return
-	}
-
+	// process and response
 	var group *egroup.Group
 	if len(types) > 1 {
-		// 启用协程
 		group = egroup.WithContext(ctx)
 	}
 	for i := range types {

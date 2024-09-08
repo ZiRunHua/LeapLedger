@@ -6,6 +6,7 @@ import (
 	"errors"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
+	"time"
 )
 
 type User struct {
@@ -13,7 +14,9 @@ type User struct {
 	AccountId  uint `gorm:"not null;uniqueIndex:idx_mapping,priority:1"`
 	UserId     uint `gorm:"not null;uniqueIndex:idx_mapping,priority:2"`
 	Permission UserPermission
-	gorm.Model
+	CreatedAt  time.Time      `gorm:"type:TIMESTAMP"`
+	UpdatedAt  time.Time      `gorm:"type:TIMESTAMP"`
+	DeletedAt  gorm.DeletedAt `gorm:"index;type:TIMESTAMP"`
 }
 
 type UserUpdateData struct {
@@ -140,7 +143,9 @@ type UserInvitation struct {
 	Invitee    uint `gorm:"uniqueIndex:idx_mapping,priority:2"`
 	Status     UserInvitationStatus
 	Permission UserPermission
-	gorm.Model
+	CreatedAt  time.Time      `gorm:"type:TIMESTAMP"`
+	UpdatedAt  time.Time      `gorm:"type:TIMESTAMP"`
+	DeletedAt  gorm.DeletedAt `gorm:"index;type:TIMESTAMP"`
 }
 
 type UserInvitationStatus int
@@ -255,10 +260,13 @@ func (u *UserInvitation) Updates(
 }
 
 type UserConfig struct {
-	gorm.Model
-	AccountId  uint      `gorm:"not null;uniqueIndex:idx_mapping,priority:1"`
-	UserId     uint      `gorm:"not null;uniqueIndex:idx_mapping,priority:2"`
-	TransFlags TransFlag `gorm:"type:smallint;unsigned;comment:'交易配置标志'"`
+	ID         uint           `gorm:"primarykey"`
+	AccountId  uint           `gorm:"not null;uniqueIndex:idx_mapping,priority:1"`
+	UserId     uint           `gorm:"not null;uniqueIndex:idx_mapping,priority:2"`
+	TransFlags TransFlag      `gorm:"type:smallint;unsigned;comment:'交易配置标志'"`
+	CreatedAt  time.Time      `gorm:"type:TIMESTAMP"`
+	UpdatedAt  time.Time      `gorm:"type:TIMESTAMP"`
+	DeletedAt  gorm.DeletedAt `gorm:"index;type:TIMESTAMP"`
 }
 
 func (uc *UserConfig) TableName() string {

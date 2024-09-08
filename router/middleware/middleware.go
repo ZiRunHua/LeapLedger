@@ -5,7 +5,7 @@ import (
 	apiUtil "KeepAccount/api/util"
 	"KeepAccount/global"
 	accountModel "KeepAccount/model/account"
-	"KeepAccount/util/jwt"
+	commonService "KeepAccount/service/common"
 	"bytes"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
@@ -36,7 +36,7 @@ func NoTourist() gin.HandlerFunc {
 
 func JWTAuth() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
-		claims, err := jwt.ParseToken(apiUtil.ContextFunc.GetToken(ctx), global.Config.System.JwtKey)
+		claims, err := commonService.GroupApp.ParseToken(apiUtil.ContextFunc.GetToken(ctx))
 		if err != nil {
 			response.TokenExpired(ctx)
 			return

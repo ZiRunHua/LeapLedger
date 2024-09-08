@@ -3,21 +3,36 @@ package accountModel
 import (
 	"KeepAccount/global"
 	commonModel "KeepAccount/model/common"
-	queryFunc "KeepAccount/model/common/query"
 	userModel "KeepAccount/model/user"
 	"KeepAccount/util"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
+	"time"
 )
 
 type Account struct {
-	ID     uint   `gorm:"primarykey"`
-	UserId uint   `gorm:"comment:用户id;not null"`
-	Type   Type   `gorm:"default:independent;not null"`
-	Name   string `gorm:"comment:名称;not null;size:128"`
-	Icon   string `gorm:"comment:图标;not null;default:'payment';size:64"`
-	gorm.Model
+	ID        uint           `gorm:"primarykey"`
+	UserId    uint           `gorm:"comment:用户id;not null"`
+	Type      Type           `gorm:"default:independent;not null"`
+	Name      string         `gorm:"comment:名称;not null;size:128"`
+	Icon      string         `gorm:"comment:图标;not null;default:'payment';size:64"`
+	Location  string         `gorm:"comment:地区;not null;default:'Asia/Shanghai';size:64"`
+	CreatedAt time.Time      `gorm:"type:TIMESTAMP"`
+	UpdatedAt time.Time      `gorm:"type:TIMESTAMP"`
+	DeletedAt gorm.DeletedAt `gorm:"index;type:TIMESTAMP"`
 	commonModel.BaseModel
+}
+
+func (a *Account) GetTimeLocation() *time.Location {
+	l, err := time.LoadLocation(a.Location)
+	if err != nil {
+		panic(err)
+	}
+	return l
+}
+
+func (a *Account) GetNowTime() time.Time {
+	return time.Now().In(a.GetTimeLocation())
 }
 
 type AccountUpdateData struct {
@@ -82,10 +97,6 @@ func (a *Account) IsEmpty() bool {
 
 func (a *Account) SelectById(id uint) error {
 	return global.GvaDb.First(a, id).Error
-}
-
-func (a *Account) Exits(query interface{}, args ...interface{}) (bool, error) {
-	return queryFunc.Exist[*Account](query, args)
 }
 
 func (a *Account) CheckBelongTo(user userModel.User) bool {

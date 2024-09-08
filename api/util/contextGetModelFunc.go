@@ -3,7 +3,7 @@ package util
 import (
 	"KeepAccount/api/response"
 	"KeepAccount/global"
-	"KeepAccount/global/cusCtx"
+	"KeepAccount/global/cus"
 	accountModel "KeepAccount/model/account"
 	categoryModel "KeepAccount/model/category"
 	transactionModel "KeepAccount/model/transaction"
@@ -24,7 +24,7 @@ func (cf *contextFunc) GetTransByParam(ctx *gin.Context) (result transactionMode
 	if pass = CheckFunc.AccountBelong(trans.AccountId, ctx); false == pass {
 		return
 	}
-	accountId, exist := ctx.Get(string(cusCtx.AccountId))
+	accountId, exist := ctx.Get(string(cus.AccountId))
 	if exist && accountId != trans.AccountId {
 		response.FailToParameter(ctx, global.ErrAccountId)
 		return

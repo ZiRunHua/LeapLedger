@@ -3,12 +3,16 @@ package userModel
 import (
 	"KeepAccount/global"
 	"gorm.io/gorm"
+	"time"
 )
 
 type TransactionShareConfig struct {
-	gorm.Model
-	UserId       uint `gorm:"comment:'用户ID';unique"`
-	DisplayFlags Flag `gorm:"comment:'展示字段标志'"`
+	ID           uint           `gorm:"primarykey"`
+	UserId       uint           `gorm:"comment:'用户ID';unique"`
+	DisplayFlags Flag           `gorm:"comment:'展示字段标志'"`
+	CreatedAt    time.Time      `gorm:"type:TIMESTAMP"`
+	UpdatedAt    time.Time      `gorm:"type:TIMESTAMP"`
+	DeletedAt    gorm.DeletedAt `gorm:"index;type:TIMESTAMP"`
 }
 
 type Flag uint

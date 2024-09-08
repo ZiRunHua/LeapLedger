@@ -13,8 +13,8 @@ type Father struct {
 	IncomeExpense  constant.IncomeExpense `gorm:"comment:'收支类型'"`
 	Name           string                 `gorm:"size:128;comment:'名称'"`
 	Previous       uint                   `gorm:"comment:'前一位'"`
-	OrderUpdatedAt time.Time
-	CreatedAt      time.Time
+	OrderUpdatedAt time.Time              `gorm:"type:TIMESTAMP"`
+	CreatedAt      time.Time              `gorm:"type:TIMESTAMP"`
 	commonModel.BaseModel
 }
 

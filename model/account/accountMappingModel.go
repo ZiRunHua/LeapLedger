@@ -7,11 +7,11 @@ import (
 )
 
 type Mapping struct {
-	ID        uint `gorm:"primarykey"`
-	MainId    uint `gorm:"not null;uniqueIndex:idx_mapping,priority:1"`
-	RelatedId uint `gorm:"not null;uniqueIndex:idx_mapping,priority:2"`
-	CreatedAt time.Time
-	UpdatedAt time.Time
+	ID        uint      `gorm:"primarykey"`
+	MainId    uint      `gorm:"not null;uniqueIndex:idx_mapping,priority:1"`
+	RelatedId uint      `gorm:"not null;uniqueIndex:idx_mapping,priority:2"`
+	CreatedAt time.Time `gorm:"type:TIMESTAMP"`
+	UpdatedAt time.Time `gorm:"type:TIMESTAMP"`
 }
 
 func (m *Mapping) TableName() string {

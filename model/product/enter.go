@@ -1,10 +1,11 @@
 package productModel
 
 import (
-	"KeepAccount/global"
 	"KeepAccount/global/constant"
+	"KeepAccount/global/cus"
+	"KeepAccount/global/db"
 	"KeepAccount/util"
-	"KeepAccount/util/gormFunc"
+	"context"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
 	"os"
@@ -12,28 +13,27 @@ import (
 
 var initSqlFile = constant.DATA_PATH + "/database/product.sql"
 
-func CurrentInit(db *gorm.DB) error {
+func init() {
 	// table
 	tables := []interface{}{
 		Product{}, BillHeader{}, Bill{},
 		TransactionCategory{}, TransactionCategoryMapping{},
 	}
-	err := db.AutoMigrate(tables...)
+	err := db.InitDb.AutoMigrate(tables...)
 	if err != nil {
-		return err
-	}
-	for _, table := range tables {
-		_ = gormFunc.AlterIdToHeader(table, db)
+		panic(err)
 	}
 	// table data
 	sqlFile, err := os.Open(initSqlFile)
 	if err != nil {
-		return err
+		panic(err)
 	}
-	return global.GvaDb.Transaction(
-		func(tx *gorm.DB) error {
-			tx = tx.Session(&gorm.Session{Logger: tx.Logger.LogMode(logger.Silent)})
-			return util.File.ExecSqlFile(sqlFile, tx)
-		},
-	)
+	err = db.Transaction(context.Background(), func(ctx *cus.TxContext) error {
+		tx := ctx.GetDb()
+		tx = tx.Session(&gorm.Session{Logger: tx.Logger.LogMode(logger.Silent)})
+		return util.File.ExecSqlFile(sqlFile, tx)
+	})
+	if err != nil {
+		panic(err)
+	}
 }

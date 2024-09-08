@@ -2,6 +2,7 @@ package transactionModel
 
 import (
 	"KeepAccount/global/constant"
+	accountModel "KeepAccount/model/account"
 	"KeepAccount/util/timeTool"
 	"gorm.io/gorm"
 	"time"
@@ -135,12 +136,28 @@ type StatisticCondition struct {
 	ForeignKeyCondition
 	StartTime time.Time
 	EndTime   time.Time
+
+	accountId uint
+	location  *time.Location
+}
+
+func (s *StatisticCondition) getLocation() *time.Location {
+	if s.accountId == s.AccountId && s.location != nil {
+		return s.location
+	}
+	var err error
+	s.location, err = time.LoadLocation(accountModel.NewDao().GetLocation(s.accountId))
+	if err != nil {
+		panic(err)
+	}
+	s.accountId = s.AccountId
+	return s.location
 }
 
 // addConditionToQuery 通过条件获取附带查询条件的gorm.db
 func (s *StatisticCondition) addConditionToQuery(db *gorm.DB) *gorm.DB {
 	query := s.ForeignKeyCondition.addConditionToQuery(db)
-	query = query.Where("date BETWEEN ? AND ?", timeTool.ToDay(s.StartTime), timeTool.ToDay(s.EndTime))
+	query = query.Where("date BETWEEN ? AND ?", timeTool.ToDay(s.StartTime.In(s.getLocation())), timeTool.ToDay(s.EndTime.In(s.getLocation())))
 	return query
 }
 

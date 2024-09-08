@@ -2,10 +2,6 @@ package timeTool
 
 import "time"
 
-func IsSameDay(t1 time.Time, t2 time.Time) bool {
-	return t1.Truncate(24 * time.Hour).Equal(t2.Truncate(24 * time.Hour))
-}
-
 func GetLastMonthMidnight() time.Time {
 	currentTime := time.Now()
 	lastMonth := currentTime.AddDate(0, -1, 0)
@@ -27,15 +23,12 @@ func SplitMonths(startDate, endDate time.Time) [][2]time.Time {
 }
 
 func SplitDays(startDate, endDate time.Time) []time.Time {
-	duration := endDate.Sub(startDate)
-	length := int(duration.Hours()/24) + 1
-	days := make([]time.Time, length, length)
 	startDate = time.Date(startDate.Year(), startDate.Month(), startDate.Day(), 0, 0, 0, 0, startDate.Location())
-
+	var days []time.Time
 	current := startDate
-	for i := 0; i < len(days); i++ {
-		days[i] = current
-		current = time.Date(current.Year(), current.Month(), current.Day()+1, 0, 0, 0, 0, current.Location())
+	for !current.After(endDate) {
+		days = append(days, current)
+		current = current.AddDate(0, 0, 1)
 	}
 	return days
 }

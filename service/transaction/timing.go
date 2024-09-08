@@ -1,7 +1,7 @@
 package transactionService
 
 import (
-	"KeepAccount/global/cusCtx"
+	"KeepAccount/global/cus"
 	"KeepAccount/global/db"
 	"KeepAccount/global/lock"
 	accountModel "KeepAccount/model/account"
@@ -122,7 +122,7 @@ func (te *TimingExec) ProcessWaitExecByStartId(startId uint, limit int, ctx cont
 		return err
 	}
 	for _, timingExec := range list {
-		err = db.Transaction(ctx, func(ctx *cusCtx.TxContext) error {
+		err = db.Transaction(ctx, func(ctx *cus.TxContext) error {
 			trans, err = server.Create(timingExec.TransInfo, accountUser, server.NewDefaultOption(), ctx)
 			return err
 		})

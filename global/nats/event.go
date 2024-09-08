@@ -1,7 +1,7 @@
 package nats
 
 import (
-	"KeepAccount/global/cusCtx"
+	"KeepAccount/global/cus"
 	"KeepAccount/global/db"
 	"KeepAccount/global/nats/manager"
 	transactionModel "KeepAccount/model/transaction"
@@ -39,7 +39,7 @@ func SubscribeEvent[EventDataType PayloadType](event Event, name string, handleT
 		if err := json.Unmarshal(msg.Data(), &data); err != nil {
 			return err
 		}
-		return db.Transaction(context.TODO(), func(ctx *cusCtx.TxContext) error {
+		return db.Transaction(context.TODO(), func(ctx *cus.TxContext) error {
 			return handleTransaction(data, ctx)
 		})
 	}

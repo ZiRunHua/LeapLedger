@@ -134,14 +134,17 @@ func (t *TransactionDao) GetAmountRank(accountId uint, ie constant.IncomeExpense
 	query = query.Where("account_id = ?", accountId).Where("income_expense = ?", ie)
 	return result, query.Limit(limit).Order("amount DESC").Find(&result).Error
 }
+
 func (t *TransactionDao) SelectTimingById(id uint) (result Timing, err error) {
 	err = t.db.First(&result, id).Error
 	return
 }
+
 func (t *TransactionDao) SelectTimingListByUserId(accountId uint, offset int, limit int) (result []Timing, err error) {
 	err = t.db.Where("account_id = ?", accountId).Limit(limit).Offset(offset).Order("id DESC").Find(&result).Error
 	return
 }
+
 func (t *TransactionDao) SelectAllTimingAndProcess(startTime time.Time, process func(timing Timing) error) (err error) {
 	rows, err := t.db.Model(&Timing{}).Where("next_time < ? AND close = ?", startTime, false).Rows()
 	if err != nil {
@@ -172,9 +175,4 @@ func (t *TransactionDao) SelectWaitTimingExec(startId uint, limit int) ([]Timing
 	var list []TimingExec
 	err := t.db.Where("id >= ? AND status = ?", startId, TimingExecWait).Order("id ASC").Limit(limit).Find(&list).Error
 	return list, err
-}
-
-func (t *TransactionDao) UpdateTimingNextTime(id uint, nextTime time.Time) error {
-	s := "Update transaction_timing set next_time = ? AND trans_info = JSON_SET(trans_info,'$.trade_time',?) WHERE id  = ?"
-	return t.db.Exec(s, nextTime.Format("2006-01-02 15:04:05.000"), nextTime.Format("2006-01-02 15:04:05.000"), id).Error
 }

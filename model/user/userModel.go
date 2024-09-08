@@ -7,13 +7,17 @@ import (
 	"errors"
 	"gorm.io/gorm"
 	"strconv"
+	"time"
 )
 
 type User struct {
-	Username string `gorm:"type:varchar(128);comment:'用户名'"`
-	Password string `gorm:"type:char(64);comment:'密码'"`
-	Email    string `gorm:"type:varchar(64);comment:'邮箱';unique"`
-	gorm.Model
+	ID        uint           `gorm:"primarykey"`
+	Username  string         `gorm:"type:varchar(128);comment:'用户名'"`
+	Password  string         `gorm:"type:char(64);comment:'密码'"`
+	Email     string         `gorm:"type:varchar(64);comment:'邮箱';unique"`
+	CreatedAt time.Time      `gorm:"type:TIMESTAMP"`
+	UpdatedAt time.Time      `gorm:"type:TIMESTAMP"`
+	DeletedAt gorm.DeletedAt `gorm:"index;type:TIMESTAMP"`
 	commonModel.BaseModel
 }
 
@@ -61,9 +65,11 @@ func (u *User) GetTransactionShareConfig() (TransactionShareConfig, error) {
 }
 
 type Tour struct {
-	UserId uint `gorm:"primary"`
-	Status bool
-	gorm.Model
+	UserId    uint `gorm:"primary"`
+	Status    bool
+	CreatedAt time.Time      `gorm:"type:TIMESTAMP"`
+	UpdatedAt time.Time      `gorm:"type:TIMESTAMP"`
+	DeletedAt gorm.DeletedAt `gorm:"index;type:TIMESTAMP"`
 	commonModel.BaseModel
 }
 

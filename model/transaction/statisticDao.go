@@ -65,6 +65,12 @@ type CategoryAmountRankCondition struct {
 	EndTime   time.Time
 }
 
+func (c *CategoryAmountRankCondition) Local() {
+	location := accountModel.NewDao().GetTimeLocation(c.Account.ID)
+	c.StartTime = c.StartTime.In(location)
+	c.EndTime = c.EndTime.In(location)
+}
+
 // CategoryAmountRank  StatisticDao.GetCategoryAmountRank查询结果
 type CategoryAmountRank struct {
 	CategoryId uint
@@ -74,6 +80,7 @@ type CategoryAmountRank struct {
 func (s *StatisticDao) GetCategoryAmountRank(
 	ie constant.IncomeExpense, condition CategoryAmountRankCondition, limit *int,
 ) (result []CategoryAmountRank, err error) {
+	condition.Local()
 	query := s.db.Where("account_id = ?", condition.Account.ID)
 	query = query.Where("date BETWEEN ? AND ?", condition.StartTime, condition.EndTime)
 

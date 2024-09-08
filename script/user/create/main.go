@@ -3,9 +3,8 @@ package main
 import (
 	userModel "KeepAccount/model/user"
 	userService "KeepAccount/service/user"
+	"KeepAccount/util"
 	"context"
-	"crypto/sha256"
-	"encoding/hex"
 	"fmt"
 )
 
@@ -16,12 +15,9 @@ func create() {
 	email := "share_account_child@gmail.com"
 	password := "1999123456"
 	username := "child"
-	bytes := []byte(email + password)
-	hash := sha256.Sum256(bytes)
-	password = hex.EncodeToString(hash[:])
 	addData := userModel.AddData{
 		Email:    email,
-		Password: password,
+		Password: util.ClientPasswordHash(email, password),
 		Username: username,
 	}
 	user, err := userService.GroupApp.Register(addData, context.Background())

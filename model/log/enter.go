@@ -2,22 +2,18 @@ package logModel
 
 import (
 	"KeepAccount/global/constant"
-	"KeepAccount/util/gormFunc"
+	"KeepAccount/global/db"
 	"gorm.io/gorm"
 )
 
-func CurrentInit(db *gorm.DB) error {
+func init() {
 	tables := []interface{}{
 		AccountMappingLog{}, AccountLogMapping{},
 	}
-	err := db.AutoMigrate(tables...)
+	err := db.InitDb.AutoMigrate(tables...)
 	if err != nil {
-		return err
+		panic(err)
 	}
-	for _, table := range tables {
-		_ = gormFunc.AlterIdToHeader(table, db)
-	}
-	return nil
 }
 
 /*账本*/

@@ -450,14 +450,14 @@ func (u *UserApi) Home(ctx *gin.Context) {
 		response.FailToParameter(ctx, err)
 		return
 	}
-	pass := checkFunc.AccountBelong(requestData.AccountId, ctx)
+	account, _, pass := checkFunc.AccountBelongAndGet(requestData.AccountId, ctx)
 	if false == pass {
 		return
 	}
 
 	group := egroup.WithContext(ctx)
-	nowTime := time.Now()
-	year, month, day := time.Now().Date()
+	nowTime, timeLocation := account.GetNowTime(), account.GetTimeLocation()
+	year, month, day := nowTime.Date()
 	var todayData, yesterdayData, weekData, monthData, yearData response.TransactionStatistic
 	condition := transactionModel.StatisticCondition{
 		ForeignKeyCondition: transactionModel.ForeignKeyCondition{AccountId: requestData.AccountId},
@@ -481,16 +481,16 @@ func (u *UserApi) Home(ctx *gin.Context) {
 		// 今日统计
 		if err = handelOneTime(
 			&todayData,
-			time.Date(year, month, day, 0, 0, 0, 0, time.Local),
-			time.Date(year, month, day, 23, 59, 59, 0, time.Local),
+			time.Date(year, month, day, 0, 0, 0, 0, timeLocation),
+			time.Date(year, month, day, 23, 59, 59, 0, timeLocation),
 		); err != nil {
 			return err
 		}
 		// 昨日统计
 		if err = handelOneTime(
 			&yesterdayData,
-			time.Date(year, month, day-1, 0, 0, 0, 0, time.Local),
-			time.Date(year, month, day-1, 23, 59, 59, 0, time.Local),
+			time.Date(year, month, day-1, 0, 0, 0, 0, timeLocation),
+			time.Date(year, month, day-1, 23, 59, 59, 0, timeLocation),
 		); err != nil {
 			return err
 		}
@@ -498,7 +498,7 @@ func (u *UserApi) Home(ctx *gin.Context) {
 		if err = handelOneTime(
 			&weekData,
 			timeTool.GetFirstSecondOfMonday(nowTime),
-			time.Date(year, month, day, 23, 59, 59, 0, time.Local),
+			time.Date(year, month, day, 23, 59, 59, 0, timeLocation),
 		); err != nil {
 			return err
 		}
@@ -511,7 +511,7 @@ func (u *UserApi) Home(ctx *gin.Context) {
 		if err = handelOneTime(
 			&monthData,
 			timeTool.GetFirstSecondOfMonth(nowTime),
-			time.Date(year, month, day, 23, 59, 59, 0, time.Local),
+			time.Date(year, month, day, 23, 59, 59, 0, timeLocation),
 		); err != nil {
 			return err
 		}
@@ -519,7 +519,7 @@ func (u *UserApi) Home(ctx *gin.Context) {
 		if err = handelOneTime(
 			&yearData,
 			timeTool.GetFirstSecondOfYear(nowTime),
-			time.Date(year, month, day, 23, 59, 59, 0, time.Local),
+			time.Date(year, month, day, 23, 59, 59, 0, timeLocation),
 		); err != nil {
 			return err
 		}
@@ -811,7 +811,7 @@ func (u *UserApi) GetFriendInvitationList(ctx *gin.Context) {
 	response.OkWithData(response.List[response.UserFriendInvitation]{List: responseData}, ctx)
 }
 
-// RefuseFriendInvitation
+// GetAccountInvitationList
 //
 //	@Tags		User/Friend/Invitation
 //	@Accept		json

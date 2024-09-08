@@ -2,7 +2,7 @@ package group
 
 import (
 	"KeepAccount/global"
-	"KeepAccount/global/cusCtx"
+	"KeepAccount/global/cus"
 	accountModel "KeepAccount/model/account"
 	routerEngine "KeepAccount/router/engine"
 	"KeepAccount/router/middleware"
@@ -22,7 +22,7 @@ var (
 	AccountCreator       *gin.RouterGroup
 )
 
-const accountWithIdPrefixPath = "/account/:" + string(cusCtx.AccountId)
+const accountWithIdPrefixPath = "/account/:" + string(cus.AccountId)
 
 func init() {
 	Public = engine.Group(global.Config.System.RouterPrefix + "/public")

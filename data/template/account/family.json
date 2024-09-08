@@ -2,6 +2,7 @@
   "Name": "家庭账本",
   "Icon": "book",
   "Type": "share",
+  "Location": "Asia/Shanghai",
   "Category": [
     {
       "Name": "日常消费",

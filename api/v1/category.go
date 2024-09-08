@@ -376,7 +376,6 @@ func (catApi *CategoryApi) DeleteFather(ctx *gin.Context) {
 //	@Success	204			{object}	response.NoContent
 //	@Router		/account/{accountId}/category/{id}/mapping [post]
 func (catApi *CategoryApi) MappingCategory(ctx *gin.Context) {
-	// 获取数据
 	var requestData request.CategoryMapping
 	if err := ctx.ShouldBindJSON(&requestData); err != nil {
 		response.FailToParameter(ctx, err)
@@ -393,7 +392,7 @@ func (catApi *CategoryApi) MappingCategory(ctx *gin.Context) {
 	if !checkFunc.AccountPermission(childCategory.AccountId, accountModel.UserPermissionAddOwn, ctx) {
 		return
 	}
-	// 执行
+	// handle
 	var operator userModel.User
 	operator, err = contextFunc.GetUser(ctx)
 	if responseError(err, ctx) {

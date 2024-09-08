@@ -13,7 +13,7 @@ type statisticModel interface {
 }
 
 type Statistic struct {
-	Date   time.Time `gorm:"primaryKey;type:date"`
+	Date   time.Time `gorm:"primaryKey;type:TIMESTAMP"`
 	Amount int
 	Count  int
 	commonModel.BaseModel
@@ -26,8 +26,8 @@ func (s *Statistic) GetUpdatesValue(amount, count int) map[string]interface{} {
 	}
 }
 
-func (s *Statistic) GetDate(tradeTime time.Time) time.Time {
-	return time.Date(tradeTime.Year(), tradeTime.Month(), tradeTime.Day(), 0, 0, 0, 0, time.Local)
+func (s *Statistic) GetDate(t time.Time) time.Time {
+	return time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, t.Location())
 }
 
 func ExpenseAccumulate(

@@ -4,7 +4,6 @@ import (
 	"KeepAccount/global"
 	"KeepAccount/global/constant"
 	commonModel "KeepAccount/model/common"
-	"errors"
 	"gorm.io/gorm"
 	"strings"
 	"time"
@@ -31,10 +30,10 @@ type Client interface {
 }
 
 type UserClientBaseInfo struct {
-	UserId                uint `gorm:"primaryKey"`
+	UserId                uint `gorm:"primaryKey;autoIncrement:false"`
 	CurrentAccountId      uint
 	CurrentShareAccountId uint
-	LoginTime             time.Time
+	LoginTime             time.Time `gorm:"type:TIMESTAMP"`
 }
 
 func (uci *UserClientBaseInfo) GetUserId() uint {
@@ -134,50 +133,4 @@ func GetUserClientModel(client constant.Client) Client {
 	default:
 		panic("unknown client")
 	}
-}
-
-var ErrClientNotFound = errors.New("client not found")
-
-func GetUserClientBaseInfo(client Client) *UserClientBaseInfo {
-	switch client.(type) {
-	case *UserClientWeb:
-		clientWeb := client.(*UserClientWeb)
-		return &UserClientBaseInfo{
-			UserId:           clientWeb.UserId,
-			CurrentAccountId: clientWeb.CurrentAccountId,
-			LoginTime:        clientWeb.LoginTime,
-		}
-	case *UserClientAndroid:
-		clientAndroid := client.(*UserClientAndroid)
-		return &UserClientBaseInfo{
-			UserId:           clientAndroid.UserId,
-			CurrentAccountId: clientAndroid.CurrentAccountId,
-			LoginTime:        clientAndroid.LoginTime,
-		}
-	case *UserClientIos:
-		clientIos := client.(*UserClientIos)
-		return &UserClientBaseInfo{
-			UserId:           clientIos.UserId,
-			CurrentAccountId: clientIos.CurrentAccountId,
-			LoginTime:        clientIos.LoginTime,
-		}
-	}
-	panic(ErrClientNotFound)
-}
-
-type UserClientDbFunc func(db *gorm.DB) error
-
-func HandleUserClient(client Client, handleFunc UserClientDbFunc, tx *gorm.DB) error {
-	switch client.(type) {
-	case *UserClientWeb:
-		clientWeb := client.(*UserClientWeb)
-		return handleFunc(tx.Model(clientWeb))
-	case *UserClientAndroid:
-		clientAndroid := client.(*UserClientAndroid)
-		return handleFunc(tx.Model(clientAndroid))
-	case *UserClientIos:
-		clientIos := client.(*UserClientIos)
-		return handleFunc(tx.Model(clientIos))
-	}
-	return nil
 }

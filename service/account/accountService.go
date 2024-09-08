@@ -2,39 +2,51 @@ package accountService
 
 import (
 	"KeepAccount/global"
-	"KeepAccount/global/cusCtx"
+	"KeepAccount/global/cus"
 	"KeepAccount/global/db"
 	accountModel "KeepAccount/model/account"
 	userModel "KeepAccount/model/user"
 	"context"
 	"github.com/pkg/errors"
+	"strings"
 )
 
 type base struct{}
 
+func (b *base) NewCreateData(name string, icon string, aType accountModel.Type, location string) accountModel.Account {
+	return accountModel.Account{
+		Type:     aType,
+		Name:     strings.TrimSpace(name),
+		Icon:     strings.TrimSpace(icon),
+		Location: strings.TrimSpace(location),
+	}
+}
 func (b *base) CreateOne(
-	user userModel.User, name string, icon string, aType accountModel.Type, ctx context.Context,
+	user userModel.User, data accountModel.Account, ctx context.Context,
 ) (account accountModel.Account, aUser accountModel.User, err error) {
-	if name == "" || icon == "" {
-		err = global.NewErrDataIsEmpty("name或icon")
+	if data.Name == "" || data.Icon == "" {
+		err = global.NewErrDataIsEmpty("请填写")
 		return
 	}
-	account = accountModel.Account{
-		UserId: user.ID,
-		Name:   name,
-		Icon:   icon,
-		Type:   aType,
+	if data.Location == "" {
+		err = global.NewErrDataIsEmpty("请选择地区")
+		return
 	}
-	tx := db.Get(ctx)
-	err = tx.Create(&account).Error
-	if err != nil {
-		err = errors.WithStack(err)
-	}
-	aUser, err = ServiceGroupApp.Share.AddAccountUser(account, user, accountModel.UserPermissionCreator, ctx)
-	if err != nil {
-		err = errors.WithStack(err)
-	}
-	err = b.updateUserCurrentAfterCreate(aUser, ctx)
+	account = data
+	account.UserId = user.ID
+	err = db.Transaction(
+		ctx, func(ctx *cus.TxContext) error {
+			err = db.Get(ctx).Create(&account).Error
+			if err != nil {
+				err = errors.WithStack(err)
+			}
+			aUser, err = GroupApp.Share.AddAccountUser(account, user, accountModel.UserPermissionCreator, ctx)
+			if err != nil {
+				err = errors.WithStack(err)
+			}
+			return b.updateUserCurrentAfterCreate(aUser, ctx)
+		},
+	)
 	return
 }
 
@@ -131,7 +143,9 @@ func (b *base) updateUserCurrentAfterDelete(accountUser accountModel.User, ctx c
 	return
 }
 
-func (b *base) getNewCurrentAccount(user userModel.User, ctx context.Context) (accountModel.Account, *accountModel.Account, error) {
+func (b *base) getNewCurrentAccount(user userModel.User, ctx context.Context) (
+	accountModel.Account, *accountModel.Account, error,
+) {
 	tx := db.Get(ctx)
 	dao, condition := accountModel.NewDao(tx), *accountModel.NewUserCondition()
 	current, err := dao.SelectByUserAndAccountType(user.ID, condition)
@@ -147,7 +161,8 @@ func (b *base) getNewCurrentAccount(user userModel.User, ctx context.Context) (a
 	return current, currentShare, err
 }
 func (b *base) Update(
-	account accountModel.Account, accountUser accountModel.User, updateData accountModel.AccountUpdateData, ctx context.Context,
+	account accountModel.Account, accountUser accountModel.User, updateData accountModel.AccountUpdateData,
+	ctx context.Context,
 ) (err error) {
 	if accountUser.AccountId != account.ID {
 		return global.ErrAccountId
@@ -155,13 +170,16 @@ func (b *base) Update(
 	if false == accountUser.HavePermission(accountModel.UserPermissionEditAccount) {
 		return global.ErrNoPermission
 	}
-	return db.Transaction(ctx, func(ctx *cusCtx.TxContext) error {
-		return accountModel.NewDao(ctx.GetDb()).Update(account, updateData)
-	})
+	return db.Transaction(
+		ctx, func(ctx *cus.TxContext) error {
+			return accountModel.NewDao(ctx.GetDb()).Update(account, updateData)
+		},
+	)
 }
 
 func (b *base) UpdateUser(
-	accountUser accountModel.User, operator accountModel.User, updateData accountModel.UserUpdateData, ctx context.Context,
+	accountUser accountModel.User, operator accountModel.User, updateData accountModel.UserUpdateData,
+	ctx context.Context,
 ) (result accountModel.User, err error) {
 	if accountUser.AccountId != operator.AccountId {
 		return result, global.ErrAccountId

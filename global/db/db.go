@@ -1,36 +1,38 @@
 package db
 
 import (
-	"KeepAccount/global/cusCtx"
+	"KeepAccount/global/cus"
 	"KeepAccount/initialize"
 	"context"
 	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
 )
 
 var (
 	Db      = initialize.Db
-	Context *cusCtx.DbContext
+	InitDb  = Db.Session(&gorm.Session{Logger: Db.Logger.LogMode(logger.Silent)})
+	Context *cus.DbContext
 )
 
 func init() {
-	Context = cusCtx.WithDb(context.Background(), Db)
+	Context = cus.WithDb(context.Background(), Db)
 }
 
 func Get(ctx context.Context) *gorm.DB {
-	value := ctx.Value(cusCtx.Db)
+	value := ctx.Value(cus.Db)
 	if value == nil {
 		return Db
 	}
-	return ctx.Value(cusCtx.Db).(*gorm.DB)
+	return ctx.Value(cus.Db).(*gorm.DB)
 }
 
-type TxFunc func(ctx *cusCtx.TxContext) error
+type TxFunc func(ctx *cus.TxContext) error
 
 func Transaction(parent context.Context, fc TxFunc) error {
-	ctx := cusCtx.WithTxCommitContext(parent)
+	ctx := cus.WithTxCommitContext(parent)
 	err := Get(ctx).Transaction(
 		func(tx *gorm.DB) error {
-			return fc(cusCtx.WithTx(ctx, tx))
+			return fc(cus.WithTx(ctx, tx))
 		},
 	)
 	if err == nil {
@@ -39,6 +41,6 @@ func Transaction(parent context.Context, fc TxFunc) error {
 	return err
 }
 
-func AddCommitCallback(parent context.Context, callbacks ...cusCtx.TxCommitCallback) error {
-	return parent.Value(cusCtx.TxCommit).(*cusCtx.TxCommitContext).AddCallback(callbacks...)
+func AddCommitCallback(parent context.Context, callbacks ...cus.TxCommitCallback) error {
+	return parent.Value(cus.TxCommit).(*cus.TxCommitContext).AddCallback(callbacks...)
 }

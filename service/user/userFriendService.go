@@ -1,7 +1,7 @@
 package userService
 
 import (
-	"KeepAccount/global/cusCtx"
+	"KeepAccount/global/cus"
 	"KeepAccount/global/db"
 	userModel "KeepAccount/model/user"
 	"context"
@@ -14,7 +14,7 @@ type Friend struct{}
 func (f *Friend) CreateInvitation(
 	inviter userModel.User, invitee userModel.User, ctx context.Context,
 ) (invitation userModel.FriendInvitation, err error) {
-	return invitation, db.Transaction(ctx, func(ctx *cusCtx.TxContext) (err error) {
+	return invitation, db.Transaction(ctx, func(ctx *cus.TxContext) (err error) {
 		tx := ctx.GetDb()
 		dao := userModel.NewDao(tx)
 		invitation, err = dao.CreateFriendInvitation(inviter.ID, invitee.ID)
@@ -41,7 +41,7 @@ func (f *Friend) CreateInvitation(
 func (f *Friend) AcceptInvitation(Invitation *userModel.FriendInvitation, ctx context.Context) (
 	inviterFriend userModel.Friend, inviteeFriend userModel.Friend, err error,
 ) {
-	err = db.Transaction(ctx, func(ctx *cusCtx.TxContext) error {
+	err = db.Transaction(ctx, func(ctx *cus.TxContext) error {
 		inviterFriend, inviteeFriend, err = Invitation.Accept(ctx.GetDb())
 		return err
 	})
@@ -49,7 +49,7 @@ func (f *Friend) AcceptInvitation(Invitation *userModel.FriendInvitation, ctx co
 }
 
 func (f *Friend) RefuseInvitation(Invitation *userModel.FriendInvitation, ctx context.Context) error {
-	return db.Transaction(ctx, func(ctx *cusCtx.TxContext) error {
+	return db.Transaction(ctx, func(ctx *cus.TxContext) error {
 		return Invitation.Refuse(ctx.GetDb())
 	})
 }

@@ -2,13 +2,11 @@ package script
 
 import (
 	"KeepAccount/global/constant"
-	"KeepAccount/global/cusCtx"
 	accountModel "KeepAccount/model/account"
 	userModel "KeepAccount/model/user"
 	"KeepAccount/util/dataTool"
 	"context"
 	"encoding/json"
-	"gorm.io/gorm"
 	"io"
 	"os"
 )
@@ -19,7 +17,7 @@ type accountScripts struct {
 var Account = accountScripts{}
 
 func (as *accountScripts) CreateByTemplate(tmpl AccountTmpl, user userModel.User, ctx context.Context) (account accountModel.Account, accountUser accountModel.User, err error) {
-	account, accountUser, err = accountService.CreateOne(user, tmpl.Name, tmpl.Icon, tmpl.Type, ctx)
+	account, accountUser, err = accountService.CreateOne(user, accountService.NewCreateData(tmpl.Name, tmpl.Icon, tmpl.Type, tmpl.Location), ctx)
 	if err != nil {
 		return
 	}
@@ -43,9 +41,9 @@ func (as *accountScripts) CreateExample(user userModel.User, ctx context.Context
 }
 
 type AccountTmpl struct {
-	Name, Icon string
-	Type       accountModel.Type
-	Category   []fatherTmpl
+	Name, Icon, Location string
+	Type                 accountModel.Type
+	Category             []fatherTmpl
 }
 
 func (at *AccountTmpl) ReadFromJson(path string) error {
@@ -60,8 +58,4 @@ func (at *AccountTmpl) ReadFromJson(path string) error {
 		return err
 	}
 	return nil
-}
-
-func (at *AccountTmpl) create(user userModel.User, tx *gorm.DB) (accountModel.Account, accountModel.User, error) {
-	return accountService.CreateOne(user, at.Name, at.Icon, at.Type, cusCtx.WithDb(context.TODO(), tx))
 }

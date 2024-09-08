@@ -3,7 +3,7 @@ package transactionService
 import (
 	"KeepAccount/global"
 	"KeepAccount/global/constant"
-	"KeepAccount/global/cusCtx"
+	"KeepAccount/global/cus"
 	"KeepAccount/global/db"
 	"KeepAccount/global/nats"
 	accountModel "KeepAccount/model/account"
@@ -23,7 +23,7 @@ func (txnService *Transaction) Create(
 	transInfo transactionModel.Info, accountUser accountModel.User, option Option, ctx context.Context,
 ) (transactionModel.Transaction, error) {
 	trans := transactionModel.Transaction{Info: transInfo}
-	err := db.Transaction(ctx, func(ctx *cusCtx.TxContext) error {
+	err := db.Transaction(ctx, func(ctx *cus.TxContext) error {
 		tx := ctx.GetDb()
 		// check
 		if transInfo.AccountId != accountUser.AccountId {
@@ -50,7 +50,6 @@ func (txnService *Transaction) Create(
 			nats.PublishEventWithPayload(nats.EventTransactionCreate, trans)
 		})
 	})
-
 	return trans, err
 }
 
@@ -59,7 +58,7 @@ func (txnService *Transaction) Update(
 	trans transactionModel.Transaction, accountUser accountModel.User, option Option, ctx context.Context,
 ) error {
 	var oldTrans transactionModel.Transaction
-	err := db.Transaction(ctx, func(ctx *cusCtx.TxContext) error {
+	err := db.Transaction(ctx, func(ctx *cus.TxContext) error {
 		tx := ctx.GetDb()
 		// check
 		err := txnService.checkTransaction(trans, accountUser, tx)
@@ -86,7 +85,8 @@ func (txnService *Transaction) Update(
 			if !option.isSyncTrans {
 				nats.PublishTaskWithPayload(nats.TaskTransactionSync, trans)
 			}
-			nats.PublishEventWithPayload(nats.EventTransactionUpdate,
+			nats.PublishEventWithPayload(
+				nats.EventTransactionUpdate,
 				nats.EventTransactionUpdatePayload{OldTrans: oldTrans, NewTrans: trans},
 			)
 		})
@@ -97,7 +97,7 @@ func (txnService *Transaction) Update(
 func (txnService *Transaction) Delete(
 	txn transactionModel.Transaction, accountUser accountModel.User, ctx context.Context,
 ) error {
-	err := db.Transaction(ctx, func(ctx *cusCtx.TxContext) error {
+	err := db.Transaction(ctx, func(ctx *cus.TxContext) error {
 		tx := ctx.GetDb()
 		err := accountUser.CheckTransEditByUserId(txn.UserId)
 		if err != nil {
@@ -112,7 +112,9 @@ func (txnService *Transaction) Delete(
 	return err
 }
 
-func (txnService *Transaction) checkTransaction(trans transactionModel.Transaction, accountUser accountModel.User, tx *gorm.DB) error {
+func (txnService *Transaction) checkTransaction(
+	trans transactionModel.Transaction, accountUser accountModel.User, tx *gorm.DB,
+) error {
 	if trans.AccountId != accountUser.AccountId {
 		return global.ErrAccountId
 	}
@@ -124,19 +126,27 @@ func (txnService *Transaction) checkTransaction(trans transactionModel.Transacti
 }
 
 func (txnService *Transaction) updateStatistic(data transactionModel.StatisticData, ctx context.Context) (err error) {
+	l, err := time.LoadLocation(data.Location)
+	if err != nil {
+		return err
+	}
+	data.TradeTime = data.TradeTime.In(l)
+
 	switch data.IncomeExpense {
 	case constant.Income:
-		err = db.Transaction(ctx, func(ctx *cusCtx.TxContext) error {
+		err = db.Transaction(ctx, func(ctx *cus.TxContext) error {
 			return transactionModel.IncomeAccumulate(
 				data.TradeTime, data.AccountId, data.UserId, data.CategoryId, data.Amount, data.Count, ctx.GetDb(),
 			)
-		})
+		},
+		)
 	case constant.Expense:
-		err = db.Transaction(ctx, func(ctx *cusCtx.TxContext) error {
+		err = db.Transaction(ctx, func(ctx *cus.TxContext) error {
 			return transactionModel.ExpenseAccumulate(
 				data.TradeTime, data.AccountId, data.UserId, data.CategoryId, data.Amount, data.Count, ctx.GetDb(),
 			)
-		})
+		},
+		)
 	default:
 		panic("income expense error")
 	}
@@ -159,7 +169,9 @@ func (txnService *Transaction) SyncToMappingAccount(trans transactionModel.Trans
 	return err
 }
 
-func (txnService *Transaction) syncToShareAccount(indAccountTrans transactionModel.Transaction, ctx context.Context) error {
+func (txnService *Transaction) syncToShareAccount(
+	indAccountTrans transactionModel.Transaction, ctx context.Context,
+) error {
 	tx := db.Get(ctx)
 	accountDao, categoryDao := accountModel.NewDao(tx), categoryModel.NewDao(tx)
 
@@ -199,14 +211,20 @@ func (txnService *Transaction) syncToShareAccount(indAccountTrans transactionMod
 	return nil
 }
 
-func (txnService *Transaction) syncToIndependentAccount(shareAccountTrans transactionModel.Transaction, ctx context.Context) error {
+func (txnService *Transaction) syncToIndependentAccount(
+	shareAccountTrans transactionModel.Transaction, ctx context.Context,
+) error {
 	tx := db.Get(ctx)
 	var err error
-	accountMapping, err := accountModel.NewDao(tx).SelectMappingByMainAccountAndRelatedUser(shareAccountTrans.AccountId, shareAccountTrans.UserId)
+	accountMapping, err := accountModel.NewDao(tx).SelectMappingByMainAccountAndRelatedUser(
+		shareAccountTrans.AccountId, shareAccountTrans.UserId,
+	)
 	if err != nil {
 		return err
 	}
-	categoryMapping, err := categoryModel.NewDao(tx).SelectMappingByCAccountIdAndPCategoryId(accountMapping.RelatedId, shareAccountTrans.CategoryId)
+	categoryMapping, err := categoryModel.NewDao(tx).SelectMappingByCAccountIdAndPCategoryId(
+		accountMapping.RelatedId, shareAccountTrans.CategoryId,
+	)
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		return nil
 	} else if err != nil {
@@ -235,7 +253,9 @@ func (txnService *Transaction) syncToIndependentAccount(shareAccountTrans transa
 	return nil
 }
 
-func (txnService *Transaction) syncUpdate(mapping transactionModel.Mapping, origin, target transactionModel.Transaction, ctx context.Context) error {
+func (txnService *Transaction) syncUpdate(
+	mapping transactionModel.Mapping, origin, target transactionModel.Transaction, ctx context.Context,
+) error {
 	tx := db.Get(ctx)
 	err := mapping.ForShare(tx)
 	if err != nil {
@@ -263,7 +283,9 @@ func (txnService *Transaction) syncUpdate(mapping transactionModel.Mapping, orig
 	return nil
 }
 
-func (txnService *Transaction) CreateSyncTrans(trans, syncTrans transactionModel.Transaction, ctx context.Context) (mapping transactionModel.Mapping, err error) {
+func (txnService *Transaction) CreateSyncTrans(
+	trans, syncTrans transactionModel.Transaction, ctx context.Context,
+) (mapping transactionModel.Mapping, err error) {
 	tx := db.Get(ctx)
 	accountUser, err := accountModel.NewDao(tx).SelectUser(syncTrans.AccountId, syncTrans.UserId)
 	if err != nil {
@@ -283,7 +305,9 @@ func (txnService *Transaction) CreateSyncTrans(trans, syncTrans transactionModel
 	return
 }
 
-func (txnService *Transaction) CreateMapping(trans1, trans2 transactionModel.Transaction, ctx context.Context) (mapping transactionModel.Mapping, err error) {
+func (txnService *Transaction) CreateMapping(
+	trans1, trans2 transactionModel.Transaction, ctx context.Context,
+) (mapping transactionModel.Mapping, err error) {
 	tx := db.Get(ctx)
 	accountType, err := accountModel.NewDao(tx).GetAccountType(trans1.AccountId)
 	if err != nil {
@@ -397,7 +421,7 @@ func (txnService *Transaction) addStatisticAfterCreateMultiple(
 	account accountModel.Account, accountUser accountModel.User, incomeExpense constant.IncomeExpense,
 	amountList map[string]map[uint]int, countList map[string]map[uint]int, tx *gorm.DB,
 ) error {
-	ctx := context.WithValue(context.Background(), cusCtx.Tx, tx)
+	ctx := context.WithValue(context.Background(), cus.Tx, tx)
 	var err error
 	var tradeTime time.Time
 	for date, categoryList := range amountList {
@@ -432,7 +456,9 @@ func (txnService *Transaction) NewOption() Option {
 	return Option{}
 }
 
-func (txnService *Transaction) NewOptionFormConfig(trans transactionModel.Info, ctx context.Context) (option Option, err error) {
+func (txnService *Transaction) NewOptionFormConfig(trans transactionModel.Info, ctx context.Context) (
+	option Option, err error,
+) {
 	userConfig, err := accountModel.NewDao(db.Get(ctx)).SelectUserConfig(trans.AccountId, trans.UserId)
 	if err != nil {
 		return

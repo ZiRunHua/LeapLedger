@@ -3,11 +3,10 @@ package userService
 import (
 	"KeepAccount/global"
 	"KeepAccount/global/constant"
-	"KeepAccount/global/cusCtx"
+	"KeepAccount/global/cus"
 	"KeepAccount/global/db"
 	"KeepAccount/global/nats"
 	accountModel "KeepAccount/model/account"
-	"KeepAccount/model/common/query"
 	userModel "KeepAccount/model/user"
 	commonService "KeepAccount/service/common"
 	"KeepAccount/util/rand"
@@ -73,50 +72,46 @@ func (userSvc *User) NewRegisterOption() *RegisterOption { return &RegisterOptio
 func (userSvc *User) Register(addData userModel.AddData, ctx context.Context, option ...RegisterOption) (
 	user userModel.User, err error,
 ) {
-	return user, db.Transaction(
-		ctx, func(ctx *cusCtx.TxContext) (err error) {
-			addData.Password = commonService.Common.HashPassword(addData.Email, addData.Password)
-			exist, err := query.Exist[*userModel.User]("email = ?", addData.Email)
-			if err != nil {
-				return err
-			} else if exist {
+	return user, db.Transaction(ctx, func(ctx *cus.TxContext) (err error) {
+		addData.Password = commonService.Common.HashPassword(addData.Email, addData.Password)
+		tx := db.Get(ctx)
+		userDao := userModel.NewDao(tx)
+		err = userDao.CheckEmail(addData.Email)
+		if err != nil {
+			return err
+		}
+		user, err = userDao.Add(addData)
+		if err != nil {
+			if errors.Is(err, gorm.ErrDuplicatedKey) {
 				return errors.New("该邮箱已注册")
 			}
-			tx := db.Get(ctx)
-			userDao := userModel.NewDao(tx)
-			user, err = userDao.Add(addData)
-			if err != nil {
-				if errors.Is(err, gorm.ErrDuplicatedKey) {
-					return errors.New("该邮箱已注册")
-				}
-				return
-			}
-			for _, client := range userModel.GetClients() {
-				if err = client.InitByUser(user, tx); err != nil {
-					return
-				}
-			}
-			_, err = userSvc.RecordAction(user, constant.Register, ctx)
-
-			if err != nil {
-				return
-			}
-			if len(option) == 0 {
-				return
-			}
-			if option[0].Tour {
-				_, err = userDao.CreateTour(user)
-				if err != nil {
-					return
-				}
-				err = user.ModifyAsTourist(tx)
-				if err != nil {
-					return
-				}
-			}
 			return
-		},
-	)
+		}
+		for _, client := range userModel.GetClients() {
+			if err = client.InitByUser(user, tx); err != nil {
+				return
+			}
+		}
+		_, err = userSvc.RecordAction(user, constant.Register, ctx)
+
+		if err != nil {
+			return
+		}
+		if len(option) == 0 {
+			return
+		}
+		if option[0].Tour {
+			_, err = userDao.CreateTour(user)
+			if err != nil {
+				return
+			}
+			err = user.ModifyAsTourist(tx)
+			if err != nil {
+				return
+			}
+		}
+		return
+	})
 }
 
 func (userSvc *User) UpdatePassword(user userModel.User, newPassword string, ctx context.Context) error {
@@ -125,16 +120,15 @@ func (userSvc *User) UpdatePassword(user userModel.User, newPassword string, ctx
 	if password == user.Password {
 		logRemark = global.ErrSameAsTheOldPassword.Error()
 	}
-	return db.Transaction(
-		ctx, func(ctx *cusCtx.TxContext) error {
-			tx := ctx.GetDb()
-			err := tx.Model(user).Update("password", password).Error
-			if err != nil {
-				return err
-			}
-			_, err = userSvc.RecordActionAndRemark(user, constant.UpdatePassword, logRemark, ctx)
+	return db.Transaction(ctx, func(ctx *cus.TxContext) error {
+		tx := ctx.GetDb()
+		err := tx.Model(user).Update("password", password).Error
+		if err != nil {
 			return err
-		},
+		}
+		_, err = userSvc.RecordActionAndRemark(user, constant.UpdatePassword, logRemark, ctx)
+		return err
+	},
 	)
 }
 
@@ -201,7 +195,7 @@ func (userSvc *User) EnableTourist(
 		return user, global.ErrDeviceNotSupported
 	}
 	return user, db.Transaction(
-		ctx, func(ctx *cusCtx.TxContext) (err error) {
+		ctx, func(ctx *cus.TxContext) (err error) {
 			tx := ctx.GetDb()
 			userDao := userModel.NewDao(tx)
 			userInfo, err := userDao.SelectByDeviceNumber(client, deviceNumber)

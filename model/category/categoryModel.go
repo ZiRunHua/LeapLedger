@@ -17,8 +17,10 @@ type Category struct {
 	Name           string                 `gorm:"comment:'名称';size:128;uniqueIndex:unique_name,priority:2"`
 	Icon           string                 `gorm:"comment:'图标';size:64"`
 	Previous       uint                   `gorm:"comment:'前一位'"`
-	OrderUpdatedAt time.Time              `gorm:"comment:'顺序更新时间';not null;default:CURRENT_TIMESTAMP(3);"`
-	gorm.Model
+	OrderUpdatedAt time.Time              `gorm:"comment:'顺序更新时间';not null;default:now();type:TIMESTAMP;"`
+	CreatedAt      time.Time              `gorm:"type:TIMESTAMP"`
+	UpdatedAt      time.Time              `gorm:"type:TIMESTAMP"`
+	DeletedAt      gorm.DeletedAt         `gorm:"index;type:TIMESTAMP"`
 	commonModel.BaseModel
 }
 
@@ -60,11 +62,14 @@ func (c *Condition) buildWhere(db *gorm.DB) *gorm.DB {
 // ParentCategoryId - ChildCategoryId  unique
 // ChildAccountId - ParentCategoryId  unique
 type Mapping struct {
-	gorm.Model
-	ParentAccountId  uint `gorm:"comment:'父账本ID';uniqueIndex:idx_mapping,priority:2"`
-	ChildAccountId   uint `gorm:"comment:'子账本ID';" `
-	ParentCategoryId uint `gorm:"comment:'父收支类型ID';index"`
-	ChildCategoryId  uint `gorm:"comment:'子收支类型ID';uniqueIndex:idx_mapping,priority:1"`
+	ID               uint           `gorm:"primarykey"`
+	ParentAccountId  uint           `gorm:"comment:'父账本ID';uniqueIndex:idx_mapping,priority:2"`
+	ChildAccountId   uint           `gorm:"comment:'子账本ID';" `
+	ParentCategoryId uint           `gorm:"comment:'父收支类型ID';index"`
+	ChildCategoryId  uint           `gorm:"comment:'子收支类型ID';uniqueIndex:idx_mapping,priority:1"`
+	CreatedAt        time.Time      `gorm:"type:TIMESTAMP"`
+	UpdatedAt        time.Time      `gorm:"type:TIMESTAMP"`
+	DeletedAt        gorm.DeletedAt `gorm:"index;type:TIMESTAMP"`
 	commonModel.BaseModel
 }
 

@@ -9,17 +9,19 @@ import (
 	queryFunc "KeepAccount/model/common/query"
 	userModel "KeepAccount/model/user"
 	"database/sql"
-	"encoding/json"
 	"errors"
-	"time"
-
+	"gorm.io/datatypes"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
+	"time"
 )
 
 type Transaction struct {
-	gorm.Model
+	ID uint `gorm:"primarykey"`
 	Info
+	CreatedAt time.Time      `gorm:"type:TIMESTAMP"`
+	UpdatedAt time.Time      `gorm:"type:TIMESTAMP"`
+	DeletedAt gorm.DeletedAt `gorm:"index;type:TIMESTAMP"`
 	commonModel.BaseModel
 }
 
@@ -28,7 +30,7 @@ type Info struct {
 	IncomeExpense                 constant.IncomeExpense
 	Amount                        int
 	Remark                        string
-	TradeTime                     time.Time
+	TradeTime                     time.Time `gorm:"type:TIMESTAMP"`
 }
 
 func (i *Info) Check(db *gorm.DB) error {
@@ -141,6 +143,7 @@ type StatisticData struct {
 	TradeTime     time.Time
 	Amount        int
 	Count         int
+	Location      string
 }
 
 func (t *Info) GetStatisticData(isAdd bool) StatisticData {
@@ -148,11 +151,13 @@ func (t *Info) GetStatisticData(isAdd bool) StatisticData {
 		return StatisticData{
 			AccountId: t.AccountId, UserId: t.UserId, IncomeExpense: t.IncomeExpense,
 			CategoryId: t.CategoryId, TradeTime: t.TradeTime, Amount: t.Amount, Count: 1,
+			Location: accountModel.NewDao().GetLocation(t.AccountId),
 		}
 	}
 	return StatisticData{
 		AccountId: t.AccountId, UserId: t.UserId, IncomeExpense: t.IncomeExpense,
 		CategoryId: t.CategoryId, TradeTime: t.TradeTime, Amount: -t.Amount, Count: -1,
+		Location: accountModel.NewDao().GetLocation(t.AccountId),
 	}
 }
 
@@ -230,14 +235,9 @@ func (t *Timing) UpdateNextTime(db *gorm.DB) error {
 			nextTime = time.Date(t.NextTime.Year(), t.NextTime.Month()+2, 1, 0, 0, 0, 0, time.Local)
 			nextTime = nextTime.AddDate(0, 0, -1)
 		}
-		t.NextTime, t.TransInfo.TradeTime = nextTime, nextTime
-		str, err := json.Marshal(t.TransInfo)
-		if err != nil {
-			return err
-		}
-		err = db.Model(t).Updates(map[string]interface{}{
-			"trans_info": str,
-			"next_time":  t.NextTime,
+		err := db.Model(t).Updates(map[string]interface{}{
+			"trans_info": datatypes.JSONSet("trans_info").Set("trade_time", nextTime),
+			"next_time":  datatypes.Date(nextTime),
 		}).Error
 		if err != nil {
 			return err

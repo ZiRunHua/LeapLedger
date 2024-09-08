@@ -2,6 +2,7 @@ package accountModel
 
 import (
 	"KeepAccount/global"
+	"time"
 
 	"gorm.io/gorm"
 )
@@ -18,13 +19,29 @@ func NewDao(db ...*gorm.DB) *AccountDao {
 }
 
 func (a *AccountDao) SelectById(id uint) (account Account, err error) {
-	err = a.db.First(&account, id).Error
+	err = a.db.Unscoped().First(&account, id).Error
 	return
 }
 
 func (a *AccountDao) GetAccountType(id uint) (accountType Type, err error) {
 	err = a.db.Model(&Account{}).Select("type").Where("id = ?", id).Scan(&accountType).Error
 	return
+}
+
+func (a *AccountDao) GetLocation(id uint) (location string) {
+	err := a.db.Model(&Account{}).Select("location").Where("id = ?", id).Scan(&location).Error
+	if err != nil {
+		panic(err)
+	}
+	return
+}
+
+func (a *AccountDao) GetTimeLocation(id uint) *time.Location {
+	l, err := time.LoadLocation(a.GetLocation(id))
+	if err != nil {
+		panic(err)
+	}
+	return l
 }
 
 func (a *AccountDao) Update(account Account, data AccountUpdateData) error {

@@ -15,6 +15,7 @@ type AccountOne struct {
 	Name       string
 	Icon       string
 	Type       accountModel.Type
+	Location   string
 	CreateTime time.Time
 	UpdateTime time.Time
 }
@@ -24,6 +25,7 @@ func (a *AccountOne) SetData(data accountModel.Account) error {
 	a.Name = data.Name
 	a.Icon = data.Icon
 	a.Type = data.Type
+	a.Location = data.Location
 	a.CreateTime = data.CreatedAt
 	a.UpdateTime = data.UpdatedAt
 	return nil
@@ -105,6 +107,7 @@ func (a *AccountDetail) setAccount(account accountModel.Account) {
 	a.Name = account.Name
 	a.Icon = account.Icon
 	a.Type = account.Type
+	a.Location = account.Location
 	a.CreatorId = account.UserId
 	a.CreateTime = account.CreatedAt
 	a.UpdateTime = account.UpdatedAt

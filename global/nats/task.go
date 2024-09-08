@@ -1,7 +1,7 @@
 package nats
 
 import (
-	"KeepAccount/global/cusCtx"
+	"KeepAccount/global/cus"
 	"KeepAccount/global/db"
 	"KeepAccount/global/nats/manager"
 	"context"
@@ -57,7 +57,7 @@ func SubscribeTaskWithPayloadAndProcessInTransaction[T PayloadType](task Task, h
 		if err := json.Unmarshal(msg.Data(), &data); err != nil {
 			return err
 		}
-		return db.Transaction(context.TODO(), func(ctx *cusCtx.TxContext) error {
+		return db.Transaction(context.TODO(), func(ctx *cus.TxContext) error {
 			return handleTransaction(data, ctx)
 		})
 	}

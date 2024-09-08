@@ -3,7 +3,7 @@ package commonService
 import (
 	"KeepAccount/global"
 	"KeepAccount/global/constant"
-	utilJwt "KeepAccount/util/jwt"
+	utilJwt "KeepAccount/util/jwtTool"
 	"crypto/sha1"
 	"encoding/hex"
 	"github.com/golang-jwt/jwt/v5"
@@ -57,14 +57,17 @@ func (cm *common) MakeCustomClaims(userId uint) jwt.RegisteredClaims {
 	}
 }
 
+func (cm *common) ParseToken(tokenStr string) (jwt.RegisteredClaims, error) {
+	return utilJwt.ParseToken(tokenStr, []byte(global.Config.System.JwtKey))
+}
+
 func (cm *common) GenerateJWT(custom jwt.RegisteredClaims) (string, error) {
-	token, err := utilJwt.CreateToken(custom, global.Config.System.JwtKey)
+	token, err := utilJwt.CreateToken(custom, []byte(global.Config.System.JwtKey))
 	if err != nil {
 		return "", errors.Wrap(err, "jwt.CreateToken")
 	}
 	return token, err
 }
-
 func (cm *common) RefreshJWT(custom jwt.RegisteredClaims) (token string, newCustom jwt.RegisteredClaims, err error) {
 	newCustom = custom
 	if newCustom.ExpiresAt.Before(time.Now().Add(ExpiresAt / 3)) {

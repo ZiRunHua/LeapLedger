@@ -4,7 +4,7 @@ import (
 	"KeepAccount/api/request"
 	"KeepAccount/api/response"
 	"KeepAccount/global"
-	"KeepAccount/global/cusCtx"
+	"KeepAccount/global/cus"
 	"KeepAccount/global/db"
 	categoryModel "KeepAccount/model/category"
 	productModel "KeepAccount/model/product"
@@ -118,7 +118,7 @@ func (p *ProductApi) MappingTransactionCategory(ctx *gin.Context) {
 		return
 	}
 	err = db.Transaction(
-		ctx, func(ctx *cusCtx.TxContext) error {
+		ctx, func(ctx *cus.TxContext) error {
 			_, err = productService.MappingTransactionCategory(category, transactionCategory, ctx)
 			return err
 		},
@@ -157,7 +157,7 @@ func (p *ProductApi) DeleteTransactionCategoryMapping(ctx *gin.Context) {
 	}
 
 	err = db.Transaction(
-		ctx, func(ctx *cusCtx.TxContext) error {
+		ctx, func(ctx *cus.TxContext) error {
 			return productService.DeleteMappingTransactionCategory(category, ptc, ctx)
 		},
 	)

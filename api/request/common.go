@@ -50,9 +50,19 @@ func (t *TimeFrame) CheckTimeFrame() error {
 
 // 格式化日时间 将StartTime置为当日第一秒 endTime置为当日最后一秒
 func (t *TimeFrame) FormatDayTime() (startTime time.Time, endTime time.Time) {
-	startTime = time.Date(t.StartTime.Year(), t.StartTime.Month(), t.StartTime.Day(), 0, 0, 0, 0, time.Local)
-	endTime = time.Date(t.EndTime.Year(), t.EndTime.Month(), t.EndTime.Day(), 23, 59, 59, 0, time.Local)
+	year, month, day := t.StartTime.Date()
+	startTime = time.Date(year, month, day, 0, 0, 0, 0, t.StartTime.Location())
+	year, month, day = t.EndTime.Date()
+	endTime = time.Date(year, month, day, 23, 59, 59, 0, t.EndTime.Location())
 	return
+}
+
+func (t *TimeFrame) SetLocal(l *time.Location) {
+	t.StartTime, t.EndTime = t.StartTime.In(l), t.EndTime.In(l)
+}
+
+func (t *TimeFrame) ToUTC() {
+	t.StartTime, t.EndTime = t.StartTime.UTC(), t.EndTime.UTC()
 }
 
 // 信息类型

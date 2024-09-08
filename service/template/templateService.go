@@ -2,17 +2,20 @@ package templateService
 
 import (
 	"KeepAccount/global"
-	"KeepAccount/global/cusCtx"
+	"KeepAccount/global/constant"
+	"KeepAccount/global/cus"
 	"KeepAccount/global/db"
 	accountModel "KeepAccount/model/account"
 	categoryModel "KeepAccount/model/category"
 	productModel "KeepAccount/model/product"
 	userModel "KeepAccount/model/user"
-	accountService "KeepAccount/service/account"
 	"KeepAccount/util/dataTool"
 	"context"
+	"encoding/json"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
+	"io"
+	"os"
 	"time"
 )
 
@@ -50,9 +53,9 @@ func (t *template) CreateAccount(
 	if tmplAccount.UserId != TmplUserId {
 		return account, ErrNotBelongTemplate
 	}
-	return account, db.Transaction(ctx, func(ctx *cusCtx.TxContext) error {
-		account, _, err = accountService.ServiceGroupApp.CreateOne(
-			user, tmplAccount.Name, tmplAccount.Icon, tmplAccount.Type, ctx,
+	return account, db.Transaction(ctx, func(ctx *cus.TxContext) error {
+		account, _, err = accountService.CreateOne(
+			user, accountService.NewCreateData(tmplAccount.Name, tmplAccount.Icon, tmplAccount.Type, tmplAccount.Location), ctx,
 		)
 		if err != nil {
 			return err
@@ -62,7 +65,7 @@ func (t *template) CreateAccount(
 }
 
 func (t *template) CreateCategory(account accountModel.Account, tmplAccount accountModel.Account, ctx context.Context) error {
-	return db.Transaction(ctx, func(ctx *cusCtx.TxContext) error {
+	return db.Transaction(ctx, func(ctx *cus.TxContext) error {
 		tx := db.Get(ctx)
 		var err error
 		if err = account.ForShare(tx); err != nil {
@@ -135,4 +138,97 @@ func (t *template) createFatherCategory(
 	}
 
 	return nil
+}
+func (t *template) CreateAccountByTemplate(tmpl AccountTmpl, user userModel.User, ctx context.Context) (account accountModel.Account, accountUser accountModel.User, err error) {
+	account = accountService.NewCreateData(tmpl.Name, tmpl.Icon, tmpl.Type, tmpl.Location)
+	account, accountUser, err = accountService.CreateOne(user, account, ctx)
+	if err != nil {
+		return
+	}
+	var list dataTool.Slice[any, fatherTmpl] = tmpl.Category
+	for _, f := range list.CopyReverse() {
+		err = f.create(account, ctx)
+		if err != nil {
+			return
+		}
+	}
+	return
+}
+
+func (t *template) CreateExampleAccount(user userModel.User, ctx context.Context) (account accountModel.Account, accountUser accountModel.User, err error) {
+	var accountTmpl AccountTmpl
+	err = accountTmpl.ReadFromJson(constant.ExampleAccountJsonPath)
+	if err != nil {
+		return
+	}
+	return t.CreateAccountByTemplate(accountTmpl, user, ctx)
+}
+
+type AccountTmpl struct {
+	Name, Icon, Location string
+	Type                 accountModel.Type
+	Category             []fatherTmpl
+}
+
+func (at *AccountTmpl) ReadFromJson(path string) error {
+	jsonFile, err := os.Open(path)
+	if err != nil {
+		return err
+	}
+	defer jsonFile.Close()
+	byteValue, _ := io.ReadAll(jsonFile)
+	err = json.Unmarshal(byteValue, at)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+type fatherTmpl struct {
+	Name     string
+	Ie       constant.IncomeExpense
+	Children []categoryTmpl
+}
+
+func (ft *fatherTmpl) create(account accountModel.Account, ctx context.Context) error {
+	father, err := categoryService.CreateOneFather(account, ft.Ie, ft.Name, ctx)
+	if err != nil {
+		return err
+	}
+	var list dataTool.Slice[any, categoryTmpl] = ft.Children
+	for _, child := range list.CopyReverse() {
+		_, err = child.create(father, ctx)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+type categoryTmpl struct {
+	Name, Icon  string
+	Ie          constant.IncomeExpense
+	MappingPtcs []struct {
+		ProductKey productModel.KeyValue
+		Name       string
+	}
+}
+
+func (ct *categoryTmpl) create(father categoryModel.Father, ctx context.Context) (category categoryModel.Category, err error) {
+	category, err = categoryService.CreateOne(father, categoryService.NewCategoryData(ct.Name, ct.Icon), ctx)
+	if err != nil {
+		return
+	}
+	var ptc productModel.TransactionCategory
+	for _, mappingPtc := range ct.MappingPtcs {
+		ptc, err = productModel.NewDao(db.Get(ctx)).SelectByName(mappingPtc.ProductKey, father.IncomeExpense, mappingPtc.Name)
+		if err != nil {
+			return
+		}
+		_, err = productService.MappingTransactionCategory(category, ptc, ctx)
+		if err != nil {
+			return
+		}
+	}
+	return
 }

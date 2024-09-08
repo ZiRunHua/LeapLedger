@@ -3,7 +3,7 @@ package categoryService
 import (
 	"KeepAccount/global"
 	"KeepAccount/global/constant"
-	"KeepAccount/global/cusCtx"
+	"KeepAccount/global/cus"
 	"KeepAccount/global/db"
 	"KeepAccount/global/nats"
 	accountModel "KeepAccount/model/account"
@@ -39,7 +39,7 @@ func (catSvc *Category) CreateOne(father categoryModel.Father, data CreateData, 
 		Previous:       0,
 		OrderUpdatedAt: time.Now(),
 	}
-	return category, db.Transaction(ctx, func(ctx *cusCtx.TxContext) error {
+	return category, db.Transaction(ctx, func(ctx *cus.TxContext) error {
 		tx := db.Get(ctx)
 		if err := category.CheckName(tx); err != nil {
 			return err
@@ -72,7 +72,7 @@ func (catSvc *Category) UpdateCategoryMapping(category categoryModel.Category, c
 	if !aiService.IsOpen() {
 		return nil
 	}
-	return db.Transaction(ctx, func(ctx *cusCtx.TxContext) error {
+	return db.Transaction(ctx, func(ctx *cus.TxContext) error {
 		tx := db.Get(ctx)
 		accountDao, categoryDao := accountModel.NewDao(tx), categoryModel.NewDao(tx)
 		accountMapping, err := accountDao.SelectMultipleMapping(*accountModel.NewMappingCondition().WithRelatedId(category.AccountId))
@@ -132,7 +132,7 @@ func (catSvc *Category) CreateList(
 		}
 
 	}
-	err := db.Transaction(ctx, func(ctx *cusCtx.TxContext) error {
+	err := db.Transaction(ctx, func(ctx *cus.TxContext) error {
 		return ctx.GetDb().Create(&categoryList).Error
 	})
 	if err != nil {
@@ -151,7 +151,7 @@ func (catSvc *Category) CreateOneFather(
 		Previous:       0,
 		OrderUpdatedAt: time.Now(),
 	}
-	return father, db.Transaction(ctx, func(ctx *cusCtx.TxContext) error {
+	return father, db.Transaction(ctx, func(ctx *cus.TxContext) error {
 		err := ctx.GetDb().Create(&father).Error
 		if err != nil {
 			return errors.Wrap(err, "father.CreateOne()")
@@ -164,7 +164,7 @@ func (catSvc *Category) MoveCategory(
 	category categoryModel.Category, previous *categoryModel.Category, father *categoryModel.Father,
 	operator userModel.User, ctx context.Context,
 ) error {
-	return db.Transaction(ctx, func(ctx *cusCtx.TxContext) error {
+	return db.Transaction(ctx, func(ctx *cus.TxContext) error {
 		tx := ctx.GetDb()
 		// 数据校验
 		if previous != nil && (category.ID == previous.ID || previous.AccountId != category.AccountId || previous.IncomeExpense != category.IncomeExpense) {
@@ -223,7 +223,7 @@ func (catSvc *Category) MoveCategory(
 }
 
 func (catSvc *Category) MoveFather(father categoryModel.Father, previous *categoryModel.Father, ctx context.Context) error {
-	return db.Transaction(ctx, func(ctx *cusCtx.TxContext) error {
+	return db.Transaction(ctx, func(ctx *cus.TxContext) error {
 		tx := ctx.GetDb()
 		if previous != nil && (previous.AccountId != father.AccountId || previous.IncomeExpense != father.IncomeExpense || father.ID == previous.ID) {
 			return errors.Wrap(global.ErrInvalidParameter, "categoryService.MoveFather")
@@ -285,7 +285,7 @@ func (catSvc *Category) GetSequenceFather(
 }
 
 func (catSvc *Category) Update(categoryId uint, data categoryModel.CategoryUpdateData, ctx context.Context) (category categoryModel.Category, err error) {
-	err = db.Transaction(ctx, func(ctx *cusCtx.TxContext) error {
+	err = db.Transaction(ctx, func(ctx *cus.TxContext) error {
 		dao := categoryModel.NewDao(ctx.GetDb())
 		err = dao.Update(categoryId, data)
 		if err != nil {
@@ -306,20 +306,20 @@ func (catSvc *Category) UpdateFather(father categoryModel.Father, name string) (
 }
 
 func (catSvc *Category) Delete(category categoryModel.Category, ctx context.Context) error {
-	return db.Transaction(ctx, func(ctx *cusCtx.TxContext) error {
+	return db.Transaction(ctx, func(ctx *cus.TxContext) error {
 		exits, err := catSvc.existTransaction(category)
 		if err != nil {
 			return err
 		}
 		if exits {
-			return errors.Wrap(ErrExistTransaction, "delete category")
+			return errors.Wrap(ErrExistTransaction, "已存在交易不可删除")
 		}
 		return ctx.GetDb().Delete(&category).Error
 	})
 }
 
 func (catSvc *Category) DeleteFather(father categoryModel.Father, ctx context.Context) error {
-	return db.Transaction(ctx, func(ctx *cusCtx.TxContext) error {
+	return db.Transaction(ctx, func(ctx *cus.TxContext) error {
 		tx := ctx.GetDb()
 		var categoryList []categoryModel.Category
 		err := global.GvaDb.Select("id").Where("father_id = ?", father.ID).Find(&categoryList).Error
@@ -376,7 +376,7 @@ func (catSvc *Category) checkMappingParam(parent, child categoryModel.Category, 
 }
 
 func (catSvc *Category) MappingCategory(parent, child categoryModel.Category, operator userModel.User, ctx context.Context) (mapping categoryModel.Mapping, err error) {
-	err = db.Transaction(ctx, func(ctx *cusCtx.TxContext) error {
+	err = db.Transaction(ctx, func(ctx *cus.TxContext) error {
 		tx := ctx.GetDb()
 		err = catSvc.checkMappingParam(parent, child, operator, tx)
 		if err != nil {
@@ -389,7 +389,7 @@ func (catSvc *Category) MappingCategory(parent, child categoryModel.Category, op
 }
 
 func (catSvc *Category) DeleteMapping(parent, child categoryModel.Category, operator userModel.User, ctx context.Context) error {
-	return db.Transaction(ctx, func(ctx *cusCtx.TxContext) error {
+	return db.Transaction(ctx, func(ctx *cus.TxContext) error {
 		tx := ctx.GetDb()
 		err := catSvc.checkMappingParam(parent, child, operator, tx)
 		if err != nil {

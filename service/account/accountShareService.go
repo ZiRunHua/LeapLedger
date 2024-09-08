@@ -3,7 +3,7 @@ package accountService
 import (
 	"KeepAccount/global"
 	"KeepAccount/global/constant"
-	"KeepAccount/global/cusCtx"
+	"KeepAccount/global/cus"
 	"KeepAccount/global/db"
 	accountModel "KeepAccount/model/account"
 	logModel "KeepAccount/model/log"
@@ -23,7 +23,7 @@ func (b *share) CreateUserInvitation(
 		return invitation, global.ErrNoPermission
 	}
 
-	return invitation, db.Transaction(ctx, func(ctx *cusCtx.TxContext) (err error) {
+	return invitation, db.Transaction(ctx, func(ctx *cus.TxContext) (err error) {
 		tx := ctx.GetDb()
 		accountDao := accountModel.NewDao(tx)
 		var existUser bool
@@ -67,7 +67,7 @@ func (b *share) CreateUserInvitation(
 func (b *share) AddAccountUser(
 	account accountModel.Account, user userModel.User, permission accountModel.UserPermission, ctx context.Context,
 ) (accountUser accountModel.User, err error) {
-	return accountUser, db.Transaction(ctx, func(ctx *cusCtx.TxContext) (err error) {
+	return accountUser, db.Transaction(ctx, func(ctx *cus.TxContext) (err error) {
 		accountDao := accountModel.NewDao(ctx.GetDb())
 		accountUser, err = accountDao.CreateUser(account.ID, user.ID, permission)
 		if err != nil {
@@ -102,7 +102,7 @@ func (b *share) MappingAccount(
 	if user.ID != mappingAccount.UserId {
 		return mapping, global.ErrNoPermission
 	}
-	err = db.Transaction(ctx, func(ctx *cusCtx.TxContext) (err error) {
+	err = db.Transaction(ctx, func(ctx *cus.TxContext) (err error) {
 		tx := ctx.GetDb()
 		if err = mainAccount.ForShare(tx); err != nil {
 			return
@@ -131,7 +131,7 @@ func (b *share) MappingAccount(
 }
 
 func (b *share) DeleteAccountMapping(user userModel.User, mapping accountModel.Mapping, ctx context.Context) (err error) {
-	return db.Transaction(ctx, func(ctx *cusCtx.TxContext) error {
+	return db.Transaction(ctx, func(ctx *cus.TxContext) error {
 		tx := ctx.GetDb()
 		_, _, err = logServer.RecordAccountLog(
 			&mapping,
@@ -148,7 +148,7 @@ func (b *share) DeleteAccountMapping(user userModel.User, mapping accountModel.M
 func (b *share) UpdateAccountMapping(
 	user userModel.User, mapping accountModel.Mapping, mappingAccount accountModel.Account, ctx context.Context,
 ) (newMapping accountModel.Mapping, err error) {
-	return newMapping, db.Transaction(ctx, func(ctx *cusCtx.TxContext) error {
+	return newMapping, db.Transaction(ctx, func(ctx *cus.TxContext) error {
 		tx := ctx.GetDb()
 		_, _, err = logServer.RecordAccountLog(
 			&mapping,

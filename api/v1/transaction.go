@@ -4,7 +4,7 @@ import (
 	"KeepAccount/api/request"
 	"KeepAccount/api/response"
 	"KeepAccount/global/constant"
-	"KeepAccount/global/cusCtx"
+	"KeepAccount/global/cus"
 	"KeepAccount/global/db"
 	accountModel "KeepAccount/model/account"
 	categoryModel "KeepAccount/model/category"
@@ -13,6 +13,7 @@ import (
 	"KeepAccount/util/timeTool"
 	"context"
 	"github.com/gin-gonic/gin"
+	"log"
 	"time"
 )
 
@@ -71,9 +72,10 @@ func (t *TransactionApi) CreateOne(ctx *gin.Context) {
 		},
 	}
 	err := db.Transaction(
-		ctx, func(ctx *cusCtx.TxContext) error {
+		ctx, func(ctx *cus.TxContext) error {
 			var err error
-			transaction, err = transactionService.Create(transaction.Info, accountUser, transactionService.NewDefaultOption(), ctx)
+			transaction, err = transactionService.Create(transaction.Info, accountUser,
+				transactionService.NewDefaultOption(), ctx)
 			return err
 		},
 	)
@@ -182,7 +184,7 @@ func (t *TransactionApi) GetList(ctx *gin.Context) {
 		return
 	}
 
-	// 查询并获取结果
+	// select and response
 	condition := requestData.GetCondition()
 	condition.AccountId = contextFunc.GetAccountId(ctx)
 	var transactionList []transactionModel.Transaction
@@ -219,11 +221,11 @@ func (t *TransactionApi) GetTotal(ctx *gin.Context) {
 		response.FailToParameter(ctx, err)
 		return
 	}
-	// 查询条件
+	// condition
 	condition := requestData.GetStatisticCondition()
 	condition.AccountId = contextFunc.GetAccountId(ctx)
 	extCond := requestData.GetExtensionCondition()
-	// 查询并处理响应
+	// select and response
 	total, err := transactionModel.NewDao().GetIeStatisticByCondition(
 		requestData.IncomeExpense, condition, &extCond,
 	)
@@ -255,12 +257,13 @@ func (t *TransactionApi) GetMonthStatistic(ctx *gin.Context) {
 	if pass := checkFunc.AccountBelong(requestData.AccountId, ctx); pass == false {
 		return
 	}
+	requestData.SetLocal(contextFunc.GetTimeLocation(ctx))
 	requestData.AccountId = contextFunc.GetAccountId(ctx)
-	// 设置查询条件
+	// condition
 	statisticCondition, extCond := requestData.GetStatisticCondition(), requestData.GetExtensionCondition()
 	condition := statisticCondition
 	months := timeTool.SplitMonths(statisticCondition.StartTime, statisticCondition.EndTime)
-	// 查询并处理响应
+	// select and process
 	responseList := make([]response.TransactionStatistic, len(months), len(months))
 	dao := transactionModel.NewDao()
 	for i := len(months) - 1; i >= 0; i-- {
@@ -299,9 +302,12 @@ func (t *TransactionApi) GetDayStatistic(ctx *gin.Context) {
 		response.FailToParameter(ctx, err)
 		return
 	}
+	timeLocation := contextFunc.GetTimeLocation(ctx)
 	requestData.AccountId = contextFunc.GetAccountId(ctx)
+	requestData.SetLocal(timeLocation)
 	// 处理请求
 	var startTime, endTime = requestData.FormatDayTime()
+	log.Print(startTime.Hour(), startTime.Location(), endTime.Hour())
 	days := timeTool.SplitDays(startTime, endTime)
 	dayMap := make(map[time.Time]*response.TransactionDayStatistic, len(days))
 	condition := transactionModel.StatisticCondition{
@@ -318,8 +324,10 @@ func (t *TransactionApi) GetDayStatistic(ctx *gin.Context) {
 			return err
 		}
 		for _, item := range statistics {
-			dayMap[item.Date].Amount += item.Amount
-			dayMap[item.Date].Count += item.Count
+			log.Print(item.Date.In(timeLocation).Day(), item.Date.In(timeLocation).Hour(),
+				item.Date.In(timeLocation).Location())
+			dayMap[item.Date.In(timeLocation)].Amount += item.Amount
+			dayMap[item.Date.In(timeLocation)].Count += item.Count
 		}
 		return nil
 	}
@@ -343,9 +351,7 @@ func (t *TransactionApi) GetDayStatistic(ctx *gin.Context) {
 			return
 		}
 	}
-	response.OkWithData(
-		response.List[response.TransactionDayStatistic]{List: responseData}, ctx,
-	)
+	response.OkWithData(response.List[response.TransactionDayStatistic]{List: responseData}, ctx)
 }
 
 // GetCategoryAmountRank
@@ -367,6 +373,7 @@ func (t *TransactionApi) GetCategoryAmountRank(ctx *gin.Context) {
 		return
 	}
 	requestData.AccountId = contextFunc.GetAccountId(ctx)
+	requestData.SetLocal(contextFunc.GetTimeLocation(ctx))
 	account := contextFunc.GetAccount(ctx)
 	// fetch ranking List
 	var startTime, endTime = requestData.FormatDayTime()
@@ -451,6 +458,7 @@ func (t *TransactionApi) GetAmountRank(ctx *gin.Context) {
 		response.FailToParameter(ctx, err)
 		return
 	}
+	requestData.SetLocal(contextFunc.GetTimeLocation(ctx))
 	requestData.AccountId = contextFunc.GetAccountId(ctx)
 	// fetch
 	timeCond := transactionModel.NewTimeCondition()
@@ -494,7 +502,7 @@ func (t *TransactionApi) CreateTiming(ctx *gin.Context) {
 	// handle
 	var err error
 	err = db.Transaction(
-		ctx, func(ctx *cusCtx.TxContext) error {
+		ctx, func(ctx *cus.TxContext) error {
 			timing, err = transactionService.Timing.CreateTiming(timing, ctx)
 			return err
 		},
@@ -533,9 +541,9 @@ func (t *TransactionApi) UpdateTiming(ctx *gin.Context) {
 	// handle
 	var err error
 	err = db.Transaction(
-		ctx, func(ctx *cusCtx.TxContext) error {
+		ctx, func(ctx *cus.TxContext) error {
 			tx := ctx.GetDb()
-			timing, err = transactionService.Timing.UpdateTiming(timing, context.WithValue(ctx, cusCtx.Db, tx))
+			timing, err = transactionService.Timing.UpdateTiming(timing, context.WithValue(ctx, cus.Db, tx))
 			return err
 		},
 	)
@@ -566,7 +574,8 @@ func (t *TransactionApi) GetTimingList(ctx *gin.Context) {
 		response.FailToParameter(ctx, err)
 		return
 	}
-	list, err := transactionModel.NewDao().SelectTimingListByUserId(contextFunc.GetAccountId(ctx), requestData.Offset, requestData.Limit)
+	list, err := transactionModel.NewDao().SelectTimingListByUserId(contextFunc.GetAccountId(ctx), requestData.Offset,
+		requestData.Limit)
 	if responseError(err, ctx) {
 		return
 	}

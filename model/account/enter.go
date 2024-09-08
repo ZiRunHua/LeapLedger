@@ -1,21 +1,16 @@
 package accountModel
 
 import (
-	"KeepAccount/util/gormFunc"
-	"gorm.io/gorm"
+	"KeepAccount/global/db"
 )
 
-func CurrentInit(db *gorm.DB) error {
+func init() {
 	tables := []interface{}{
 		Account{}, Mapping{},
 		User{}, UserConfig{}, UserInvitation{},
 	}
-	err := db.AutoMigrate(tables...)
+	err := db.InitDb.AutoMigrate(tables...)
 	if err != nil {
-		return err
+		panic(err)
 	}
-	for _, table := range tables {
-		_ = gormFunc.AlterIdToHeader(table, db)
-	}
-	return nil
 }

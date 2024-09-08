@@ -1,7 +1,7 @@
 package transaction
 
 import (
-	"KeepAccount/global/cusCtx"
+	"KeepAccount/global/cus"
 	"KeepAccount/global/db"
 	transactionModel "KeepAccount/model/transaction"
 	"KeepAccount/test"
@@ -28,7 +28,7 @@ func TestTiming(t *testing.T) {
 		_ = create(testTiming, t)
 	}
 	now := time.Date(time.Now().Year(), time.Now().Month(), time.Now().Day()+1, 0, 0, 0, 0, time.Local)
-	err := db.Transaction(context.TODO(), func(ctx *cusCtx.TxContext) error {
+	err := db.Transaction(context.TODO(), func(ctx *cus.TxContext) error {
 		return service.Timing.Exec.GenerateAndPublishTasks(now, 5, ctx)
 	})
 	time.Sleep(time.Second * 10)
@@ -41,7 +41,7 @@ func create(testTiming transactionModel.Timing, t *testing.T) transactionModel.T
 	ctx := context.TODO()
 	var err error
 	var timing transactionModel.Timing
-	err = db.Transaction(ctx, func(ctx *cusCtx.TxContext) error {
+	err = db.Transaction(ctx, func(ctx *cus.TxContext) error {
 		timing, err = service.Timing.CreateTiming(testTiming, ctx)
 		return err
 	})

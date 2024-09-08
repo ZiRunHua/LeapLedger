@@ -67,6 +67,17 @@ func (u *UserDao) SelectById(id uint, args ...interface{}) (User, error) {
 	return user, err
 }
 
+func (u *UserDao) CheckEmail(email string) error {
+	err := u.db.Where("email = ?", email).Take(&User{}).Error
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil
+	} else if err == nil {
+		return errors.New("邮箱已存在")
+	} else {
+		return err
+	}
+}
+
 func (u *UserDao) SelectUserInfoById(id uint) (result UserInfo, err error) {
 	err = u.db.Select("id", "username", "email").Where("id = ?", id).Model(&User{}).First(&result).Error
 	return result, err
