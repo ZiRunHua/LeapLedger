@@ -4,6 +4,7 @@ import (
 	"KeepAccount/global"
 	"KeepAccount/global/constant"
 	accountModel "KeepAccount/model/account"
+	"KeepAccount/util/timeTool"
 	"database/sql"
 	"time"
 
@@ -31,7 +32,9 @@ func (t *TransactionDao) SelectById(id uint, forUpdate bool) (result Transaction
 	return
 }
 
-func (t *TransactionDao) GetListByCondition(condition Condition, offset int, limit int) (result []Transaction, err error) {
+func (t *TransactionDao) GetListByCondition(condition Condition, offset int, limit int) (
+	result []Transaction, err error,
+) {
 	query := condition.addConditionToQuery(t.db)
 	err = query.Limit(limit).Offset(offset).Order("trade_time DESC").Find(&result).Error
 	return
@@ -40,12 +43,12 @@ func (t *TransactionDao) GetListByCondition(condition Condition, offset int, lim
 func (t *TransactionDao) GetIeStatisticByCondition(
 	ie *constant.IncomeExpense, condition StatisticCondition, extCond *ExtensionCondition,
 ) (result global.IEStatistic, err error) {
-
 	if extCond.IsSet() {
 		// transaction table select
 		query := t.db.Model(&Transaction{})
 		query = condition.ForeignKeyCondition.addConditionToQuery(query)
-		query = query.Where("trade_time between ? AND ?", condition.StartTime.Truncate(24*time.Hour), condition.EndTime.Truncate(24*time.Hour))
+		query = query.Where("trade_time between ? AND ?", timeTool.ToDay(condition.StartTime),
+			timeTool.ToDay(condition.EndTime))
 		query = extCond.addConditionToQuery(query)
 		result, err = t.getIEStatisticByWhere(ie, query)
 	} else {
@@ -104,9 +107,11 @@ func (t *TransactionDao) SelectMappingByTrans(trans, syncTrans Transaction) (map
 	if trans.ID > 0 && syncTrans.AccountId > 0 {
 		switch accountType {
 		case accountModel.TypeIndependent:
-			err = t.db.Where("main_account_id = ? AND related_id = ?", syncTrans.AccountId, trans.ID).First(&mapping).Error
+			err = t.db.Where("main_account_id = ? AND related_id = ?", syncTrans.AccountId,
+				trans.ID).First(&mapping).Error
 		case accountModel.TypeShare:
-			err = t.db.Where("main_id = ? AND related_account_id = ?", trans.ID, syncTrans.AccountId).First(&mapping).Error
+			err = t.db.Where("main_id = ? AND related_account_id = ?", trans.ID,
+				syncTrans.AccountId).First(&mapping).Error
 		default:
 			panic("err account.Type")
 		}
@@ -116,9 +121,11 @@ func (t *TransactionDao) SelectMappingByTrans(trans, syncTrans Transaction) (map
 	if syncTrans.ID > 0 && trans.AccountId > 0 {
 		switch accountType {
 		case accountModel.TypeIndependent:
-			err = t.db.Where("main_id = ? AND related_account_id = ?", syncTrans.ID, trans.AccountId).First(&mapping).Error
+			err = t.db.Where("main_id = ? AND related_account_id = ?", syncTrans.ID,
+				trans.AccountId).First(&mapping).Error
 		case accountModel.TypeShare:
-			err = t.db.Where("main_account_id = ? AND related_id = ?", syncTrans.AccountId, syncTrans.ID).First(&mapping).Error
+			err = t.db.Where("main_account_id = ? AND related_id = ?", syncTrans.AccountId,
+				syncTrans.ID).First(&mapping).Error
 		default:
 			panic("err account.Type")
 		}
@@ -128,7 +135,9 @@ func (t *TransactionDao) SelectMappingByTrans(trans, syncTrans Transaction) (map
 	return
 }
 
-func (t *TransactionDao) GetAmountRank(accountId uint, ie constant.IncomeExpense, timeCond TimeCondition) (result []Transaction, err error) {
+func (t *TransactionDao) GetAmountRank(
+	accountId uint, ie constant.IncomeExpense, timeCond TimeCondition,
+) (result []Transaction, err error) {
 	limit := 10
 	query := timeCond.addConditionToQuery(t.db)
 	query = query.Where("account_id = ?", accountId).Where("income_expense = ?", ie)

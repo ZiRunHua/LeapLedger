@@ -444,8 +444,10 @@ func (txnService *Transaction) addStatisticAfterCreateMultiple(
 }
 
 type Option struct {
-	syncUpdateStatistic bool // syncUpdateStatistic 同步/异步更新统计数据
-	isSyncTrans         bool // isSyncTrans 交易数据至同步关联账本
+	// syncUpdateStatistic 同步/异步更新统计数据
+	syncUpdateStatistic bool
+	// isSyncTrans 交易数据至同步关联账本
+	isSyncTrans bool
 }
 
 func (txnService *Transaction) NewDefaultOption() Option {

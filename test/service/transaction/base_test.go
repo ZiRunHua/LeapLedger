@@ -22,14 +22,14 @@ func TestCreate(t *testing.T) {
 	transInfo := test.NewTransInfo()
 	user, err := accountModel.NewDao().SelectUser(transInfo.AccountId, transInfo.UserId)
 	if err != nil {
-		t.Error(err)
+		t.Fatal(err)
 	}
 	builder := transactionModel.NewStatisticConditionBuilder(transInfo.AccountId)
 	builder.WithUserIds([]uint{transInfo.UserId}).WithCategoryIds([]uint{transInfo.CategoryId})
 	builder.WithDate(transInfo.TradeTime, transInfo.TradeTime)
 	total, err := transactionModel.NewDao().GetIeStatisticByCondition(&transInfo.IncomeExpense, *builder.Build(), nil)
 	if err != nil {
-		t.Error(err)
+		t.Fatal(err)
 	}
 	var trans transactionModel.Transaction
 	err = db.Transaction(
@@ -44,14 +44,14 @@ func TestCreate(t *testing.T) {
 		},
 	)
 	if err != nil {
-		t.Error(err)
+		t.Fatal(err)
 	}
 	time.Sleep(time.Second * 10)
 	newTotal, err := transactionModel.NewDao().GetIeStatisticByCondition(
 		&transInfo.IncomeExpense, *builder.Build(), nil,
 	)
 	if err != nil {
-		t.Error(err)
+		t.Fatal(err)
 	}
 
 	if transInfo.IncomeExpense == constant.Income {
@@ -62,7 +62,7 @@ func TestCreate(t *testing.T) {
 		total.Expense.Count++
 	}
 	if !reflect.DeepEqual(total, newTotal) {
-		t.Error("total not equal", total, newTotal)
+		t.Fatal("total not equal", total, newTotal)
 	} else {
 		t.Log("pass", total, newTotal)
 	}

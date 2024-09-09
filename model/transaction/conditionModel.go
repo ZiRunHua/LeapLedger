@@ -146,7 +146,7 @@ func (s *StatisticCondition) getLocation() *time.Location {
 		return s.location
 	}
 	var err error
-	s.location, err = time.LoadLocation(accountModel.NewDao().GetLocation(s.accountId))
+	s.location, err = time.LoadLocation(accountModel.NewDao().GetLocation(s.AccountId))
 	if err != nil {
 		panic(err)
 	}
@@ -157,7 +157,8 @@ func (s *StatisticCondition) getLocation() *time.Location {
 // addConditionToQuery 通过条件获取附带查询条件的gorm.db
 func (s *StatisticCondition) addConditionToQuery(db *gorm.DB) *gorm.DB {
 	query := s.ForeignKeyCondition.addConditionToQuery(db)
-	query = query.Where("date BETWEEN ? AND ?", timeTool.ToDay(s.StartTime.In(s.getLocation())), timeTool.ToDay(s.EndTime.In(s.getLocation())))
+	query = query.Where("date BETWEEN ? AND ?", timeTool.ToDay(s.StartTime.In(s.getLocation())),
+		timeTool.ToDay(s.EndTime.In(s.getLocation())))
 	return query
 }
 
