@@ -53,11 +53,6 @@ definitions:
         type: integer
       Invitee:
         type: integer
-      Limit:
-        type: integer
-      Offset:
-        minimum: 0
-        type: integer
       Role:
         $ref: '#/definitions/accountModel.UserRole'
     required:
@@ -76,8 +71,16 @@ definitions:
     type: object
   AccountMapping:
     properties:
-      AccountId:
+      CreateTime:
+        type: string
+      Id:
         type: integer
+      MainAccount:
+        $ref: '#/definitions/AccountOne'
+      RelatedAccount:
+        $ref: '#/definitions/AccountDetail'
+      UpdateTime:
+        type: string
     type: object
   AccountOne:
     properties:
@@ -290,7 +293,7 @@ definitions:
     type: object
   CategoryOne:
     properties:
-      AccountId:
+      FatherId:
         type: integer
       Icon:
         type: string
@@ -594,23 +597,12 @@ definitions:
     type: object
   TransactionCategoryAmountRank:
     properties:
-      AccountId:
+      Amount:
         type: integer
-      EndTime:
-        type: string
-      IncomeExpense:
-        allOf:
-        - $ref: '#/definitions/IncomeExpense'
-        enum:
-        - income
-        - expense
-      Limit:
+      Category:
+        $ref: '#/definitions/CategoryOne'
+      Count:
         type: integer
-      StartTime:
-        type: string
-    required:
-    - AccountId
-    - IncomeExpense
     type: object
   TransactionCreateOne:
     properties:
@@ -627,24 +619,12 @@ definitions:
     type: object
   TransactionDayStatistic:
     properties:
-      AccountId:
+      Amount:
         type: integer
-      CategoryIds:
-        items:
-          type: integer
-        type: array
-      EndTime:
+      Count:
+        type: integer
+      Date:
         type: string
-      IncomeExpense:
-        allOf:
-        - $ref: '#/definitions/IncomeExpense'
-        enum:
-        - income
-        - expense
-      StartTime:
-        type: string
-    required:
-    - AccountId
     type: object
   TransactionDetail:
     properties:
@@ -759,14 +739,20 @@ definitions:
     type: object
   TransactionTimingConfig:
     properties:
+      CreatedAt:
+        type: string
+      Id:
+        type: integer
       NextTime:
         type: string
       OffsetDays:
         type: integer
       Type:
         $ref: '#/definitions/transactionModel.TimingType'
-      UserId:
-        type: integer
+      UpdatedAt:
+        type: string
+      Username:
+        type: string
     type: object
   TransactionTotal:
     properties:
@@ -819,12 +805,6 @@ definitions:
         $ref: '#/definitions/UserInfo'
     type: object
   UserGetAccountInvitationList:
-    properties:
-      Limit:
-        type: integer
-      Offset:
-        minimum: 0
-        type: integer
     type: object
   UserHome:
     properties:
@@ -910,11 +890,6 @@ definitions:
   UserSearch:
     properties:
       Id:
-        type: integer
-      Limit:
-        type: integer
-      Offset:
-        minimum: 0
         type: integer
       Username:
         type: string
