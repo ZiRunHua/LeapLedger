@@ -24,7 +24,7 @@ func init() {
 		// 共享
 		group.AccountCreator.PUT("/user/:id", baseApi.UpdateUser)
 		group.Account.GET("/user/list", baseApi.GetUserList)
-		router.GET("/user/:id/info", baseApi.GetUserInfo)
+		group.Account.GET("/user/:id/info", baseApi.GetUserInfo)
 		router.GET("/user/invitation/list", baseApi.GetUserInvitationList)
 		group.AccountOwnEditor.POST("/user/invitation", baseApi.CreateAccountUserInvitation)
 		router.PUT("/user/invitation/:id/accept", baseApi.AcceptAccountUserInvitation)

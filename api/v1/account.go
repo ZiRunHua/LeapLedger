@@ -553,7 +553,7 @@ func (a *AccountApi) GetUserList(ctx *gin.Context) {
 //	@Param		id		path		int							true	"Account User ID"
 //	@Param		body	body		request.AccountGetUserInfo	true	"query param"
 //	@Success	200		{object}	response.Data{Data=response.AccountUserInfo}
-//	@Router		/account/user/{id}/info [get]
+//	@Router		/account/{accountId}/user/{id}/info [get]
 func (a *AccountApi) GetUserInfo(ctx *gin.Context) {
 	var requestData request.AccountGetUserInfo
 	if err := ctx.ShouldBindJSON(&requestData); err != nil {
