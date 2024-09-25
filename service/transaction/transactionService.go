@@ -220,6 +220,9 @@ func (txnService *Transaction) syncToIndependentAccount(
 		shareAccountTrans.AccountId, shareAccountTrans.UserId,
 	)
 	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil
+		}
 		return err
 	}
 	categoryMapping, err := categoryModel.NewDao(tx).SelectMappingByCAccountIdAndPCategoryId(
