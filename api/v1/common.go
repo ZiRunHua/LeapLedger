@@ -4,8 +4,10 @@ import (
 	"KeepAccount/api/request"
 	"KeepAccount/api/response"
 	"KeepAccount/global"
+	"KeepAccount/global/nats"
 	"github.com/gin-gonic/gin"
 	"github.com/mojocn/base64Captcha"
+	"github.com/pkg/errors"
 )
 
 type CommonApi struct {
@@ -59,9 +61,11 @@ func (p *PublicApi) SendEmailCaptcha(ctx *gin.Context) {
 		return
 	}
 
-	err := thirdpartyService.SendCaptchaEmail(requestData.Email, requestData.Type)
-	if responseError(err, ctx) {
-		return
+	isSuccess := nats.PublishTaskWithPayload(nats.TaskSendCaptchaEmail, nats.PayloadSendCaptchaEmail{
+		Email: requestData.Email, Action: requestData.Type,
+	})
+	if !isSuccess {
+		response.FailToError(ctx, errors.New("发送失败"))
 	}
 	response.OkWithData(response.ExpirationTime{ExpirationTime: global.Config.Captcha.EmailCaptchaTimeOut}, ctx)
 }

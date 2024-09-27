@@ -1,12 +1,15 @@
 package initialize
 
 import (
-	"KeepAccount/global"
 	"KeepAccount/global/constant"
 	"KeepAccount/global/db"
 	_ "KeepAccount/global/nats"
-	_ "KeepAccount/initialize"
 	_ "KeepAccount/initialize/database"
+	"KeepAccount/router"
+	"KeepAccount/test/info"
+	"fmt"
+	"net/http"
+	"time"
 )
 import (
 	accountModel "KeepAccount/model/account"
@@ -20,9 +23,18 @@ var (
 	ExpenseCategoryList []categoryModel.Category
 )
 
+const (
+	port = "7979"
+	Host = "127.0.0.1:" + port
+)
+
+var (
+	Info = info.Data
+)
+
 func init() {
 	var err error
-	User, err = userModel.NewDao().SelectById(global.TestUserId)
+	User, err = userModel.NewDao().SelectById(Info.UserId)
 	if err != nil {
 		panic(err)
 	}
@@ -39,4 +51,18 @@ func init() {
 	if err != nil {
 		panic(err)
 	}
+	go func() {
+		httpServer := &http.Server{
+			Addr:           fmt.Sprintf(":%s", port),
+			Handler:        router.Engine,
+			ReadTimeout:    5 * time.Second,
+			WriteTimeout:   5 * time.Second,
+			MaxHeaderBytes: 1 << 20,
+		}
+		err = httpServer.ListenAndServe()
+		if err != nil {
+			panic(err)
+		}
+	}()
+	time.Sleep(time.Second)
 }

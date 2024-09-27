@@ -4,7 +4,7 @@ import (
 	"KeepAccount/global/constant"
 	"KeepAccount/global/cus"
 	"KeepAccount/global/db"
-	"KeepAccount/util"
+	"KeepAccount/util/fileTool"
 	"context"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
@@ -31,7 +31,7 @@ func init() {
 	err = db.Transaction(context.Background(), func(ctx *cus.TxContext) error {
 		tx := ctx.GetDb()
 		tx = tx.Session(&gorm.Session{Logger: tx.Logger.LogMode(logger.Silent)})
-		return util.File.ExecSqlFile(sqlFile, tx)
+		return fileTool.ExecSqlFile(sqlFile, tx)
 	})
 	if err != nil {
 		panic(err)

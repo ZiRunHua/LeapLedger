@@ -1,6 +1,7 @@
 package nats
 
 import (
+	"KeepAccount/global/constant"
 	"KeepAccount/global/cus"
 	"KeepAccount/global/db"
 	"KeepAccount/global/nats/manager"
@@ -10,6 +11,21 @@ import (
 )
 
 type Task manager.Task
+
+// email task
+const TaskSendCaptchaEmail Task = "sendCaptchaEmail"
+
+type PayloadSendCaptchaEmail struct {
+	Email  string
+	Action constant.UserAction
+}
+
+const TaskSendNotificationEmail Task = "sendNotificationEmail"
+
+type PayloadSendNotificationEmail struct {
+	UserId       uint
+	Notification constant.Notification
+}
 
 // user task
 const TaskCreateTourist Task = "createTourist"
@@ -57,9 +73,11 @@ func SubscribeTaskWithPayloadAndProcessInTransaction[T PayloadType](task Task, h
 		if err := json.Unmarshal(msg.Data(), &data); err != nil {
 			return err
 		}
-		return db.Transaction(context.TODO(), func(ctx *cus.TxContext) error {
-			return handleTransaction(data, ctx)
-		})
+		return db.Transaction(
+			context.TODO(), func(ctx *cus.TxContext) error {
+				return handleTransaction(data, ctx)
+			},
+		)
 	}
 	taskManage.Subscribe(manager.Task(task), handler)
 }

@@ -17,9 +17,9 @@ type Slice[K comparable, V any] []V
 	})
 	fmt.Println(userMap) //将得到 map[1:{1 test1 test2} 2:{2 test2 test3}]
 */
-func (s *Slice[K, V]) ToMap(getKey func(V) K) (result map[K]V) {
+func (s Slice[K, V]) ToMap(getKey func(V) K) (result map[K]V) {
 	result = make(map[K]V)
-	for _, v := range *s {
+	for _, v := range s {
 		result[getKey(v)] = v
 	}
 	return
@@ -38,9 +38,9 @@ func (s *Slice[K, V]) ToMap(getKey func(V) K) (result map[K]V) {
 	})
 	fmt.Println(userIds) //将得到 [1 2]
 */
-func (s *Slice[K, V]) ExtractValues(getVal func(V) K) (result []K) {
-	result = make([]K, len(*s), len(*s))
-	for i, v := range *s {
+func (s Slice[K, V]) ExtractValues(getVal func(V) K) (result []K) {
+	result = make([]K, len(s), len(s))
+	for i, v := range s {
 		result[i] = getVal(v)
 	}
 	return
@@ -53,9 +53,17 @@ func (s *Slice[K, V]) Reverse() {
 	}
 }
 
-func (s *Slice[K, V]) CopyReverse() Slice[K, V] {
-	list := make(Slice[K, V], len(*s), len(*s))
-	copy(list, *s)
+func (s Slice[K, V]) CopyReverse() Slice[K, V] {
+	list := make(Slice[K, V], len(s), len(s))
+	copy(list, s)
 	list.Reverse()
 	return list
+}
+
+func ToMap[Slice ~[]V, V any, K comparable](s Slice, getKey func(V) K) (result map[K]V) {
+	result = make(map[K]V)
+	for _, v := range s {
+		result[getKey(v)] = v
+	}
+	return
 }

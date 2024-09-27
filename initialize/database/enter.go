@@ -1,39 +1,37 @@
 package database
 
 import (
-	"KeepAccount/global/db"
-	"KeepAccount/service"
+	_ "KeepAccount/model"
 )
 
-// The starting point of database data initialization
-// Trigger the init method by introducing "KeepAccount/model"
 import (
-	"KeepAccount/global"
-	"KeepAccount/global/cus"
-	_ "KeepAccount/model"
 	userModel "KeepAccount/model/user"
 	"KeepAccount/script"
-	_templateService "KeepAccount/service/template"
+	"KeepAccount/service"
 	"KeepAccount/util"
-	"context"
+
+	_templateService "KeepAccount/service/template"
 	"errors"
-	"fmt"
+
+	"KeepAccount/global/cus"
+	"KeepAccount/global/db"
+	testInfo "KeepAccount/test/info"
+	"context"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
 )
 
 var (
 	userService = service.GroupApp.UserServiceGroup
+
+	commonService = service.GroupApp.CommonServiceGroup
 )
-var tmplUserId = _templateService.TmplUserId
 var (
 	templateService = _templateService.Group{}
 )
 
 const (
-	tmplUserEmail    = _templateService.TmplUserEmail
-	tmplUserPassword = _templateService.TmplUserPassword
-	tmplUserName     = _templateService.TmplUserName
+	testUserPassword = _templateService.TmplUserPassword
 )
 
 func init() {
@@ -69,16 +67,24 @@ func initTestUser(ctx *cus.TxContext) (err error) {
 	if err != nil {
 		return
 	}
-	err = userService.UpdatePassword(user, util.ClientPasswordHash(user.Email, tmplUserPassword), ctx)
+	err = userService.UpdatePassword(user, util.ClientPasswordHash(user.Email, testUserPassword), ctx)
 	if err != nil {
 		return
 	}
-	_, _, err = script.Account.CreateExample(user, ctx)
+	account, _, err := script.Account.CreateExample(user, ctx)
 	if err != nil {
 		return
 	}
-	global.TestUserId = user.ID
-	global.TestUserInfo = fmt.Sprintf("test user:\nemail:%s password:%s", user.Email, tmplUserPassword)
+	token, err := commonService.GenerateJWT(commonService.MakeCustomClaims(user.ID))
+	if err != nil {
+		return
+	}
+	testInfo.Data = testInfo.Info{
+		UserId:    user.ID,
+		Email:     user.Email,
+		AccountId: account.ID,
+		Token:     token,
+	}
 	return
 }
 

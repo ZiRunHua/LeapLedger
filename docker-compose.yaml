@@ -4,12 +4,10 @@ services:
     container_name: leap-ledger-server
     build:
       context: .
-      dockerfile: docker/Dockerfile.debug
+      dockerfile: docker/Dockerfile
     ports:
       - "8080:8080"
       - "2345:2345"
-#    environment:
-#      - CONFIG_FILE_NAME=production_config.yaml
     volumes:
       - ./log:/go/LeapLedger/log
       - ./docs:/go/LeapLedger/docs

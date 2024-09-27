@@ -26,7 +26,7 @@ func (tc *TransactionCategory) SelectById(id uint) error {
 	return global.GvaDb.First(tc, id).Error
 }
 
-func (tc *TransactionCategory) GetMap(productKey KeyValue) (map[uint]TransactionCategory, error) {
+func (tc *TransactionCategory) GetMap(productKey Key) (map[uint]TransactionCategory, error) {
 	transCategoryMap := make(map[uint]TransactionCategory)
 	var prodTransCategory TransactionCategory
 	rows, err := global.GvaDb.Model(&prodTransCategory).Where(
@@ -45,7 +45,7 @@ func (tc *TransactionCategory) GetMap(productKey KeyValue) (map[uint]Transaction
 	return transCategoryMap, nil
 }
 
-func (tc *TransactionCategory) GetIncomeExpenseAndNameMap(productKey KeyValue) (
+func (tc *TransactionCategory) GetIncomeExpenseAndNameMap(productKey Key) (
 	result map[constant.IncomeExpense]map[string]TransactionCategory, err error,
 ) {
 	var prodTransCategory TransactionCategory

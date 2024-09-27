@@ -73,6 +73,45 @@ func (t *TransactionDetail) SetData(
 	return nil
 }
 
+func (t *TransactionDetail) SetDataIgnoreErr(
+	trans transactionModel.Transaction, account *accountModel.Account,
+) error {
+	var (
+		user     userModel.User
+		category categoryModel.Category
+		father   categoryModel.Father
+	)
+	if account == nil {
+		account = &accountModel.Account{}
+		*account, _ = trans.GetAccount()
+	}
+	if trans.UserId > 0 {
+		user, _ = trans.GetUser("username", "id")
+	}
+	if trans.CategoryId > 0 {
+		category, _ = trans.GetCategory()
+	}
+	if category.FatherId > 0 {
+		father, _ = category.GetFather()
+	}
+	t.Id = trans.ID
+	t.UserId = user.ID
+	t.UserName = user.Username
+	t.AccountId = account.ID
+	t.AccountName = account.Name
+	t.Amount = trans.Amount
+	t.CategoryId = trans.CategoryId
+	t.CategoryIcon = category.Icon
+	t.CategoryName = category.Name
+	t.CategoryFatherName = father.Name
+	t.IncomeExpense = category.IncomeExpense
+	t.Remark = category.Icon
+	t.TradeTime = trans.TradeTime
+	t.UpdateTime = trans.UpdatedAt
+	t.CreateTime = trans.CreatedAt
+	return nil
+}
+
 // TransactionDetailList 交易详情列表
 type TransactionDetailList []TransactionDetail
 

@@ -21,8 +21,7 @@ func (as *accountScripts) CreateByTemplate(tmpl AccountTmpl, user userModel.User
 	if err != nil {
 		return
 	}
-	var list dataTool.Slice[any, fatherTmpl] = tmpl.Category
-	for _, f := range list.CopyReverse() {
+	for _, f := range dataTool.Slice[any, fatherTmpl](tmpl.Category).CopyReverse() {
 		err = f.create(account, ctx)
 		if err != nil {
 			return
@@ -31,7 +30,9 @@ func (as *accountScripts) CreateByTemplate(tmpl AccountTmpl, user userModel.User
 	return
 }
 
-func (as *accountScripts) CreateExample(user userModel.User, ctx context.Context) (account accountModel.Account, accountUser accountModel.User, err error) {
+func (as *accountScripts) CreateExample(user userModel.User, ctx context.Context) (
+	account accountModel.Account, accountUser accountModel.User, err error,
+) {
 	var accountTmpl AccountTmpl
 	err = accountTmpl.ReadFromJson(constant.ExampleAccountJsonPath)
 	if err != nil {

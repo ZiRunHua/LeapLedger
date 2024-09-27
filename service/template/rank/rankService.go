@@ -73,9 +73,9 @@ func (r *Rank[memberType]) OnceIncrWeight(useOb memberType, Key uint, value int6
 
 func (r *Rank[memberType]) updateRank(ctx context.Context) (err error) {
 	var memberWidget int64
-	max := "(" + strconv.FormatInt(time.Now().Add(-r.periodValidity).Unix(), 10)
+	maxValue := "(" + strconv.FormatInt(time.Now().Add(-r.periodValidity).Unix(), 10)
 	for _, member := range r.members {
-		_, err = rdb.ZRemRangeByScore(ctx, r.getMemberKey(member, r.useZsetKey), "-inf", max).Result()
+		_, err = rdb.ZRemRangeByScore(ctx, r.getMemberKey(member, r.useZsetKey), "-inf", maxValue).Result()
 		if err != nil {
 			return err
 		}
@@ -92,7 +92,8 @@ func (r *Rank[memberType]) updateRank(ctx context.Context) (err error) {
 }
 
 func (r *Rank[memberType]) GetAll(ctx context.Context) ([]memberType, error) {
-	members, err := rdb.ZRevRangeByScoreWithScores(ctx, r.rankZsetKey, &redis.ZRangeBy{Min: "-inf", Max: "+inf"}).Result()
+	members, err := rdb.ZRevRangeByScoreWithScores(ctx, r.rankZsetKey,
+		&redis.ZRangeBy{Min: "-inf", Max: "+inf"}).Result()
 	if err != nil {
 		return nil, err
 	}
@@ -103,9 +104,6 @@ func (r *Rank[memberType]) GetAll(ctx context.Context) ([]memberType, error) {
 			continue
 		}
 		result[i] = member
-		if err != nil {
-			return nil, err
-		}
 	}
 	return result, nil
 }

@@ -27,7 +27,7 @@ func (tcm *TransactionCategoryMapping) IsEmpty() bool {
 }
 
 func (tcm *TransactionCategoryMapping) GetPtcIdMapping(
-	account *accountModel.Account, productKey KeyValue,
+	account *accountModel.Account, productKey Key,
 ) (result map[uint]TransactionCategoryMapping, err error) {
 	db := global.GvaDb
 	rows, err := db.Model(&TransactionCategoryMapping{}).Where(

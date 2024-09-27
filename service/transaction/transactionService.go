@@ -26,19 +26,16 @@ func (txnService *Transaction) Create(
 	err := db.Transaction(ctx, func(ctx *cus.TxContext) error {
 		tx := ctx.GetDb()
 		// check
-		if transInfo.AccountId != accountUser.AccountId {
-			return global.ErrAccountId
-		}
-		err := transInfo.Check(tx)
+		trans.AccountId = accountUser.AccountId
+		err := trans.Check(tx)
 		if err != nil {
 			return errors.WithStack(err)
 		}
-		err = accountUser.CheckTransAddByUserId(transInfo.UserId)
+		err = accountUser.CheckTransAddByUserId(trans.UserId)
 		if err != nil {
 			return errors.WithStack(err)
 		}
 		// handle
-		transInfo.UserId = accountUser.UserId
 		err = tx.Create(&trans).Error
 		if err != nil {
 			return errors.WithStack(err)

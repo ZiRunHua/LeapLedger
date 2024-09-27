@@ -23,7 +23,7 @@ func init() {
 	if err != nil {
 		panic(err)
 	}
-	_, err = Scheduler.Every(10).Second().Do(
+	_, err = Scheduler.Every(30).Minute().Do(
 		MakeJobFunc(
 			func() error {
 				return nats.RepublishDieMsg(50, context.TODO())

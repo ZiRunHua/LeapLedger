@@ -35,19 +35,22 @@ type categoryTmpl struct {
 	Name, Icon  string
 	Ie          constant.IncomeExpense
 	MappingPtcs []struct {
-		ProductKey productModel.KeyValue
+		ProductKey productModel.Key
 		Name       string
 	}
 }
 
-func (ct *categoryTmpl) create(father categoryModel.Father, ctx context.Context) (category categoryModel.Category, err error) {
+func (ct *categoryTmpl) create(father categoryModel.Father, ctx context.Context) (
+	category categoryModel.Category, err error,
+) {
 	category, err = categoryService.CreateOne(father, categoryService.NewCategoryData(ct.Name, ct.Icon), ctx)
 	if err != nil {
 		return
 	}
 	var ptc productModel.TransactionCategory
 	for _, mappingPtc := range ct.MappingPtcs {
-		ptc, err = productModel.NewDao(db.Get(ctx)).SelectByName(mappingPtc.ProductKey, father.IncomeExpense, mappingPtc.Name)
+		ptc, err = productModel.NewDao(db.Get(ctx)).SelectCategoryByName(mappingPtc.ProductKey, father.IncomeExpense,
+			mappingPtc.Name)
 		if err != nil {
 			return
 		}

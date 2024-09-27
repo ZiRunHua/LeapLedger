@@ -7,7 +7,7 @@ import (
 )
 
 type Bill struct {
-	ProductKey string `gorm:"primary_key;"`
+	ProductKey Key `gorm:"primary_key;"`
 	Encoding   constant.Encoding
 	StartRow   int
 	DateFormat string `gorm:"default:2006-01-02 15:04:05;"`

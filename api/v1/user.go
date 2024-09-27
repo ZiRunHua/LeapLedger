@@ -6,6 +6,7 @@ import (
 	"KeepAccount/global"
 	"KeepAccount/global/constant"
 	"KeepAccount/global/db"
+	"KeepAccount/global/nats"
 	accountModel "KeepAccount/model/account"
 	transactionModel "KeepAccount/model/transaction"
 	userModel "KeepAccount/model/user"
@@ -158,8 +159,6 @@ func (p *PublicApi) Register(ctx *gin.Context) {
 	if responseError(err, ctx) {
 		return
 	}
-	// 发送不成功不影响主流程
-	_ = thirdpartyService.SendNotificationEmail(constant.NotificationOfRegistrationSuccess, &user)
 
 	responseData := response.Register{Token: token, TokenExpirationTime: customClaims.ExpiresAt.Time}
 	err = responseData.User.SetData(user)
@@ -233,8 +232,6 @@ func (p *PublicApi) UpdatePassword(ctx *gin.Context) {
 		return
 	}
 	err = userService.UpdatePassword(user, requestData.Password, ctx)
-	// 发送不成功不影响主流程
-	_ = thirdpartyService.SendNotificationEmail(constant.NotificationOfUpdatePassword, &user)
 	if responseError(err, ctx) {
 		return
 	}
@@ -283,8 +280,6 @@ func (u *UserApi) UpdatePassword(ctx *gin.Context) {
 	}
 
 	err = userService.UpdatePassword(user, requestData.Password, ctx)
-	// 发送不成功不影响主流程
-	_ = thirdpartyService.SendNotificationEmail(constant.NotificationOfUpdatePassword, &user)
 	if responseError(err, ctx) {
 		return
 	}
@@ -429,9 +424,11 @@ func (u *UserApi) SendCaptchaEmail(ctx *gin.Context) {
 	if responseError(err, ctx) {
 		return
 	}
-	err = thirdpartyService.SendCaptchaEmail(user.Email, requestData.Type)
-	if responseError(err, ctx) {
-		return
+	isSuccess := nats.PublishTaskWithPayload(nats.TaskSendCaptchaEmail, nats.PayloadSendCaptchaEmail{
+		Email: user.Email, Action: requestData.Type,
+	})
+	if !isSuccess {
+		response.FailToError(ctx, errors.New("发送失败"))
 	}
 	response.OkWithData(response.ExpirationTime{ExpirationTime: global.Config.Captcha.EmailCaptchaTimeOut}, ctx)
 }

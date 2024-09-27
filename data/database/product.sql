@@ -3,7 +3,7 @@ VALUES ('AliPay', '支付宝', 0, 0),
        ('WeChatPay', '微信支付', 0, 0);
 
 REPLACE INTO `product_bill` (`product_key`, `encoding`, `start_row`, `date_format`)
-VALUES ('AliPay', 'GBK', 23, '2006-01-02 15:04:05'),
+VALUES ('AliPay', 'GBK', 25, '2006/1/2 15:04'),
        ('WeChatPay', 'UTF-8', 17, '2006-01-02 15:04:05');
 
 REPLACE INTO `product_bill_header` (`name`, `type`, `product_key`)

@@ -3,7 +3,8 @@ package main
 import (
 	"KeepAccount/initialize"
 	_ "KeepAccount/initialize/database"
-	"KeepAccount/router/engine"
+	"KeepAccount/router"
+	test "KeepAccount/test/initialize"
 )
 import (
 	"KeepAccount/global"
@@ -16,9 +17,6 @@ import (
 	"os/signal"
 	"syscall"
 	"time"
-)
-import (
-	_ "KeepAccount/router"
 )
 
 var httpServer *http.Server
@@ -39,13 +37,13 @@ var httpServer *http.Server
 func main() {
 	httpServer = &http.Server{
 		Addr:           fmt.Sprintf(":%d", initialize.Config.System.Addr),
-		Handler:        engine.Engine,
+		Handler:        router.Engine,
 		ReadTimeout:    5 * time.Second,
 		WriteTimeout:   5 * time.Second,
 		MaxHeaderBytes: 1 << 20,
 	}
 	if global.Config.Mode == constant.Debug {
-		fmt.Println(global.TestUserInfo)
+		fmt.Println(test.Info.ToString())
 	}
 	err := httpServer.ListenAndServe()
 	if err != nil {

@@ -6,16 +6,16 @@ import (
 )
 
 type Product struct {
-	Key    KeyValue `gorm:"primary_key"`
-	Name   string   `gorm:"comment:'名称'"`
-	Hide   uint8    `gorm:"default:0;comment:'隐藏标识'"`
-	Weight int      `gorm:"default:0;comment:'权重'"`
+	Key    Key    `gorm:"primary_key"`
+	Name   string `gorm:"comment:'名称'"`
+	Hide   uint8  `gorm:"default:0;comment:'隐藏标识'"`
+	Weight int    `gorm:"default:0;comment:'权重'"`
 	commonModel.BaseModel
 }
 
-type KeyValue string
+type Key string
 
-const AliPay, WeChatPay KeyValue = "AliPay", "WeChatPay"
+const AliPay, WeChatPay Key = "AliPay", "WeChatPay"
 
 func (p *Product) TableName() string {
 	return "product"
@@ -25,7 +25,7 @@ func (p *Product) IsEmpty() bool {
 	return p == nil || p.Key == ""
 }
 
-func (p *Product) SelectByKey(key KeyValue) (result Product, err error) {
+func (p *Product) SelectByKey(key Key) (result Product, err error) {
 	err = global.GvaDb.Where("key = ?", key).First(&result).Error
 	return
 }

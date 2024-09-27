@@ -20,7 +20,8 @@ func create() {
 		Password: util.ClientPasswordHash(email, password),
 		Username: username,
 	}
-	user, err := userService.GroupApp.Register(addData, context.Background())
+	user, err := userService.GroupApp.Register(addData, context.Background(),
+		*userService.GroupApp.NewRegisterOption().WithSendEmail(false))
 	if err != nil {
 		panic(err)
 	}

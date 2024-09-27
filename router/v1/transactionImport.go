@@ -18,6 +18,6 @@ func init() {
 		accountRouter.GET("/:key/transCategory/mapping/tree", baseApi.GetMappingTree)
 		editRouter.POST("/transCategory/:id/mapping", baseApi.MappingTransactionCategory)
 		editRouter.DELETE("/transCategory/:id/mapping", baseApi.DeleteTransactionCategoryMapping)
-		editRouter.POST("/:key/bill/import", websocket.Use(baseApi.ImportProductBill))
+		editRouter.GET("/:key/bill/import", websocket.Use(baseApi.ImportProductBill))
 	}
 }

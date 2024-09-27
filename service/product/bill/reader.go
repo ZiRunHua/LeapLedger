@@ -1,3 +1,11 @@
+// Package bill is used to define the bill reading method
+//
+// The bill package uses the template method design pattern, so to add a new bill reader,
+// all you need to do is implement [TransactionReader] and update the [NewReader] method.
+//
+// Of course, the new product configuration needs to be completed before this,
+// Its configuration is very simple, refer to other product in A file [productModel.initSqlFile]
+// set the data of the new product, and set [productModel.Key]
 package bill
 
 import (
@@ -5,59 +13,55 @@ import (
 	accountModel "KeepAccount/model/account"
 	productModel "KeepAccount/model/product"
 	transactionModel "KeepAccount/model/transaction"
-	"KeepAccount/util"
-	"github.com/pkg/errors"
+	"KeepAccount/util/log"
 	"go.uber.org/zap"
-	"go.uber.org/zap/zapcore"
-	"os"
-	"path/filepath"
-	"strings"
 )
+
+import (
+	"KeepAccount/global/db"
+	"context"
+	"github.com/pkg/errors"
+)
+
+const logPath = constant.LOG_PATH + "/service/product/bill.log"
 
 var logger *zap.Logger
 
 func init() {
-	if err := initLogger(); err != nil {
+	var err error
+	if logger, err = log.GetNewZapLogger(logPath); err != nil {
 		panic(err)
 	}
 }
 
-func initLogger() error {
-	path := constant.LOG_PATH + "/service/product/bill.log"
-	dir := filepath.Dir(path)
-	err := os.MkdirAll(dir, os.ModePerm)
-	logFile, err := os.Create(path)
-	if err != nil {
-		return err
+func NewReader(account accountModel.Account, product productModel.Product, ctx context.Context) (Reader, error) {
+	var reader ReaderTemplate
+	switch product.Key {
+	case productModel.AliPay:
+		reader.TransactionReader = &AliPayReader{}
+	case productModel.WeChatPay:
+		reader.TransactionReader = &WeChatPayReader{}
 	}
-	encoderConfig := zap.NewDevelopmentEncoderConfig()
-	encoderConfig.EncodeLevel = zapcore.CapitalColorLevelEncoder
-	encoder := zapcore.NewJSONEncoder(encoderConfig)
-	core := zapcore.NewCore(
-		encoder,
-		zapcore.AddSync(logFile),
-		zap.NewAtomicLevelAt(zap.InfoLevel),
-	)
-	logger = zap.New(core, zap.AddCaller())
-	return nil
+	return &reader, reader.init(account, product, ctx)
 }
 
-type ReaderTemplate struct {
-	info             productModel.Bill
-	ptcMapping       map[constant.IncomeExpense]map[string]productModel.TransactionCategory
-	transDataMapping transactionDataColumnMapping
-	ptcIdToMapping   map[uint]productModel.TransactionCategoryMapping
-	TransactionReadIterator
-	SuccessTransList []transactionModel.Transaction
-	FailTransList    [][]string
+type Reader interface {
 	TransactionReader
-	err error
+	ReaderTrans(row []string, ctx context.Context) (trans transactionModel.Info, ignore bool, err error)
+	init(account accountModel.Account, product productModel.Product, ctx context.Context) error
+}
+type ReaderTemplate struct {
+	BillInfo
+
+	TransactionReadIterator
+	TransactionReader
 }
 
 type TransactionReadIterator struct {
 	currentRow         []string
 	currentIndex       int
-	currentTransaction transactionModel.Transaction
+	currentTransaction transactionModel.Info
+	err                error
 }
 
 type transactionDataColumnMapping struct {
@@ -71,108 +75,47 @@ type transactionDataColumnMapping struct {
 }
 
 type TransactionReader interface {
-	readTransaction() (isSuccess bool)
+	readTransaction(*ReaderTemplate) (ignore bool, err error)
 }
 
-func (r *ReaderTemplate) Init(account *accountModel.Account, product *productModel.Product) error {
-	var err error
-	r.ptcIdToMapping, err = (&productModel.TransactionCategoryMapping{}).GetPtcIdMapping(account, product.Key)
+func (t *ReaderTemplate) init(account accountModel.Account, product productModel.Product, ctx context.Context) error {
+	t.currentTransaction = transactionModel.Info{AccountId: account.ID}
+	bill, err := productModel.NewDao(db.Get(ctx)).SelectBillByKey(product.Key)
 	if err != nil {
 		return err
 	}
-	r.ptcMapping, err = (&productModel.TransactionCategory{}).GetIncomeExpenseAndNameMap(product.Key)
+	err = t.BillInfo.init(bill, account, ctx)
 	if err != nil {
 		return err
 	}
-	r.currentTransaction = transactionModel.Transaction{
-		Info: transactionModel.Info{
-			AccountId: account.ID,
-		},
-	}
-	bill, err := product.GetBill()
-	if err != nil {
-		return err
-	}
-	r.info = *bill
-	r.transDataMapping = transactionDataColumnMapping{}
 	return nil
 }
 
-func (b *ReaderTemplate) ReaderTransFormFile(file *util.FileWithSuffix) (err error) {
-	reader := file.GetReaderByEncoding(b.info.Encoding)
-	var fileReadAndHandleFunc util.IteratorsHandleReaderFunc
-	switch file.Suffix {
-	case ".csv":
-		fileReadAndHandleFunc = util.File.IteratorsHandleCSVReader
-	case ".excel":
-		fileReadAndHandleFunc = util.File.IteratorsHandleEXCELReader
-	default:
-		panic("不支持该文件类型")
-	}
-	if err = fileReadAndHandleFunc(reader, b.handleRow); err != nil {
-		return err
-	}
-	return
-}
+func (t *ReaderTemplate) ReaderTrans(row []string, ctx context.Context) (
+	trans transactionModel.Info, ignore bool, err error,
+) {
+	t.currentIndex++
+	ignore = true
 
-func (b *ReaderTemplate) handleRow(row []string, err error) (isContinue bool) {
-	b.currentIndex++
-	isContinue = true
-	if b.currentIndex < b.info.StartRow {
+	if t.currentIndex < t.info.StartRow {
 		// 未到读取的起始行 忽略
 		return
-	} else if b.currentIndex == b.info.StartRow {
+	} else if t.currentIndex == t.info.StartRow {
 		// 处理列标题行
-		if b.err = b.setTransDataMapping(row); b.err != nil {
+		if t.err = t.setTransDataMapping(row, ctx); t.err != nil {
 			logger.Error("读取标题行", zap.Strings("data", row), zap.Error(err))
-			return false
+			return trans, false, errors.New("读取标题行失败")
 		}
 	} else {
-		b.currentRow = row
-		if true == b.readTransaction() {
-			b.SuccessTransList = append(b.SuccessTransList, b.currentTransaction)
-		} else {
-			if b.err != nil {
-				logger.Error("读取交易行", zap.Strings("data", row), zap.Error(err))
-				b.err = nil
-			}
-			b.FailTransList = append(b.FailTransList, row)
+		t.currentRow = row
+		ignore, err = t.readTransaction(t)
+		if ignore {
+			return trans, ignore, nil
 		}
+		if err != nil {
+			return t.currentTransaction, false, err
+		}
+		return t.currentTransaction, false, nil
 	}
 	return
-}
-
-// 设置交易数据与列的映射，以确定交易数据所处的列
-func (b *ReaderTemplate) setTransDataMapping(header []string) error {
-	headerMappedToPtc, err := (&productModel.BillHeader{}).GetNameMap(b.info.ProductKey)
-	if err != nil {
-		return err
-	}
-	headerTypeMappedToColumn := map[productModel.BillHeaderType]int{}
-	for index, name := range header {
-		name = strings.TrimSpace(name)
-		if _, exist := headerMappedToPtc[name]; exist == true {
-			headerTypeMappedToColumn[headerMappedToPtc[name].Type] = index
-		}
-	}
-
-	needHeader := []productModel.BillHeaderType{
-		productModel.TransCategory, productModel.IncomeExpense, productModel.Amount, productModel.Remark,
-		productModel.TransTime, productModel.OrderNumber, productModel.TransStatus,
-	}
-	for i := range needHeader {
-		if _, exist := headerTypeMappedToColumn[needHeader[i]]; exist == false {
-			return errors.Wrap(errors.New(string(needHeader[i]+"数据缺失")), "setTransMapping")
-		}
-	}
-	b.transDataMapping = transactionDataColumnMapping{
-		OrderNumber:   headerTypeMappedToColumn[productModel.OrderNumber],
-		TransCategory: headerTypeMappedToColumn[productModel.TransCategory],
-		IncomeExpense: headerTypeMappedToColumn[productModel.IncomeExpense],
-		Amount:        headerTypeMappedToColumn[productModel.Amount],
-		Remark:        headerTypeMappedToColumn[productModel.Remark],
-		TradeTime:     headerTypeMappedToColumn[productModel.TransTime],
-		TransStatus:   headerTypeMappedToColumn[productModel.TransStatus],
-	}
-	return nil
 }

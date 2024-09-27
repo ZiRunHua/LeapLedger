@@ -59,15 +59,22 @@ func (userSvc *User) updateDataAfterLogin(user userModel.User, clientType consta
 }
 
 type RegisterOption struct {
-	Tour bool
+	tour      bool
+	sendEmail bool
 }
 
 func (ro *RegisterOption) WithTour(Tour bool) *RegisterOption {
-	ro.Tour = Tour
+	ro.tour = Tour
+	ro.sendEmail = false
 	return ro
 }
-
-func (userSvc *User) NewRegisterOption() *RegisterOption { return &RegisterOption{} }
+func (ro *RegisterOption) WithSendEmail(value bool) *RegisterOption {
+	ro.sendEmail = value
+	return ro
+}
+func (userSvc *User) NewRegisterOption() *RegisterOption {
+	return &RegisterOption{sendEmail: true}
+}
 
 func (userSvc *User) Register(addData userModel.AddData, ctx context.Context, option ...RegisterOption) (
 	user userModel.User, err error,
@@ -93,14 +100,14 @@ func (userSvc *User) Register(addData userModel.AddData, ctx context.Context, op
 			}
 		}
 		_, err = userSvc.RecordAction(user, constant.Register, ctx)
-
 		if err != nil {
 			return
 		}
-		if len(option) == 0 {
-			return
+		var isTour bool
+		if len(option) != 0 {
+			isTour = option[0].tour
 		}
-		if option[0].Tour {
+		if isTour {
 			_, err = userDao.CreateTour(user)
 			if err != nil {
 				return
@@ -109,6 +116,12 @@ func (userSvc *User) Register(addData userModel.AddData, ctx context.Context, op
 			if err != nil {
 				return
 			}
+		} else {
+			return db.AddCommitCallback(ctx, func() {
+				nats.PublishTaskWithPayload(nats.TaskSendNotificationEmail, nats.PayloadSendNotificationEmail{
+					UserId: user.ID, Notification: constant.NotificationOfRegistrationSuccess,
+				})
+			})
 		}
 		return
 	})
@@ -127,7 +140,12 @@ func (userSvc *User) UpdatePassword(user userModel.User, newPassword string, ctx
 			return err
 		}
 		_, err = userSvc.RecordActionAndRemark(user, constant.UpdatePassword, logRemark, ctx)
-		return err
+		return db.AddCommitCallback(ctx, func() {
+			nats.PublishTaskWithPayload(nats.TaskSendNotificationEmail, nats.PayloadSendNotificationEmail{
+				UserId:       user.ID,
+				Notification: constant.NotificationOfUpdatePassword,
+			})
+		})
 	},
 	)
 }

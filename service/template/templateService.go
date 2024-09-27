@@ -55,7 +55,9 @@ func (t *template) CreateAccount(
 	}
 	return account, db.Transaction(ctx, func(ctx *cus.TxContext) error {
 		account, _, err = accountService.CreateOne(
-			user, accountService.NewCreateData(tmplAccount.Name, tmplAccount.Icon, tmplAccount.Type, tmplAccount.Location), ctx,
+			user,
+			accountService.NewCreateData(tmplAccount.Name, tmplAccount.Icon, tmplAccount.Type, tmplAccount.Location),
+			ctx,
 		)
 		if err != nil {
 			return err
@@ -64,7 +66,8 @@ func (t *template) CreateAccount(
 	})
 }
 
-func (t *template) CreateCategory(account accountModel.Account, tmplAccount accountModel.Account, ctx context.Context) error {
+func (t *template) CreateCategory(
+	account accountModel.Account, tmplAccount accountModel.Account, ctx context.Context) error {
 	return db.Transaction(ctx, func(ctx *cus.TxContext) error {
 		tx := db.Get(ctx)
 		var err error
@@ -115,7 +118,8 @@ func (t *template) createFatherCategory(
 	var mappingList []productModel.TransactionCategoryMapping
 	productDao := productModel.NewDao(tx)
 	for _, tmplCategory := range tmplCategoryList {
-		category, err = categoryService.CreateOne(father, categoryService.NewCategoryData(tmplCategory.Name, tmplCategory.Icon), ctx)
+		category, err = categoryService.CreateOne(father,
+			categoryService.NewCategoryData(tmplCategory.Name, tmplCategory.Icon), ctx)
 		if err != nil {
 			return err
 		}
@@ -139,14 +143,16 @@ func (t *template) createFatherCategory(
 
 	return nil
 }
-func (t *template) CreateAccountByTemplate(tmpl AccountTmpl, user userModel.User, ctx context.Context) (account accountModel.Account, accountUser accountModel.User, err error) {
+func (t *template) CreateAccountByTemplate(
+	tmpl AccountTmpl, user userModel.User, ctx context.Context) (
+	account accountModel.Account, accountUser accountModel.User, err error,
+) {
 	account = accountService.NewCreateData(tmpl.Name, tmpl.Icon, tmpl.Type, tmpl.Location)
 	account, accountUser, err = accountService.CreateOne(user, account, ctx)
 	if err != nil {
 		return
 	}
-	var list dataTool.Slice[any, fatherTmpl] = tmpl.Category
-	for _, f := range list.CopyReverse() {
+	for _, f := range tmpl.Category {
 		err = f.create(account, ctx)
 		if err != nil {
 			return
@@ -155,7 +161,9 @@ func (t *template) CreateAccountByTemplate(tmpl AccountTmpl, user userModel.User
 	return
 }
 
-func (t *template) CreateExampleAccount(user userModel.User, ctx context.Context) (account accountModel.Account, accountUser accountModel.User, err error) {
+func (t *template) CreateExampleAccount(user userModel.User, ctx context.Context) (
+	account accountModel.Account, accountUser accountModel.User, err error,
+) {
 	var accountTmpl AccountTmpl
 	err = accountTmpl.ReadFromJson(constant.ExampleAccountJsonPath)
 	if err != nil {
@@ -195,8 +203,7 @@ func (ft *fatherTmpl) create(account accountModel.Account, ctx context.Context) 
 	if err != nil {
 		return err
 	}
-	var list dataTool.Slice[any, categoryTmpl] = ft.Children
-	for _, child := range list.CopyReverse() {
+	for _, child := range ft.Children {
 		_, err = child.create(father, ctx)
 		if err != nil {
 			return err
@@ -209,19 +216,22 @@ type categoryTmpl struct {
 	Name, Icon  string
 	Ie          constant.IncomeExpense
 	MappingPtcs []struct {
-		ProductKey productModel.KeyValue
+		ProductKey productModel.Key
 		Name       string
 	}
 }
 
-func (ct *categoryTmpl) create(father categoryModel.Father, ctx context.Context) (category categoryModel.Category, err error) {
+func (ct *categoryTmpl) create(father categoryModel.Father, ctx context.Context) (
+	category categoryModel.Category, err error,
+) {
 	category, err = categoryService.CreateOne(father, categoryService.NewCategoryData(ct.Name, ct.Icon), ctx)
 	if err != nil {
 		return
 	}
 	var ptc productModel.TransactionCategory
 	for _, mappingPtc := range ct.MappingPtcs {
-		ptc, err = productModel.NewDao(db.Get(ctx)).SelectByName(mappingPtc.ProductKey, father.IncomeExpense, mappingPtc.Name)
+		ptc, err = productModel.NewDao(db.Get(ctx)).SelectCategoryByName(mappingPtc.ProductKey, father.IncomeExpense,
+			mappingPtc.Name)
 		if err != nil {
 			return
 		}

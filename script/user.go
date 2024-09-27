@@ -21,7 +21,7 @@ func (u *_user) Create(email, password, username string, ctx context.Context) (u
 		Password: util.ClientPasswordHash(email, password),
 		Username: username,
 	}
-	return userService.Register(addData, ctx)
+	return userService.Register(addData, ctx, *userService.NewRegisterOption().WithSendEmail(false))
 }
 
 func (u *_user) CreateTourist(ctx context.Context) (user userModel.User, err error) {

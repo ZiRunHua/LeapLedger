@@ -5,7 +5,7 @@ Mode: debug
 System:
   Addr: 8080
   RouterPrefix: ""
-
+  JwtKey:
 Redis:
   Addr: "leap-ledger-redis:6379"
   Password: ""

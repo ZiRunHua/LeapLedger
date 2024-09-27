@@ -6,12 +6,10 @@ import (
 )
 
 var (
-	GvaDb        = initialize.Db
-	GvaRdb       = initialize.Rdb
-	Config       = initialize.Config
-	Cache        = initialize.Cache
-	TestUserId   uint
-	TestUserInfo string
+	GvaDb  = initialize.Db
+	GvaRdb = initialize.Rdb
+	Config = initialize.Config
+	Cache  = initialize.Cache
 )
 
 var (

@@ -2,10 +2,10 @@ package transaction
 
 import (
 	"KeepAccount/global/db"
+	"KeepAccount/test/initialize"
 	_ "KeepAccount/test/initialize"
 )
 import (
-	"KeepAccount/global"
 	"KeepAccount/global/constant"
 	accountModel "KeepAccount/model/account"
 	categoryModel "KeepAccount/model/category"
@@ -18,11 +18,12 @@ var (
 	testAccount             accountModel.Account
 	testExpenseCategoryList []categoryModel.Category
 	service                 = _service.GroupApp.TransactionServiceGroup
+	testInfo                = initialize.Info
 )
 
 func init() {
 	var err error
-	testUser, err = userModel.NewDao().SelectById(global.TestUserId)
+	testUser, err = userModel.NewDao().SelectById(testInfo.UserId)
 	if err != nil {
 		panic(err)
 	}

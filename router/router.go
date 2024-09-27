@@ -4,6 +4,7 @@ import (
 	_ "KeepAccount/docs"
 	"KeepAccount/global"
 	"KeepAccount/global/constant"
+	routerEngine "KeepAccount/router/engine"
 	"KeepAccount/router/group"
 	_ "KeepAccount/router/v1"
 	"github.com/gin-gonic/gin"
@@ -11,6 +12,8 @@ import (
 	"github.com/swaggo/gin-swagger"
 	"net/http"
 )
+
+var Engine = routerEngine.Engine
 
 func init() {
 	// health

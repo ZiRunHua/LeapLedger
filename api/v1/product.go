@@ -3,15 +3,16 @@ package v1
 import (
 	"KeepAccount/api/request"
 	"KeepAccount/api/response"
+	"KeepAccount/api/v1/ws"
 	"KeepAccount/global"
 	"KeepAccount/global/cus"
 	"KeepAccount/global/db"
 	categoryModel "KeepAccount/model/category"
 	productModel "KeepAccount/model/product"
-	"KeepAccount/util"
+	transactionModel "KeepAccount/model/transaction"
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
-	"gorm.io/gorm"
+	"golang.org/x/sync/errgroup"
 )
 
 type ProductApi struct {
@@ -60,7 +61,7 @@ func (p *ProductApi) GetTransactionCategory(ctx *gin.Context) {
 	var transactionCategory productModel.TransactionCategory
 	rows, err := db.Db.Model(&transactionCategory).Where(
 		"product_key = ?", ctx.Param("key"),
-	).Order("income_expense DESC").Rows()
+	).Order("income_expense DESC,id ASC").Rows()
 	if err != nil {
 		response.FailToError(ctx, err)
 		return
@@ -177,7 +178,7 @@ func (p *ProductApi) DeleteTransactionCategoryMapping(ctx *gin.Context) {
 //	@Success	200			{object}	response.Data{Data=response.ProductMappingTree}
 //	@Router		/account/{accountId}/product/{key}/transCategory/mapping/tree [get]
 func (p *ProductApi) GetMappingTree(ctx *gin.Context) {
-	accountId, productKey := contextFunc.GetAccountId(ctx), productModel.KeyValue(ctx.Param("key"))
+	accountId, productKey := contextFunc.GetAccountId(ctx), productModel.Key(ctx.Param("key"))
 	var prodTransCategory productModel.TransactionCategory
 	transCategoryMap, err := prodTransCategory.GetMap(productKey)
 	if err != nil {
@@ -225,44 +226,61 @@ func (p *ProductApi) GetMappingTree(ctx *gin.Context) {
 	response.OkWithData(tree, ctx)
 }
 
-// ImportProductBill
-//
-//	@Tags		Product/Bill/Import
-//	@Accept		multipart/form-data
-//	@Produce	json
-//	@Param		accountId	path		int		true	"Account ID"
-//	@Param		key			path		int		true	"Product unique key"
-//	@Param		file		formData	file	true	"file to upload"
-//	@Success	200			{object}	response.NoContent
-//	@Router		/account/{accountId}/product/{key}/bill/import [post]
-func (p *ProductApi) ImportProductBill(conn *websocket.Conn, ctx *gin.Context) {
-	fileHeader, err := ctx.FormFile("File")
-	if responseError(err, ctx) {
-		return
-	}
-	var file *util.FileWithSuffix
-	file, err = util.File.GetNewFileWithSuffixByFileHeader(fileHeader)
-	if responseError(err, ctx) {
-		return
-	}
-	defer file.Close()
-	account, accountUser := contextFunc.GetAccount(ctx), contextFunc.GetAccountUser(ctx)
-	product, err := p.getProductByParam(ctx)
-	if responseError(err, ctx) {
-		return
-	}
-	err = db.Db.Transaction(
-		func(tx *gorm.DB) error {
-			return productService.BillImport(accountUser, account, product, file, tx)
-		},
-	)
-	if responseError(err, ctx) {
-		return
-	}
-	response.Ok(ctx)
-}
-
 func (p *ProductApi) getProductByParam(ctx *gin.Context) (productModel.Product, error) {
 	product := productModel.Product{}
-	return product.SelectByKey(productModel.KeyValue(ctx.Param("key")))
+	return product.SelectByKey(productModel.Key(ctx.Param("key")))
+}
+
+func (p *ProductApi) ImportProductBill(conn *websocket.Conn, ctx *gin.Context) error {
+	account, accountUser := contextFunc.GetAccount(ctx), contextFunc.GetAccountUser(ctx)
+	transOption := transactionService.NewDefaultOption()
+	msgHandle := ws.NewBillImportWebsocket(conn, account)
+
+	createTransFunc := func(transInfo transactionModel.Info) error {
+		var trans transactionModel.Transaction
+		var err error
+		err = db.Transaction(ctx, func(ctx *cus.TxContext) error {
+			transInfo.UserId = accountUser.ID
+			trans, err = transactionService.Create(transInfo, accountUser, transOption, ctx)
+			return err
+		})
+		if err != nil {
+			err = msgHandle.SendTransactionCreateFail(transInfo, err)
+		} else {
+			err = msgHandle.SendTransactionCreateSuccess(trans)
+		}
+		return err
+	}
+
+	msgHandle.RegisterMsgHandlerCreateRetry(createTransFunc)
+	msgHandle.RegisterMsgHandlerIgnoreTrans()
+
+	fileName, file, err := msgHandle.ReadFile()
+	if err != nil {
+		return err
+	}
+	billFile := productService.GetNewBillFile(string(fileName), file)
+
+	var group errgroup.Group
+	group.Go(func() error {
+		product, err := productModel.NewDao().SelectByKey(productModel.Key(ctx.Param("key")))
+		if err != nil {
+			return err
+		}
+		handler := func(transInfo transactionModel.Info, err error) error {
+			if err == nil {
+				err = createTransFunc(transInfo)
+			} else {
+				err = msgHandle.SendTransactionCreateFail(transInfo, err)
+			}
+			return err
+		}
+		err = productService.ProcessesBill(billFile, product, accountUser, handler, ctx)
+		if err != nil {
+			return err
+		}
+		return msgHandle.TryFinish()
+	})
+	group.Go(msgHandle.Read)
+	return group.Wait()
 }
