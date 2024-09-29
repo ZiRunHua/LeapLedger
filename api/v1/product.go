@@ -231,6 +231,15 @@ func (p *ProductApi) getProductByParam(ctx *gin.Context) (productModel.Product, 
 	return product.SelectByKey(productModel.Key(ctx.Param("key")))
 }
 
+// ImportProductBill
+//
+//	@Description	websocket api
+//	@Tags			Product/Bill/Import
+//	@Accept			json
+//	@Produce		json
+//	@Param			accountId	path	int		true	"Account ID"
+//	@Param			key			path	string	true	"Product unique key"
+//	@Router			/account/{accountId}/product/{key}/bill/import [get]
 func (p *ProductApi) ImportProductBill(conn *websocket.Conn, ctx *gin.Context) error {
 	account, accountUser := contextFunc.GetAccount(ctx), contextFunc.GetAccountUser(ctx)
 	transOption := transactionService.NewDefaultOption()
@@ -239,11 +248,13 @@ func (p *ProductApi) ImportProductBill(conn *websocket.Conn, ctx *gin.Context) e
 	createTransFunc := func(transInfo transactionModel.Info) error {
 		var trans transactionModel.Transaction
 		var err error
-		err = db.Transaction(ctx, func(ctx *cus.TxContext) error {
-			transInfo.UserId = accountUser.ID
-			trans, err = transactionService.Create(transInfo, accountUser, transOption, ctx)
-			return err
-		})
+		err = db.Transaction(
+			ctx, func(ctx *cus.TxContext) error {
+				transInfo.UserId = accountUser.ID
+				trans, err = transactionService.Create(transInfo, accountUser, transOption, ctx)
+				return err
+			},
+		)
 		if err != nil {
 			err = msgHandle.SendTransactionCreateFail(transInfo, err)
 		} else {
@@ -262,25 +273,27 @@ func (p *ProductApi) ImportProductBill(conn *websocket.Conn, ctx *gin.Context) e
 	billFile := productService.GetNewBillFile(string(fileName), file)
 
 	var group errgroup.Group
-	group.Go(func() error {
-		product, err := productModel.NewDao().SelectByKey(productModel.Key(ctx.Param("key")))
-		if err != nil {
-			return err
-		}
-		handler := func(transInfo transactionModel.Info, err error) error {
-			if err == nil {
-				err = createTransFunc(transInfo)
-			} else {
-				err = msgHandle.SendTransactionCreateFail(transInfo, err)
+	group.Go(
+		func() error {
+			product, err := productModel.NewDao().SelectByKey(productModel.Key(ctx.Param("key")))
+			if err != nil {
+				return err
 			}
-			return err
-		}
-		err = productService.ProcessesBill(billFile, product, accountUser, handler, ctx)
-		if err != nil {
-			return err
-		}
-		return msgHandle.TryFinish()
-	})
+			handler := func(transInfo transactionModel.Info, err error) error {
+				if err == nil {
+					err = createTransFunc(transInfo)
+				} else {
+					err = msgHandle.SendTransactionCreateFail(transInfo, err)
+				}
+				return err
+			}
+			err = productService.ProcessesBill(billFile, product, accountUser, handler, ctx)
+			if err != nil {
+				return err
+			}
+			return msgHandle.TryFinish()
+		},
+	)
 	group.Go(msgHandle.Read)
 	return group.Wait()
 }

@@ -1,5 +1,4 @@
-#!/bin/sh
-
+#!/sh
 echo go install github.com/swaggo/swag/cmd/swag@latest
 go install github.com/swaggo/swag/cmd/swag@latest
 echo go run /go/LeapLedger/docs/beforeDocsMake/renameModel/main.go
