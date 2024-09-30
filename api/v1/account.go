@@ -929,7 +929,7 @@ func (a *AccountApi) UpdateAccountMapping(ctx *gin.Context) {
 //	@Tags		Account
 //	@Produce	json
 //	@Param		accountId	path		int	true	"Account ID"
-//	@Param		type		path		int	false	"Account type"
+//	@Param		type		path		string	true	"Account type"
 //	@Success	200			{object}	response.Data{Data=response.AccountInfo}
 //	@Router		/account/{accountId}/info/:type [get]
 //	@Router		/account/{accountId}/info [get]
