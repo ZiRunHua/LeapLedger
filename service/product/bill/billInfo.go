@@ -8,17 +8,19 @@ import (
 	"context"
 	"github.com/pkg/errors"
 	"strings"
+	"time"
 )
 
 type BillInfo struct {
 	info             productModel.Bill
+	location         *time.Location
 	ptcMapping       map[constant.IncomeExpense]map[string]productModel.TransactionCategory
 	transDataMapping transactionDataColumnMapping
 	ptcIdToMapping   map[uint]productModel.TransactionCategoryMapping
 }
 
 func (b *BillInfo) init(bill productModel.Bill, account accountModel.Account, ctx context.Context) error {
-	b.info = bill
+	b.info, b.location = bill, account.GetTimeLocation()
 	dao := productModel.NewDao(db.Get(ctx))
 	var err error
 	b.ptcIdToMapping, err = dao.GetPtcIdMapping(account.ID, bill.ProductKey)

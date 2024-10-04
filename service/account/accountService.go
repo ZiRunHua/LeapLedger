@@ -36,6 +36,8 @@ func (b *base) CreateOne(
 	account.UserId = user.ID
 	err = db.Transaction(
 		ctx, func(ctx *cus.TxContext) error {
+			var err error
+			account, err = accountModel.NewDao(ctx.GetDb()).Create(account)
 			err = db.Get(ctx).Create(&account).Error
 			if err != nil {
 				err = errors.WithStack(err)
@@ -101,7 +103,7 @@ func (b *base) Delete(account accountModel.Account, accountUser accountModel.Use
 	if err != nil {
 		return err
 	}
-	//删除的可能是当前账本 故需要更新客户端信息
+	// 删除的可能是当前账本 故需要更新客户端信息
 	err = b.updateUserCurrentAfterDelete(accountUser, ctx)
 	if err != nil {
 		return err

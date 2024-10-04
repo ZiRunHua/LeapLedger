@@ -2,6 +2,7 @@ package accountModel
 
 import (
 	"KeepAccount/global"
+	"context"
 	"time"
 
 	"gorm.io/gorm"
@@ -18,6 +19,37 @@ func NewDao(db ...*gorm.DB) *AccountDao {
 	return &AccountDao{global.GvaDb}
 }
 
+func (a *AccountDao) Create(account Account) (Account, error) {
+	err := a.db.Create(&account).Error
+	if err != nil {
+		return account, err
+	}
+	err = rdb.Set(context.TODO(), rdbKey.getLocation(account.ID), account.Location, -1).Err()
+	if err != nil {
+		return account, err
+	}
+	return account, err
+}
+
+func (a *AccountDao) initRedis() error {
+	rows, err := a.db.Model(&Account{}).Rows()
+	if err != nil {
+		return err
+	}
+	var account Account
+	for rows.Next() {
+		err = a.db.ScanRows(rows, &account)
+		if err != nil {
+			return err
+		}
+		err = rdb.Set(context.TODO(), rdbKey.getLocation(account.ID), account.Location, -1).Err()
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func (a *AccountDao) SelectById(id uint) (account Account, err error) {
 	err = a.db.Unscoped().First(&account, id).Error
 	return
@@ -29,6 +61,10 @@ func (a *AccountDao) GetAccountType(id uint) (accountType Type, err error) {
 }
 
 func (a *AccountDao) GetLocation(id uint) (location string) {
+	result := rdb.Get(context.TODO(), rdbKey.getLocation(id))
+	if result.Err() == nil {
+		return result.Val()
+	}
 	err := a.db.Model(&Account{}).Select("location").Where("id = ?", id).Scan(&location).Error
 	if err != nil {
 		panic(err)
@@ -111,8 +147,12 @@ func (a *AccountDao) SelectUser(accountId uint, userId uint) (user User, err err
 	return
 }
 
-func (a *AccountDao) CheckUserPermission(permission UserPermission, accountId uint, userId uint) (pass bool, err error) {
-	err = a.db.Model(&User{}).Where("account_id = ? AND user_id = ?", accountId, userId).Select("(permission & ?) > 0 as pass", permission).Pluck("pass", &pass).Error
+func (a *AccountDao) CheckUserPermission(permission UserPermission, accountId uint, userId uint) (
+	pass bool, err error,
+) {
+	err = a.db.Model(&User{}).Where(
+		"account_id = ? AND user_id = ?", accountId, userId,
+	).Select("(permission & ?) > 0 as pass", permission).Pluck("pass", &pass).Error
 	return
 }
 

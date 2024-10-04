@@ -95,6 +95,9 @@ func (r *AliPayReader) setRemark(t *ReaderTemplate) {
 
 func (r *AliPayReader) setTradeTime(t *ReaderTemplate) error {
 	var err error
-	t.currentTransaction.TradeTime, err = time.Parse(t.info.DateFormat, t.currentRow[t.transDataMapping.TradeTime])
+	t.currentTransaction.TradeTime, err = time.ParseInLocation(
+		t.info.DateFormat,
+		t.currentRow[t.transDataMapping.TradeTime], t.location,
+	)
 	return err
 }
