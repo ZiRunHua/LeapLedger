@@ -494,8 +494,8 @@ func (u *UserApi) Home(ctx *gin.Context) {
 		// 周统计
 		if err = handelOneTime(
 			&weekData,
-			timeTool.GetFirstSecondOfMonday(nowTime),
-			time.Date(year, month, day, 23, 59, 59, 0, timeLocation),
+			timeTool.GetFirstSecondOfWeek(nowTime),
+			timeTool.GetLastSecondOfWeek(nowTime),
 		); err != nil {
 			return err
 		}
@@ -508,7 +508,7 @@ func (u *UserApi) Home(ctx *gin.Context) {
 		if err = handelOneTime(
 			&monthData,
 			timeTool.GetFirstSecondOfMonth(nowTime),
-			time.Date(year, month, day, 23, 59, 59, 0, timeLocation),
+			timeTool.GetLastSecondOfMonth(nowTime),
 		); err != nil {
 			return err
 		}
@@ -516,7 +516,7 @@ func (u *UserApi) Home(ctx *gin.Context) {
 		if err = handelOneTime(
 			&yearData,
 			timeTool.GetFirstSecondOfYear(nowTime),
-			time.Date(year, month, day, 23, 59, 59, 0, timeLocation),
+			timeTool.GetLastSecondOfYear(nowTime),
 		); err != nil {
 			return err
 		}
@@ -524,7 +524,6 @@ func (u *UserApi) Home(ctx *gin.Context) {
 	}
 	group.Go(handelGoroutineOne)
 	group.Go(handelGoroutineTwo)
-	// 等待所有 Goroutine 完成
 	if err := group.Wait(); responseError(err, ctx) {
 		return
 	}
