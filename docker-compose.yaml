@@ -2,9 +2,7 @@ version: '3.3'
 services:
   leap-ledger-server:
     container_name: leap-ledger-server
-    build:
-      context: .
-      dockerfile: docker/Dockerfile
+    image: xiaozirun/leap-ledger:latest
     ports:
       - "8080:8080"
       - "2345:2345"

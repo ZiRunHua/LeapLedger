@@ -38,7 +38,7 @@ func GetFileSuffix(filename string) string {
 	return path.Ext(filename)
 }
 
-func NewRowChan(reader io.Reader, suffix string) (chan []string, error) {
+func NewRowReader(reader io.Reader, suffix string) (func(yield func([]string) bool), error) {
 	switch suffix {
 	case ".csv":
 		return IteratorsHandleCSVReader(reader)
@@ -49,25 +49,20 @@ func NewRowChan(reader io.Reader, suffix string) (chan []string, error) {
 	}
 }
 
-// 迭代器处理CSV
-func IteratorsHandleCSVReader(reader io.Reader) (chan []string, error) {
-	rowChan := make(chan []string)
-	go func() {
-		defer close(rowChan)
+func IteratorsHandleCSVReader(reader io.Reader) (func(yield func([]string) bool), error) {
+	return func(yield func([]string) bool) {
 		csvReader := csv.NewReader(reader)
 		for {
 			row, err := csvReader.Read()
-			if err == io.EOF {
+			if err != nil || !yield(row) {
 				return
 			}
-			rowChan <- row
 		}
-	}()
-	return rowChan, nil
+	}, nil
 }
 
 // 迭代器处理EXCEL 会跳过空行
-func IteratorsHandleEXCELReader(reader io.Reader) (chan []string, error) {
+func IteratorsHandleEXCELReader(reader io.Reader) (func(yield func([]string) bool), error) {
 	file, err := excelize.OpenReader(reader)
 	if err != nil {
 		return nil, err
@@ -76,20 +71,23 @@ func IteratorsHandleEXCELReader(reader io.Reader) (chan []string, error) {
 	if err != nil {
 		return nil, err
 	}
-
-	rowChan := make(chan []string)
-	go func() {
+	return func(yield func([]string) bool) {
 		defer rows.Close()
 		var row []string
+		var err error
 		for rows.Next() {
 			row, err = rows.Columns()
+			if err != nil {
+				return
+			}
 			if len(row) == 0 {
 				continue
 			}
-			rowChan <- row
+			if !yield(row) {
+				return
+			}
 		}
-	}()
-	return rowChan, err
+	}, nil
 }
 
 func ExecSqlFile(reader io.Reader, db *gorm.DB) error {

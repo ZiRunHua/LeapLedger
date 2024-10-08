@@ -17,8 +17,8 @@ type BillFile struct {
 	fileReader io.Reader
 }
 
-func (bf *BillFile) GetRowChan(encoding constant.Encoding) (chan []string, error) {
-	return fileTool.NewRowChan(
+func (bf *BillFile) GetRowReader(encoding constant.Encoding) (func(yield func([]string) bool), error) {
+	return fileTool.NewRowReader(
 		fileTool.GetReaderByEncoding(bf.fileReader, encoding),
 		fileTool.GetFileSuffix(bf.fileName),
 	)
@@ -36,7 +36,7 @@ func (proService *Product) ProcessesBill(
 	if err != nil {
 		return err
 	}
-	rowChan, err := file.GetRowChan(billConfig.Encoding)
+	rowReader, err := file.GetRowReader(billConfig.Encoding)
 	if err != nil {
 		return err
 	}
@@ -50,7 +50,7 @@ func (proService *Product) ProcessesBill(
 		transInfo transactionModel.Info
 		ignore    bool
 	)
-	for row := range rowChan {
+	for row := range rowReader {
 		transInfo, ignore, err = transReader.ReaderTrans(row, ctx)
 		if ignore {
 			continue
