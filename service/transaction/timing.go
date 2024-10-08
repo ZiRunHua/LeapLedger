@@ -15,7 +15,9 @@ type Timing struct {
 	Exec TimingExec
 }
 
-func (tService *Timing) CreateTiming(timing transactionModel.Timing, ctx context.Context) (transactionModel.Timing, error) {
+func (tService *Timing) CreateTiming(timing transactionModel.Timing, ctx context.Context) (
+	transactionModel.Timing, error,
+) {
 	tx := db.Get(ctx)
 	if err := timing.TransInfo.Check(tx); err != nil {
 		return timing, err
@@ -25,7 +27,9 @@ func (tService *Timing) CreateTiming(timing transactionModel.Timing, ctx context
 	return timing, err
 }
 
-func (tService *Timing) UpdateTiming(timing transactionModel.Timing, ctx context.Context) (transactionModel.Timing, error) {
+func (tService *Timing) UpdateTiming(timing transactionModel.Timing, ctx context.Context) (
+	transactionModel.Timing, error,
+) {
 	tx := db.Get(ctx)
 	if err := timing.TransInfo.Check(tx); err != nil {
 		return timing, err
@@ -41,6 +45,7 @@ type TimingExec struct {
 func (te *TimingExec) getLock() lock.Lock {
 	return lock.NewWithDuration("transaction_timing_exec", time.Minute*10)
 }
+
 func (te *TimingExec) execAfterLock(exec func() error, ctx context.Context) (err error) {
 	l := te.getLock()
 	err = l.Lock(ctx)
@@ -69,28 +74,30 @@ func (te *TimingExec) GenerateAndPublishTasks(deadline time.Time, taskSize int, 
 		return err
 	}
 	for _, startId := range startIds {
-		err = db.AddCommitCallback(ctx, func() {
-			var err error
-			err = task.execTransactionTiming(startId, taskSize)
-			if err != nil {
-				errorLog.Error("GenerateAndPublishTasks => execTransactionTiming", zap.Error(err))
-			}
-		})
+		err = db.AddCommitCallback(
+			ctx, func() {
+				var err error
+				err = task.execTransactionTiming(startId, taskSize)
+				if err != nil {
+					errorLog.Error("GenerateAndPublishTasks => execTransactionTiming", zap.Error(err))
+				}
+			},
+		)
 		if err != nil {
 			return err
 		}
-
 	}
 	return nil
 }
 
-func (te *TimingExec) makeAndSplitExecTask(deadline time.Time, size int, ctx context.Context) (starIds []uint, err error) {
+func (te *TimingExec) makeAndSplitExecTask(deadline time.Time, size int, ctx context.Context) (
+	starIds []uint, err error,
+) {
 	var (
 		tx       = db.Get(ctx)
 		count    int
 		timeExec transactionModel.TimingExec
 	)
-
 	process := func(timing transactionModel.Timing) error {
 		timeExec, err = timing.MakeExecTask(tx)
 		if err != nil {
@@ -122,10 +129,12 @@ func (te *TimingExec) ProcessWaitExecByStartId(startId uint, limit int, ctx cont
 		return err
 	}
 	for _, timingExec := range list {
-		err = db.Transaction(ctx, func(ctx *cus.TxContext) error {
-			trans, err = server.Create(timingExec.TransInfo, accountUser, server.NewDefaultOption(), ctx)
-			return err
-		})
+		err = db.Transaction(
+			ctx, func(ctx *cus.TxContext) error {
+				trans, err = server.Create(timingExec.TransInfo, accountUser, server.NewDefaultOption(), ctx)
+				return err
+			},
+		)
 		if err != nil {
 			err = timingExec.ExecFail(err, tx)
 			if err != nil {

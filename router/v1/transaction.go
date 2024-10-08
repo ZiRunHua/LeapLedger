@@ -25,5 +25,7 @@ func init() {
 		editRouter.GET("/timing/list", baseApi.GetTimingList)
 		editRouter.POST("/timing", baseApi.CreateTiming)
 		editRouter.PUT("/timing/:id", baseApi.UpdateTiming)
+		editRouter.DELETE("/timing/:id", baseApi.DeleteTiming)
+		editRouter.PUT("/timing/:id/:operate", baseApi.HandleTiming)
 	}
 }

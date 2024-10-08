@@ -227,6 +227,7 @@ type TransactionTimingConfig struct {
 	OffsetDays            int
 	NextTime              time.Time
 	Username              string
+	Close                 bool
 	CreatedAt             time.Time
 	UpdatedAt             time.Time
 }
@@ -253,6 +254,7 @@ func (tt *TransactionTiming) SetData(data transactionModel.Timing) error {
 		OffsetDays: data.OffsetDays,
 		NextTime:   data.NextTime,
 		Username:   name,
+		Close:      data.Close,
 		CreatedAt:  data.CreatedAt,
 		UpdatedAt:  data.UpdatedAt,
 	}
@@ -278,6 +280,7 @@ func (ttl *TransactionTimingList) SetData(list dataTool.Slice[uint, transactionM
 			OffsetDays: timing.OffsetDays,
 			NextTime:   timing.NextTime,
 			Username:   nameMap[timing.UserId],
+			Close:      timing.Close,
 			CreatedAt:  timing.CreatedAt,
 			UpdatedAt:  timing.UpdatedAt,
 		}

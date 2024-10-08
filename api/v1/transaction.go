@@ -12,6 +12,7 @@ import (
 	"KeepAccount/util/dataTool"
 	"KeepAccount/util/timeTool"
 	"context"
+	"errors"
 	"github.com/gin-gonic/gin"
 	"log"
 	"time"
@@ -74,8 +75,10 @@ func (t *TransactionApi) CreateOne(ctx *gin.Context) {
 	err := db.Transaction(
 		ctx, func(ctx *cus.TxContext) error {
 			var err error
-			transaction, err = transactionService.Create(transaction.Info, accountUser,
-				transactionService.NewDefaultOption(), ctx)
+			transaction, err = transactionService.Create(
+				transaction.Info, accountUser,
+				transactionService.NewDefaultOption(), ctx,
+			)
 			return err
 		},
 	)
@@ -324,8 +327,10 @@ func (t *TransactionApi) GetDayStatistic(ctx *gin.Context) {
 			return err
 		}
 		for _, item := range statistics {
-			log.Print(item.Date.In(timeLocation).Day(), item.Date.In(timeLocation).Hour(),
-				item.Date.In(timeLocation).Location())
+			log.Print(
+				item.Date.In(timeLocation).Day(), item.Date.In(timeLocation).Hour(),
+				item.Date.In(timeLocation).Location(),
+			)
 			dayMap[item.Date.In(timeLocation)].Amount += item.Amount
 			dayMap[item.Date.In(timeLocation)].Count += item.Count
 		}
@@ -525,7 +530,7 @@ func (t *TransactionApi) CreateTiming(ctx *gin.Context) {
 //	@Accept		json
 //	@Produce	json
 //	@Param		accountId	path		int							true	"Account ID"
-//	@Param		id			path		int							true	"Transaction ID"
+//	@Param		id			path		int							true	"Timing ID"
 //	@Param		data		body		request.TransactionTiming	true	"timing config"
 //	@Success	200			{object}	response.Data{Data=response.TransactionTiming}
 //	@Router		/account/{accountId}/transaction/timing/{id} [put]
@@ -559,6 +564,76 @@ func (t *TransactionApi) UpdateTiming(ctx *gin.Context) {
 	response.OkWithData(responseData, ctx)
 }
 
+// HandleTiming
+//
+//		@Tags		Transaction/Timing
+//		@Accept		json
+//		@Produce	json
+//		@Param		accountId	path		int							true	"Account ID"
+//		@Param		id			path		int							true	"Timing ID"
+//	 @Param		operate			path		string							true	"operate name"
+//		@Param		data		body		request.TransactionTiming	true	"timing config"
+//		@Success	200			{object}	response.Data{Data=response.TransactionTiming}
+//		@Router		/account/{accountId}/transaction/timing/{id}/{operate} [put]
+func (t *TransactionApi) HandleTiming(ctx *gin.Context) {
+	timing, err := transactionModel.NewDao().SelectTimingById(contextFunc.GetId(ctx))
+	if responseError(err, ctx) {
+		return
+	}
+	if timing.AccountId != contextFunc.GetAccountId(ctx) {
+		response.Forbidden(ctx)
+		return
+	}
+	operate := ctx.Param("operate")
+	err = db.Transaction(
+		ctx, func(ctx *cus.TxContext) error {
+			switch operate {
+			case "close":
+				return ctx.GetDb().Model(&timing).Update("close", true).Error
+			case "open":
+				return timing.Open(ctx.GetDb())
+			default:
+				return errors.New("不存在的操作类型")
+			}
+		},
+	)
+	if responseError(err, ctx) {
+		return
+	}
+	// response
+	var responseData response.TransactionTiming
+	err = responseData.SetData(timing)
+	if responseError(err, ctx) {
+		return
+	}
+	response.OkWithData(responseData, ctx)
+}
+
+// DeleteTiming
+//
+//	@Tags		Transaction/Timing
+//	@Accept		json
+//	@Produce	json
+//	@Param		accountId	path		int							true	"Account ID"
+//	@Param		id			path		int							true	"Timing ID"
+//	@Success	204			{object}	response.NoContent
+//	@Router		/account/{accountId}/transaction/timing/{id} [delete]
+func (t *TransactionApi) DeleteTiming(ctx *gin.Context) {
+	timing, err := transactionModel.NewDao().SelectTimingById(contextFunc.GetId(ctx))
+	if responseError(err, ctx) {
+		return
+	}
+	if timing.AccountId != contextFunc.GetAccountId(ctx) {
+		response.Forbidden(ctx)
+		return
+	}
+	err = db.Db.Delete(&timing).Error
+	if responseError(err, ctx) {
+		return
+	}
+	response.Ok(ctx)
+}
+
 // GetTimingList
 //
 //	@Tags		Transaction/Timing
@@ -574,8 +649,10 @@ func (t *TransactionApi) GetTimingList(ctx *gin.Context) {
 		response.FailToParameter(ctx, err)
 		return
 	}
-	list, err := transactionModel.NewDao().SelectTimingListByUserId(contextFunc.GetAccountId(ctx), requestData.Offset,
-		requestData.Limit)
+	list, err := transactionModel.NewDao().SelectTimingListByUserId(
+		contextFunc.GetAccountId(ctx), requestData.Offset,
+		requestData.Limit,
+	)
 	if responseError(err, ctx) {
 		return
 	}

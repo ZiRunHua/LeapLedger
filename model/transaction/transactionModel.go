@@ -8,6 +8,7 @@ import (
 	commonModel "KeepAccount/model/common"
 	queryFunc "KeepAccount/model/common/query"
 	userModel "KeepAccount/model/user"
+	"KeepAccount/util/timeTool"
 	"database/sql"
 	"errors"
 	"gorm.io/datatypes"
@@ -206,44 +207,96 @@ type Timing struct {
 
 func (t *Timing) TableName() string { return "transaction_timing" }
 
+func (t *Timing) ForUpdate(tx *gorm.DB) error {
+	return tx.Model(t).Clauses(clause.Locking{Strength: "UPDATE"}).Error
+}
+
 type TimingType string
 
 const (
-	Once           TimingType = "Once"
-	EveryDay       TimingType = "EveryDay"
-	EveryWeek      TimingType = "EveryWeek"
-	EveryMonth     TimingType = "EveryMonth"
-	LastDayOfMonth TimingType = "LastDayOfMonth"
+	Once           TimingType = "once"
+	EveryDay       TimingType = "everyDay"
+	EveryWeek      TimingType = "everyWeek"
+	EveryMonth     TimingType = "everyMonth"
+	LastDayOfMonth TimingType = "lastDayOfMonth"
 )
 
 func (t *Timing) UpdateNextTime(db *gorm.DB) error {
-	var nextTime time.Time
-	if t.Type == Once {
-		err := db.Model(t).Update("close", true).Error
-		if err != nil {
-			return err
-		}
-	} else {
-		switch t.Type {
-		case EveryDay:
-			nextTime = t.NextTime.AddDate(0, 0, 1)
-		case EveryWeek:
-			nextTime = t.NextTime.AddDate(0, 0, 7)
-		case EveryMonth:
-			nextTime = t.NextTime.AddDate(0, 1, 0)
-		case LastDayOfMonth:
-			nextTime = time.Date(t.NextTime.Year(), t.NextTime.Month()+2, 1, 0, 0, 0, 0, time.Local)
-			nextTime = nextTime.AddDate(0, 0, -1)
-		}
-		err := db.Model(t).Updates(map[string]interface{}{
+	nextTime := t.NextTime.In(accountModel.NewDao(db).GetTimeLocation(t.AccountId))
+	switch t.Type {
+	case EveryDay:
+		nextTime = nextTime.AddDate(0, 0, 1)
+	case EveryWeek:
+		nextTime = nextTime.AddDate(0, 0, 7)
+	case EveryMonth:
+		nextTime = nextTime.AddDate(0, 1, 0)
+	case LastDayOfMonth:
+		nextTime = time.Date(nextTime.Year(), nextTime.Month()+2, 1, 0, 0, 0, 0, time.Local)
+		nextTime = nextTime.AddDate(0, 0, -1)
+	default:
+		return db.Model(t).Update("close", true).Error
+	}
+	return db.Model(t).Updates(
+		map[string]interface{}{
 			"trans_info": datatypes.JSONSet("trans_info").Set("trade_time", nextTime),
 			"next_time":  datatypes.Date(nextTime),
-		}).Error
-		if err != nil {
-			return err
-		}
+		},
+	).Error
+}
+
+func (t *Timing) Open(tx *gorm.DB) error {
+	err := t.ForUpdate(tx)
+	if err != nil {
+		return err
 	}
-	return nil
+	if t.Close == false {
+		return nil
+	}
+
+	nowDate := timeTool.GetFirstSecondOfDay(time.Now().In(accountModel.NewDao(tx).GetTimeLocation(t.AccountId)))
+	var nextTime time.Time
+	switch t.Type {
+	case Once:
+		nextTime = t.NextTime
+	case EveryDay:
+		nextTime = nowDate.AddDate(0, 0, 1)
+	case EveryWeek:
+		weekday := int(nextTime.Weekday())
+		if weekday == 0 {
+			weekday = 7
+		}
+		if t.OffsetDays-weekday < 0 {
+			nextTime = nextTime.AddDate(0, 0, t.OffsetDays-weekday+7)
+		} else if t.OffsetDays-weekday > 0 {
+			nextTime = nextTime.AddDate(0, 0, t.OffsetDays-weekday)
+		} else {
+			nextTime = nowDate
+		}
+	case EveryMonth:
+		year, month, _ := nextTime.Date()
+		if nowDate.Day() >= t.OffsetDays {
+			nextTime = time.Date(year, month+1, t.OffsetDays, 0, 0, 0, 0, nowDate.Location())
+		} else {
+			nextTime = time.Date(year, month, t.OffsetDays, 0, 0, 0, 0, nowDate.Location())
+		}
+	case LastDayOfMonth:
+		year, month, _ := nextTime.Date()
+		beforeLastDayOfMonth := nowDate.AddDate(0, 0, 1).Day() > nowDate.Day()
+		if beforeLastDayOfMonth {
+			nextTime = time.Date(year, month, t.OffsetDays, 0, 0, 0, 0, nowDate.Location())
+		} else {
+			nextTime = time.Date(year, month+1, t.OffsetDays, 0, 0, 0, 0, nowDate.Location())
+		}
+	default:
+		panic("error timing type")
+	}
+	return tx.Model(t).Updates(
+		map[string]interface{}{
+			"close":      false,
+			"trans_info": datatypes.JSONSet("trans_info").Set("trade_time", nextTime),
+			"next_time":  datatypes.Date(nextTime),
+		},
+	).Error
 }
 
 func (t *Timing) MakeExecTask(db *gorm.DB) (TimingExec, error) {
@@ -287,17 +340,21 @@ func (t *TimingExec) ExecFail(execErr error, db *gorm.DB) error {
 	if errors.Is(execErr, global.ErrNoPermission) {
 		failCause = "账本无权操作"
 	}
-	return db.Model(t).Where("id = ?", t.ID).Updates(TimingExec{
-		FailCause: failCause,
-		Status:    TimingExecFail,
-		ExecTime:  sql.NullTime{Time: time.Now(), Valid: true},
-	}).Error
+	return db.Model(t).Where("id = ?", t.ID).Updates(
+		TimingExec{
+			FailCause: failCause,
+			Status:    TimingExecFail,
+			ExecTime:  sql.NullTime{Time: time.Now(), Valid: true},
+		},
+	).Error
 }
 
 func (t *TimingExec) ExecSuccess(trans Transaction, db *gorm.DB) error {
-	return db.Model(t).Where("id = ?", t.ID).Updates(TimingExec{
-		TransactionId: trans.ID,
-		Status:        TimingExecSuccess,
-		ExecTime:      sql.NullTime{Time: time.Now(), Valid: true},
-	}).Error
+	return db.Model(t).Where("id = ?", t.ID).Updates(
+		TimingExec{
+			TransactionId: trans.ID,
+			Status:        TimingExecSuccess,
+			ExecTime:      sql.NullTime{Time: time.Now(), Valid: true},
+		},
+	).Error
 }
