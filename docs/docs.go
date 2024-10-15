@@ -46,7 +46,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/AccountCreateOne"
+                            "$ref": "#/definitions/request.AccountCreateOne"
                         }
                     }
                 ],
@@ -62,7 +62,7 @@ const docTemplate = `{
                                     "type": "object",
                                     "properties": {
                                         "Data": {
-                                            "$ref": "#/definitions/AccountDetail"
+                                            "$ref": "#/definitions/response.AccountDetail"
                                         }
                                     }
                                 }
@@ -101,7 +101,7 @@ const docTemplate = `{
                                     "type": "object",
                                     "properties": {
                                         "Data": {
-                                            "$ref": "#/definitions/AccountDetail"
+                                            "$ref": "#/definitions/response.AccountDetail"
                                         }
                                     }
                                 }
@@ -131,7 +131,7 @@ const docTemplate = `{
                                     "type": "object",
                                     "properties": {
                                         "Data": {
-                                            "$ref": "#/definitions/List-AccountDetail"
+                                            "$ref": "#/definitions/response.List-response_AccountDetail"
                                         }
                                     }
                                 }
@@ -170,7 +170,7 @@ const docTemplate = `{
                                     "type": "object",
                                     "properties": {
                                         "Data": {
-                                            "$ref": "#/definitions/List-AccountDetail"
+                                            "$ref": "#/definitions/response.List-response_AccountDetail"
                                         }
                                     }
                                 }
@@ -200,7 +200,7 @@ const docTemplate = `{
                                     "type": "object",
                                     "properties": {
                                         "Data": {
-                                            "$ref": "#/definitions/AccountTemplateList"
+                                            "$ref": "#/definitions/response.AccountTemplateList"
                                         }
                                     }
                                 }
@@ -228,7 +228,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/AccountGetUserInvitationList"
+                            "$ref": "#/definitions/request.AccountGetUserInvitationList"
                         }
                     }
                 ],
@@ -244,7 +244,7 @@ const docTemplate = `{
                                     "type": "object",
                                     "properties": {
                                         "Data": {
-                                            "$ref": "#/definitions/List-AccountUserInvitation"
+                                            "$ref": "#/definitions/response.List-response_AccountUserInvitation"
                                         }
                                     }
                                 }
@@ -283,7 +283,7 @@ const docTemplate = `{
                                     "type": "object",
                                     "properties": {
                                         "Data": {
-                                            "$ref": "#/definitions/AccountUserInvitation"
+                                            "$ref": "#/definitions/response.AccountUserInvitation"
                                         }
                                     }
                                 }
@@ -322,58 +322,7 @@ const docTemplate = `{
                                     "type": "object",
                                     "properties": {
                                         "Data": {
-                                            "$ref": "#/definitions/AccountUserInvitation"
-                                        }
-                                    }
-                                }
-                            ]
-                        }
-                    }
-                }
-            }
-        },
-        "/account/user/{id}/info": {
-            "get": {
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Account/User"
-                ],
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "Account User ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "query param",
-                        "name": "body",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/AccountGetUserInfo"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "allOf": [
-                                {
-                                    "$ref": "#/definitions/Response"
-                                },
-                                {
-                                    "type": "object",
-                                    "properties": {
-                                        "Data": {
-                                            "$ref": "#/definitions/AccountUserInfo"
+                                            "$ref": "#/definitions/response.AccountUserInvitation"
                                         }
                                     }
                                 }
@@ -408,7 +357,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/CategoryCreateOne"
+                            "$ref": "#/definitions/request.CategoryCreateOne"
                         }
                     }
                 ],
@@ -424,7 +373,7 @@ const docTemplate = `{
                                     "type": "object",
                                     "properties": {
                                         "Data": {
-                                            "$ref": "#/definitions/CategoryOne"
+                                            "$ref": "#/definitions/response.CategoryOne"
                                         }
                                     }
                                 }
@@ -459,7 +408,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/CategoryCreateOneFather"
+                            "$ref": "#/definitions/request.CategoryCreateOneFather"
                         }
                     }
                 ],
@@ -475,7 +424,7 @@ const docTemplate = `{
                                     "type": "object",
                                     "properties": {
                                         "Data": {
-                                            "$ref": "#/definitions/FatherOne"
+                                            "$ref": "#/definitions/response.FatherOne"
                                         }
                                     }
                                 }
@@ -517,7 +466,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/Name"
+                            "$ref": "#/definitions/request.Name"
                         }
                     }
                 ],
@@ -533,7 +482,7 @@ const docTemplate = `{
                                     "type": "object",
                                     "properties": {
                                         "Data": {
-                                            "$ref": "#/definitions/FatherOne"
+                                            "$ref": "#/definitions/response.FatherOne"
                                         }
                                     }
                                 }
@@ -607,7 +556,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/CategoryMoveFather"
+                            "$ref": "#/definitions/request.CategoryMoveFather"
                         }
                     }
                 ],
@@ -646,7 +595,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/CategoryGetMappingTree"
+                            "$ref": "#/definitions/request.CategoryGetMappingTree"
                         }
                     }
                 ],
@@ -662,7 +611,7 @@ const docTemplate = `{
                                     "type": "object",
                                     "properties": {
                                         "Data": {
-                                            "$ref": "#/definitions/CategoryMappingTree"
+                                            "$ref": "#/definitions/response.CategoryMappingTree"
                                         }
                                     }
                                 }
@@ -697,7 +646,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/CategoryGetList"
+                            "$ref": "#/definitions/request.CategoryGetList"
                         }
                     }
                 ],
@@ -713,7 +662,7 @@ const docTemplate = `{
                                     "type": "object",
                                     "properties": {
                                         "Data": {
-                                            "$ref": "#/definitions/List-CategoryDetail"
+                                            "$ref": "#/definitions/response.List-response_CategoryDetail"
                                         }
                                     }
                                 }
@@ -755,7 +704,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/CategoryUpdateOne"
+                            "$ref": "#/definitions/request.CategoryUpdateOne"
                         }
                     }
                 ],
@@ -833,7 +782,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/CategoryMapping"
+                            "$ref": "#/definitions/request.CategoryMapping"
                         }
                     }
                 ],
@@ -877,7 +826,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/CategoryMapping"
+                            "$ref": "#/definitions/request.CategoryMapping"
                         }
                     }
                 ],
@@ -923,7 +872,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/CategoryMove"
+                            "$ref": "#/definitions/request.CategoryMove"
                         }
                     }
                 ],
@@ -966,7 +915,7 @@ const docTemplate = `{
                                     "type": "object",
                                     "properties": {
                                         "Data": {
-                                            "$ref": "#/definitions/AccountInfo"
+                                            "$ref": "#/definitions/response.AccountInfo"
                                         }
                                     }
                                 }
@@ -993,10 +942,11 @@ const docTemplate = `{
                         "required": true
                     },
                     {
-                        "type": "integer",
+                        "type": "string",
                         "description": "Account type",
                         "name": "type",
-                        "in": "path"
+                        "in": "path",
+                        "required": true
                     }
                 ],
                 "responses": {
@@ -1011,7 +961,7 @@ const docTemplate = `{
                                     "type": "object",
                                     "properties": {
                                         "Data": {
-                                            "$ref": "#/definitions/AccountInfo"
+                                            "$ref": "#/definitions/response.AccountInfo"
                                         }
                                     }
                                 }
@@ -1050,7 +1000,7 @@ const docTemplate = `{
                                     "type": "object",
                                     "properties": {
                                         "Data": {
-                                            "$ref": "#/definitions/AccountMapping"
+                                            "$ref": "#/definitions/response.AccountMapping"
                                         }
                                     }
                                 }
@@ -1083,7 +1033,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/AccountMapping"
+                            "$ref": "#/definitions/request.AccountMapping"
                         }
                     }
                 ],
@@ -1099,7 +1049,7 @@ const docTemplate = `{
                                     "type": "object",
                                     "properties": {
                                         "Data": {
-                                            "$ref": "#/definitions/AccountMapping"
+                                            "$ref": "#/definitions/response.AccountMapping"
                                         }
                                     }
                                 }
@@ -1138,7 +1088,7 @@ const docTemplate = `{
                                     "type": "object",
                                     "properties": {
                                         "Data": {
-                                            "$ref": "#/definitions/List-AccountMapping"
+                                            "$ref": "#/definitions/response.List-response_AccountMapping"
                                         }
                                     }
                                 }
@@ -1180,7 +1130,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/UpdateAccountMapping"
+                            "$ref": "#/definitions/request.UpdateAccountMapping"
                         }
                     }
                 ],
@@ -1196,7 +1146,7 @@ const docTemplate = `{
                                     "type": "object",
                                     "properties": {
                                         "Data": {
-                                            "$ref": "#/definitions/AccountMapping"
+                                            "$ref": "#/definitions/response.AccountMapping"
                                         }
                                     }
                                 }
@@ -1270,7 +1220,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/ProductMappingTransactionCategory"
+                            "$ref": "#/definitions/request.ProductMappingTransactionCategory"
                         }
                     }
                 ],
@@ -1314,7 +1264,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/ProductMappingTransactionCategory"
+                            "$ref": "#/definitions/request.ProductMappingTransactionCategory"
                         }
                     }
                 ],
@@ -1329,9 +1279,10 @@ const docTemplate = `{
             }
         },
         "/account/{accountId}/product/{key}/bill/import": {
-            "post": {
+            "get": {
+                "description": "websocket api",
                 "consumes": [
-                    "multipart/form-data"
+                    "application/json"
                 ],
                 "produces": [
                     "application/json"
@@ -1348,28 +1299,14 @@ const docTemplate = `{
                         "required": true
                     },
                     {
-                        "type": "integer",
+                        "type": "string",
                         "description": "Product unique key",
                         "name": "key",
                         "in": "path",
                         "required": true
-                    },
-                    {
-                        "type": "file",
-                        "description": "file to upload",
-                        "name": "file",
-                        "in": "formData",
-                        "required": true
                     }
                 ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/NoContent"
-                        }
-                    }
-                }
+                "responses": {}
             }
         },
         "/account/{accountId}/product/{key}/transCategory/mapping/tree": {
@@ -1411,7 +1348,7 @@ const docTemplate = `{
                                     "type": "object",
                                     "properties": {
                                         "Data": {
-                                            "$ref": "#/definitions/ProductMappingTree"
+                                            "$ref": "#/definitions/response.ProductMappingTree"
                                         }
                                     }
                                 }
@@ -1446,7 +1383,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/TransactionAmountRank"
+                            "$ref": "#/definitions/request.TransactionAmountRank"
                         }
                     }
                 ],
@@ -1462,7 +1399,7 @@ const docTemplate = `{
                                     "type": "object",
                                     "properties": {
                                         "Data": {
-                                            "$ref": "#/definitions/List-response_TransactionDetailList"
+                                            "$ref": "#/definitions/response.List-response_TransactionDetailList"
                                         }
                                     }
                                 }
@@ -1497,7 +1434,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/TransactionCategoryAmountRank"
+                            "$ref": "#/definitions/request.TransactionCategoryAmountRank"
                         }
                     }
                 ],
@@ -1513,7 +1450,7 @@ const docTemplate = `{
                                     "type": "object",
                                     "properties": {
                                         "Data": {
-                                            "$ref": "#/definitions/List-TransactionCategoryAmountRank"
+                                            "$ref": "#/definitions/response.List-response_TransactionCategoryAmountRank"
                                         }
                                     }
                                 }
@@ -1548,7 +1485,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/AccountTransCategoryInit"
+                            "$ref": "#/definitions/request.AccountTransCategoryInit"
                         }
                     }
                 ],
@@ -1564,7 +1501,7 @@ const docTemplate = `{
                                     "type": "object",
                                     "properties": {
                                         "Data": {
-                                            "$ref": "#/definitions/AccountDetail"
+                                            "$ref": "#/definitions/response.AccountDetail"
                                         }
                                     }
                                 }
@@ -1599,7 +1536,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/TransactionDayStatistic"
+                            "$ref": "#/definitions/request.TransactionDayStatistic"
                         }
                     }
                 ],
@@ -1615,7 +1552,7 @@ const docTemplate = `{
                                     "type": "object",
                                     "properties": {
                                         "Data": {
-                                            "$ref": "#/definitions/List-TransactionDayStatistic"
+                                            "$ref": "#/definitions/response.List-response_TransactionDayStatistic"
                                         }
                                     }
                                 }
@@ -1657,7 +1594,7 @@ const docTemplate = `{
                                     "type": "object",
                                     "properties": {
                                         "Data": {
-                                            "$ref": "#/definitions/List-TransactionDetail"
+                                            "$ref": "#/definitions/response.List-response_TransactionDetail"
                                         }
                                     }
                                 }
@@ -1692,7 +1629,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/TransactionMonthStatistic"
+                            "$ref": "#/definitions/request.TransactionMonthStatistic"
                         }
                     }
                 ],
@@ -1708,7 +1645,7 @@ const docTemplate = `{
                                     "type": "object",
                                     "properties": {
                                         "Data": {
-                                            "$ref": "#/definitions/List-TransactionStatistic"
+                                            "$ref": "#/definitions/response.List-response_TransactionStatistic"
                                         }
                                     }
                                 }
@@ -1743,7 +1680,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/TransactionTiming"
+                            "$ref": "#/definitions/request.TransactionTiming"
                         }
                     }
                 ],
@@ -1759,7 +1696,7 @@ const docTemplate = `{
                                     "type": "object",
                                     "properties": {
                                         "Data": {
-                                            "$ref": "#/definitions/TransactionTiming"
+                                            "$ref": "#/definitions/response.TransactionTiming"
                                         }
                                     }
                                 }
@@ -1794,7 +1731,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/PageData"
+                            "$ref": "#/definitions/request.PageData"
                         }
                     }
                 ],
@@ -1810,7 +1747,7 @@ const docTemplate = `{
                                     "type": "object",
                                     "properties": {
                                         "Data": {
-                                            "$ref": "#/definitions/List-TransactionTiming"
+                                            "$ref": "#/definitions/response.List-response_TransactionTiming"
                                         }
                                     }
                                 }
@@ -1841,7 +1778,7 @@ const docTemplate = `{
                     },
                     {
                         "type": "integer",
-                        "description": "Transaction ID",
+                        "description": "Timing ID",
                         "name": "id",
                         "in": "path",
                         "required": true
@@ -1852,7 +1789,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/TransactionTiming"
+                            "$ref": "#/definitions/request.TransactionTiming"
                         }
                     }
                 ],
@@ -1868,7 +1805,107 @@ const docTemplate = `{
                                     "type": "object",
                                     "properties": {
                                         "Data": {
-                                            "$ref": "#/definitions/TransactionTiming"
+                                            "$ref": "#/definitions/response.TransactionTiming"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Transaction/Timing"
+                ],
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Account ID",
+                        "name": "accountId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Timing ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content",
+                        "schema": {
+                            "$ref": "#/definitions/NoContent"
+                        }
+                    }
+                }
+            }
+        },
+        "/account/{accountId}/transaction/timing/{id}/{operate}": {
+            "put": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Transaction/Timing"
+                ],
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Account ID",
+                        "name": "accountId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Timing ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "operate name",
+                        "name": "operate",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "timing config",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request.TransactionTiming"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "Data": {
+                                            "$ref": "#/definitions/response.TransactionTiming"
                                         }
                                     }
                                 }
@@ -1903,7 +1940,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/TransactionTotal"
+                            "$ref": "#/definitions/request.TransactionTotal"
                         }
                     }
                 ],
@@ -1919,7 +1956,7 @@ const docTemplate = `{
                                     "type": "object",
                                     "properties": {
                                         "Data": {
-                                            "$ref": "#/definitions/TransactionTotal"
+                                            "$ref": "#/definitions/response.TransactionTotal"
                                         }
                                     }
                                 }
@@ -1968,7 +2005,7 @@ const docTemplate = `{
                                     "type": "object",
                                     "properties": {
                                         "Data": {
-                                            "$ref": "#/definitions/TransactionDetail"
+                                            "$ref": "#/definitions/response.TransactionDetail"
                                         }
                                     }
                                 }
@@ -2008,7 +2045,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/TransactionCreateOne"
+                            "$ref": "#/definitions/request.TransactionCreateOne"
                         }
                     }
                 ],
@@ -2024,7 +2061,7 @@ const docTemplate = `{
                                     "type": "object",
                                     "properties": {
                                         "Data": {
-                                            "$ref": "#/definitions/TransactionDetail"
+                                            "$ref": "#/definitions/response.TransactionDetail"
                                         }
                                     }
                                 }
@@ -2064,7 +2101,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/TransactionCreateOne"
+                            "$ref": "#/definitions/request.TransactionCreateOne"
                         }
                     }
                 ],
@@ -2080,7 +2117,7 @@ const docTemplate = `{
                                     "type": "object",
                                     "properties": {
                                         "Data": {
-                                            "$ref": "#/definitions/TransactionDetail"
+                                            "$ref": "#/definitions/response.TransactionDetail"
                                         }
                                     }
                                 }
@@ -2154,7 +2191,7 @@ const docTemplate = `{
                                     "type": "object",
                                     "properties": {
                                         "Data": {
-                                            "$ref": "#/definitions/AccountUserConfig"
+                                            "$ref": "#/definitions/response.AccountUserConfig"
                                         }
                                     }
                                 }
@@ -2189,7 +2226,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/AccountUserConfigFlagUpdate"
+                            "$ref": "#/definitions/request.AccountUserConfigFlagUpdate"
                         }
                     }
                 ],
@@ -2205,7 +2242,7 @@ const docTemplate = `{
                                     "type": "object",
                                     "properties": {
                                         "Data": {
-                                            "$ref": "#/definitions/AccountUserConfig"
+                                            "$ref": "#/definitions/response.AccountUserConfig"
                                         }
                                     }
                                 }
@@ -2240,7 +2277,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/AccountGetUserInvitationList"
+                            "$ref": "#/definitions/request.AccountGetUserInvitationList"
                         }
                     }
                 ],
@@ -2256,7 +2293,7 @@ const docTemplate = `{
                                     "type": "object",
                                     "properties": {
                                         "Data": {
-                                            "$ref": "#/definitions/AccountUserInvitation"
+                                            "$ref": "#/definitions/response.AccountUserInvitation"
                                         }
                                     }
                                 }
@@ -2298,7 +2335,7 @@ const docTemplate = `{
                                     "type": "object",
                                     "properties": {
                                         "Data": {
-                                            "$ref": "#/definitions/List-AccountUser"
+                                            "$ref": "#/definitions/response.List-response_AccountUser"
                                         }
                                     }
                                 }
@@ -2340,7 +2377,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/AccountUpdateUser"
+                            "$ref": "#/definitions/request.AccountUpdateUser"
                         }
                     }
                 ],
@@ -2356,7 +2393,58 @@ const docTemplate = `{
                                     "type": "object",
                                     "properties": {
                                         "Data": {
-                                            "$ref": "#/definitions/AccountUser"
+                                            "$ref": "#/definitions/response.AccountUser"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/account/{accountId}/user/{id}/info": {
+            "get": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Account/User"
+                ],
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Account User ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "query param",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request.AccountGetUserInfo"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "Data": {
+                                            "$ref": "#/definitions/response.AccountUserInfo"
                                         }
                                     }
                                 }
@@ -2398,7 +2486,7 @@ const docTemplate = `{
                                     "type": "object",
                                     "properties": {
                                         "Data": {
-                                            "$ref": "#/definitions/AccountDetail"
+                                            "$ref": "#/definitions/response.AccountDetail"
                                         }
                                     }
                                 }
@@ -2431,7 +2519,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/AccountUpdateOne"
+                            "$ref": "#/definitions/request.AccountUpdateOne"
                         }
                     }
                 ],
@@ -2447,7 +2535,7 @@ const docTemplate = `{
                                     "type": "object",
                                     "properties": {
                                         "Data": {
-                                            "$ref": "#/definitions/AccountDetail"
+                                            "$ref": "#/definitions/response.AccountDetail"
                                         }
                                     }
                                 }
@@ -2484,7 +2572,7 @@ const docTemplate = `{
                                     "type": "object",
                                     "properties": {
                                         "Data": {
-                                            "$ref": "#/definitions/UserCurrentClientInfo"
+                                            "$ref": "#/definitions/response.UserCurrentClientInfo"
                                         }
                                     }
                                 }
@@ -2514,7 +2602,7 @@ const docTemplate = `{
                                     "type": "object",
                                     "properties": {
                                         "Data": {
-                                            "$ref": "#/definitions/ProductList"
+                                            "$ref": "#/definitions/response.ProductList"
                                         }
                                     }
                                 }
@@ -2559,7 +2647,7 @@ const docTemplate = `{
                                     "type": "object",
                                     "properties": {
                                         "Data": {
-                                            "$ref": "#/definitions/ProductTransactionCategoryList"
+                                            "$ref": "#/definitions/response.ProductTransactionCategoryList"
                                         }
                                     }
                                 }
@@ -2595,7 +2683,7 @@ const docTemplate = `{
                                     "type": "object",
                                     "properties": {
                                         "Data": {
-                                            "$ref": "#/definitions/CommonCaptcha"
+                                            "$ref": "#/definitions/response.CommonCaptcha"
                                         }
                                     }
                                 }
@@ -2623,7 +2711,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/CommonSendEmailCaptcha"
+                            "$ref": "#/definitions/request.CommonSendEmailCaptcha"
                         }
                     }
                 ],
@@ -2639,7 +2727,7 @@ const docTemplate = `{
                                     "type": "object",
                                     "properties": {
                                         "Data": {
-                                            "$ref": "#/definitions/ExpirationTime"
+                                            "$ref": "#/definitions/response.ExpirationTime"
                                         }
                                     }
                                 }
@@ -2667,7 +2755,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/UserLogin"
+                            "$ref": "#/definitions/request.UserLogin"
                         }
                     }
                 ],
@@ -2683,7 +2771,7 @@ const docTemplate = `{
                                     "type": "object",
                                     "properties": {
                                         "Data": {
-                                            "$ref": "#/definitions/Login"
+                                            "$ref": "#/definitions/response.Login"
                                         }
                                     }
                                 }
@@ -2711,7 +2799,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/UserForgetPassword"
+                            "$ref": "#/definitions/request.UserForgetPassword"
                         }
                     }
                 ],
@@ -2743,7 +2831,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/UserRegister"
+                            "$ref": "#/definitions/request.UserRegister"
                         }
                     }
                 ],
@@ -2759,7 +2847,7 @@ const docTemplate = `{
                                     "type": "object",
                                     "properties": {
                                         "Data": {
-                                            "$ref": "#/definitions/Login"
+                                            "$ref": "#/definitions/response.Login"
                                         }
                                     }
                                 }
@@ -2787,7 +2875,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/TourApply"
+                            "$ref": "#/definitions/request.TourApply"
                         }
                     }
                 ],
@@ -2803,7 +2891,7 @@ const docTemplate = `{
                                     "type": "object",
                                     "properties": {
                                         "Data": {
-                                            "$ref": "#/definitions/Login"
+                                            "$ref": "#/definitions/response.Login"
                                         }
                                     }
                                 }
@@ -2831,7 +2919,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/UserGetAccountInvitationList"
+                            "$ref": "#/definitions/request.UserGetAccountInvitationList"
                         }
                     }
                 ],
@@ -2847,7 +2935,7 @@ const docTemplate = `{
                                     "type": "object",
                                     "properties": {
                                         "Data": {
-                                            "$ref": "#/definitions/AccountUserInvitation"
+                                            "$ref": "#/definitions/response.AccountUserInvitation"
                                         }
                                     }
                                 }
@@ -2875,7 +2963,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/Id"
+                            "$ref": "#/definitions/request.Id"
                         }
                     }
                 ],
@@ -2907,7 +2995,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/Id"
+                            "$ref": "#/definitions/request.Id"
                         }
                     }
                 ],
@@ -2937,7 +3025,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/UserSendEmail"
+                            "$ref": "#/definitions/request.UserSendEmail"
                         }
                     }
                 ],
@@ -2953,7 +3041,7 @@ const docTemplate = `{
                                     "type": "object",
                                     "properties": {
                                         "Data": {
-                                            "$ref": "#/definitions/ExpirationTime"
+                                            "$ref": "#/definitions/response.ExpirationTime"
                                         }
                                     }
                                 }
@@ -2981,7 +3069,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/UserUpdateInfo"
+                            "$ref": "#/definitions/request.UserUpdateInfo"
                         }
                     }
                 ],
@@ -3015,7 +3103,7 @@ const docTemplate = `{
                                     "type": "object",
                                     "properties": {
                                         "Data": {
-                                            "$ref": "#/definitions/List-UserFriendInvitation"
+                                            "$ref": "#/definitions/response.List-response_UserFriendInvitation"
                                         }
                                     }
                                 }
@@ -3041,7 +3129,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/UserCreateFriendInvitation"
+                            "$ref": "#/definitions/request.UserCreateFriendInvitation"
                         }
                     }
                 ],
@@ -3057,7 +3145,7 @@ const docTemplate = `{
                                     "type": "object",
                                     "properties": {
                                         "Data": {
-                                            "$ref": "#/definitions/UserFriendInvitation"
+                                            "$ref": "#/definitions/response.UserFriendInvitation"
                                         }
                                     }
                                 }
@@ -3096,7 +3184,7 @@ const docTemplate = `{
                                     "type": "object",
                                     "properties": {
                                         "Data": {
-                                            "$ref": "#/definitions/UserFriendInvitation"
+                                            "$ref": "#/definitions/response.UserFriendInvitation"
                                         }
                                     }
                                 }
@@ -3135,7 +3223,7 @@ const docTemplate = `{
                                     "type": "object",
                                     "properties": {
                                         "Data": {
-                                            "$ref": "#/definitions/UserFriendInvitation"
+                                            "$ref": "#/definitions/response.UserFriendInvitation"
                                         }
                                     }
                                 }
@@ -3165,7 +3253,7 @@ const docTemplate = `{
                                     "type": "object",
                                     "properties": {
                                         "Data": {
-                                            "$ref": "#/definitions/List-UserInfo"
+                                            "$ref": "#/definitions/response.List-response_UserInfo"
                                         }
                                     }
                                 }
@@ -3193,7 +3281,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/UserHome"
+                            "$ref": "#/definitions/request.UserHome"
                         }
                     }
                 ],
@@ -3209,7 +3297,7 @@ const docTemplate = `{
                                     "type": "object",
                                     "properties": {
                                         "Data": {
-                                            "$ref": "#/definitions/UserHome"
+                                            "$ref": "#/definitions/response.UserHome"
                                         }
                                     }
                                 }
@@ -3237,7 +3325,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/UserUpdatePassword"
+                            "$ref": "#/definitions/request.UserUpdatePassword"
                         }
                     }
                 ],
@@ -3269,7 +3357,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/UserSearch"
+                            "$ref": "#/definitions/request.UserSearch"
                         }
                     }
                 ],
@@ -3285,7 +3373,7 @@ const docTemplate = `{
                                     "type": "object",
                                     "properties": {
                                         "Data": {
-                                            "$ref": "#/definitions/List-UserInfo"
+                                            "$ref": "#/definitions/response.List-response_UserInfo"
                                         }
                                     }
                                 }
@@ -3318,7 +3406,7 @@ const docTemplate = `{
                                     "type": "object",
                                     "properties": {
                                         "Data": {
-                                            "$ref": "#/definitions/Token"
+                                            "$ref": "#/definitions/response.Token"
                                         }
                                     }
                                 }
@@ -3348,7 +3436,7 @@ const docTemplate = `{
                                     "type": "object",
                                     "properties": {
                                         "Data": {
-                                            "$ref": "#/definitions/UserTransactionShareConfig"
+                                            "$ref": "#/definitions/response.UserTransactionShareConfig"
                                         }
                                     }
                                 }
@@ -3374,7 +3462,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/UserTransactionShareConfigUpdate"
+                            "$ref": "#/definitions/request.UserTransactionShareConfigUpdate"
                         }
                     }
                 ],
@@ -3390,7 +3478,7 @@ const docTemplate = `{
                                     "type": "object",
                                     "properties": {
                                         "Data": {
-                                            "$ref": "#/definitions/UserTransactionShareConfig"
+                                            "$ref": "#/definitions/response.UserTransactionShareConfig"
                                         }
                                     }
                                 }
@@ -3402,585 +3490,6 @@ const docTemplate = `{
         }
     },
     "definitions": {
-        "AccountCreateOne": {
-            "type": "object",
-            "required": [
-                "Icon",
-                "Location",
-                "Name",
-                "Type"
-            ],
-            "properties": {
-                "Icon": {
-                    "type": "string"
-                },
-                "Location": {
-                    "type": "string"
-                },
-                "Name": {
-                    "type": "string"
-                },
-                "Type": {
-                    "$ref": "#/definitions/accountModel.Type"
-                }
-            }
-        },
-        "AccountDetail": {
-            "type": "object",
-            "properties": {
-                "CreateTime": {
-                    "type": "string"
-                },
-                "CreatorId": {
-                    "type": "integer"
-                },
-                "CreatorName": {
-                    "type": "string"
-                },
-                "Icon": {
-                    "type": "string"
-                },
-                "Id": {
-                    "type": "integer"
-                },
-                "JoinTime": {
-                    "type": "string"
-                },
-                "Location": {
-                    "type": "string"
-                },
-                "Name": {
-                    "type": "string"
-                },
-                "Role": {
-                    "$ref": "#/definitions/accountModel.UserRole"
-                },
-                "Type": {
-                    "$ref": "#/definitions/accountModel.Type"
-                },
-                "UpdateTime": {
-                    "type": "string"
-                }
-            }
-        },
-        "AccountGetUserInfo": {
-            "type": "object",
-            "properties": {
-                "Types": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                }
-            }
-        },
-        "AccountGetUserInvitationList": {
-            "type": "object",
-            "required": [
-                "AccountId"
-            ],
-            "properties": {
-                "AccountId": {
-                    "type": "integer"
-                },
-                "Invitee": {
-                    "type": "integer"
-                },
-                "Role": {
-                    "$ref": "#/definitions/accountModel.UserRole"
-                }
-            }
-        },
-        "AccountInfo": {
-            "type": "object",
-            "properties": {
-                "CurrentMonthTransTotal": {
-                    "$ref": "#/definitions/global.IEStatisticWithTime"
-                },
-                "RecentTrans": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/TransactionDetail"
-                    }
-                },
-                "TodayTransTotal": {
-                    "$ref": "#/definitions/global.IEStatisticWithTime"
-                }
-            }
-        },
-        "AccountMapping": {
-            "type": "object",
-            "properties": {
-                "CreateTime": {
-                    "type": "string"
-                },
-                "Id": {
-                    "type": "integer"
-                },
-                "MainAccount": {
-                    "$ref": "#/definitions/AccountOne"
-                },
-                "RelatedAccount": {
-                    "$ref": "#/definitions/AccountDetail"
-                },
-                "UpdateTime": {
-                    "type": "string"
-                }
-            }
-        },
-        "AccountOne": {
-            "type": "object",
-            "properties": {
-                "CreateTime": {
-                    "type": "string"
-                },
-                "Icon": {
-                    "type": "string"
-                },
-                "Id": {
-                    "type": "integer"
-                },
-                "Location": {
-                    "type": "string"
-                },
-                "Name": {
-                    "type": "string"
-                },
-                "Type": {
-                    "$ref": "#/definitions/accountModel.Type"
-                },
-                "UpdateTime": {
-                    "type": "string"
-                }
-            }
-        },
-        "AccountTemplateList": {
-            "type": "object",
-            "properties": {
-                "List": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/AccountTemplateOne"
-                    }
-                }
-            }
-        },
-        "AccountTemplateOne": {
-            "type": "object",
-            "properties": {
-                "Icon": {
-                    "type": "string"
-                },
-                "Id": {
-                    "type": "integer"
-                },
-                "Name": {
-                    "type": "string"
-                },
-                "Type": {
-                    "$ref": "#/definitions/accountModel.Type"
-                }
-            }
-        },
-        "AccountTransCategoryInit": {
-            "type": "object",
-            "properties": {
-                "TemplateId": {
-                    "type": "integer"
-                }
-            }
-        },
-        "AccountUpdateOne": {
-            "type": "object",
-            "required": [
-                "Type"
-            ],
-            "properties": {
-                "Icon": {
-                    "type": "string"
-                },
-                "Name": {
-                    "type": "string"
-                },
-                "Type": {
-                    "$ref": "#/definitions/accountModel.Type"
-                }
-            }
-        },
-        "AccountUpdateUser": {
-            "type": "object",
-            "required": [
-                "Role"
-            ],
-            "properties": {
-                "Role": {
-                    "$ref": "#/definitions/accountModel.UserRole"
-                }
-            }
-        },
-        "AccountUser": {
-            "type": "object",
-            "properties": {
-                "AccountId": {
-                    "type": "integer"
-                },
-                "CreateTime": {
-                    "type": "string"
-                },
-                "Id": {
-                    "type": "integer"
-                },
-                "Info": {
-                    "$ref": "#/definitions/UserInfo"
-                },
-                "Role": {
-                    "$ref": "#/definitions/accountModel.UserRole"
-                },
-                "UserId": {
-                    "type": "integer"
-                }
-            }
-        },
-        "AccountUserConfig": {
-            "type": "object",
-            "properties": {
-                "AccountId": {
-                    "type": "integer"
-                },
-                "CreateTime": {
-                    "type": "string"
-                },
-                "Id": {
-                    "type": "integer"
-                },
-                "Trans": {
-                    "type": "object",
-                    "properties": {
-                        "SyncMappingAccount": {
-                            "type": "boolean"
-                        }
-                    }
-                },
-                "UpdateTime": {
-                    "type": "string"
-                },
-                "UserId": {
-                    "type": "integer"
-                }
-            }
-        },
-        "AccountUserConfigFlagUpdate": {
-            "type": "object",
-            "properties": {
-                "Status": {
-                    "type": "boolean"
-                }
-            }
-        },
-        "AccountUserInfo": {
-            "type": "object",
-            "properties": {
-                "CurrentMonthTransTotal": {
-                    "$ref": "#/definitions/global.IEStatisticWithTime"
-                },
-                "RecentTrans": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/TransactionDetail"
-                    }
-                },
-                "TodayTransTotal": {
-                    "$ref": "#/definitions/global.IEStatisticWithTime"
-                }
-            }
-        },
-        "AccountUserInvitation": {
-            "type": "object",
-            "properties": {
-                "Account": {
-                    "$ref": "#/definitions/AccountOne"
-                },
-                "CreateTime": {
-                    "type": "string"
-                },
-                "Id": {
-                    "type": "integer"
-                },
-                "Invitee": {
-                    "$ref": "#/definitions/UserInfo"
-                },
-                "Inviter": {
-                    "$ref": "#/definitions/UserInfo"
-                },
-                "Role": {
-                    "$ref": "#/definitions/accountModel.UserRole"
-                },
-                "Status": {
-                    "$ref": "#/definitions/accountModel.UserInvitationStatus"
-                }
-            }
-        },
-        "CategoryCreateOne": {
-            "type": "object",
-            "required": [
-                "FatherId",
-                "Icon",
-                "Name"
-            ],
-            "properties": {
-                "FatherId": {
-                    "type": "integer"
-                },
-                "Icon": {
-                    "type": "string"
-                },
-                "Name": {
-                    "type": "string"
-                }
-            }
-        },
-        "CategoryCreateOneFather": {
-            "type": "object",
-            "properties": {
-                "IncomeExpense": {
-                    "$ref": "#/definitions/IncomeExpense"
-                },
-                "Name": {
-                    "type": "string"
-                }
-            }
-        },
-        "CategoryDetail": {
-            "type": "object",
-            "properties": {
-                "FatherId": {
-                    "type": "integer"
-                },
-                "FatherName": {
-                    "type": "string"
-                },
-                "Icon": {
-                    "type": "string"
-                },
-                "Id": {
-                    "type": "integer"
-                },
-                "IncomeExpense": {
-                    "$ref": "#/definitions/IncomeExpense"
-                },
-                "Name": {
-                    "type": "string"
-                }
-            }
-        },
-        "CategoryGetList": {
-            "type": "object",
-            "properties": {
-                "IncomeExpense": {
-                    "$ref": "#/definitions/IncomeExpense"
-                }
-            }
-        },
-        "CategoryGetMappingTree": {
-            "type": "object",
-            "required": [
-                "MappingAccountId"
-            ],
-            "properties": {
-                "MappingAccountId": {
-                    "type": "integer"
-                }
-            }
-        },
-        "CategoryGetTree": {
-            "type": "object",
-            "properties": {
-                "IncomeExpense": {
-                    "$ref": "#/definitions/IncomeExpense"
-                }
-            }
-        },
-        "CategoryMapping": {
-            "type": "object",
-            "properties": {
-                "ChildCategoryId": {
-                    "type": "integer"
-                }
-            }
-        },
-        "CategoryMappingTree": {
-            "type": "object",
-            "properties": {
-                "Tree": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/CategoryMappingTreeFather"
-                    }
-                }
-            }
-        },
-        "CategoryMappingTreeFather": {
-            "type": "object",
-            "properties": {
-                "ChildrenIds": {
-                    "type": "array",
-                    "items": {
-                        "type": "integer"
-                    }
-                },
-                "FatherId": {
-                    "type": "integer"
-                }
-            }
-        },
-        "CategoryMove": {
-            "type": "object",
-            "properties": {
-                "FatherId": {
-                    "type": "integer"
-                },
-                "Previous": {
-                    "type": "integer"
-                }
-            }
-        },
-        "CategoryMoveFather": {
-            "type": "object",
-            "properties": {
-                "Previous": {
-                    "type": "integer"
-                }
-            }
-        },
-        "CategoryOne": {
-            "type": "object",
-            "properties": {
-                "FatherId": {
-                    "type": "integer"
-                },
-                "Icon": {
-                    "type": "string"
-                },
-                "Id": {
-                    "type": "integer"
-                },
-                "IncomeExpense": {
-                    "$ref": "#/definitions/IncomeExpense"
-                },
-                "Name": {
-                    "type": "string"
-                }
-            }
-        },
-        "CategoryTree": {
-            "type": "object",
-            "properties": {
-                "Tree": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/FatherOne"
-                    }
-                }
-            }
-        },
-        "CategoryUpdateOne": {
-            "type": "object",
-            "properties": {
-                "Icon": {
-                    "type": "string"
-                },
-                "Name": {
-                    "type": "string"
-                }
-            }
-        },
-        "CommonCaptcha": {
-            "type": "object",
-            "properties": {
-                "CaptchaId": {
-                    "type": "string"
-                },
-                "CaptchaLength": {
-                    "type": "integer"
-                },
-                "OpenCaptcha": {
-                    "type": "boolean"
-                },
-                "PicBase64": {
-                    "type": "string"
-                }
-            }
-        },
-        "CommonSendEmailCaptcha": {
-            "type": "object",
-            "required": [
-                "Captcha",
-                "CaptchaId",
-                "Email",
-                "Type"
-            ],
-            "properties": {
-                "Captcha": {
-                    "type": "string"
-                },
-                "CaptchaId": {
-                    "type": "string"
-                },
-                "Email": {
-                    "type": "string"
-                },
-                "Type": {
-                    "enum": [
-                        "register",
-                        "forgetPassword"
-                    ],
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/constant.UserAction"
-                        }
-                    ]
-                }
-            }
-        },
-        "ExpirationTime": {
-            "type": "object",
-            "properties": {
-                "ExpirationTime": {
-                    "type": "integer"
-                }
-            }
-        },
-        "FatherOne": {
-            "type": "object",
-            "properties": {
-                "AccountId": {
-                    "type": "integer"
-                },
-                "Children": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/CategoryOne"
-                    }
-                },
-                "Id": {
-                    "type": "integer"
-                },
-                "IncomeExpense": {
-                    "$ref": "#/definitions/IncomeExpense"
-                },
-                "Name": {
-                    "type": "string"
-                }
-            }
-        },
-        "Id": {
-            "type": "object",
-            "properties": {
-                "Id": {
-                    "type": "integer"
-                }
-            }
-        },
         "IncomeExpense": {
             "type": "string",
             "enum": [
@@ -3992,278 +3501,12 @@ const docTemplate = `{
                 "Expense"
             ]
         },
-        "List-AccountDetail": {
-            "type": "object",
-            "properties": {
-                "List": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/AccountDetail"
-                    }
-                }
-            }
-        },
-        "List-AccountMapping": {
-            "type": "object",
-            "properties": {
-                "List": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/AccountMapping"
-                    }
-                }
-            }
-        },
-        "List-AccountUser": {
-            "type": "object",
-            "properties": {
-                "List": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/AccountUser"
-                    }
-                }
-            }
-        },
-        "List-AccountUserInvitation": {
-            "type": "object",
-            "properties": {
-                "List": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/AccountUserInvitation"
-                    }
-                }
-            }
-        },
-        "List-CategoryDetail": {
-            "type": "object",
-            "properties": {
-                "List": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/CategoryDetail"
-                    }
-                }
-            }
-        },
-        "List-TransactionCategoryAmountRank": {
-            "type": "object",
-            "properties": {
-                "List": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/TransactionCategoryAmountRank"
-                    }
-                }
-            }
-        },
-        "List-TransactionDayStatistic": {
-            "type": "object",
-            "properties": {
-                "List": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/TransactionDayStatistic"
-                    }
-                }
-            }
-        },
-        "List-TransactionDetail": {
-            "type": "object",
-            "properties": {
-                "List": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/TransactionDetail"
-                    }
-                }
-            }
-        },
-        "List-TransactionStatistic": {
-            "type": "object",
-            "properties": {
-                "List": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/TransactionStatistic"
-                    }
-                }
-            }
-        },
-        "List-TransactionTiming": {
-            "type": "object",
-            "properties": {
-                "List": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/TransactionTiming"
-                    }
-                }
-            }
-        },
-        "List-UserFriendInvitation": {
-            "type": "object",
-            "properties": {
-                "List": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/UserFriendInvitation"
-                    }
-                }
-            }
-        },
-        "List-UserInfo": {
-            "type": "object",
-            "properties": {
-                "List": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/UserInfo"
-                    }
-                }
-            }
-        },
-        "List-response_TransactionDetailList": {
-            "type": "object",
-            "properties": {
-                "List": {
-                    "type": "array",
-                    "items": {
-                        "type": "array",
-                        "items": {
-                            "$ref": "#/definitions/TransactionDetail"
-                        }
-                    }
-                }
-            }
-        },
-        "Login": {
-            "type": "object",
-            "properties": {
-                "CurrentAccount": {
-                    "$ref": "#/definitions/AccountDetail"
-                },
-                "CurrentShareAccount": {
-                    "$ref": "#/definitions/AccountDetail"
-                },
-                "Token": {
-                    "type": "string"
-                },
-                "TokenExpirationTime": {
-                    "type": "string"
-                },
-                "User": {
-                    "$ref": "#/definitions/UserOne"
-                }
-            }
-        },
-        "Name": {
-            "type": "object",
-            "properties": {
-                "Name": {
-                    "type": "string"
-                }
-            }
-        },
         "NoContent": {
             "type": "object",
             "properties": {
                 "Data": {},
                 "Msg": {
                     "type": "string"
-                }
-            }
-        },
-        "PageData": {
-            "type": "object",
-            "properties": {
-                "Limit": {
-                    "type": "integer"
-                },
-                "Offset": {
-                    "type": "integer",
-                    "minimum": 0
-                }
-            }
-        },
-        "ProductList": {
-            "type": "object",
-            "properties": {
-                "List": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/ProductOne"
-                    }
-                }
-            }
-        },
-        "ProductMappingTransactionCategory": {
-            "type": "object",
-            "properties": {
-                "CategoryId": {
-                    "type": "integer"
-                }
-            }
-        },
-        "ProductMappingTree": {
-            "type": "object",
-            "properties": {
-                "Tree": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/ProductMappingTreeFather"
-                    }
-                }
-            }
-        },
-        "ProductMappingTreeFather": {
-            "type": "object",
-            "properties": {
-                "Children": {
-                    "type": "array",
-                    "items": {
-                        "type": "integer"
-                    }
-                },
-                "FatherId": {
-                    "type": "integer"
-                }
-            }
-        },
-        "ProductOne": {
-            "type": "object",
-            "properties": {
-                "Name": {
-                    "type": "string"
-                },
-                "UniqueKey": {
-                    "type": "string"
-                }
-            }
-        },
-        "ProductTransactionCategory": {
-            "type": "object",
-            "properties": {
-                "Id": {
-                    "type": "integer"
-                },
-                "IncomeExpense": {
-                    "$ref": "#/definitions/IncomeExpense"
-                },
-                "Name": {
-                    "type": "string"
-                }
-            }
-        },
-        "ProductTransactionCategoryList": {
-            "type": "object",
-            "properties": {
-                "List": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/ProductTransactionCategory"
-                    }
                 }
             }
         },
@@ -4274,594 +3517,6 @@ const docTemplate = `{
                 "Msg": {
                     "type": "string",
                     "example": "success"
-                }
-            }
-        },
-        "Token": {
-            "type": "object",
-            "properties": {
-                "Token": {
-                    "type": "string"
-                },
-                "TokenExpirationTime": {
-                    "type": "string"
-                }
-            }
-        },
-        "TourApply": {
-            "type": "object",
-            "properties": {
-                "DeviceNumber": {
-                    "type": "string"
-                }
-            }
-        },
-        "TransactionAmountRank": {
-            "type": "object",
-            "required": [
-                "AccountId",
-                "IncomeExpense"
-            ],
-            "properties": {
-                "AccountId": {
-                    "type": "integer"
-                },
-                "EndTime": {
-                    "type": "string"
-                },
-                "IncomeExpense": {
-                    "enum": [
-                        "income",
-                        "expense"
-                    ],
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/IncomeExpense"
-                        }
-                    ]
-                },
-                "StartTime": {
-                    "type": "string"
-                }
-            }
-        },
-        "TransactionCategoryAmountRank": {
-            "type": "object",
-            "properties": {
-                "Amount": {
-                    "type": "integer"
-                },
-                "Category": {
-                    "$ref": "#/definitions/CategoryOne"
-                },
-                "Count": {
-                    "type": "integer"
-                }
-            }
-        },
-        "TransactionCreateOne": {
-            "type": "object",
-            "properties": {
-                "Amount": {
-                    "type": "integer"
-                },
-                "CategoryId": {
-                    "type": "integer"
-                },
-                "IncomeExpense": {
-                    "$ref": "#/definitions/IncomeExpense"
-                },
-                "Remark": {
-                    "type": "string"
-                },
-                "TradeTime": {
-                    "type": "string"
-                }
-            }
-        },
-        "TransactionDayStatistic": {
-            "type": "object",
-            "properties": {
-                "Amount": {
-                    "type": "integer"
-                },
-                "Count": {
-                    "type": "integer"
-                },
-                "Date": {
-                    "type": "string"
-                }
-            }
-        },
-        "TransactionDetail": {
-            "type": "object",
-            "properties": {
-                "AccountId": {
-                    "type": "integer"
-                },
-                "AccountName": {
-                    "type": "string"
-                },
-                "Amount": {
-                    "type": "integer"
-                },
-                "CategoryFatherName": {
-                    "type": "string"
-                },
-                "CategoryIcon": {
-                    "type": "string"
-                },
-                "CategoryId": {
-                    "type": "integer"
-                },
-                "CategoryName": {
-                    "type": "string"
-                },
-                "CreateTime": {
-                    "type": "string"
-                },
-                "Id": {
-                    "type": "integer"
-                },
-                "IncomeExpense": {
-                    "$ref": "#/definitions/IncomeExpense"
-                },
-                "Remark": {
-                    "type": "string"
-                },
-                "TradeTime": {
-                    "type": "string"
-                },
-                "UpdateTime": {
-                    "type": "string"
-                },
-                "UserId": {
-                    "type": "integer"
-                },
-                "UserName": {
-                    "type": "string"
-                }
-            }
-        },
-        "TransactionInfo": {
-            "type": "object",
-            "properties": {
-                "AccountId": {
-                    "type": "integer"
-                },
-                "AccountName": {
-                    "type": "string"
-                },
-                "Amount": {
-                    "type": "integer"
-                },
-                "CategoryFatherName": {
-                    "type": "string"
-                },
-                "CategoryIcon": {
-                    "type": "string"
-                },
-                "CategoryId": {
-                    "type": "integer"
-                },
-                "CategoryName": {
-                    "type": "string"
-                },
-                "Id": {
-                    "type": "integer"
-                },
-                "IncomeExpense": {
-                    "$ref": "#/definitions/IncomeExpense"
-                },
-                "Remark": {
-                    "type": "string"
-                },
-                "TradeTime": {
-                    "type": "string"
-                },
-                "UserId": {
-                    "type": "integer"
-                },
-                "UserName": {
-                    "type": "string"
-                }
-            }
-        },
-        "TransactionMonthStatistic": {
-            "type": "object",
-            "required": [
-                "AccountId"
-            ],
-            "properties": {
-                "AccountId": {
-                    "type": "integer"
-                },
-                "CategoryIds": {
-                    "type": "array",
-                    "items": {
-                        "type": "integer"
-                    }
-                },
-                "EndTime": {
-                    "type": "string"
-                },
-                "IncomeExpense": {
-                    "enum": [
-                        "income",
-                        "expense"
-                    ],
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/IncomeExpense"
-                        }
-                    ]
-                },
-                "MaximumAmount": {
-                    "type": "integer",
-                    "minimum": 0
-                },
-                "MinimumAmount": {
-                    "type": "integer",
-                    "minimum": 0
-                },
-                "StartTime": {
-                    "type": "string"
-                },
-                "UserIds": {
-                    "type": "array",
-                    "items": {
-                        "type": "integer"
-                    }
-                }
-            }
-        },
-        "TransactionStatistic": {
-            "type": "object",
-            "properties": {
-                "EndTime": {
-                    "type": "string"
-                },
-                "Expense": {
-                    "$ref": "#/definitions/global.AmountCount"
-                },
-                "Income": {
-                    "$ref": "#/definitions/global.AmountCount"
-                },
-                "StartTime": {
-                    "type": "string"
-                }
-            }
-        },
-        "TransactionTiming": {
-            "type": "object",
-            "properties": {
-                "Config": {
-                    "$ref": "#/definitions/TransactionTimingConfig"
-                },
-                "Trans": {
-                    "$ref": "#/definitions/TransactionInfo"
-                }
-            }
-        },
-        "TransactionTimingConfig": {
-            "type": "object",
-            "properties": {
-                "CreatedAt": {
-                    "type": "string"
-                },
-                "Id": {
-                    "type": "integer"
-                },
-                "NextTime": {
-                    "type": "string"
-                },
-                "OffsetDays": {
-                    "type": "integer"
-                },
-                "Type": {
-                    "$ref": "#/definitions/transactionModel.TimingType"
-                },
-                "UpdatedAt": {
-                    "type": "string"
-                },
-                "Username": {
-                    "type": "string"
-                }
-            }
-        },
-        "TransactionTotal": {
-            "type": "object",
-            "properties": {
-                "Expense": {
-                    "$ref": "#/definitions/global.AmountCount"
-                },
-                "Income": {
-                    "$ref": "#/definitions/global.AmountCount"
-                }
-            }
-        },
-        "UpdateAccountMapping": {
-            "type": "object",
-            "properties": {
-                "RelatedAccountId": {
-                    "type": "integer"
-                }
-            }
-        },
-        "UserCreateFriendInvitation": {
-            "type": "object",
-            "properties": {
-                "Invitee": {
-                    "type": "integer"
-                }
-            }
-        },
-        "UserCurrentClientInfo": {
-            "type": "object",
-            "properties": {
-                "CurrentAccount": {
-                    "$ref": "#/definitions/AccountDetail"
-                },
-                "CurrentShareAccount": {
-                    "$ref": "#/definitions/AccountDetail"
-                },
-                "LoginTime": {
-                    "type": "string"
-                }
-            }
-        },
-        "UserForgetPassword": {
-            "type": "object",
-            "required": [
-                "Captcha",
-                "Email",
-                "Password"
-            ],
-            "properties": {
-                "Captcha": {
-                    "type": "string"
-                },
-                "Email": {
-                    "type": "string"
-                },
-                "Password": {
-                    "type": "string"
-                }
-            }
-        },
-        "UserFriendInvitation": {
-            "type": "object",
-            "properties": {
-                "CreateTime": {
-                    "type": "string"
-                },
-                "Id": {
-                    "type": "integer"
-                },
-                "Invitee": {
-                    "$ref": "#/definitions/UserInfo"
-                },
-                "Inviter": {
-                    "$ref": "#/definitions/UserInfo"
-                }
-            }
-        },
-        "UserGetAccountInvitationList": {
-            "type": "object"
-        },
-        "UserHome": {
-            "type": "object",
-            "properties": {
-                "HeaderCard": {
-                    "$ref": "#/definitions/UserHomeHeaderCard"
-                },
-                "TimePeriodStatistics": {
-                    "$ref": "#/definitions/UserHomeTimePeriodStatistics"
-                }
-            }
-        },
-        "UserHomeHeaderCard": {
-            "type": "object",
-            "properties": {
-                "EndTime": {
-                    "type": "string"
-                },
-                "Expense": {
-                    "$ref": "#/definitions/global.AmountCount"
-                },
-                "Income": {
-                    "$ref": "#/definitions/global.AmountCount"
-                },
-                "StartTime": {
-                    "type": "string"
-                }
-            }
-        },
-        "UserHomeTimePeriodStatistics": {
-            "type": "object",
-            "properties": {
-                "TodayData": {
-                    "$ref": "#/definitions/TransactionStatistic"
-                },
-                "WeekData": {
-                    "$ref": "#/definitions/TransactionStatistic"
-                },
-                "YearData": {
-                    "$ref": "#/definitions/TransactionStatistic"
-                },
-                "YesterdayData": {
-                    "$ref": "#/definitions/TransactionStatistic"
-                }
-            }
-        },
-        "UserInfo": {
-            "type": "object",
-            "properties": {
-                "Email": {
-                    "type": "string"
-                },
-                "Id": {
-                    "type": "integer"
-                },
-                "Username": {
-                    "type": "string"
-                }
-            }
-        },
-        "UserLogin": {
-            "type": "object",
-            "required": [
-                "Captcha",
-                "CaptchaId",
-                "Email",
-                "Password"
-            ],
-            "properties": {
-                "Captcha": {
-                    "type": "string"
-                },
-                "CaptchaId": {
-                    "type": "string"
-                },
-                "Email": {
-                    "type": "string"
-                },
-                "Password": {
-                    "type": "string"
-                }
-            }
-        },
-        "UserOne": {
-            "type": "object",
-            "properties": {
-                "CreateTime": {
-                    "type": "string"
-                },
-                "Email": {
-                    "type": "string"
-                },
-                "Id": {
-                    "type": "integer"
-                },
-                "Username": {
-                    "type": "string"
-                }
-            }
-        },
-        "UserRegister": {
-            "type": "object",
-            "required": [
-                "Captcha",
-                "Email",
-                "Password",
-                "Username"
-            ],
-            "properties": {
-                "Captcha": {
-                    "type": "string"
-                },
-                "Email": {
-                    "type": "string"
-                },
-                "Password": {
-                    "type": "string"
-                },
-                "Username": {
-                    "type": "string"
-                }
-            }
-        },
-        "UserSearch": {
-            "type": "object",
-            "required": [
-                "Username"
-            ],
-            "properties": {
-                "Id": {
-                    "type": "integer"
-                },
-                "Username": {
-                    "type": "string"
-                }
-            }
-        },
-        "UserSendEmail": {
-            "type": "object",
-            "required": [
-                "Captcha",
-                "CaptchaId",
-                "Type"
-            ],
-            "properties": {
-                "Captcha": {
-                    "type": "string"
-                },
-                "CaptchaId": {
-                    "type": "string"
-                },
-                "Type": {
-                    "enum": [
-                        "updatePassword"
-                    ],
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/constant.UserAction"
-                        }
-                    ]
-                }
-            }
-        },
-        "UserTransactionShareConfig": {
-            "type": "object",
-            "properties": {
-                "Account": {
-                    "type": "boolean"
-                },
-                "CreateTime": {
-                    "type": "boolean"
-                },
-                "Remark": {
-                    "type": "boolean"
-                },
-                "UpdateTime": {
-                    "type": "boolean"
-                }
-            }
-        },
-        "UserTransactionShareConfigUpdate": {
-            "type": "object",
-            "properties": {
-                "Flag": {
-                    "$ref": "#/definitions/request.TransactionShareConfigName"
-                },
-                "Status": {
-                    "type": "boolean"
-                }
-            }
-        },
-        "UserUpdateInfo": {
-            "type": "object",
-            "required": [
-                "Username"
-            ],
-            "properties": {
-                "Username": {
-                    "type": "string"
-                }
-            }
-        },
-        "UserUpdatePassword": {
-            "type": "object",
-            "required": [
-                "Captcha",
-                "Password"
-            ],
-            "properties": {
-                "Captcha": {
-                    "type": "string"
-                },
-                "Password": {
-                    "type": "string"
                 }
             }
         },
@@ -4947,6 +3602,449 @@ const docTemplate = `{
                 }
             }
         },
+        "request.AccountCreateOne": {
+            "type": "object",
+            "required": [
+                "Icon",
+                "Location",
+                "Name",
+                "Type"
+            ],
+            "properties": {
+                "Icon": {
+                    "type": "string"
+                },
+                "Location": {
+                    "type": "string"
+                },
+                "Name": {
+                    "type": "string"
+                },
+                "Type": {
+                    "$ref": "#/definitions/accountModel.Type"
+                }
+            }
+        },
+        "request.AccountGetUserInfo": {
+            "type": "object",
+            "properties": {
+                "Types": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "request.AccountGetUserInvitationList": {
+            "type": "object",
+            "required": [
+                "AccountId"
+            ],
+            "properties": {
+                "AccountId": {
+                    "type": "integer"
+                },
+                "Invitee": {
+                    "type": "integer"
+                },
+                "Limit": {
+                    "type": "integer"
+                },
+                "Offset": {
+                    "type": "integer",
+                    "minimum": 0
+                },
+                "Role": {
+                    "$ref": "#/definitions/accountModel.UserRole"
+                }
+            }
+        },
+        "request.AccountMapping": {
+            "type": "object",
+            "properties": {
+                "AccountId": {
+                    "type": "integer"
+                }
+            }
+        },
+        "request.AccountTransCategoryInit": {
+            "type": "object",
+            "properties": {
+                "TemplateId": {
+                    "type": "integer"
+                }
+            }
+        },
+        "request.AccountUpdateOne": {
+            "type": "object",
+            "required": [
+                "Type"
+            ],
+            "properties": {
+                "Icon": {
+                    "type": "string"
+                },
+                "Name": {
+                    "type": "string"
+                },
+                "Type": {
+                    "$ref": "#/definitions/accountModel.Type"
+                }
+            }
+        },
+        "request.AccountUpdateUser": {
+            "type": "object",
+            "required": [
+                "Role"
+            ],
+            "properties": {
+                "Role": {
+                    "$ref": "#/definitions/accountModel.UserRole"
+                }
+            }
+        },
+        "request.AccountUserConfigFlagUpdate": {
+            "type": "object",
+            "properties": {
+                "Status": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "request.CategoryCreateOne": {
+            "type": "object",
+            "required": [
+                "FatherId",
+                "Icon",
+                "Name"
+            ],
+            "properties": {
+                "FatherId": {
+                    "type": "integer"
+                },
+                "Icon": {
+                    "type": "string"
+                },
+                "Name": {
+                    "type": "string"
+                }
+            }
+        },
+        "request.CategoryCreateOneFather": {
+            "type": "object",
+            "properties": {
+                "IncomeExpense": {
+                    "$ref": "#/definitions/IncomeExpense"
+                },
+                "Name": {
+                    "type": "string"
+                }
+            }
+        },
+        "request.CategoryGetList": {
+            "type": "object",
+            "properties": {
+                "IncomeExpense": {
+                    "$ref": "#/definitions/IncomeExpense"
+                }
+            }
+        },
+        "request.CategoryGetMappingTree": {
+            "type": "object",
+            "required": [
+                "MappingAccountId"
+            ],
+            "properties": {
+                "MappingAccountId": {
+                    "type": "integer"
+                }
+            }
+        },
+        "request.CategoryGetTree": {
+            "type": "object",
+            "properties": {
+                "IncomeExpense": {
+                    "$ref": "#/definitions/IncomeExpense"
+                }
+            }
+        },
+        "request.CategoryMapping": {
+            "type": "object",
+            "properties": {
+                "ChildCategoryId": {
+                    "type": "integer"
+                }
+            }
+        },
+        "request.CategoryMove": {
+            "type": "object",
+            "properties": {
+                "FatherId": {
+                    "type": "integer"
+                },
+                "Previous": {
+                    "type": "integer"
+                }
+            }
+        },
+        "request.CategoryMoveFather": {
+            "type": "object",
+            "properties": {
+                "Previous": {
+                    "type": "integer"
+                }
+            }
+        },
+        "request.CategoryUpdateOne": {
+            "type": "object",
+            "properties": {
+                "Icon": {
+                    "type": "string"
+                },
+                "Name": {
+                    "type": "string"
+                }
+            }
+        },
+        "request.CommonSendEmailCaptcha": {
+            "type": "object",
+            "required": [
+                "Captcha",
+                "CaptchaId",
+                "Email",
+                "Type"
+            ],
+            "properties": {
+                "Captcha": {
+                    "type": "string"
+                },
+                "CaptchaId": {
+                    "type": "string"
+                },
+                "Email": {
+                    "type": "string"
+                },
+                "Type": {
+                    "enum": [
+                        "register",
+                        "forgetPassword"
+                    ],
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/constant.UserAction"
+                        }
+                    ]
+                }
+            }
+        },
+        "request.Id": {
+            "type": "object",
+            "properties": {
+                "Id": {
+                    "type": "integer"
+                }
+            }
+        },
+        "request.Name": {
+            "type": "object",
+            "properties": {
+                "Name": {
+                    "type": "string"
+                }
+            }
+        },
+        "request.PageData": {
+            "type": "object",
+            "properties": {
+                "Limit": {
+                    "type": "integer"
+                },
+                "Offset": {
+                    "type": "integer",
+                    "minimum": 0
+                }
+            }
+        },
+        "request.ProductMappingTransactionCategory": {
+            "type": "object",
+            "properties": {
+                "CategoryId": {
+                    "type": "integer"
+                }
+            }
+        },
+        "request.TourApply": {
+            "type": "object",
+            "properties": {
+                "DeviceNumber": {
+                    "type": "string"
+                }
+            }
+        },
+        "request.TransactionAmountRank": {
+            "type": "object",
+            "required": [
+                "AccountId",
+                "IncomeExpense"
+            ],
+            "properties": {
+                "AccountId": {
+                    "type": "integer"
+                },
+                "EndTime": {
+                    "type": "string"
+                },
+                "IncomeExpense": {
+                    "enum": [
+                        "income",
+                        "expense"
+                    ],
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/IncomeExpense"
+                        }
+                    ]
+                },
+                "StartTime": {
+                    "type": "string"
+                }
+            }
+        },
+        "request.TransactionCategoryAmountRank": {
+            "type": "object",
+            "required": [
+                "AccountId",
+                "IncomeExpense"
+            ],
+            "properties": {
+                "AccountId": {
+                    "type": "integer"
+                },
+                "EndTime": {
+                    "type": "string"
+                },
+                "IncomeExpense": {
+                    "enum": [
+                        "income",
+                        "expense"
+                    ],
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/IncomeExpense"
+                        }
+                    ]
+                },
+                "Limit": {
+                    "type": "integer"
+                },
+                "StartTime": {
+                    "type": "string"
+                }
+            }
+        },
+        "request.TransactionCreateOne": {
+            "type": "object",
+            "properties": {
+                "Amount": {
+                    "type": "integer"
+                },
+                "CategoryId": {
+                    "type": "integer"
+                },
+                "IncomeExpense": {
+                    "$ref": "#/definitions/IncomeExpense"
+                },
+                "Remark": {
+                    "type": "string"
+                },
+                "TradeTime": {
+                    "type": "string"
+                }
+            }
+        },
+        "request.TransactionDayStatistic": {
+            "type": "object",
+            "required": [
+                "AccountId"
+            ],
+            "properties": {
+                "AccountId": {
+                    "type": "integer"
+                },
+                "CategoryIds": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "EndTime": {
+                    "type": "string"
+                },
+                "IncomeExpense": {
+                    "enum": [
+                        "income",
+                        "expense"
+                    ],
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/IncomeExpense"
+                        }
+                    ]
+                },
+                "StartTime": {
+                    "type": "string"
+                }
+            }
+        },
+        "request.TransactionMonthStatistic": {
+            "type": "object",
+            "required": [
+                "AccountId"
+            ],
+            "properties": {
+                "AccountId": {
+                    "type": "integer"
+                },
+                "CategoryIds": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "EndTime": {
+                    "type": "string"
+                },
+                "IncomeExpense": {
+                    "enum": [
+                        "income",
+                        "expense"
+                    ],
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/IncomeExpense"
+                        }
+                    ]
+                },
+                "MaximumAmount": {
+                    "type": "integer",
+                    "minimum": 0
+                },
+                "MinimumAmount": {
+                    "type": "integer",
+                    "minimum": 0
+                },
+                "StartTime": {
+                    "type": "string"
+                },
+                "UserIds": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                }
+            }
+        },
         "request.TransactionShareConfigName": {
             "type": "string",
             "enum": [
@@ -4961,6 +4059,1180 @@ const docTemplate = `{
                 "FLAG_UPDATE_TIME",
                 "FLAG_REMARK"
             ]
+        },
+        "request.TransactionTiming": {
+            "type": "object",
+            "properties": {
+                "Config": {
+                    "$ref": "#/definitions/request.TransactionTimingConfig"
+                },
+                "Trans": {
+                    "$ref": "#/definitions/transactionModel.Info"
+                }
+            }
+        },
+        "request.TransactionTimingConfig": {
+            "type": "object",
+            "properties": {
+                "NextTime": {
+                    "type": "string"
+                },
+                "OffsetDays": {
+                    "type": "integer"
+                },
+                "Type": {
+                    "$ref": "#/definitions/transactionModel.TimingType"
+                },
+                "UserId": {
+                    "type": "integer"
+                }
+            }
+        },
+        "request.TransactionTotal": {
+            "type": "object",
+            "required": [
+                "AccountId"
+            ],
+            "properties": {
+                "AccountId": {
+                    "type": "integer"
+                },
+                "CategoryIds": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "EndTime": {
+                    "type": "string"
+                },
+                "IncomeExpense": {
+                    "enum": [
+                        "income",
+                        "expense"
+                    ],
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/IncomeExpense"
+                        }
+                    ]
+                },
+                "MaximumAmount": {
+                    "type": "integer",
+                    "minimum": 0
+                },
+                "MinimumAmount": {
+                    "type": "integer",
+                    "minimum": 0
+                },
+                "StartTime": {
+                    "type": "string"
+                },
+                "UserIds": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                }
+            }
+        },
+        "request.UpdateAccountMapping": {
+            "type": "object",
+            "properties": {
+                "RelatedAccountId": {
+                    "type": "integer"
+                }
+            }
+        },
+        "request.UserCreateFriendInvitation": {
+            "type": "object",
+            "properties": {
+                "Invitee": {
+                    "type": "integer"
+                }
+            }
+        },
+        "request.UserForgetPassword": {
+            "type": "object",
+            "required": [
+                "Captcha",
+                "Email",
+                "Password"
+            ],
+            "properties": {
+                "Captcha": {
+                    "type": "string"
+                },
+                "Email": {
+                    "type": "string"
+                },
+                "Password": {
+                    "type": "string"
+                }
+            }
+        },
+        "request.UserGetAccountInvitationList": {
+            "type": "object",
+            "properties": {
+                "Limit": {
+                    "type": "integer"
+                },
+                "Offset": {
+                    "type": "integer",
+                    "minimum": 0
+                }
+            }
+        },
+        "request.UserHome": {
+            "type": "object",
+            "properties": {
+                "AccountId": {
+                    "type": "integer"
+                }
+            }
+        },
+        "request.UserLogin": {
+            "type": "object",
+            "required": [
+                "Captcha",
+                "CaptchaId",
+                "Email",
+                "Password"
+            ],
+            "properties": {
+                "Captcha": {
+                    "type": "string"
+                },
+                "CaptchaId": {
+                    "type": "string"
+                },
+                "Email": {
+                    "type": "string"
+                },
+                "Password": {
+                    "type": "string"
+                }
+            }
+        },
+        "request.UserRegister": {
+            "type": "object",
+            "required": [
+                "Captcha",
+                "Email",
+                "Password",
+                "Username"
+            ],
+            "properties": {
+                "Captcha": {
+                    "type": "string"
+                },
+                "Email": {
+                    "type": "string"
+                },
+                "Password": {
+                    "type": "string"
+                },
+                "Username": {
+                    "type": "string"
+                }
+            }
+        },
+        "request.UserSearch": {
+            "type": "object",
+            "required": [
+                "Username"
+            ],
+            "properties": {
+                "Id": {
+                    "type": "integer"
+                },
+                "Limit": {
+                    "type": "integer"
+                },
+                "Offset": {
+                    "type": "integer",
+                    "minimum": 0
+                },
+                "Username": {
+                    "type": "string"
+                }
+            }
+        },
+        "request.UserSendEmail": {
+            "type": "object",
+            "required": [
+                "Captcha",
+                "CaptchaId",
+                "Type"
+            ],
+            "properties": {
+                "Captcha": {
+                    "type": "string"
+                },
+                "CaptchaId": {
+                    "type": "string"
+                },
+                "Type": {
+                    "enum": [
+                        "updatePassword"
+                    ],
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/constant.UserAction"
+                        }
+                    ]
+                }
+            }
+        },
+        "request.UserTransactionShareConfigUpdate": {
+            "type": "object",
+            "properties": {
+                "Flag": {
+                    "$ref": "#/definitions/request.TransactionShareConfigName"
+                },
+                "Status": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "request.UserUpdateInfo": {
+            "type": "object",
+            "required": [
+                "Username"
+            ],
+            "properties": {
+                "Username": {
+                    "type": "string"
+                }
+            }
+        },
+        "request.UserUpdatePassword": {
+            "type": "object",
+            "required": [
+                "Captcha",
+                "Password"
+            ],
+            "properties": {
+                "Captcha": {
+                    "type": "string"
+                },
+                "Password": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.AccountDetail": {
+            "type": "object",
+            "properties": {
+                "CreateTime": {
+                    "type": "string"
+                },
+                "CreatorId": {
+                    "type": "integer"
+                },
+                "CreatorName": {
+                    "type": "string"
+                },
+                "Icon": {
+                    "type": "string"
+                },
+                "Id": {
+                    "type": "integer"
+                },
+                "JoinTime": {
+                    "type": "string"
+                },
+                "Location": {
+                    "type": "string"
+                },
+                "Name": {
+                    "type": "string"
+                },
+                "Role": {
+                    "$ref": "#/definitions/accountModel.UserRole"
+                },
+                "Type": {
+                    "$ref": "#/definitions/accountModel.Type"
+                },
+                "UpdateTime": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.AccountInfo": {
+            "type": "object",
+            "properties": {
+                "CurrentMonthTransTotal": {
+                    "$ref": "#/definitions/global.IEStatisticWithTime"
+                },
+                "RecentTrans": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/response.TransactionDetail"
+                    }
+                },
+                "TodayTransTotal": {
+                    "$ref": "#/definitions/global.IEStatisticWithTime"
+                }
+            }
+        },
+        "response.AccountMapping": {
+            "type": "object",
+            "properties": {
+                "CreateTime": {
+                    "type": "string"
+                },
+                "Id": {
+                    "type": "integer"
+                },
+                "MainAccount": {
+                    "$ref": "#/definitions/response.AccountOne"
+                },
+                "RelatedAccount": {
+                    "$ref": "#/definitions/response.AccountDetail"
+                },
+                "UpdateTime": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.AccountOne": {
+            "type": "object",
+            "properties": {
+                "CreateTime": {
+                    "type": "string"
+                },
+                "Icon": {
+                    "type": "string"
+                },
+                "Id": {
+                    "type": "integer"
+                },
+                "Location": {
+                    "type": "string"
+                },
+                "Name": {
+                    "type": "string"
+                },
+                "Type": {
+                    "$ref": "#/definitions/accountModel.Type"
+                },
+                "UpdateTime": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.AccountTemplateList": {
+            "type": "object",
+            "properties": {
+                "List": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/response.AccountTemplateOne"
+                    }
+                }
+            }
+        },
+        "response.AccountTemplateOne": {
+            "type": "object",
+            "properties": {
+                "Icon": {
+                    "type": "string"
+                },
+                "Id": {
+                    "type": "integer"
+                },
+                "Name": {
+                    "type": "string"
+                },
+                "Type": {
+                    "$ref": "#/definitions/accountModel.Type"
+                }
+            }
+        },
+        "response.AccountUser": {
+            "type": "object",
+            "properties": {
+                "AccountId": {
+                    "type": "integer"
+                },
+                "CreateTime": {
+                    "type": "string"
+                },
+                "Id": {
+                    "type": "integer"
+                },
+                "Info": {
+                    "$ref": "#/definitions/response.UserInfo"
+                },
+                "Role": {
+                    "$ref": "#/definitions/accountModel.UserRole"
+                },
+                "UserId": {
+                    "type": "integer"
+                }
+            }
+        },
+        "response.AccountUserConfig": {
+            "type": "object",
+            "properties": {
+                "AccountId": {
+                    "type": "integer"
+                },
+                "CreateTime": {
+                    "type": "string"
+                },
+                "Id": {
+                    "type": "integer"
+                },
+                "Trans": {
+                    "type": "object",
+                    "properties": {
+                        "SyncMappingAccount": {
+                            "type": "boolean"
+                        }
+                    }
+                },
+                "UpdateTime": {
+                    "type": "string"
+                },
+                "UserId": {
+                    "type": "integer"
+                }
+            }
+        },
+        "response.AccountUserInfo": {
+            "type": "object",
+            "properties": {
+                "CurrentMonthTransTotal": {
+                    "$ref": "#/definitions/global.IEStatisticWithTime"
+                },
+                "RecentTrans": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/response.TransactionDetail"
+                    }
+                },
+                "TodayTransTotal": {
+                    "$ref": "#/definitions/global.IEStatisticWithTime"
+                }
+            }
+        },
+        "response.AccountUserInvitation": {
+            "type": "object",
+            "properties": {
+                "Account": {
+                    "$ref": "#/definitions/response.AccountOne"
+                },
+                "CreateTime": {
+                    "type": "string"
+                },
+                "Id": {
+                    "type": "integer"
+                },
+                "Invitee": {
+                    "$ref": "#/definitions/response.UserInfo"
+                },
+                "Inviter": {
+                    "$ref": "#/definitions/response.UserInfo"
+                },
+                "Role": {
+                    "$ref": "#/definitions/accountModel.UserRole"
+                },
+                "Status": {
+                    "$ref": "#/definitions/accountModel.UserInvitationStatus"
+                }
+            }
+        },
+        "response.CategoryDetail": {
+            "type": "object",
+            "properties": {
+                "FatherId": {
+                    "type": "integer"
+                },
+                "FatherName": {
+                    "type": "string"
+                },
+                "Icon": {
+                    "type": "string"
+                },
+                "Id": {
+                    "type": "integer"
+                },
+                "IncomeExpense": {
+                    "$ref": "#/definitions/IncomeExpense"
+                },
+                "Name": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.CategoryMappingTree": {
+            "type": "object",
+            "properties": {
+                "Tree": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/response.CategoryMappingTreeFather"
+                    }
+                }
+            }
+        },
+        "response.CategoryMappingTreeFather": {
+            "type": "object",
+            "properties": {
+                "ChildrenIds": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "FatherId": {
+                    "type": "integer"
+                }
+            }
+        },
+        "response.CategoryOne": {
+            "type": "object",
+            "properties": {
+                "AccountId": {
+                    "type": "integer"
+                },
+                "Icon": {
+                    "type": "string"
+                },
+                "Id": {
+                    "type": "integer"
+                },
+                "IncomeExpense": {
+                    "$ref": "#/definitions/IncomeExpense"
+                },
+                "Name": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.CategoryTree": {
+            "type": "object",
+            "properties": {
+                "Tree": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/response.FatherOne"
+                    }
+                }
+            }
+        },
+        "response.CommonCaptcha": {
+            "type": "object",
+            "properties": {
+                "CaptchaId": {
+                    "type": "string"
+                },
+                "CaptchaLength": {
+                    "type": "integer"
+                },
+                "OpenCaptcha": {
+                    "type": "boolean"
+                },
+                "PicBase64": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.ExpirationTime": {
+            "type": "object",
+            "properties": {
+                "ExpirationTime": {
+                    "type": "integer"
+                }
+            }
+        },
+        "response.FatherOne": {
+            "type": "object",
+            "properties": {
+                "AccountId": {
+                    "type": "integer"
+                },
+                "Children": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/response.CategoryOne"
+                    }
+                },
+                "Id": {
+                    "type": "integer"
+                },
+                "IncomeExpense": {
+                    "$ref": "#/definitions/IncomeExpense"
+                },
+                "Name": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.List-response_AccountDetail": {
+            "type": "object",
+            "properties": {
+                "List": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/response.AccountDetail"
+                    }
+                }
+            }
+        },
+        "response.List-response_AccountMapping": {
+            "type": "object",
+            "properties": {
+                "List": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/response.AccountMapping"
+                    }
+                }
+            }
+        },
+        "response.List-response_AccountUser": {
+            "type": "object",
+            "properties": {
+                "List": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/response.AccountUser"
+                    }
+                }
+            }
+        },
+        "response.List-response_AccountUserInvitation": {
+            "type": "object",
+            "properties": {
+                "List": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/response.AccountUserInvitation"
+                    }
+                }
+            }
+        },
+        "response.List-response_CategoryDetail": {
+            "type": "object",
+            "properties": {
+                "List": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/response.CategoryDetail"
+                    }
+                }
+            }
+        },
+        "response.List-response_TransactionCategoryAmountRank": {
+            "type": "object",
+            "properties": {
+                "List": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/response.TransactionCategoryAmountRank"
+                    }
+                }
+            }
+        },
+        "response.List-response_TransactionDayStatistic": {
+            "type": "object",
+            "properties": {
+                "List": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/response.TransactionDayStatistic"
+                    }
+                }
+            }
+        },
+        "response.List-response_TransactionDetail": {
+            "type": "object",
+            "properties": {
+                "List": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/response.TransactionDetail"
+                    }
+                }
+            }
+        },
+        "response.List-response_TransactionDetailList": {
+            "type": "object",
+            "properties": {
+                "List": {
+                    "type": "array",
+                    "items": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/definitions/response.TransactionDetail"
+                        }
+                    }
+                }
+            }
+        },
+        "response.List-response_TransactionStatistic": {
+            "type": "object",
+            "properties": {
+                "List": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/response.TransactionStatistic"
+                    }
+                }
+            }
+        },
+        "response.List-response_TransactionTiming": {
+            "type": "object",
+            "properties": {
+                "List": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/response.TransactionTiming"
+                    }
+                }
+            }
+        },
+        "response.List-response_UserFriendInvitation": {
+            "type": "object",
+            "properties": {
+                "List": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/response.UserFriendInvitation"
+                    }
+                }
+            }
+        },
+        "response.List-response_UserInfo": {
+            "type": "object",
+            "properties": {
+                "List": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/response.UserInfo"
+                    }
+                }
+            }
+        },
+        "response.Login": {
+            "type": "object",
+            "properties": {
+                "CurrentAccount": {
+                    "$ref": "#/definitions/response.AccountDetail"
+                },
+                "CurrentShareAccount": {
+                    "$ref": "#/definitions/response.AccountDetail"
+                },
+                "Token": {
+                    "type": "string"
+                },
+                "TokenExpirationTime": {
+                    "type": "string"
+                },
+                "User": {
+                    "$ref": "#/definitions/response.UserOne"
+                }
+            }
+        },
+        "response.ProductList": {
+            "type": "object",
+            "properties": {
+                "List": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/response.ProductOne"
+                    }
+                }
+            }
+        },
+        "response.ProductMappingTree": {
+            "type": "object",
+            "properties": {
+                "Tree": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/response.ProductMappingTreeFather"
+                    }
+                }
+            }
+        },
+        "response.ProductMappingTreeFather": {
+            "type": "object",
+            "properties": {
+                "Children": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "FatherId": {
+                    "type": "integer"
+                }
+            }
+        },
+        "response.ProductOne": {
+            "type": "object",
+            "properties": {
+                "Name": {
+                    "type": "string"
+                },
+                "UniqueKey": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.ProductTransactionCategory": {
+            "type": "object",
+            "properties": {
+                "Id": {
+                    "type": "integer"
+                },
+                "IncomeExpense": {
+                    "$ref": "#/definitions/IncomeExpense"
+                },
+                "Name": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.ProductTransactionCategoryList": {
+            "type": "object",
+            "properties": {
+                "List": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/response.ProductTransactionCategory"
+                    }
+                }
+            }
+        },
+        "response.Token": {
+            "type": "object",
+            "properties": {
+                "Token": {
+                    "type": "string"
+                },
+                "TokenExpirationTime": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.TransactionCategoryAmountRank": {
+            "type": "object",
+            "properties": {
+                "Amount": {
+                    "type": "integer"
+                },
+                "Category": {
+                    "$ref": "#/definitions/response.CategoryOne"
+                },
+                "Count": {
+                    "type": "integer"
+                }
+            }
+        },
+        "response.TransactionDayStatistic": {
+            "type": "object",
+            "properties": {
+                "Amount": {
+                    "type": "integer"
+                },
+                "Count": {
+                    "type": "integer"
+                },
+                "Date": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.TransactionDetail": {
+            "type": "object",
+            "properties": {
+                "AccountId": {
+                    "type": "integer"
+                },
+                "AccountName": {
+                    "type": "string"
+                },
+                "Amount": {
+                    "type": "integer"
+                },
+                "CategoryFatherName": {
+                    "type": "string"
+                },
+                "CategoryIcon": {
+                    "type": "string"
+                },
+                "CategoryId": {
+                    "type": "integer"
+                },
+                "CategoryName": {
+                    "type": "string"
+                },
+                "CreateTime": {
+                    "type": "string"
+                },
+                "Id": {
+                    "type": "integer"
+                },
+                "IncomeExpense": {
+                    "$ref": "#/definitions/IncomeExpense"
+                },
+                "Remark": {
+                    "type": "string"
+                },
+                "TradeTime": {
+                    "type": "string"
+                },
+                "UpdateTime": {
+                    "type": "string"
+                },
+                "UserId": {
+                    "type": "integer"
+                },
+                "UserName": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.TransactionInfo": {
+            "type": "object",
+            "properties": {
+                "AccountId": {
+                    "type": "integer"
+                },
+                "AccountName": {
+                    "type": "string"
+                },
+                "Amount": {
+                    "type": "integer"
+                },
+                "CategoryFatherName": {
+                    "type": "string"
+                },
+                "CategoryIcon": {
+                    "type": "string"
+                },
+                "CategoryId": {
+                    "type": "integer"
+                },
+                "CategoryName": {
+                    "type": "string"
+                },
+                "Id": {
+                    "type": "integer"
+                },
+                "IncomeExpense": {
+                    "$ref": "#/definitions/IncomeExpense"
+                },
+                "Remark": {
+                    "type": "string"
+                },
+                "TradeTime": {
+                    "type": "string"
+                },
+                "UserId": {
+                    "type": "integer"
+                },
+                "UserName": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.TransactionStatistic": {
+            "type": "object",
+            "properties": {
+                "EndTime": {
+                    "type": "string"
+                },
+                "Expense": {
+                    "$ref": "#/definitions/global.AmountCount"
+                },
+                "Income": {
+                    "$ref": "#/definitions/global.AmountCount"
+                },
+                "StartTime": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.TransactionTiming": {
+            "type": "object",
+            "properties": {
+                "Config": {
+                    "$ref": "#/definitions/response.TransactionTimingConfig"
+                },
+                "Trans": {
+                    "$ref": "#/definitions/response.TransactionInfo"
+                }
+            }
+        },
+        "response.TransactionTimingConfig": {
+            "type": "object",
+            "properties": {
+                "Close": {
+                    "type": "boolean"
+                },
+                "CreatedAt": {
+                    "type": "string"
+                },
+                "Id": {
+                    "type": "integer"
+                },
+                "NextTime": {
+                    "type": "string"
+                },
+                "OffsetDays": {
+                    "type": "integer"
+                },
+                "Type": {
+                    "$ref": "#/definitions/transactionModel.TimingType"
+                },
+                "UpdatedAt": {
+                    "type": "string"
+                },
+                "Username": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.TransactionTotal": {
+            "type": "object",
+            "properties": {
+                "Expense": {
+                    "$ref": "#/definitions/global.AmountCount"
+                },
+                "Income": {
+                    "$ref": "#/definitions/global.AmountCount"
+                }
+            }
+        },
+        "response.UserCurrentClientInfo": {
+            "type": "object",
+            "properties": {
+                "CurrentAccount": {
+                    "$ref": "#/definitions/response.AccountDetail"
+                },
+                "CurrentShareAccount": {
+                    "$ref": "#/definitions/response.AccountDetail"
+                },
+                "LoginTime": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.UserFriendInvitation": {
+            "type": "object",
+            "properties": {
+                "CreateTime": {
+                    "type": "string"
+                },
+                "Id": {
+                    "type": "integer"
+                },
+                "Invitee": {
+                    "$ref": "#/definitions/response.UserInfo"
+                },
+                "Inviter": {
+                    "$ref": "#/definitions/response.UserInfo"
+                }
+            }
+        },
+        "response.UserHome": {
+            "type": "object",
+            "properties": {
+                "HeaderCard": {
+                    "$ref": "#/definitions/response.UserHomeHeaderCard"
+                },
+                "TimePeriodStatistics": {
+                    "$ref": "#/definitions/response.UserHomeTimePeriodStatistics"
+                }
+            }
+        },
+        "response.UserHomeHeaderCard": {
+            "type": "object",
+            "properties": {
+                "EndTime": {
+                    "type": "string"
+                },
+                "Expense": {
+                    "$ref": "#/definitions/global.AmountCount"
+                },
+                "Income": {
+                    "$ref": "#/definitions/global.AmountCount"
+                },
+                "StartTime": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.UserHomeTimePeriodStatistics": {
+            "type": "object",
+            "properties": {
+                "TodayData": {
+                    "$ref": "#/definitions/response.TransactionStatistic"
+                },
+                "WeekData": {
+                    "$ref": "#/definitions/response.TransactionStatistic"
+                },
+                "YearData": {
+                    "$ref": "#/definitions/response.TransactionStatistic"
+                },
+                "YesterdayData": {
+                    "$ref": "#/definitions/response.TransactionStatistic"
+                }
+            }
+        },
+        "response.UserInfo": {
+            "type": "object",
+            "properties": {
+                "Email": {
+                    "type": "string"
+                },
+                "Id": {
+                    "type": "integer"
+                },
+                "Username": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.UserOne": {
+            "type": "object",
+            "properties": {
+                "CreateTime": {
+                    "type": "string"
+                },
+                "Email": {
+                    "type": "string"
+                },
+                "Id": {
+                    "type": "integer"
+                },
+                "Username": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.UserTransactionShareConfig": {
+            "type": "object",
+            "properties": {
+                "Account": {
+                    "type": "boolean"
+                },
+                "CreateTime": {
+                    "type": "boolean"
+                },
+                "Remark": {
+                    "type": "boolean"
+                },
+                "UpdateTime": {
+                    "type": "boolean"
+                }
+            }
         },
         "transactionModel.Info": {
             "type": "object",
@@ -4985,11 +5257,11 @@ const docTemplate = `{
         "transactionModel.TimingType": {
             "type": "string",
             "enum": [
-                "Once",
-                "EveryDay",
-                "EveryWeek",
-                "EveryMonth",
-                "LastDayOfMonth"
+                "once",
+                "everyDay",
+                "everyWeek",
+                "everyMonth",
+                "lastDayOfMonth"
             ],
             "x-enum-varnames": [
                 "Once",
