@@ -19,11 +19,6 @@ var (
 	ExpenseCategoryList []categoryModel.Category
 )
 
-const (
-	port = "7979"
-	Host = "127.0.0.1:" + port
-)
-
 var (
 	Info = info.Data
 )

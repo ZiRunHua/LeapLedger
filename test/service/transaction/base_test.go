@@ -1,21 +1,21 @@
 package transaction
 
 import (
+	"context"
+
 	_ "KeepAccount/test/initialize"
 )
 import (
+	"reflect"
+	"testing"
+	"time"
+
 	"KeepAccount/global"
 	"KeepAccount/global/constant"
-	"KeepAccount/global/cus"
-	"KeepAccount/global/db"
 	"KeepAccount/global/nats"
 	accountModel "KeepAccount/model/account"
 	transactionModel "KeepAccount/model/transaction"
 	"KeepAccount/test"
-	"context"
-	"reflect"
-	"testing"
-	"time"
 )
 
 func TestCreate(t *testing.T) {
@@ -32,17 +32,11 @@ func TestCreate(t *testing.T) {
 		t.Fatal(err)
 	}
 	var trans transactionModel.Transaction
-	err = db.Transaction(
-		context.TODO(), func(ctx *cus.TxContext) error {
-			createOption, err := service.NewOptionFormConfig(transInfo, ctx)
-			if err != nil {
-				return err
-			}
-			createOption.WithSyncUpdateStatistic(false)
-			trans, err = service.Create(transInfo, user, createOption, ctx)
-			return err
-		},
-	)
+	createOption, err := service.NewOptionFormConfig(transInfo, context.TODO())
+	if err != nil {
+		t.Fatal(err)
+	}
+	trans, err = service.Create(transInfo, user, createOption, context.TODO())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -71,14 +65,19 @@ func TestCreate(t *testing.T) {
 func TestAll(t *testing.T) {
 	var transaction transactionModel.Transaction
 	rows, err := global.GvaDb.Model(&transactionModel.Transaction{}).Rows()
-	defer rows.Close()
+	defer func() {
+		err = rows.Close()
+		if err != nil {
+			t.Fatal(err)
+		}
+	}()
 	if err != nil {
-		t.Error(err)
+		t.Fatal(err)
 	}
 	for rows.Next() {
 		err = global.GvaDb.ScanRows(rows, &transaction)
 		if err != nil {
-			t.Error(err)
+			t.Fatal(err)
 		}
 		nats.PublishTaskWithPayload(nats.TaskStatisticUpdate, transaction.GetStatisticData(true))
 	}
