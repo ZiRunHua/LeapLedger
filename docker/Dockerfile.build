@@ -17,10 +17,12 @@ RUN go build -o leapledger
 FROM alpine:3.20.3
 
 ENV TZ=Asia/Shanghai
+ENV GOROOT=/usr/local/go
 
-WORKDIR /app
+WORKDIR /go/LeapLedger
 
-COPY --from=builder /go/LeapLedger/leapledger /app/leapledger
+COPY --from=builder /usr/local/go/lib /usr/local/go/lib
+COPY --from=builder /go/LeapLedger /go/LeapLedger
 
 EXPOSE 8080
 

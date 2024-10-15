@@ -14,9 +14,8 @@ local_test
 runtime
 
 docker/*
-!docker/docker-compose.yaml
-!docker/Dockerfile
 !docker/redis.conf
+!docker/Dockerfile
+!docker/Dockerfile.build
 !docker/Dockerfile.debug
-
 production_config.yaml
