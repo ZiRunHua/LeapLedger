@@ -4,6 +4,7 @@ import (
 	"KeepAccount/global/constant"
 	"KeepAccount/initialize"
 	"KeepAccount/util/log"
+
 	"github.com/nats-io/nats.go/jetstream"
 	"go.uber.org/zap"
 )
@@ -71,7 +72,7 @@ func init() {
 	}
 }
 
-func receiveMsg(msg jetstream.Msg, handle MessageHandler, logger *zap.Logger) {
+func receiveMsg(msg jetstream.Msg, handle func(msg jetstream.Msg) error, logger *zap.Logger) {
 	var err error
 	defer func() {
 		r := recover()

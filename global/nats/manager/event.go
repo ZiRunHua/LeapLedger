@@ -16,6 +16,7 @@ type EventManager interface {
 	Publish(event Event, payload []byte) bool
 	Subscribe(event Event, triggerTask Task, fetchTaskData func(eventData []byte) ([]byte, error))
 	SubscribeToNewConsumer(event Event, name string, handler MessageHandler)
+	GetMessageHandler(event Event) (MessageHandler, error)
 }
 
 const (
@@ -84,49 +85,65 @@ func (em *eventManager) Subscribe(event Event, triggerTask Task, fetchTaskData f
 	if em.eventToTask[event] == nil {
 		em.eventToTask[event] = make(map[Task]MessageHandler)
 	}
-	em.eventToTask[event][triggerTask] = func(msg jetstream.Msg) error {
-		data, err := fetchTaskData(msg.Data())
+	em.eventToTask[event][triggerTask] = func(payload []byte) error {
+		data, err := fetchTaskData(payload)
 		if err != nil {
 			return err
 		}
 		if em.taskManage.Publish(triggerTask, data) {
 			return nil
 		}
-		str, _ := json.Marshal(RetryTriggerTask{Task: triggerTask, Data: msg.Data()})
+		str, _ := json.Marshal(RetryTriggerTask{Task: triggerTask, Data: payload})
 		em.Publish(EventRetryTriggerTask, str)
 		return nil
 	}
 
-	if em.msgHandlerMap == nil {
-		em.msgHandlerMap = make(map[string]MessageHandler)
-	}
-	em.msgHandlerMap[event.subject()] = func(msg jetstream.Msg) error {
-		for _, handler := range em.eventToTask[event] {
-			_ = handler(msg)
-		}
-		return nil
-	}
+	em.updateMsgHandlerMap(
+		event.subject(), func(payload []byte) error {
+			for _, handler := range em.eventToTask[event] {
+				_ = handler(payload)
+			}
+			return nil
+		},
+	)
 }
-
 func (em *eventManager) SubscribeToNewConsumer(event Event, name string, handler MessageHandler) {
+	updateMsg := func() {
+		em.lock.Lock()
+		defer em.lock.Unlock()
+		if _, exist := em.msgHandlerMap[event.subject()]; exist {
+			return
+		}
+		em.updateMsgHandlerMap(
+			event.subject(), func(payload []byte) error {
+				// ignore
+				return nil
+			},
+		)
+	}
+	updateMsg()
 	ctx := context.Background()
 	config, err := em.getCustomerConfig(ctx)
 	if err != nil {
 		panic(err)
 	}
-	config.Name, config.Durable, config.FilterSubjects = name, name, []string{string(event)}
+	config.Name, config.Durable, config.FilterSubjects = name, name, []string{string(event.subject())}
 	customer, err := em.newCustomer(ctx, config)
 	if err != nil {
 		panic(err)
 	}
 	_, err = customer.Consume(
 		func(msg jetstream.Msg) {
-			receiveMsg(msg, handler, em.logger)
+			receiveMsg(msg, func(msg jetstream.Msg) error { return handler(msg.Data()) }, em.logger)
 		},
 	)
 	if err != nil {
 		panic(err)
 	}
+}
+
+func (em *eventManager) GetMessageHandler(event Event) (MessageHandler, error) {
+	return em.getHandler(event.subject())
 }
 
 type eventMsgHandler struct {
@@ -141,14 +158,14 @@ type eventMsgHandler struct {
 }
 
 func (em *eventMsgHandler) receiveMsg(msg jetstream.Msg) {
-	receiveMsg(msg, func(msg jetstream.Msg) error { return em.msgHandle(msg) }, em.logger)
+	receiveMsg(msg, func(msg jetstream.Msg) error { return em.msgHandle(msg.Subject(), msg.Data()) }, em.logger)
 }
 
 func (em *eventMsgHandler) getHandler(subject string) (MessageHandler, error) {
 	if subject == string(EventRetryTriggerTask) {
-		return func(msg jetstream.Msg) error {
+		return func(payload []byte) error {
 			var data RetryTriggerTask
-			err := json.Unmarshal(msg.Data(), &data)
+			err := json.Unmarshal(payload, &data)
 			if err != nil {
 				return err
 			}
@@ -161,17 +178,24 @@ func (em *eventMsgHandler) getHandler(subject string) (MessageHandler, error) {
 	}
 	handler, exist := em.msgHandlerMap[subject]
 	if !exist {
-		return func(msg jetstream.Msg) error { return nil }, fmt.Errorf(
+		return func(payload []byte) error { return nil }, fmt.Errorf(
 			"subject: %s ,%w", subject, ErrMsgHandlerNotExist,
 		)
 	}
 	return handler, nil
 }
 
-func (em *eventMsgHandler) msgHandle(msg jetstream.Msg) error {
-	handler, err := em.getHandler(msg.Subject())
+func (em *eventMsgHandler) msgHandle(subject string, payload []byte) error {
+	handler, err := em.getHandler(subject)
 	if err != nil {
 		return err
 	}
-	return handler(msg)
+	return handler(payload)
+}
+
+func (em *eventMsgHandler) updateMsgHandlerMap(subject string, handler MessageHandler) {
+	if em.msgHandlerMap == nil {
+		em.msgHandlerMap = make(map[string]MessageHandler)
+	}
+	em.msgHandlerMap[subject] = handler
 }

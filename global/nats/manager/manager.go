@@ -12,7 +12,7 @@ const msgHeaderKeySubject = "subject"
 type msgManger interface {
 	receiveMsg(msg jetstream.Msg)
 	getHandler(subject string) (MessageHandler, error)
-	msgHandle(msg jetstream.Msg) error
+	msgHandle(subject string, payload []byte) error
 }
 
 type MsgType interface {
@@ -20,14 +20,11 @@ type MsgType interface {
 	queue() string
 }
 
-type MessageHandler func(msg jetstream.Msg) error
+type MessageHandler func(payload []byte) error
 
 var backOff = []time.Duration{
-	time.Millisecond * 50,
-	time.Millisecond * 250,
-	time.Millisecond * 500,
-	time.Second * 3,
-	time.Second * 30,
+	time.Second * 10,
+	time.Second * 60,
 	time.Second * 300,
 	time.Hour,
 	time.Hour * 7,

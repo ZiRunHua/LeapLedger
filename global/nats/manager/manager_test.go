@@ -3,22 +3,22 @@ package manager
 import (
 	"context"
 	"errors"
-	"github.com/google/uuid"
 	"reflect"
 	"strconv"
 	"testing"
 	"time"
 
-	"github.com/nats-io/nats.go/jetstream"
+	"github.com/google/uuid"
 )
 
 func TestSubscribeAndPublish(t *testing.T) {
+	t.Parallel()
 	var task = Task(t.Name())
 	var count int
 	manager := taskManage
 	manager.Subscribe(
-		task, func(msg jetstream.Msg) error {
-			if !reflect.DeepEqual(msg.Data(), []byte("1")) {
+		task, func(payload []byte) error {
+			if !reflect.DeepEqual(payload, []byte("1")) {
 				t.Fail()
 			}
 			count++
@@ -34,6 +34,7 @@ func TestSubscribeAndPublish(t *testing.T) {
 }
 
 func TestEventSubscribeAndPublish(t *testing.T) {
+	t.Parallel()
 	var event Event = Event(t.Name())
 	var taskPrefix Task = Task(t.Name())
 
@@ -48,7 +49,7 @@ func TestEventSubscribeAndPublish(t *testing.T) {
 	for task := range taskMap {
 		// 订阅任务
 		taskM.Subscribe(
-			task, func(msg jetstream.Msg) error {
+			task, func(payload []byte) error {
 				taskMap[task] = true
 				return nil
 			},
@@ -69,11 +70,12 @@ func TestEventSubscribeAndPublish(t *testing.T) {
 }
 
 func TestDql(t *testing.T) {
+	t.Parallel()
 	taskM := taskManage
 	var task Task = Task(t.Name())
 	var count = 1
 	taskM.Subscribe(
-		task, func(msg jetstream.Msg) error {
+		task, func(payload []byte) error {
 			count++
 			return errors.New("test dql")
 		},
@@ -94,11 +96,12 @@ func TestDql(t *testing.T) {
 }
 
 func TestDqlRepublish(t *testing.T) {
+	t.Parallel()
 	taskM := taskManage
 	var task Task = Task(t.Name())
 	var count = 1
 	taskM.Subscribe(
-		task, func(msg jetstream.Msg) error {
+		task, func(payload []byte) error {
 			count++
 			return errors.New("test dql")
 		},
@@ -111,7 +114,7 @@ func TestDqlRepublish(t *testing.T) {
 	t.Run(
 		"republish die msg", func(t *testing.T) {
 			taskM.Subscribe(
-				task, func(msg jetstream.Msg) error {
+				task, func(payload []byte) error {
 					count--
 					return nil
 				},
@@ -130,7 +133,7 @@ func BenchmarkDql(b *testing.B) {
 	var task Task = Task(uuid.NewString())
 	var count = b.N
 	taskM.Subscribe(
-		task, func(msg jetstream.Msg) error {
+		task, func(payload []byte) error {
 			return errors.New("test dql")
 		},
 	)
@@ -142,7 +145,7 @@ func BenchmarkDql(b *testing.B) {
 	b.Run(
 		"republish", func(b *testing.B) {
 			taskM.Subscribe(
-				task, func(msg jetstream.Msg) error {
+				task, func(payload []byte) error {
 					count--
 					return nil
 				},

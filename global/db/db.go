@@ -41,6 +41,8 @@ func Transaction(parent context.Context, fc TxFunc) error {
 	return err
 }
 
+// AddCommitCallback
+// Transaction needs to be called before using this method
 func AddCommitCallback(parent context.Context, callbacks ...cus.TxCommitCallback) error {
 	return parent.Value(cus.TxCommit).(*cus.TxCommitContext).AddCallback(callbacks...)
 }

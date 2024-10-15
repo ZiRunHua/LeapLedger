@@ -3,9 +3,10 @@ package lock
 import (
 	"context"
 	"errors"
+	"time"
+
 	"github.com/google/uuid"
 	"gorm.io/gorm"
-	"time"
 )
 
 var (
@@ -18,7 +19,7 @@ type lockTable struct {
 	Expiration int64
 }
 
-func (lt *lockTable) TableName() string { return "lock" }
+func (lt *lockTable) TableName() string { return "core_lock" }
 
 func newMysqlLock(client *gorm.DB, key string, expiration time.Duration) *MysqlLock {
 	return &MysqlLock{
@@ -37,11 +38,13 @@ type MysqlLock struct {
 }
 
 func (ml *MysqlLock) Lock(ctx context.Context) error {
-	err := ml.client.WithContext(ctx).Create(&lockTable{
-		Key:        ml.key,
-		Value:      ml.value,
-		Expiration: time.Now().Add(ml.expiration).Unix(),
-	}).Error
+	err := ml.client.WithContext(ctx).Create(
+		&lockTable{
+			Key:        ml.key,
+			Value:      ml.value,
+			Expiration: time.Now().Add(ml.expiration).Unix(),
+		},
+	).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrDuplicatedKey) {
 			return ErrLockOccupied

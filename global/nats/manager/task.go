@@ -2,16 +2,18 @@ package manager
 
 import (
 	"fmt"
+	"sync"
+	"time"
+
 	"github.com/nats-io/nats.go"
 	"github.com/nats-io/nats.go/jetstream"
 	"go.uber.org/zap"
-	"sync"
-	"time"
 )
 
 type TaskManager interface {
 	Publish(task Task, payload []byte) bool
 	Subscribe(task Task, handler MessageHandler)
+	GetMessageHandler(task Task) (MessageHandler, error)
 }
 
 const (
@@ -79,6 +81,10 @@ func (tm *taskManager) Subscribe(task Task, handler MessageHandler) {
 	tm.msgHandlerMap[task.subject()] = handler
 }
 
+func (tm *taskManager) GetMessageHandler(task Task) (MessageHandler, error) {
+	return tm.getHandler(task.subject())
+}
+
 type taskMsgHandler struct {
 	msgHandlerMap map[string]MessageHandler
 	msgManger
@@ -88,7 +94,7 @@ type taskMsgHandler struct {
 }
 
 func (tm *taskMsgHandler) receiveMsg(msg jetstream.Msg) {
-	receiveMsg(msg, func(msg jetstream.Msg) error { return tm.msgHandle(msg) }, tm.logger)
+	receiveMsg(msg, func(msg jetstream.Msg) error { return tm.msgHandle(msg.Subject(), msg.Data()) }, tm.logger)
 }
 func (tm *taskMsgHandler) getHandler(subject string) (MessageHandler, error) {
 	handler, exist := tm.msgHandlerMap[subject]
@@ -98,10 +104,10 @@ func (tm *taskMsgHandler) getHandler(subject string) (MessageHandler, error) {
 	return handler, nil
 }
 
-func (tm *taskMsgHandler) msgHandle(msg jetstream.Msg) error {
-	handler, err := tm.getHandler(msg.Subject())
+func (tm *taskMsgHandler) msgHandle(subject string, payload []byte) error {
+	handler, err := tm.getHandler(subject)
 	if err != nil {
 		return err
 	}
-	return handler(msg)
+	return handler(payload)
 }

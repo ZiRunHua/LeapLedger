@@ -7,11 +7,12 @@ import (
 	transactionModel "KeepAccount/model/transaction"
 	"context"
 	"encoding/json"
-	"github.com/nats-io/nats.go/jetstream"
+	"errors"
 )
 
 type Event manager.Event
 
+const EventOutbox Event = "outbox"
 const EventTransactionCreate Event = "transaction_create_event"
 const EventTransactionUpdate Event = "transaction_update_event"
 
@@ -25,7 +26,7 @@ func PublishEvent(event Event) (isSuccess bool) {
 	return eventManage.Publish(manager.Event(event), []byte{})
 }
 
-func PublishEventWithPayload[EventDataType PayloadType](event Event, fetchTaskData EventDataType) (isSuccess bool) {
+func PublishEventWithPayload[T PayloadType](event Event, fetchTaskData T) (isSuccess bool) {
 	str, err := json.Marshal(&fetchTaskData)
 	if err != nil {
 		return false
@@ -33,29 +34,37 @@ func PublishEventWithPayload[EventDataType PayloadType](event Event, fetchTaskDa
 	return eventManage.Publish(manager.Event(event), str)
 }
 
-func SubscribeEvent[EventDataType PayloadType](event Event, name string, handleTransaction handle[EventDataType]) {
-	handler := func(msg jetstream.Msg) error {
-		var data EventDataType
-		if err := json.Unmarshal(msg.Data(), &data); err != nil {
-			return err
-		}
-		return db.Transaction(context.TODO(), func(ctx *cus.TxContext) error {
-			return handleTransaction(data, ctx)
-		})
-	}
-	eventManage.SubscribeToNewConsumer(manager.Event(event), name, handler)
+func SubscribeEvent[T PayloadType](event Event, name string, handleTransaction handler[T]) {
+	eventManage.SubscribeToNewConsumer(
+		manager.Event(event), name, func(payload []byte) error {
+			var data T
+			if err := json.Unmarshal(payload, &data); err != nil {
+				return err
+			}
+			return db.Transaction(
+				context.TODO(), func(ctx *cus.TxContext) error {
+					return handleTransaction(data, ctx)
+				},
+			)
+		},
+	)
 }
 
 func BindTaskToEvent(event Event, triggerTask Task) {
-	eventManage.Subscribe(manager.Event(event), manager.Task(triggerTask), func(eventData []byte) ([]byte, error) { return []byte{}, nil })
+	eventManage.Subscribe(
+		manager.Event(event), manager.Task(triggerTask),
+		func(eventData []byte) ([]byte, error) {
+			return eventData, nil
+		},
+	)
 }
 
-func BindTaskToEventAndMakePayload[EventDataType PayloadType, TriggerTaskDataType PayloadType](
-	event Event, triggerTask Task, fetchTaskData func(eventData EventDataType) (TriggerTaskDataType, error),
+func BindTaskToEventAndMakePayload[T PayloadType, TriggerTaskDataType PayloadType](
+	event Event, triggerTask Task, fetchTaskData func(eventData T) (TriggerTaskDataType, error),
 ) {
 	eventManage.Subscribe(
 		manager.Event(event), manager.Task(triggerTask), func(eventData []byte) ([]byte, error) {
-			var data EventDataType
+			var data T
 			if err := json.Unmarshal(eventData, &data); err != nil {
 				return nil, err
 			}
@@ -66,4 +75,19 @@ func BindTaskToEventAndMakePayload[EventDataType PayloadType, TriggerTaskDataTyp
 			return json.Marshal(taskData)
 		},
 	)
+}
+
+func PublishEventToOutboxWithPayload[T PayloadType](ctx context.Context, event Event, payload T) error {
+	if event == EventOutbox {
+		return errors.New("cannot be TaskOutbox")
+	}
+	bytes, err := json.Marshal(payload)
+	if err != nil {
+		return err
+	}
+	id, err := outboxService.sendToOutbox(db.Get(ctx), outboxTypeEvent, string(event), bytes)
+	if err != nil {
+		return err
+	}
+	return db.AddCommitCallback(ctx, func() { PublishEventWithPayload(EventOutbox, id) })
 }
