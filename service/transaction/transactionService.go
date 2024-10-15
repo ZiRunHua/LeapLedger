@@ -23,30 +23,33 @@ func (txnService *Transaction) Create(
 	transInfo transactionModel.Info, accountUser accountModel.User, option Option, ctx context.Context,
 ) (transactionModel.Transaction, error) {
 	trans := transactionModel.Transaction{Info: transInfo}
-	err := db.Transaction(ctx, func(ctx *cus.TxContext) error {
-		tx := ctx.GetDb()
-		// check
-		trans.AccountId = accountUser.AccountId
-		err := trans.Check(tx)
-		if err != nil {
-			return errors.WithStack(err)
-		}
-		err = accountUser.CheckTransAddByUserId(trans.UserId)
-		if err != nil {
-			return errors.WithStack(err)
-		}
-		// handle
-		err = tx.Create(&trans).Error
-		if err != nil {
-			return errors.WithStack(err)
-		}
-		return db.AddCommitCallback(ctx, func() {
-			if !option.isSyncTrans {
-				nats.PublishTaskWithPayload(nats.TaskTransactionSync, trans)
+	err := db.Transaction(
+		ctx, func(ctx *cus.TxContext) error {
+			tx := ctx.GetDb()
+			// check
+			trans.AccountId = accountUser.AccountId
+			err := trans.Check(tx)
+			if err != nil {
+				return errors.WithStack(err)
 			}
-			nats.PublishEventWithPayload(nats.EventTransactionCreate, trans)
-		})
-	})
+			err = accountUser.CheckTransAddByUserId(trans.UserId)
+			if err != nil {
+				return errors.WithStack(err)
+			}
+			// handle
+			err = tx.Create(&trans).Error
+			if err != nil {
+				return errors.WithStack(err)
+			}
+			if option.isSyncTrans {
+				err = nats.PublishTaskToOutboxWithPayload(ctx, nats.TaskTransactionSync, trans)
+				if err != nil {
+					return err
+				}
+			}
+			return nats.PublishEventToOutboxWithPayload(ctx, nats.EventTransactionCreate, trans)
+		},
+	)
 	return trans, err
 }
 
@@ -55,57 +58,62 @@ func (txnService *Transaction) Update(
 	trans transactionModel.Transaction, accountUser accountModel.User, option Option, ctx context.Context,
 ) error {
 	var oldTrans transactionModel.Transaction
-	err := db.Transaction(ctx, func(ctx *cus.TxContext) error {
-		tx := ctx.GetDb()
-		// check
-		err := txnService.checkTransaction(trans, accountUser, tx)
-		if err != nil {
-			return errors.WithStack(err)
-		}
-		err = accountUser.CheckTransEditByUserId(trans.UserId)
-		if err != nil {
-			return errors.WithStack(err)
-		}
-		// handle
-		oldTrans = trans
-		if err = oldTrans.ForShare(tx); err != nil {
-			return errors.WithStack(err)
-		}
-		if oldTrans.UpdatedAt.Add(time.Second * 3).After(time.Now()) {
-			return errors.WithStack(global.ErrFrequentOperation)
-		}
-		err = tx.Select("income_expense", "category_id", "amount", "remark", "trade_time").Updates(trans).Error
-		if err != nil {
-			return errors.WithStack(err)
-		}
-		return db.AddCommitCallback(ctx, func() {
-			if !option.isSyncTrans {
-				nats.PublishTaskWithPayload(nats.TaskTransactionSync, trans)
+	err := db.Transaction(
+		ctx, func(ctx *cus.TxContext) error {
+			tx := ctx.GetDb()
+			// check
+			err := txnService.checkTransaction(trans, accountUser, tx)
+			if err != nil {
+				return errors.WithStack(err)
 			}
-			nats.PublishEventWithPayload(
-				nats.EventTransactionUpdate,
+			err = accountUser.CheckTransEditByUserId(trans.UserId)
+			if err != nil {
+				return errors.WithStack(err)
+			}
+			// handle
+			oldTrans = trans
+			if err = oldTrans.ForShare(tx); err != nil {
+				return errors.WithStack(err)
+			}
+			if oldTrans.UpdatedAt.Add(time.Second * 3).After(time.Now()) {
+				return errors.WithStack(global.ErrFrequentOperation)
+			}
+			err = tx.Select("income_expense", "category_id", "amount", "remark", "trade_time").Updates(trans).Error
+			if err != nil {
+				return errors.WithStack(err)
+			}
+			if option.isSyncTrans {
+				err = nats.PublishTaskToOutboxWithPayload(ctx, nats.TaskTransactionSync, trans)
+				if err != nil {
+					return err
+				}
+			}
+			return nats.PublishEventToOutboxWithPayload(
+				ctx, nats.EventTransactionUpdate,
 				nats.EventTransactionUpdatePayload{OldTrans: oldTrans, NewTrans: trans},
 			)
-		})
-	})
+		},
+	)
 	return err
 }
 
 func (txnService *Transaction) Delete(
 	txn transactionModel.Transaction, accountUser accountModel.User, ctx context.Context,
 ) error {
-	err := db.Transaction(ctx, func(ctx *cus.TxContext) error {
-		tx := ctx.GetDb()
-		err := accountUser.CheckTransEditByUserId(txn.UserId)
-		if err != nil {
-			return err
-		}
-		err = tx.Delete(&txn).Error
-		if err != nil {
-			return err
-		}
-		return db.AddCommitCallback(ctx, func() { nats.PublishEventWithPayload(nats.EventTransactionDelete, txn) })
-	})
+	err := db.Transaction(
+		ctx, func(ctx *cus.TxContext) error {
+			tx := ctx.GetDb()
+			err := accountUser.CheckTransEditByUserId(txn.UserId)
+			if err != nil {
+				return err
+			}
+			err = tx.Delete(&txn).Error
+			if err != nil {
+				return err
+			}
+			return nats.PublishEventToOutboxWithPayload(ctx, nats.EventTransactionDelete, txn)
+		},
+	)
 	return err
 }
 
@@ -131,18 +139,20 @@ func (txnService *Transaction) updateStatistic(data transactionModel.StatisticDa
 
 	switch data.IncomeExpense {
 	case constant.Income:
-		err = db.Transaction(ctx, func(ctx *cus.TxContext) error {
-			return transactionModel.IncomeAccumulate(
-				data.TradeTime, data.AccountId, data.UserId, data.CategoryId, data.Amount, data.Count, ctx.GetDb(),
-			)
-		},
+		err = db.Transaction(
+			ctx, func(ctx *cus.TxContext) error {
+				return transactionModel.IncomeAccumulate(
+					data.TradeTime, data.AccountId, data.UserId, data.CategoryId, data.Amount, data.Count, ctx.GetDb(),
+				)
+			},
 		)
 	case constant.Expense:
-		err = db.Transaction(ctx, func(ctx *cus.TxContext) error {
-			return transactionModel.ExpenseAccumulate(
-				data.TradeTime, data.AccountId, data.UserId, data.CategoryId, data.Amount, data.Count, ctx.GetDb(),
-			)
-		},
+		err = db.Transaction(
+			ctx, func(ctx *cus.TxContext) error {
+				return transactionModel.ExpenseAccumulate(
+					data.TradeTime, data.AccountId, data.UserId, data.CategoryId, data.Amount, data.Count, ctx.GetDb(),
+				)
+			},
 		)
 	default:
 		panic("income expense error")
@@ -271,7 +281,6 @@ func (txnService *Transaction) syncUpdate(
 		return err
 	}
 	option := txnService.NewDefaultOption()
-	option.IsSyncTrans()
 	err = txnService.Update(target, accountUser, option, ctx)
 	if err != nil {
 		return err
@@ -291,9 +300,7 @@ func (txnService *Transaction) CreateSyncTrans(
 	if err != nil {
 		return
 	}
-	option := txnService.NewDefaultOption()
-	option.IsSyncTrans()
-	newTrans, err := txnService.Create(syncTrans.Info, accountUser, option, ctx)
+	newTrans, err := txnService.Create(syncTrans.Info, accountUser, txnService.NewDefaultOption(), ctx)
 	if err != nil {
 		return
 	}
@@ -444,8 +451,6 @@ func (txnService *Transaction) addStatisticAfterCreateMultiple(
 }
 
 type Option struct {
-	// syncUpdateStatistic 同步/异步更新统计数据
-	syncUpdateStatistic bool
 	// isSyncTrans 交易数据至同步关联账本
 	isSyncTrans bool
 }
@@ -468,11 +473,6 @@ func (txnService *Transaction) NewOptionFormConfig(trans transactionModel.Info, 
 	option = txnService.NewDefaultOption()
 	option.isSyncTrans = userConfig.GetFlagStatus(accountModel.Flag_Trans_Sync_Mapping_Account)
 	return
-}
-
-func (o *Option) WithSyncUpdateStatistic(val bool) *Option {
-	o.syncUpdateStatistic = val
-	return o
 }
 
 func (o *Option) IsSyncTrans() *Option {

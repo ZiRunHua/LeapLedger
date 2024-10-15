@@ -1,14 +1,14 @@
 package transactionService
 
 import (
-	"KeepAccount/global/cus"
+	"context"
+	"time"
+
 	"KeepAccount/global/db"
 	"KeepAccount/global/lock"
+	"KeepAccount/global/nats"
 	accountModel "KeepAccount/model/account"
 	transactionModel "KeepAccount/model/transaction"
-	"context"
-	"go.uber.org/zap"
-	"time"
 )
 
 type Timing struct {
@@ -74,13 +74,9 @@ func (te *TimingExec) GenerateAndPublishTasks(deadline time.Time, taskSize int, 
 		return err
 	}
 	for _, startId := range startIds {
-		err = db.AddCommitCallback(
-			ctx, func() {
-				var err error
-				err = task.execTransactionTiming(startId, taskSize)
-				if err != nil {
-					errorLog.Error("GenerateAndPublishTasks => execTransactionTiming", zap.Error(err))
-				}
+		err = nats.PublishTaskToOutboxWithPayload(
+			ctx, nats.TaskTransactionTimingExec, transactionTimingExecTask{
+				StartId: startId, Size: taskSize,
 			},
 		)
 		if err != nil {
@@ -128,20 +124,26 @@ func (te *TimingExec) ProcessWaitExecByStartId(startId uint, limit int, ctx cont
 	if err != nil {
 		return err
 	}
-	for _, timingExec := range list {
-		err = db.Transaction(
-			ctx, func(ctx *cus.TxContext) error {
-				trans, err = server.Create(timingExec.TransInfo, accountUser, server.NewDefaultOption(), ctx)
-				return err
-			},
+	exec := func(data transactionModel.TimingExec) (err error) {
+		defer func() {
+			if err != nil {
+				err = data.ExecFail(err, tx)
+			} else {
+				err = data.ExecSuccess(trans, tx)
+			}
+		}()
+		accountUser, err = accountModel.NewDao(tx).SelectUser(
+			data.TransInfo.AccountId, data.TransInfo.UserId,
 		)
 		if err != nil {
-			err = timingExec.ExecFail(err, tx)
-			if err != nil {
-				return err
-			}
+			return
 		}
-		err = timingExec.ExecSuccess(trans, tx)
+		trans, err = server.Create(data.TransInfo, accountUser, server.NewDefaultOption(), ctx)
+		return
+	}
+
+	for _, timingExec := range list {
+		err = exec(timingExec)
 		if err != nil {
 			return err
 		}

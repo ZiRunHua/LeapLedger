@@ -1,6 +1,10 @@
 package transactionModel
 
 import (
+	"database/sql"
+	"errors"
+	"time"
+
 	"KeepAccount/global"
 	"KeepAccount/global/constant"
 	accountModel "KeepAccount/model/account"
@@ -9,12 +13,9 @@ import (
 	queryFunc "KeepAccount/model/common/query"
 	userModel "KeepAccount/model/user"
 	"KeepAccount/util/timeTool"
-	"database/sql"
-	"errors"
 	"gorm.io/datatypes"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
-	"time"
 )
 
 type Transaction struct {
@@ -339,6 +340,8 @@ func (t *TimingExec) ExecFail(execErr error, db *gorm.DB) error {
 	var failCause string
 	if errors.Is(execErr, global.ErrNoPermission) {
 		failCause = "账本无权操作"
+	} else {
+		failCause = execErr.Error()
 	}
 	return db.Model(t).Where("id = ?", t.ID).Updates(
 		TimingExec{

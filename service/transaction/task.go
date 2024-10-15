@@ -1,11 +1,11 @@
 package transactionService
 
 import (
+	"context"
+	"time"
+
 	"KeepAccount/global/cron"
 	"KeepAccount/global/nats"
-	"context"
-	"github.com/pkg/errors"
-	"time"
 )
 
 type _task struct{}
@@ -14,7 +14,9 @@ func init() {
 	// update statistic
 	nats.SubscribeTaskWithPayload(nats.TaskStatisticUpdate, GroupApp.Transaction.updateStatistic)
 	// sync trans
-	nats.SubscribeTaskWithPayloadAndProcessInTransaction(nats.TaskTransactionSync, GroupApp.Transaction.SyncToMappingAccount)
+	nats.SubscribeTaskWithPayloadAndProcessInTransaction(
+		nats.TaskTransactionSync, GroupApp.Transaction.SyncToMappingAccount,
+	)
 	// timing
 	_, err := cron.Scheduler.Every(1).Day().At("00:00").Do(
 		cron.PublishTaskWithMakePayload(
@@ -52,16 +54,4 @@ type taskTransactionTimingTaskAssign struct {
 type transactionTimingExecTask struct {
 	StartId uint
 	Size    int
-}
-
-func (t *_task) execTransactionTiming(startId uint, size int) error {
-	isSuccess := nats.PublishTaskWithPayload[transactionTimingExecTask](
-		nats.TaskTransactionTimingExec, transactionTimingExecTask{
-			StartId: startId, Size: size,
-		},
-	)
-	if !isSuccess {
-		return errors.New("nats not work")
-	}
-	return nil
 }

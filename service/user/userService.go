@@ -1,6 +1,9 @@
 package userService
 
 import (
+	"context"
+	"time"
+
 	"KeepAccount/global"
 	"KeepAccount/global/constant"
 	"KeepAccount/global/cus"
@@ -10,11 +13,9 @@ import (
 	userModel "KeepAccount/model/user"
 	commonService "KeepAccount/service/common"
 	"KeepAccount/util/rand"
-	"context"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/pkg/errors"
 	"gorm.io/gorm"
-	"time"
 )
 
 type User struct{}
@@ -79,52 +80,54 @@ func (userSvc *User) NewRegisterOption() *RegisterOption {
 func (userSvc *User) Register(addData userModel.AddData, ctx context.Context, option ...RegisterOption) (
 	user userModel.User, err error,
 ) {
-	return user, db.Transaction(ctx, func(ctx *cus.TxContext) (err error) {
-		addData.Password = commonService.Common.HashPassword(addData.Email, addData.Password)
-		tx := db.Get(ctx)
-		userDao := userModel.NewDao(tx)
-		err = userDao.CheckEmail(addData.Email)
-		if err != nil {
-			return err
-		}
-		user, err = userDao.Add(addData)
-		if err != nil {
-			if errors.Is(err, gorm.ErrDuplicatedKey) {
-				return errors.New("该邮箱已注册")
+	return user, db.Transaction(
+		ctx, func(ctx *cus.TxContext) (err error) {
+			addData.Password = commonService.Common.HashPassword(addData.Email, addData.Password)
+			tx := db.Get(ctx)
+			userDao := userModel.NewDao(tx)
+			err = userDao.CheckEmail(addData.Email)
+			if err != nil {
+				return err
 			}
-			return
-		}
-		for _, client := range userModel.GetClients() {
-			if err = client.InitByUser(user, tx); err != nil {
+			user, err = userDao.Add(addData)
+			if err != nil {
+				if errors.Is(err, gorm.ErrDuplicatedKey) {
+					return errors.New("该邮箱已注册")
+				}
 				return
 			}
-		}
-		_, err = userSvc.RecordAction(user, constant.Register, ctx)
-		if err != nil {
-			return
-		}
-		var isTour bool
-		if len(option) != 0 {
-			isTour = option[0].tour
-		}
-		if isTour {
-			_, err = userDao.CreateTour(user)
+			for _, client := range userModel.GetClients() {
+				if err = client.InitByUser(user, tx); err != nil {
+					return
+				}
+			}
+			_, err = userSvc.RecordAction(user, constant.Register, ctx)
 			if err != nil {
 				return
 			}
-			err = user.ModifyAsTourist(tx)
-			if err != nil {
-				return
+			var isTour bool
+			if len(option) != 0 {
+				isTour = option[0].tour
 			}
-		} else {
-			return db.AddCommitCallback(ctx, func() {
-				nats.PublishTaskWithPayload(nats.TaskSendNotificationEmail, nats.PayloadSendNotificationEmail{
-					UserId: user.ID, Notification: constant.NotificationOfRegistrationSuccess,
-				})
-			})
-		}
-		return
-	})
+			if isTour {
+				_, err = userDao.CreateTour(user)
+				if err != nil {
+					return
+				}
+				err = user.ModifyAsTourist(tx)
+				if err != nil {
+					return
+				}
+			} else {
+				return nats.PublishTaskToOutboxWithPayload(
+					ctx, nats.TaskSendNotificationEmail, nats.PayloadSendNotificationEmail{
+						UserId: user.ID, Notification: constant.NotificationOfRegistrationSuccess,
+					},
+				)
+			}
+			return
+		},
+	)
 }
 
 func (userSvc *User) UpdatePassword(user userModel.User, newPassword string, ctx context.Context) error {
@@ -133,20 +136,21 @@ func (userSvc *User) UpdatePassword(user userModel.User, newPassword string, ctx
 	if password == user.Password {
 		logRemark = global.ErrSameAsTheOldPassword.Error()
 	}
-	return db.Transaction(ctx, func(ctx *cus.TxContext) error {
-		tx := ctx.GetDb()
-		err := tx.Model(user).Update("password", password).Error
-		if err != nil {
-			return err
-		}
-		_, err = userSvc.RecordActionAndRemark(user, constant.UpdatePassword, logRemark, ctx)
-		return db.AddCommitCallback(ctx, func() {
-			nats.PublishTaskWithPayload(nats.TaskSendNotificationEmail, nats.PayloadSendNotificationEmail{
-				UserId:       user.ID,
-				Notification: constant.NotificationOfUpdatePassword,
-			})
-		})
-	},
+	return db.Transaction(
+		ctx, func(ctx *cus.TxContext) error {
+			tx := ctx.GetDb()
+			err := tx.Model(user).Update("password", password).Error
+			if err != nil {
+				return err
+			}
+			_, err = userSvc.RecordActionAndRemark(user, constant.UpdatePassword, logRemark, ctx)
+			return nats.PublishTaskToOutboxWithPayload(
+				ctx, nats.TaskSendNotificationEmail, nats.PayloadSendNotificationEmail{
+					UserId:       user.ID,
+					Notification: constant.NotificationOfUpdatePassword,
+				},
+			)
+		},
 	)
 }
 
@@ -257,11 +261,7 @@ func (userSvc *User) EnableTourist(
 			if err != nil {
 				return
 			}
-			return db.AddCommitCallback(
-				ctx, func() {
-					nats.PublishTask(nats.TaskCreateTourist)
-				},
-			)
+			return nats.PublishTaskToOutbox(ctx, nats.TaskCreateTourist)
 		},
 	)
 }

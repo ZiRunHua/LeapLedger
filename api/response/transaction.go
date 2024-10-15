@@ -66,7 +66,7 @@ func (t *TransactionDetail) SetData(
 	t.CategoryName = category.Name
 	t.CategoryFatherName = father.Name
 	t.IncomeExpense = category.IncomeExpense
-	t.Remark = category.Icon
+	t.Remark = trans.Remark
 	t.TradeTime = trans.TradeTime
 	t.UpdateTime = trans.UpdatedAt
 	t.CreateTime = trans.CreatedAt
@@ -105,7 +105,7 @@ func (t *TransactionDetail) SetDataIgnoreErr(
 	t.CategoryName = category.Name
 	t.CategoryFatherName = father.Name
 	t.IncomeExpense = category.IncomeExpense
-	t.Remark = category.Icon
+	t.Remark = trans.Remark
 	t.TradeTime = trans.TradeTime
 	t.UpdateTime = trans.UpdatedAt
 	t.CreateTime = trans.CreatedAt

@@ -72,16 +72,11 @@ func (t *TransactionApi) CreateOne(ctx *gin.Context) {
 			TradeTime:     requestData.TradeTime,
 		},
 	}
-	err := db.Transaction(
-		ctx, func(ctx *cus.TxContext) error {
-			var err error
-			transaction, err = transactionService.Create(
-				transaction.Info, accountUser,
-				transactionService.NewDefaultOption(), ctx,
-			)
-			return err
-		},
-	)
+	option, err := transactionService.NewOptionFormConfig(transaction.Info, ctx)
+	if responseError(err, ctx) {
+		return
+	}
+	transaction, err = transactionService.Create(transaction.Info, accountUser, option, ctx)
 	if responseError(err, ctx) {
 		return
 	}
@@ -125,8 +120,11 @@ func (t *TransactionApi) Update(ctx *gin.Context) {
 		},
 	}
 	transaction.ID = oldTrans.ID
-
-	err := transactionService.Update(transaction, contextFunc.GetAccountUser(ctx), transactionService.NewOption(), ctx)
+	option, err := transactionService.NewOptionFormConfig(transaction.Info, ctx)
+	if responseError(err, ctx) {
+		return
+	}
+	err = transactionService.Update(transaction, contextFunc.GetAccountUser(ctx), option, ctx)
 	if responseError(err, ctx) {
 		return
 	}

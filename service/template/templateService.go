@@ -1,6 +1,12 @@
 package templateService
 
 import (
+	"context"
+	"encoding/json"
+	"io"
+	"os"
+	"time"
+
 	"KeepAccount/global"
 	"KeepAccount/global/constant"
 	"KeepAccount/global/cus"
@@ -10,13 +16,8 @@ import (
 	productModel "KeepAccount/model/product"
 	userModel "KeepAccount/model/user"
 	"KeepAccount/util/dataTool"
-	"context"
-	"encoding/json"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
-	"io"
-	"os"
-	"time"
 )
 
 type template struct{}
@@ -53,51 +54,56 @@ func (t *template) CreateAccount(
 	if tmplAccount.UserId != TmplUserId {
 		return account, ErrNotBelongTemplate
 	}
-	return account, db.Transaction(ctx, func(ctx *cus.TxContext) error {
-		account, _, err = accountService.CreateOne(
-			user,
-			accountService.NewCreateData(tmplAccount.Name, tmplAccount.Icon, tmplAccount.Type, tmplAccount.Location),
-			ctx,
-		)
-		if err != nil {
-			return err
-		}
-		return t.CreateCategory(account, tmplAccount, ctx)
-	})
+	return account, db.Transaction(
+		ctx, func(ctx *cus.TxContext) error {
+			account, _, err = accountService.CreateOne(
+				user, accountService.NewCreateData(
+					tmplAccount.Name, tmplAccount.Icon, tmplAccount.Type, tmplAccount.Location,
+				), ctx,
+			)
+			if err != nil {
+				return err
+			}
+			return t.CreateCategory(account, tmplAccount, ctx)
+		},
+	)
 }
 
 func (t *template) CreateCategory(
-	account accountModel.Account, tmplAccount accountModel.Account, ctx context.Context) error {
-	return db.Transaction(ctx, func(ctx *cus.TxContext) error {
-		tx := db.Get(ctx)
-		var err error
-		if err = account.ForShare(tx); err != nil {
-			return err
-		}
-		var existCategory bool
-		existCategory, err = categoryModel.NewDao(tx).Exist(account)
-		if existCategory == true {
-			return errors.WithStack(errors.New("交易类型已存在"))
-		}
-		var tmplFatherList []categoryModel.Father
-		categoryDao := categoryModel.NewDao(tx)
-		tmplFatherList, err = categoryDao.GetFatherList(tmplAccount, nil)
-		if err != nil {
-			return err
-		}
-		categoryDao.OrderFather(tmplFatherList)
-		for _, tmplFather := range tmplFatherList {
-			if err = t.createFatherCategory(account, tmplFather, ctx); err != nil {
+	account accountModel.Account, tmplAccount accountModel.Account, ctx context.Context,
+) error {
+	return db.Transaction(
+		ctx, func(ctx *cus.TxContext) error {
+			tx := db.Get(ctx)
+			var err error
+			if err = account.ForShare(tx); err != nil {
 				return err
 			}
-		}
-		err = t.rankOnceIncr(account.UserId, tmplAccount, ctx)
-		if err != nil {
-			errorLog.Error("CreateAccount => rankOnceIncr", zap.Error(err))
-			err = nil
-		}
-		return nil
-	})
+			var existCategory bool
+			existCategory, err = categoryModel.NewDao(tx).Exist(account)
+			if existCategory == true {
+				return errors.WithStack(errors.New("交易类型已存在"))
+			}
+			var tmplFatherList []categoryModel.Father
+			categoryDao := categoryModel.NewDao(tx)
+			tmplFatherList, err = categoryDao.GetFatherList(tmplAccount, nil)
+			if err != nil {
+				return err
+			}
+			categoryDao.OrderFather(tmplFatherList)
+			for _, tmplFather := range tmplFatherList {
+				if err = t.createFatherCategory(account, tmplFather, ctx); err != nil {
+					return err
+				}
+			}
+			err = t.rankOnceIncr(account.UserId, tmplAccount, ctx)
+			if err != nil {
+				errorLog.Error("CreateAccount => rankOnceIncr", zap.Error(err))
+				err = nil
+			}
+			return nil
+		},
+	)
 }
 
 func (t *template) createFatherCategory(
@@ -118,8 +124,9 @@ func (t *template) createFatherCategory(
 	var mappingList []productModel.TransactionCategoryMapping
 	productDao := productModel.NewDao(tx)
 	for _, tmplCategory := range tmplCategoryList {
-		category, err = categoryService.CreateOne(father,
-			categoryService.NewCategoryData(tmplCategory.Name, tmplCategory.Icon), ctx)
+		category, err = categoryService.CreateOne(
+			father, categoryService.NewCategoryData(tmplCategory.Name, tmplCategory.Icon), ctx,
+		)
 		if err != nil {
 			return err
 		}
@@ -144,9 +151,8 @@ func (t *template) createFatherCategory(
 	return nil
 }
 func (t *template) CreateAccountByTemplate(
-	tmpl AccountTmpl, user userModel.User, ctx context.Context) (
-	account accountModel.Account, accountUser accountModel.User, err error,
-) {
+	tmpl AccountTmpl, user userModel.User, ctx context.Context,
+) (account accountModel.Account, accountUser accountModel.User, err error) {
 	account = accountService.NewCreateData(tmpl.Name, tmpl.Icon, tmpl.Type, tmpl.Location)
 	account, accountUser, err = accountService.CreateOne(user, account, ctx)
 	if err != nil {
@@ -171,6 +177,9 @@ func (t *template) CreateExampleAccount(user userModel.User, ctx context.Context
 	}
 	return t.CreateAccountByTemplate(accountTmpl, user, ctx)
 }
+func (t *template) NewAccountTmpl() AccountTmpl {
+	return AccountTmpl{}
+}
 
 type AccountTmpl struct {
 	Name, Icon, Location string
@@ -183,7 +192,12 @@ func (at *AccountTmpl) ReadFromJson(path string) error {
 	if err != nil {
 		return err
 	}
-	defer jsonFile.Close()
+	defer func() {
+		err = jsonFile.Close()
+		if err != nil {
+			panic(err)
+		}
+	}()
 	byteValue, _ := io.ReadAll(jsonFile)
 	err = json.Unmarshal(byteValue, at)
 	if err != nil {
@@ -230,8 +244,9 @@ func (ct *categoryTmpl) create(father categoryModel.Father, ctx context.Context)
 	}
 	var ptc productModel.TransactionCategory
 	for _, mappingPtc := range ct.MappingPtcs {
-		ptc, err = productModel.NewDao(db.Get(ctx)).SelectCategoryByName(mappingPtc.ProductKey, father.IncomeExpense,
-			mappingPtc.Name)
+		ptc, err = productModel.NewDao(db.Get(ctx)).SelectCategoryByName(
+			mappingPtc.ProductKey, father.IncomeExpense, mappingPtc.Name,
+		)
 		if err != nil {
 			return
 		}

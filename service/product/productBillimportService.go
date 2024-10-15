@@ -55,6 +55,7 @@ func (proService *Product) ProcessesBill(
 		if ignore {
 			continue
 		}
+		transInfo.AccountId, transInfo.UserId = accountUser.AccountId, accountUser.UserId
 		err = handler(transInfo, err)
 		if err != nil {
 			return err

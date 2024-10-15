@@ -157,8 +157,15 @@ func (s *StatisticCondition) getLocation() *time.Location {
 // addConditionToQuery 通过条件获取附带查询条件的gorm.db
 func (s *StatisticCondition) addConditionToQuery(db *gorm.DB) *gorm.DB {
 	query := s.ForeignKeyCondition.addConditionToQuery(db)
-	query = query.Where("date BETWEEN ? AND ?", timeTool.ToDay(s.StartTime.In(s.getLocation())),
-		timeTool.ToDay(s.EndTime.In(s.getLocation())))
+	switch true {
+	case !s.StartTime.IsZero() && !s.EndTime.IsZero():
+		query = query.Where("date BETWEEN ? AND ?", timeTool.ToDay(s.StartTime.In(s.getLocation())),
+			timeTool.ToDay(s.EndTime.In(s.getLocation())))
+	case !s.StartTime.IsZero():
+		query = query.Where("date >=", timeTool.ToDay(s.StartTime.In(s.getLocation())))
+	case !s.EndTime.IsZero():
+		query = query.Where("date <=", timeTool.ToDay(s.EndTime.In(s.getLocation())))
+	}
 	return query
 }
 

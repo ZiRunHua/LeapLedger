@@ -47,8 +47,12 @@ func (t *TransactionDao) GetIeStatisticByCondition(
 		// transaction table select
 		query := t.db.Model(&Transaction{})
 		query = condition.ForeignKeyCondition.addConditionToQuery(query)
-		query = query.Where("trade_time between ? AND ?", timeTool.ToDay(condition.StartTime),
-			timeTool.ToDay(condition.EndTime))
+		query, err = t.setTimeRangeForQuery(
+			query, timeTool.ToDay(condition.StartTime), timeTool.ToDay(condition.EndTime),
+		)
+		if err != nil {
+			return
+		}
 		query = extCond.addConditionToQuery(query)
 		result, err = t.getIEStatisticByWhere(ie, query)
 	} else {
@@ -59,6 +63,18 @@ func (t *TransactionDao) GetIeStatisticByCondition(
 		err = errors.Wrap(err, "transactionDao.GetIeStatisticByCondition")
 	}
 	return
+}
+
+func (t *TransactionDao) setTimeRangeForQuery(query *gorm.DB, startTime, endTime time.Time) (*gorm.DB, error) {
+	switch true {
+	case !startTime.IsZero() && !endTime.IsZero():
+		query = query.Where("trade_time BETWEEN ? AND ?", startTime, endTime)
+	case !startTime.IsZero():
+		query = query.Where("trade_time >=", startTime)
+	case !endTime.IsZero():
+		query = query.Where("trade_time <=", endTime)
+	}
+	return query, nil
 }
 
 func (t *TransactionDao) getIEStatisticByWhere(ie *constant.IncomeExpense, query *gorm.DB) (
@@ -107,11 +123,15 @@ func (t *TransactionDao) SelectMappingByTrans(trans, syncTrans Transaction) (map
 	if trans.ID > 0 && syncTrans.AccountId > 0 {
 		switch accountType {
 		case accountModel.TypeIndependent:
-			err = t.db.Where("main_account_id = ? AND related_id = ?", syncTrans.AccountId,
-				trans.ID).First(&mapping).Error
+			err = t.db.Where(
+				"main_account_id = ? AND related_id = ?", syncTrans.AccountId,
+				trans.ID,
+			).First(&mapping).Error
 		case accountModel.TypeShare:
-			err = t.db.Where("main_id = ? AND related_account_id = ?", trans.ID,
-				syncTrans.AccountId).First(&mapping).Error
+			err = t.db.Where(
+				"main_id = ? AND related_account_id = ?", trans.ID,
+				syncTrans.AccountId,
+			).First(&mapping).Error
 		default:
 			panic("err account.Type")
 		}
@@ -121,11 +141,15 @@ func (t *TransactionDao) SelectMappingByTrans(trans, syncTrans Transaction) (map
 	if syncTrans.ID > 0 && trans.AccountId > 0 {
 		switch accountType {
 		case accountModel.TypeIndependent:
-			err = t.db.Where("main_id = ? AND related_account_id = ?", syncTrans.ID,
-				trans.AccountId).First(&mapping).Error
+			err = t.db.Where(
+				"main_id = ? AND related_account_id = ?", syncTrans.ID,
+				trans.AccountId,
+			).First(&mapping).Error
 		case accountModel.TypeShare:
-			err = t.db.Where("main_account_id = ? AND related_id = ?", syncTrans.AccountId,
-				syncTrans.ID).First(&mapping).Error
+			err = t.db.Where(
+				"main_account_id = ? AND related_id = ?", syncTrans.AccountId,
+				syncTrans.ID,
+			).First(&mapping).Error
 		default:
 			panic("err account.Type")
 		}

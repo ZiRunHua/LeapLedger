@@ -1,16 +1,17 @@
 package fileTool
 
 import (
-	"KeepAccount/global/constant"
 	"encoding/csv"
 	"errors"
+	"io"
+	"path"
+	"strings"
+
+	"KeepAccount/global/constant"
 	"github.com/xuri/excelize/v2"
 	"golang.org/x/text/encoding/simplifiedchinese"
 	"golang.org/x/text/transform"
 	"gorm.io/gorm"
-	"io"
-	"path"
-	"strings"
 )
 
 type FileWithSuffix struct {
@@ -54,7 +55,13 @@ func IteratorsHandleCSVReader(reader io.Reader) (func(yield func([]string) bool)
 		csvReader := csv.NewReader(reader)
 		for {
 			row, err := csvReader.Read()
-			if err != nil || !yield(row) {
+			if err == io.EOF {
+				return
+			}
+			if err != nil && !errors.Is(err, csv.ErrFieldCount) {
+				panic(err)
+			}
+			if !yield(row) {
 				return
 			}
 		}
@@ -72,7 +79,12 @@ func IteratorsHandleEXCELReader(reader io.Reader) (func(yield func([]string) boo
 		return nil, err
 	}
 	return func(yield func([]string) bool) {
-		defer rows.Close()
+		defer func() {
+			err = rows.Close()
+			if err != nil {
+				panic(err)
+			}
+		}()
 		var row []string
 		var err error
 		for rows.Next() {
