@@ -15,6 +15,7 @@ import (
 	transactionModel "KeepAccount/model/transaction"
 	"KeepAccount/util/log"
 	"go.uber.org/zap"
+	"strings"
 )
 
 import (
@@ -97,16 +98,18 @@ func (t *ReaderTemplate) ReaderTrans(row []string, ctx context.Context) (
 	t.currentIndex++
 	ignore = true
 
-	if t.currentIndex < t.info.StartRow {
-		// 未到读取的起始行 忽略
-		return
-	} else if t.currentIndex == t.info.StartRow {
-		// 处理列标题行
+	switch t.BillInfo.status {
+	case statusOfReadInHead:
+		// Try to read the head
+		if strings.TrimSpace(row[0]) != t.BillInfo.billHeaders[0].Name {
+			return
+		}
 		if t.err = t.setTransDataMapping(row, ctx); t.err != nil {
 			logger.Error("读取标题行", zap.Strings("data", row), zap.Error(err))
 			return trans, false, errors.New("读取标题行失败")
 		}
-	} else {
+		t.BillInfo.status = statusOfReadInTransaction
+	case statusOfReadInTransaction:
 		t.currentRow = row
 		ignore, err = t.readTransaction(t)
 		if ignore {
@@ -116,6 +119,8 @@ func (t *ReaderTemplate) ReaderTrans(row []string, ctx context.Context) (
 			return t.currentTransaction, false, err
 		}
 		return t.currentTransaction, false, nil
+	default:
+		panic("error bill status")
 	}
 	return
 }

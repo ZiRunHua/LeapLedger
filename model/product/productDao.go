@@ -55,7 +55,7 @@ func (pd *ProductDao) GetIncomeExpenseAndNameMap(productKey Key) (
 	result map[constant.IncomeExpense]map[string]TransactionCategory, err error,
 ) {
 	var list []TransactionCategory
-	err = global.GvaDb.Where("product_key = ? ", productKey).Find(&list).Error
+	err = pd.db.Where("product_key = ? ", productKey).Find(&list).Error
 	if err != nil {
 		return
 	}
@@ -69,15 +69,7 @@ func (pd *ProductDao) GetIncomeExpenseAndNameMap(productKey Key) (
 	}
 	return
 }
-func (pd *ProductDao) GetNameMap(productKey Key) (nameMap map[string]BillHeader, err error) {
-	var list []BillHeader
-	err = global.GvaDb.Where("product_key = ? ", productKey).Find(&list).Error
-	if err != nil {
-		return
-	}
-	nameMap = make(map[string]BillHeader)
-	for _, header := range list {
-		nameMap[header.Name] = header
-	}
+func (pd *ProductDao) GetBillHeaderList(productKey Key) (list []BillHeader, err error) {
+	err = pd.db.Where("product_key = ? ", productKey).Order("id ASC").Find(&list).Error
 	return
 }
