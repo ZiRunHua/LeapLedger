@@ -1,18 +1,19 @@
 package ws
 
 import (
+	"errors"
+	"io"
+	"sync/atomic"
+
 	"KeepAccount/api/response"
 	"KeepAccount/api/v1/ws/msg"
 	"KeepAccount/global"
 	"KeepAccount/global/constant"
 	accountModel "KeepAccount/model/account"
 	transactionModel "KeepAccount/model/transaction"
-	"errors"
+	"KeepAccount/util/dataTool"
 	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
-	"io"
-	"sync"
-	"sync/atomic"
 )
 
 type BillImportWebsocket struct {
@@ -20,9 +21,8 @@ type BillImportWebsocket struct {
 	conn    *websocket.Conn
 	msg.Reader
 
-	lock           sync.Mutex
-	WaitRetryTrans map[string]transactionModel.Info
-	RetryingTrans  map[string]transactionModel.Info
+	WaitRetryTrans dataTool.SyncMap[string, transactionModel.Info]
+	RetryingTrans  dataTool.SyncMap[string, transactionModel.Info]
 
 	total TotalData
 }
@@ -52,14 +52,6 @@ func (b *BillImportWebsocket) SendTransactionCreateFail(transInfo transactionMod
 		return err
 	}
 	id := uuid.NewString()
-	msgHandler := func() {
-		b.lock.Lock()
-		defer b.lock.Unlock()
-		if b.WaitRetryTrans == nil {
-			b.WaitRetryTrans = make(map[string]transactionModel.Info)
-		}
-		b.WaitRetryTrans[id] = transInfo
-	}
 	type MsgTransactionCreateFail struct {
 		Id    string
 		Trans response.TransactionDetail
@@ -73,7 +65,7 @@ func (b *BillImportWebsocket) SendTransactionCreateFail(transInfo transactionMod
 	if err != nil {
 		return err
 	}
-	msgHandler()
+	b.WaitRetryTrans.Store(id, transInfo)
 	return nil
 }
 
@@ -82,19 +74,15 @@ func (b *BillImportWebsocket) RegisterMsgHandlerCreateRetry(handler func(transac
 		Id        string
 		TransInfo transactionModel.Info
 	}
-	msg.RegisterHandle[MsgTransactionCreateRetry](b.Reader, "createRetry",
+	msg.RegisterHandle[MsgTransactionCreateRetry](
+		b.Reader, "createRetry",
 		func(data MsgTransactionCreateRetry) (err error) {
 			mapHandler := func() error {
-				b.lock.Lock()
-				defer b.lock.Unlock()
-				if _, exist := b.WaitRetryTrans[data.Id]; !exist {
+				if _, exist := b.WaitRetryTrans.Load(data.Id); !exist {
 					return msg.SendError(b.conn, global.ErrOperationTooFrequent)
 				}
-				delete(b.WaitRetryTrans, data.Id)
-				if b.RetryingTrans == nil {
-					b.RetryingTrans = make(map[string]transactionModel.Info)
-				}
-				b.RetryingTrans[data.Id] = data.TransInfo
+				b.WaitRetryTrans.Delete(data.Id)
+				b.RetryingTrans.Store(data.Id, data.TransInfo)
 				return nil
 			}
 			err = mapHandler()
@@ -106,39 +94,36 @@ func (b *BillImportWebsocket) RegisterMsgHandlerCreateRetry(handler func(transac
 				return err
 			}
 			defer func() {
-				b.lock.Lock()
-				defer b.lock.Unlock()
-				delete(b.RetryingTrans, data.Id)
+				b.RetryingTrans.Delete(data.Id)
 				if err == nil {
 					err = b.tryFinish()
 				}
 			}()
 			return nil
-		})
+		},
+	)
 }
 
 func (b *BillImportWebsocket) RegisterMsgHandlerIgnoreTrans() {
-	msg.RegisterHandle[string](b.Reader, "ignoreTrans",
+	msg.RegisterHandle[string](
+		b.Reader, "ignoreTrans",
 		func(id string) (err error) {
-			b.lock.Lock()
-			defer b.lock.Unlock()
-			if _, exist := b.WaitRetryTrans[id]; !exist {
+			if _, exist := b.WaitRetryTrans.Load(id); !exist {
 				return msg.SendError(b.conn, global.ErrOperationTooFrequent)
 			}
-			delete(b.WaitRetryTrans, id)
+			b.WaitRetryTrans.Delete(id)
 			b.total.ignore()
 			return b.tryFinish()
-		})
+		},
+	)
 }
 
 func (b *BillImportWebsocket) TryFinish() error {
-	b.lock.Lock()
-	defer b.lock.Unlock()
 	return b.tryFinish()
 }
 
 func (b *BillImportWebsocket) tryFinish() error {
-	if len(b.WaitRetryTrans) != 0 || len(b.RetryingTrans) != 0 {
+	if !b.WaitRetryTrans.IsEmpty() || !b.RetryingTrans.IsEmpty() {
 		return nil
 	}
 	return b.SendFinish()
@@ -149,13 +134,15 @@ func (b *BillImportWebsocket) SendFinish() error {
 		ExpenseAmount, IncomeAmount            int64
 		ExpenseCount, IncomeCount, IgnoreCount int32
 	}
-	return msg.Send[Total](b.conn, "finish", Total{
-		ExpenseAmount: b.total.ExpenseAmount.Load(),
-		IncomeAmount:  b.total.IncomeAmount.Load(),
-		ExpenseCount:  b.total.ExpenseCount.Load(),
-		IncomeCount:   b.total.IncomeCount.Load(),
-		IgnoreCount:   b.total.IgnoreCount.Load(),
-	})
+	return msg.Send[Total](
+		b.conn, "finish", Total{
+			ExpenseAmount: b.total.ExpenseAmount.Load(),
+			IncomeAmount:  b.total.IncomeAmount.Load(),
+			ExpenseCount:  b.total.ExpenseCount.Load(),
+			IncomeCount:   b.total.IncomeCount.Load(),
+			IgnoreCount:   b.total.IgnoreCount.Load(),
+		},
+	)
 }
 
 func (b *BillImportWebsocket) Read() error {
