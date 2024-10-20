@@ -21,17 +21,19 @@ type BillImportWebsocket struct {
 	conn    *websocket.Conn
 	msg.Reader
 
-	WaitRetryTrans dataTool.SyncMap[string, transactionModel.Info]
-	RetryingTrans  dataTool.SyncMap[string, transactionModel.Info]
+	WaitRetryTrans *dataTool.RWMutexMap[string, transactionModel.Info]
+	RetryingTrans  *dataTool.RWMutexMap[string, transactionModel.Info]
 
 	total TotalData
 }
 
 func NewBillImportWebsocket(conn *websocket.Conn, account accountModel.Account) *BillImportWebsocket {
 	return &BillImportWebsocket{
-		account: account,
-		conn:    conn,
-		Reader:  msg.NewReader(),
+		account:        account,
+		conn:           conn,
+		Reader:         msg.NewReader(),
+		WaitRetryTrans: dataTool.NewRWMutexMap[string, transactionModel.Info](),
+		RetryingTrans:  dataTool.NewRWMutexMap[string, transactionModel.Info](),
 	}
 }
 
@@ -123,7 +125,7 @@ func (b *BillImportWebsocket) TryFinish() error {
 }
 
 func (b *BillImportWebsocket) tryFinish() error {
-	if !b.WaitRetryTrans.IsEmpty() || !b.RetryingTrans.IsEmpty() {
+	if b.WaitRetryTrans.Len() != 0 || b.RetryingTrans.Len() != 0 {
 		return nil
 	}
 	return b.SendFinish()
