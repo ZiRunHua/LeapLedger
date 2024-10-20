@@ -1,16 +1,17 @@
 package nats
 
 import (
+	"context"
+	"encoding/json"
+	"errors"
+
 	"KeepAccount/global/cus"
 	"KeepAccount/global/db"
 	"KeepAccount/global/nats/manager"
 	transactionModel "KeepAccount/model/transaction"
-	"context"
-	"encoding/json"
-	"errors"
 )
 
-type Event manager.Event
+type Event = manager.Event
 
 const EventOutbox Event = "outbox"
 const EventTransactionCreate Event = "transaction_create_event"
@@ -23,7 +24,7 @@ type EventTransactionUpdatePayload struct {
 const EventTransactionDelete Event = "transaction_delete_event"
 
 func PublishEvent(event Event) (isSuccess bool) {
-	return eventManage.Publish(manager.Event(event), []byte{})
+	return eventManage.Publish(event, []byte{})
 }
 
 func PublishEventWithPayload[T PayloadType](event Event, fetchTaskData T) (isSuccess bool) {
@@ -31,12 +32,12 @@ func PublishEventWithPayload[T PayloadType](event Event, fetchTaskData T) (isSuc
 	if err != nil {
 		return false
 	}
-	return eventManage.Publish(manager.Event(event), str)
+	return eventManage.Publish(event, str)
 }
 
 func SubscribeEvent[T PayloadType](event Event, name string, handleTransaction handler[T]) {
 	eventManage.SubscribeToNewConsumer(
-		manager.Event(event), name, func(payload []byte) error {
+		event, name, func(payload []byte) error {
 			var data T
 			if err := json.Unmarshal(payload, &data); err != nil {
 				return err
@@ -52,7 +53,7 @@ func SubscribeEvent[T PayloadType](event Event, name string, handleTransaction h
 
 func BindTaskToEvent(event Event, triggerTask Task) {
 	eventManage.Subscribe(
-		manager.Event(event), manager.Task(triggerTask),
+		event, triggerTask,
 		func(eventData []byte) ([]byte, error) {
 			return eventData, nil
 		},
@@ -63,7 +64,7 @@ func BindTaskToEventAndMakePayload[T PayloadType, TriggerTaskDataType PayloadTyp
 	event Event, triggerTask Task, fetchTaskData func(eventData T) (TriggerTaskDataType, error),
 ) {
 	eventManage.Subscribe(
-		manager.Event(event), manager.Task(triggerTask), func(eventData []byte) ([]byte, error) {
+		event, triggerTask, func(eventData []byte) ([]byte, error) {
 			var data T
 			if err := json.Unmarshal(eventData, &data); err != nil {
 				return nil, err

@@ -1,10 +1,6 @@
 package nats
 
 import (
-	"KeepAccount/global/cus"
-	"KeepAccount/global/db"
-	"KeepAccount/global/nats/manager"
-	"KeepAccount/util/rand"
 	"context"
 	"errors"
 	"reflect"
@@ -12,8 +8,15 @@ import (
 	"testing"
 	"time"
 
+	"KeepAccount/global/cus"
+	"KeepAccount/global/db"
+	"KeepAccount/global/nats/manager"
 	"github.com/google/uuid"
 )
+
+func init() {
+	manager.UpdateTestBackOff()
+}
 
 type taskData struct {
 	Time int64
@@ -27,39 +30,19 @@ func newTaskData() taskData {
 	}
 }
 func TestTaskPublishAndSubscribe(t *testing.T) {
-	t.Parallel()
-	t.Run(
-		"Publish task", func(t *testing.T) {
-			task := Task(uuid.NewString())
-			success := false
-			SubscribeTask(
-				task, func(ctx context.Context) error {
-					success = true
-					return nil
-				},
-			)
-			time.Sleep(time.Second)
-			if !PublishTask(task) {
-				t.Error("Publish fail")
-			}
-			time.Sleep(time.Second)
-			if !success {
-				t.Fail()
-			}
+	task := Task(t.Name() + uuid.NewString())
+	success := false
+	SubscribeTask(
+		task, func(ctx context.Context) error {
+			success = true
+			return nil
 		},
 	)
 	t.Run(
-		"Publish task With payload", func(t *testing.T) {
-			task, data := Task(uuid.NewString()), newTaskData()
-			var success bool
-			SubscribeTaskWithPayloadAndProcessInTransaction[taskData](
-				task, func(pushData taskData, ctx context.Context) error {
-					success = reflect.DeepEqual(data, pushData)
-					return nil
-				},
-			)
-			time.Sleep(time.Second)
-			if !PublishTaskWithPayload[taskData](task, data) {
+		"Publish task", func(t *testing.T) {
+			t.Parallel()
+			time.Sleep(time.Second * 3)
+			if !PublishTask(task) {
 				t.Error("Publish fail")
 			}
 			time.Sleep(time.Second * 3)
@@ -68,10 +51,30 @@ func TestTaskPublishAndSubscribe(t *testing.T) {
 			}
 		},
 	)
+	withPayloadTask, data := Task(t.Name()+uuid.NewString()), newTaskData()
+	var withPayloadTaskSuccess bool
+	SubscribeTaskWithPayloadAndProcessInTransaction(
+		withPayloadTask, func(pushData taskData, ctx context.Context) error {
+			withPayloadTaskSuccess = reflect.DeepEqual(data, pushData)
+			return nil
+		},
+	)
+	t.Run(
+		"Publish task With payload", func(t *testing.T) {
+			t.Parallel()
+			time.Sleep(time.Second * 3)
+			if !PublishTaskWithPayload(withPayloadTask, data) {
+				t.Error("Publish fail")
+			}
+			time.Sleep(time.Second * 3)
+			if !withPayloadTaskSuccess {
+				t.Fail()
+			}
+		},
+	)
 }
 
 func TestEventPublishAndSubscribe(t *testing.T) {
-	t.Parallel()
 	taskMap, event := make(map[Task]int), Event(uuid.NewString())
 	for i := 0; i < 10; i++ {
 		task := Task("task_" + uuid.NewString())
@@ -87,100 +90,112 @@ func TestEventPublishAndSubscribe(t *testing.T) {
 	for task := range taskMap {
 		BindTaskToEvent(event, task)
 	}
-	PublishEvent(event)
-	time.Sleep(time.Second * 20)
-	for task, value := range taskMap {
-		if value != 1 {
-			t.Log(task, "fail trigger count", value)
-		}
-	}
-	t.Log("task trigger info", taskMap)
+	t.Run(
+		"publish", func(t *testing.T) {
+			time.Sleep(time.Second * 3)
+			PublishEvent(event)
+			time.Sleep(time.Second * 10)
+			for task, value := range taskMap {
+				if value != 1 {
+					t.Log(task, "fail trigger count", value)
+				}
+			}
+			t.Log("task trigger info", taskMap)
+		},
+	)
 }
 
 func TestSubscribeEvent(t *testing.T) {
-	t.Parallel()
-	event := Event(uuid.NewString())
+	name := t.Name() + uuid.NewString()
+	event := Event(name)
 	var count atomic.Int32
 	count.Add(10)
 	var retryCount atomic.Int32
 	SubscribeEvent(
-		event, string(event), func(t int, ctx context.Context) error {
-			retryCount.Add(1)
-			if retryCount.Load() < 10 {
+		event, name, func(v int, ctx context.Context) error {
+			if retryCount.Add(1) < 10 {
 				return errors.New("test retry")
 			}
-			count.Add(int32(t))
+			count.Add(int32(v))
 			return nil
 		},
 	)
-	task := Task(uuid.NewString())
+	task := Task(name + "_task_1")
 	BindTaskToEvent(event, task)
 	SubscribeTaskWithPayload(
-		task, func(t int, ctx context.Context) error {
-			retryCount.Add(1)
-			if retryCount.Load() < 10 {
+		task, func(v int, ctx context.Context) error {
+			if retryCount.Add(1) < 10 {
 				return errors.New("test retry")
 			}
-			count.Add(int32(t))
+			count.Add(int32(v))
 			return nil
 		},
 	)
-	task = Task(uuid.NewString())
+	task = Task(name + "_task_2")
 	BindTaskToEvent(event, task)
 	SubscribeTaskWithPayload(
-		task, func(t int, ctx context.Context) error {
-			retryCount.Add(1)
-			if retryCount.Load() < 10 {
+		task, func(v int, ctx context.Context) error {
+			if retryCount.Add(1) < 10 {
 				return errors.New("test retry")
 			}
-			count.Add(int32(t))
+			count.Add(int32(v))
 			return nil
 		},
 	)
-	PublishEventWithPayload(event, 1)
-	time.Sleep(20 * time.Second)
-	if count.Load() != 13 {
-		t.Fatal(count.Load())
-	}
+	t.Run(
+		"publish", func(t *testing.T) {
+			t.Parallel()
+			time.Sleep(3 * time.Second)
+			PublishEventWithPayload(event, 1)
+			time.Sleep(30 * time.Second)
+			if count.Load() != 13 {
+				t.Fatal(count.Load())
+			}
+		},
+	)
 }
 
 func TestOutboxTask(t *testing.T) {
-	t.Parallel()
-	taskMap := make(map[Task]int)
-	for i := 0; i < 10; i++ {
-		task := Task("task_" + uuid.NewString())
-		taskMap[task] = 0
+	taskMap := make(map[Task]*atomic.Int32)
+	var retryCount int32 = 2
+	for i := 0; i < 3; i++ {
+		task := Task(t.Name() + "task_" + uuid.NewString())
+		taskMap[task] = new(atomic.Int32)
 		SubscribeTaskWithPayload(
-			task, func(data int, ctx context.Context) error {
-				if rand.Int(10) > 6 {
+			task, func(data int32, ctx context.Context) error {
+				if taskMap[task].Add(-1) > -retryCount {
 					return errors.New("test retry")
 				}
-				taskMap[task] += data
+				taskMap[task].Add(data)
 				return nil
 			},
 		)
 	}
-	time.Sleep(time.Second)
-	for task := range taskMap {
-		err := db.Transaction(
-			context.TODO(), func(ctx *cus.TxContext) error {
-				return PublishTaskToOutboxWithPayload(ctx, task, 1)
-			},
-		)
-		if err != nil {
-			t.Fatal(err)
-		}
-	}
-	time.Sleep(time.Second * 20)
-	for task, i := range taskMap {
-		if i != 1 {
-			t.Fatal(task, i)
-		}
-	}
+	t.Run(
+		"publish", func(t *testing.T) {
+			t.Parallel()
+			time.Sleep(time.Second * 3)
+			for task := range taskMap {
+				err := db.Transaction(
+					context.TODO(), func(ctx *cus.TxContext) error {
+						return PublishTaskToOutboxWithPayload(ctx, task, retryCount+1)
+					},
+				)
+				if err != nil {
+					t.Fatal(err)
+				}
+			}
+			time.Sleep(time.Second * 30)
+			for task, i := range taskMap {
+				if i.Load() != 1 {
+					t.Fatal(task, i)
+				}
+			}
+		},
+	)
 }
 
 func TestOutboxEvent(t *testing.T) {
-	t.Parallel()
 	eventMap := make(map[Event]*atomic.Int32)
 	eventToTask := make(map[Event][]Task)
 	for i := 0; i < 10; i++ {
@@ -198,27 +213,31 @@ func TestOutboxEvent(t *testing.T) {
 			BindTaskToEvent(event, task)
 		}
 	}
-	time.Sleep(time.Second)
-	for event := range eventMap {
-		err := db.Transaction(
-			context.TODO(), func(ctx *cus.TxContext) error {
-				return PublishEventToOutboxWithPayload(ctx, event, 3)
-			},
-		)
-		if err != nil {
-			t.Fatal(err)
-		}
-	}
-	time.Sleep(time.Second * 20)
-	for event, num := range eventMap {
-		if num.Load() != 9 {
-			t.Fatal(event, num.Load())
-		}
-	}
+	t.Run(
+		"public", func(t *testing.T) {
+			t.Parallel()
+			time.Sleep(time.Second * 3)
+			for event := range eventMap {
+				err := db.Transaction(
+					context.TODO(), func(ctx *cus.TxContext) error {
+						return PublishEventToOutboxWithPayload(ctx, event, 3)
+					},
+				)
+				if err != nil {
+					t.Fatal(err)
+				}
+			}
+			time.Sleep(time.Second * 20)
+			for event, num := range eventMap {
+				if num.Load() != 9 {
+					t.Fatal(event, num.Load())
+				}
+			}
+		},
+	)
 }
 
 func TestCustomerProcessingTimeout(t *testing.T) {
-	t.Parallel()
 	var count atomic.Int32
 	task := manager.Task(t.Name())
 	taskManage.Subscribe(
@@ -229,16 +248,21 @@ func TestCustomerProcessingTimeout(t *testing.T) {
 		},
 	)
 
-	err := db.Transaction(
-		context.TODO(), func(ctx *cus.TxContext) error {
-			return PublishTaskToOutbox(ctx, Task(task))
+	t.Run(
+		"publish", func(t *testing.T) {
+			t.Parallel()
+			err := db.Transaction(
+				context.TODO(), func(ctx *cus.TxContext) error {
+					return PublishTaskToOutbox(ctx, Task(task))
+				},
+			)
+			if err != nil {
+				t.Fatal(err)
+			}
+			time.Sleep(time.Second * 31)
+			if count.Load() != 1 {
+				t.Fatal("count not is 1,count:", count.Load())
+			}
 		},
 	)
-	if err != nil {
-		t.Fatal(err)
-	}
-	time.Sleep(time.Second * 31)
-	if count.Load() != 1 {
-		t.Fatal("count not is 1,count:", count.Load())
-	}
 }

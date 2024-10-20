@@ -5,18 +5,23 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"sync"
+	"runtime"
 	"time"
+
+	"KeepAccount/util/dataTool"
 
 	"github.com/nats-io/nats.go/jetstream"
 	"go.uber.org/zap"
 )
 
+// EventManager is used to manage events.
+// EventManager has a dedicated consumer group that publishes tasks to TaskManage when events are triggered,
+// and new consumer groups can be created to consume events.
+// These consumer groups use the same stream.
 type EventManager interface {
 	Publish(event Event, payload []byte) bool
 	Subscribe(event Event, triggerTask Task, fetchTaskData func(eventData []byte) ([]byte, error))
 	SubscribeToNewConsumer(event Event, name string, handler MessageHandler)
-	GetMessageHandler(event Event) (MessageHandler, error)
 }
 
 const (
@@ -45,7 +50,8 @@ type eventManager struct {
 }
 
 func (em *eventManager) init(js jetstream.JetStream, taskManage *taskManager, logger *zap.Logger) error {
-	em.taskManage, em.logger = taskManage, logger
+	em.eventMsgHandler.init(logger)
+	em.taskManage = taskManage
 	streamConfig := jetstream.StreamConfig{
 		Name:      natsEventName,
 		Subjects:  []string{natsEventPrefix + ".*"},
@@ -53,11 +59,12 @@ func (em *eventManager) init(js jetstream.JetStream, taskManage *taskManager, lo
 		MaxAge:    24 * time.Hour * 7,
 	}
 	customerConfig := jetstream.ConsumerConfig{
-		Name:       natsEventPrefix + "_customer",
-		Durable:    natsEventPrefix + "_customer",
-		AckPolicy:  jetstream.AckExplicitPolicy,
-		BackOff:    backOff,
-		MaxDeliver: len(backOff) + 1,
+		Name:          natsEventPrefix + "_customer",
+		Durable:       natsEventPrefix + "_customer",
+		AckPolicy:     jetstream.AckExplicitPolicy,
+		BackOff:       backOff,
+		MaxDeliver:    len(backOff) + 1,
+		MaxAckPending: runtime.GOMAXPROCS(0) * 3,
 	}
 	err := em.manageInitializers.init(js, streamConfig, customerConfig)
 	if err != nil {
@@ -77,57 +84,50 @@ func (em *eventManager) Publish(event Event, payload []byte) bool {
 }
 
 func (em *eventManager) Subscribe(event Event, triggerTask Task, fetchTaskData func(eventData []byte) ([]byte, error)) {
-	em.lock.Lock()
-	defer em.lock.Unlock()
-	if em.eventToTask == nil {
-		em.eventToTask = make(map[Event]map[Task]MessageHandler)
-	}
-	if em.eventToTask[event] == nil {
-		em.eventToTask[event] = make(map[Task]MessageHandler)
-	}
-	em.eventToTask[event][triggerTask] = func(payload []byte) error {
-		data, err := fetchTaskData(payload)
-		if err != nil {
-			return err
-		}
-		if em.taskManage.Publish(triggerTask, data) {
+	taskMap, _ := em.eventToTask.LoadOrStore(event, dataTool.NewSyncMap[Task, MessageHandler]())
+	taskMap.Store(
+		triggerTask, func(payload []byte) error {
+			data, err := fetchTaskData(payload)
+			if err != nil {
+				return err
+			}
+			if em.taskManage.Publish(triggerTask, data) {
+				return nil
+			}
+			str, _ := json.Marshal(RetryTriggerTask{Task: triggerTask, Data: payload})
+			em.Publish(EventRetryTriggerTask, str)
 			return nil
-		}
-		str, _ := json.Marshal(RetryTriggerTask{Task: triggerTask, Data: payload})
-		em.Publish(EventRetryTriggerTask, str)
-		return nil
-	}
-
+		},
+	)
 	em.updateMsgHandlerMap(
 		event.subject(), func(payload []byte) error {
-			for _, handler := range em.eventToTask[event] {
-				_ = handler(payload)
+			m, exit := em.eventToTask.Load(event)
+			if !exit {
+				return nil
 			}
+			m.Range(
+				func(_ Task, handler MessageHandler) bool {
+					_ = handler(payload)
+					return true
+				},
+			)
 			return nil
 		},
 	)
 }
 func (em *eventManager) SubscribeToNewConsumer(event Event, name string, handler MessageHandler) {
-	updateMsg := func() {
-		em.lock.Lock()
-		defer em.lock.Unlock()
-		if _, exist := em.msgHandlerMap[event.subject()]; exist {
-			return
-		}
-		em.updateMsgHandlerMap(
-			event.subject(), func(payload []byte) error {
-				// ignore
-				return nil
-			},
-		)
-	}
-	updateMsg()
+	em.msgHandlerMap.LoadOrStore(
+		event.subject(), func(payload []byte) error {
+			// ignore
+			return nil
+		},
+	)
 	ctx := context.Background()
 	config, err := em.getCustomerConfig(ctx)
 	if err != nil {
 		panic(err)
 	}
-	config.Name, config.Durable, config.FilterSubjects = name, name, []string{string(event.subject())}
+	config.Name, config.Durable, config.FilterSubjects = name, name, []string{event.subject()}
 	customer, err := em.newCustomer(ctx, config)
 	if err != nil {
 		panic(err)
@@ -142,19 +142,20 @@ func (em *eventManager) SubscribeToNewConsumer(event Event, name string, handler
 	}
 }
 
-func (em *eventManager) GetMessageHandler(event Event) (MessageHandler, error) {
-	return em.getHandler(event.subject())
-}
-
 type eventMsgHandler struct {
-	eventToTask   map[Event]map[Task]MessageHandler
-	msgHandlerMap map[string]MessageHandler
+	eventToTask   dataTool.Map[Event, dataTool.Map[Task, MessageHandler]]
+	msgHandlerMap dataTool.Map[string, MessageHandler]
 	msgManger
 
-	lock   sync.Mutex
 	logger *zap.Logger
 
 	taskManage *taskManager
+}
+
+func (em *eventMsgHandler) init(logger *zap.Logger) {
+	em.logger = logger
+	em.eventToTask = dataTool.NewSyncMap[Event, dataTool.Map[Task, MessageHandler]]()
+	em.msgHandlerMap = dataTool.NewSyncMap[string, MessageHandler]()
 }
 
 func (em *eventMsgHandler) receiveMsg(msg jetstream.Msg) {
@@ -176,7 +177,7 @@ func (em *eventMsgHandler) getHandler(subject string) (MessageHandler, error) {
 			return nil
 		}, nil
 	}
-	handler, exist := em.msgHandlerMap[subject]
+	handler, exist := em.msgHandlerMap.Load(subject)
 	if !exist {
 		return func(payload []byte) error { return nil }, fmt.Errorf(
 			"subject: %s ,%w", subject, ErrMsgHandlerNotExist,
@@ -194,8 +195,5 @@ func (em *eventMsgHandler) msgHandle(subject string, payload []byte) error {
 }
 
 func (em *eventMsgHandler) updateMsgHandlerMap(subject string, handler MessageHandler) {
-	if em.msgHandlerMap == nil {
-		em.msgHandlerMap = make(map[string]MessageHandler)
-	}
-	em.msgHandlerMap[subject] = handler
+	em.msgHandlerMap.Store(subject, handler)
 }

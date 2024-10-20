@@ -4,7 +4,6 @@ import (
 	"KeepAccount/global/constant"
 	"KeepAccount/initialize"
 	"KeepAccount/util/log"
-
 	"github.com/nats-io/nats.go/jetstream"
 	"go.uber.org/zap"
 )
@@ -33,6 +32,10 @@ var (
 )
 
 func init() {
+	initManager()
+}
+
+func initManager() {
 	var err error
 	js, err = jetstream.New(natsConn)
 	if err != nil {
@@ -51,19 +54,28 @@ func init() {
 		panic(err)
 	}
 
-	taskManage = &taskManager{}
+	if taskManage != nil {
+		taskManage = &taskManager{taskMsgHandler: taskManage.taskMsgHandler}
+	} else {
+		taskManage = &taskManager{}
+	}
 	TaskManage = taskManage
 	err = taskManage.init(js, taskLogger)
 	if err != nil {
 		panic(err)
 	}
 
-	eventManage = &eventManager{}
+	if eventManage != nil {
+		eventManage = &eventManager{eventMsgHandler: eventManage.eventMsgHandler}
+	} else {
+		eventManage = &eventManager{}
+	}
 	EventManage = eventManage
 	err = eventManage.init(js, taskManage, eventLogger)
 	if err != nil {
 		panic(err)
 	}
+
 	dlqManage = &dlqManager{}
 	DlqManage = dlqManage
 	err = dlqManage.init(js, []jetstream.Stream{taskManage.stream, eventManage.stream}, dlqLogger)

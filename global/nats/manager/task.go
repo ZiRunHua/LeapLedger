@@ -2,14 +2,17 @@ package manager
 
 import (
 	"fmt"
-	"sync"
+	"runtime"
 	"time"
 
+	"KeepAccount/util/dataTool"
 	"github.com/nats-io/nats.go"
 	"github.com/nats-io/nats.go/jetstream"
 	"go.uber.org/zap"
 )
 
+// TaskManager is used to manage tasks.
+// All tasks will be placed in a consumer group.
 type TaskManager interface {
 	Publish(task Task, payload []byte) bool
 	Subscribe(task Task, handler MessageHandler)
@@ -34,7 +37,7 @@ type taskManager struct {
 }
 
 func (tm *taskManager) init(js jetstream.JetStream, logger *zap.Logger) error {
-	tm.logger = logger
+	tm.taskMsgHandler.init(logger)
 	streamConfig := jetstream.StreamConfig{
 		Name:      natsTaskName,
 		Subjects:  []string{natsTaskPrefix + ".*"},
@@ -42,12 +45,14 @@ func (tm *taskManager) init(js jetstream.JetStream, logger *zap.Logger) error {
 		MaxAge:    24 * time.Hour * 7,
 	}
 	customerConfig := jetstream.ConsumerConfig{
-		Name:       natsTaskPrefix + "_customer",
-		Durable:    natsTaskPrefix + "_customer",
-		AckPolicy:  jetstream.AckExplicitPolicy,
-		BackOff:    backOff,
-		MaxDeliver: len(backOff) + 1,
+		Name:          natsTaskPrefix + "_customer",
+		Durable:       natsTaskPrefix + "_customer",
+		AckPolicy:     jetstream.AckExplicitPolicy,
+		BackOff:       backOff,
+		MaxDeliver:    len(backOff) + 1,
+		MaxAckPending: runtime.GOMAXPROCS(0) * 3,
 	}
+
 	err := tm.manageInitializers.init(js, streamConfig, customerConfig)
 	if err != nil {
 		return err
@@ -73,12 +78,7 @@ func (tm *taskManager) Publish(task Task, payload []byte) bool {
 }
 
 func (tm *taskManager) Subscribe(task Task, handler MessageHandler) {
-	tm.lock.Lock()
-	defer tm.lock.Unlock()
-	if tm.msgHandlerMap == nil {
-		tm.msgHandlerMap = make(map[string]MessageHandler)
-	}
-	tm.msgHandlerMap[task.subject()] = handler
+	tm.msgHandlerMap.Store(task.subject(), handler)
 }
 
 func (tm *taskManager) GetMessageHandler(task Task) (MessageHandler, error) {
@@ -86,18 +86,22 @@ func (tm *taskManager) GetMessageHandler(task Task) (MessageHandler, error) {
 }
 
 type taskMsgHandler struct {
-	msgHandlerMap map[string]MessageHandler
+	msgHandlerMap dataTool.Map[string, MessageHandler]
 	msgManger
 
-	lock   sync.Mutex
 	logger *zap.Logger
+}
+
+func (tm *taskMsgHandler) init(logger *zap.Logger) {
+	tm.logger = logger
+	tm.msgHandlerMap = dataTool.NewSyncMap[string, MessageHandler]()
 }
 
 func (tm *taskMsgHandler) receiveMsg(msg jetstream.Msg) {
 	receiveMsg(msg, func(msg jetstream.Msg) error { return tm.msgHandle(msg.Subject(), msg.Data()) }, tm.logger)
 }
 func (tm *taskMsgHandler) getHandler(subject string) (MessageHandler, error) {
-	handler, exist := tm.msgHandlerMap[subject]
+	handler, exist := tm.msgHandlerMap.Load(subject)
 	if !exist {
 		return nil, fmt.Errorf("subject: %s ,%w", subject, ErrMsgHandlerNotExist)
 	}

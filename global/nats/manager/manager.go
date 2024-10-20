@@ -2,6 +2,8 @@ package manager
 
 import (
 	"context"
+	"log"
+	"sync"
 	"time"
 
 	"github.com/nats-io/nats.go/jetstream"
@@ -29,6 +31,47 @@ var backOff = []time.Duration{
 	time.Hour,
 	time.Hour * 7,
 	time.Hour * 24,
+}
+
+var testBackOff = []time.Duration{
+	time.Second,
+	time.Second,
+	time.Second,
+	time.Second,
+	time.Second,
+	time.Second,
+	time.Second,
+	time.Second,
+	time.Second,
+	time.Second,
+	time.Second,
+	time.Second,
+	time.Second,
+	time.Second,
+	time.Second,
+	time.Second,
+	time.Second,
+	time.Second,
+	time.Second,
+}
+
+// UpdateTestBackOff
+// Most test samples are suspended for 30 seconds to wait for message consumption,
+// and test whether retry and dead letter queues work properly,
+// so to ensure that the test samples execute properly,
+// you need to retry at least 10 times within 30 seconds.
+
+var once sync.Once
+
+func UpdateTestBackOff() {
+	once.Do(
+		func() {
+			backOff = testBackOff
+			initManager()
+			time.Sleep(time.Second * 3)
+			log.Print("update test back off finish")
+		},
+	)
 }
 
 type manageInitializers struct {

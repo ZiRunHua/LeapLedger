@@ -21,7 +21,7 @@ func init() {
 	if err != nil {
 		panic(err)
 	}
-	SubscribeTaskWithPayloadAndProcessInTransaction(
+	SubscribeTaskWithPayload(
 		TaskOutbox, outboxService.getHandleTransaction(outboxTypeTask),
 	)
 	SubscribeEvent(

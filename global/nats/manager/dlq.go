@@ -4,11 +4,12 @@ package manager
 import (
 	"errors"
 	"fmt"
+
+	"KeepAccount/util/dataTool"
 	natsServer "github.com/nats-io/nats-server/v2/server"
 	"github.com/nats-io/nats.go"
 	"github.com/nats-io/nats.go/jetstream"
 	"go.uber.org/zap"
-	"sync"
 )
 
 import (
@@ -16,8 +17,12 @@ import (
 	"encoding/json"
 )
 
+// The DlqManager is used to manage dead letters.
+// Use a dead letter queue by passing in a jetstream.Stream registration.
+// Messages in DlqManager will use stream_seq to query the complete message on the registered stream,
+// provided that the message still exists, and the message will be published as a new message on the registered stream.
 type DlqManager interface {
-	RepublishBatch(batch int, ctx context.Context) error
+	RepublishBatch(batch int, ctx context.Context) (int, error)
 }
 
 const dlqName = "dlq"
@@ -34,7 +39,7 @@ type dlqManager struct {
 }
 
 func (dm *dlqManager) init(js jetstream.JetStream, registerStream []jetstream.Stream, logger *zap.Logger) (err error) {
-	dm.logger = logger
+	dm.logger, dm.register.streamMap = logger, dataTool.NewSyncMap[string, jetstream.Stream]()
 
 	err = dm.register.register(registerStream...)
 	if err != nil {
@@ -75,15 +80,17 @@ func (dm *dlqManager) init(js jetstream.JetStream, registerStream []jetstream.St
 	return err
 }
 
-func (dm *dlqManager) RepublishBatch(batch int, ctx context.Context) error {
+func (dm *dlqManager) RepublishBatch(batch int, ctx context.Context) (int, error) {
 	msgBatch, err := dm.pullCustomer.fetchMsg(batch)
 	if err != nil {
 		if errors.Is(err, nats.ErrMsgNotFound) {
-			return nil
+			return 0, nil
 		}
-		return err
+		return 0, err
 	}
+	var count int
 	for msg := range msgBatch.Messages() {
+		count++
 		err = dm.republishDieMsg(msg, ctx)
 		if err != nil {
 			dm.logger.Error("republishDieMsg err", zap.Error(err))
@@ -98,7 +105,7 @@ func (dm *dlqManager) RepublishBatch(batch int, ctx context.Context) error {
 			}
 		}
 	}
-	return nil
+	return count, nil
 }
 
 func (dm *dlqManager) republishDieMsg(msg jetstream.Msg, ctx context.Context) (err error) {
@@ -150,26 +157,29 @@ func (dmh *dlqMsgHandler) logMsg(msg jetstream.Msg) {
 }
 
 type dlqStreamRegister struct {
-	streamMap map[string]jetstream.Stream
-	lock      sync.Mutex
+	streamMap dataTool.Map[string, jetstream.Stream]
 }
 
 func (dsr *dlqStreamRegister) register(streams ...jetstream.Stream) error {
-	if dsr.streamMap == nil {
-		dsr.streamMap = make(map[string]jetstream.Stream, len(streams))
-	}
 	for _, stream := range streams {
-		dsr.streamMap[stream.CachedInfo().Config.Name] = stream
+		dsr.streamMap.LoadOrStore(stream.CachedInfo().Config.Name, stream)
 	}
 	return nil
 }
 
 func (dsr *dlqStreamRegister) getMaxDeliveriesEvents() ([]string, error) {
-	events, index := make([]string, len(dsr.streamMap), len(dsr.streamMap)), 0
-	for _, stream := range dsr.streamMap {
-		events[index] = fmt.Sprintf("$JS.EVENT.ADVISORY.CONSUMER.MAX_DELIVERIES.%s.*", stream.CachedInfo().Config.Name)
-		index++
-	}
+	var events []string
+	dsr.streamMap.Range(
+		func(_ string, stream jetstream.Stream) bool {
+			events = append(
+				events, fmt.Sprintf(
+					"$JS.EVENT.ADVISORY.CONSUMER.MAX_DELIVERIES.%s.*",
+					stream.(jetstream.Stream).CachedInfo().Config.Name,
+				),
+			)
+			return true
+		},
+	)
 	return events, nil
 }
 
@@ -177,9 +187,9 @@ func (dsr *dlqStreamRegister) selectMsgByDeliveryExceededAdvisory(
 	advisory natsServer.JSConsumerDeliveryExceededAdvisory,
 	ctx context.Context,
 ) (*jetstream.RawStreamMsg, error) {
-	stream, exist := dsr.streamMap[advisory.Stream]
+	stream, exist := dsr.streamMap.Load(advisory.Stream)
 	if !exist {
 		return nil, ErrStreamNotExist
 	}
-	return stream.GetMsg(ctx, advisory.StreamSeq)
+	return stream.(jetstream.Stream).GetMsg(ctx, advisory.StreamSeq)
 }

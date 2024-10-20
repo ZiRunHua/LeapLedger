@@ -2,8 +2,9 @@ package manager
 
 import (
 	"context"
-	"github.com/nats-io/nats.go/jetstream"
 	"time"
+
+	"github.com/nats-io/nats.go/jetstream"
 )
 
 type pullCustomer struct {
@@ -22,5 +23,5 @@ func (mi *pullCustomer) updateConfig(
 }
 
 func (mi *pullCustomer) fetchMsg(batch int) (jetstream.MessageBatch, error) {
-	return mi.consumer.Fetch(batch)
+	return mi.consumer.FetchNoWait(batch)
 }

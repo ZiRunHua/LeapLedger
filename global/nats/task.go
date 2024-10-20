@@ -11,7 +11,7 @@ import (
 	"KeepAccount/global/nats/manager"
 )
 
-type Task manager.Task
+type Task = manager.Task
 
 const TaskOutbox Task = "outbox"
 
@@ -44,11 +44,11 @@ const TaskMappingCategoryToAccountMapping Task = "mappingCategoryToAccountMappin
 const TaskUpdateCategoryMapping Task = "updateCategoryMapping"
 
 func PublishTask(task Task) (isSuccess bool) {
-	return taskManage.Publish(manager.Task(task), []byte{})
+	return taskManage.Publish(task, []byte{})
 }
 
 func SubscribeTask(task Task, handler func(ctx context.Context) error) {
-	taskManage.Subscribe(manager.Task(task), func(payload []byte) error { return handler(context.Background()) })
+	taskManage.Subscribe(task, func(payload []byte) error { return handler(context.Background()) })
 }
 
 func PublishTaskWithPayload[T PayloadType](task Task, payload T) (isSuccess bool) {
@@ -56,7 +56,7 @@ func PublishTaskWithPayload[T PayloadType](task Task, payload T) (isSuccess bool
 	if err != nil {
 		return false
 	}
-	return taskManage.Publish(manager.Task(task), str)
+	return taskManage.Publish(task, str)
 }
 
 func SubscribeTaskWithPayload[T PayloadType](task Task, handle handler[T]) {
@@ -67,12 +67,12 @@ func SubscribeTaskWithPayload[T PayloadType](task Task, handle handler[T]) {
 		}
 		return handle(data, context.Background())
 	}
-	taskManage.Subscribe(manager.Task(task), msgHandler)
+	taskManage.Subscribe(task, msgHandler)
 }
 
 func SubscribeTaskWithPayloadAndProcessInTransaction[T PayloadType](task Task, handleTransaction handler[T]) {
 	taskManage.Subscribe(
-		manager.Task(task), func(payload []byte) error {
+		task, func(payload []byte) error {
 			var data T
 			if err := json.Unmarshal(payload, &data); err != nil {
 				return err
