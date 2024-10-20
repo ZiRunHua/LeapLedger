@@ -7,6 +7,7 @@ services:
       - "8080:8080"
       - "2345:2345"
     volumes:
+      - ./global/nats:/go/LeapLedger/global/nats
       - ./log:/go/LeapLedger/log
       - ./docs:/go/LeapLedger/docs
       - ./docker/test:/go/LeapLedger/docker/test

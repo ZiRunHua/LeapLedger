@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log"
 	"runtime"
 	"time"
 
@@ -22,6 +23,7 @@ type EventManager interface {
 	Publish(event Event, payload []byte) bool
 	Subscribe(event Event, triggerTask Task, fetchTaskData func(eventData []byte) ([]byte, error))
 	SubscribeToNewConsumer(event Event, name string, handler MessageHandler)
+	GetVector(ctx context.Context) []struct{ Head, Tail string }
 }
 
 const (
@@ -115,6 +117,7 @@ func (em *eventManager) Subscribe(event Event, triggerTask Task, fetchTaskData f
 		},
 	)
 }
+
 func (em *eventManager) SubscribeToNewConsumer(event Event, name string, handler MessageHandler) {
 	em.msgHandlerMap.LoadOrStore(
 		event.subject(), func(payload []byte) error {
@@ -140,6 +143,42 @@ func (em *eventManager) SubscribeToNewConsumer(event Event, name string, handler
 	if err != nil {
 		panic(err)
 	}
+}
+
+func (em *eventManager) GetVector(ctx context.Context) []struct{ Head, Tail string } {
+	var vectors []struct{ Head, Tail string }
+	for info := range em.stream.ListConsumers(ctx).Info() {
+		if info == nil {
+			continue
+		}
+		if len(info.Config.FilterSubjects) != 0 {
+			for _, subject := range info.Config.FilterSubjects {
+				vectors = append(vectors, struct{ Head, Tail string }{Head: subject, Tail: info.Name})
+			}
+		} else {
+			vectors = append(
+				vectors, struct{ Head, Tail string }{
+					Head: info.Name, Tail: info.Config.FilterSubject,
+				},
+			)
+		}
+	}
+	log.Print(em.eventToTask)
+	em.eventToTask.Range(
+		func(event Event, d dataTool.Map[Task, MessageHandler]) (shouldContinue bool) {
+			if d == nil {
+				return true
+			}
+			d.Range(
+				func(task Task, handler MessageHandler) (shouldContinue bool) {
+					vectors = append(vectors, struct{ Head, Tail string }{Head: event.subject(), Tail: task.subject()})
+					return true
+				},
+			)
+			return true
+		},
+	)
+	return vectors
 }
 
 type eventMsgHandler struct {
