@@ -1,13 +1,14 @@
 package nats
 
 import (
+	"KeepAccount/global/cus"
 	"KeepAccount/global/db"
 	"KeepAccount/global/nats/manager"
 	"context"
 	"errors"
-
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
+	"runtime/debug"
 )
 
 type outbox struct {
@@ -15,7 +16,7 @@ type outbox struct {
 	ExecType outboxType
 	Type     string
 	Payload  []byte
-	failErr  string
+	FailErr  string
 	gorm.Model
 }
 type outboxType string
@@ -26,8 +27,8 @@ const outboxTypeEvent outboxType = "event"
 func (o *outbox) TableName() string {
 	return "core_outbox"
 }
-func (o *outbox) fail(db *gorm.DB, err error) error {
-	return db.Model(o).Update("fail_err", err.Error()).Error
+func (o *outbox) fail(db *gorm.DB, errStr string) error {
+	return db.Model(o).Update("fail_err", errStr).Error
 }
 func (o *outbox) completeReceipt(db *gorm.DB) error {
 	return db.Delete(o).Error
@@ -48,46 +49,57 @@ func (oServer *outboxServer) sendToOutbox(db *gorm.DB, execType outboxType, t st
 
 func (oServer *outboxServer) getOutboxAndLockById(db *gorm.DB, id uint) (outbox, error) {
 	var o outbox
-	err := db.Clauses(clause.Locking{Strength: "UPDATE", Options: "NOWAIT"}).First(&o, id).Error
+	err := db.Clauses(clause.Locking{Strength: "UPDATE", Options: clause.LockingOptionsNoWait}).First(&o, id).Error
 	return o, err
 }
 
 func (oServer *outboxServer) getHandleTransaction(t outboxType) handler[uint] {
-	var getMsgHandler = oServer.getMessageHandler(t)
-	return func(id uint, ctx context.Context) error {
-		tx := db.Get(ctx)
-		o, err := oServer.getOutboxAndLockById(tx, id)
-		if err != nil {
-			if errors.Is(err, gorm.ErrRecordNotFound) {
-				return nil
-			}
-			return err
-		}
-		msgHandler, err := getMsgHandler(o.Type)
-		if err != nil {
-
-			return err
-		}
-		err = msgHandler(o.Payload)
-		if err != nil {
-			_ = o.fail(tx, err)
-			return err
-		}
-		return o.completeReceipt(tx)
-	}
-}
-
-func (oServer *outboxServer) getMessageHandler(t outboxType) func(string) (manager.MessageHandler, error) {
+	var msgHandler func(execType string, payload []byte) error
 	switch t {
 	case outboxTypeTask:
-		return func(t string) (manager.MessageHandler, error) {
-			return taskManage.GetMessageHandler(manager.Task(t))
+		msgHandler = func(execType string, payload []byte) error {
+			h, err := taskManage.GetMessageHandler(manager.Task(execType))
+			if err != nil {
+				return err
+			}
+			return h(payload)
 		}
 	case outboxTypeEvent:
-		return func(t string) (manager.MessageHandler, error) {
-			return eventManage.GetMessageHandler(manager.Event(t))
+		msgHandler = func(execType string, payload []byte) error {
+			if eventManage.Publish(manager.Event(execType), payload) {
+				return nil
+			}
+			return errors.New("fail publish event")
 		}
-	default:
-		panic("error outboxType")
+	}
+	return func(id uint, ctx context.Context) error {
+		var msgHandleErr error
+		err := db.Transaction(
+			ctx, func(ctx *cus.TxContext) error {
+				tx := ctx.GetDb()
+				o, err := oServer.getOutboxAndLockById(tx, id)
+				if err != nil {
+					if errors.Is(err, gorm.ErrRecordNotFound) {
+						return nil
+					}
+					return err
+				}
+				defer func() {
+					r := recover()
+					if r != nil {
+						_ = o.fail(tx, string(debug.Stack()))
+					}
+				}()
+				msgHandleErr = msgHandler(o.Type, o.Payload)
+				if msgHandleErr != nil {
+					return o.fail(tx, msgHandleErr.Error())
+				}
+				return o.completeReceipt(tx)
+			},
+		)
+		if err != nil {
+			return err
+		}
+		return msgHandleErr
 	}
 }
