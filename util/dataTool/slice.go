@@ -60,6 +60,19 @@ func (s Slice[K, V]) CopyReverse() Slice[K, V] {
 	return list
 }
 
+func Reverse[V any](s []V) {
+	for i := 0; i < len(s)/2; i++ {
+		s[i], s[len(s)-1-i] = s[len(s)-1-i], s[i]
+	}
+}
+
+func CopyReverse[V any](s []V) []V {
+	list := make([]V, len(s), len(s))
+	copy(list, s)
+	Reverse(list)
+	return list
+}
+
 func ToMap[Slice ~[]V, V any, K comparable](s Slice, getKey func(V) K) (result map[K]V) {
 	result = make(map[K]V)
 	for _, v := range s {

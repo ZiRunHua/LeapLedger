@@ -91,6 +91,7 @@ func (t *template) CreateCategory(
 				return err
 			}
 			categoryDao.OrderFather(tmplFatherList)
+			dataTool.Reverse(tmplFatherList)
 			for _, tmplFather := range tmplFatherList {
 				if err = t.createFatherCategory(account, tmplFather, ctx); err != nil {
 					return err
@@ -123,6 +124,7 @@ func (t *template) createFatherCategory(
 	var category categoryModel.Category
 	var mappingList []productModel.TransactionCategoryMapping
 	productDao := productModel.NewDao(tx)
+	dataTool.Reverse(tmplCategoryList)
 	for _, tmplCategory := range tmplCategoryList {
 		category, err = categoryService.CreateOne(
 			father, categoryService.NewCategoryData(tmplCategory.Name, tmplCategory.Icon), ctx,
@@ -153,17 +155,22 @@ func (t *template) createFatherCategory(
 func (t *template) CreateAccountByTemplate(
 	tmpl AccountTmpl, user userModel.User, ctx context.Context,
 ) (account accountModel.Account, accountUser accountModel.User, err error) {
-	account = accountService.NewCreateData(tmpl.Name, tmpl.Icon, tmpl.Type, tmpl.Location)
-	account, accountUser, err = accountService.CreateOne(user, account, ctx)
-	if err != nil {
-		return
-	}
-	for _, f := range tmpl.Category {
-		err = f.create(account, ctx)
-		if err != nil {
-			return
-		}
-	}
+	err = db.Transaction(
+		ctx, func(ctx *cus.TxContext) error {
+			account = accountService.NewCreateData(tmpl.Name, tmpl.Icon, tmpl.Type, tmpl.Location)
+			account, accountUser, err = accountService.CreateOne(user, account, ctx)
+			if err != nil {
+				return err
+			}
+			for _, f := range dataTool.CopyReverse(tmpl.Category) {
+				err = f.create(account, ctx)
+				if err != nil {
+					return err
+				}
+			}
+			return nil
+		},
+	)
 	return
 }
 
