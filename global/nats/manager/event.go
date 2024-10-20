@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"log"
 	"runtime"
 	"time"
 
@@ -23,7 +22,7 @@ type EventManager interface {
 	Publish(event Event, payload []byte) bool
 	Subscribe(event Event, triggerTask Task, fetchTaskData func(eventData []byte) ([]byte, error))
 	SubscribeToNewConsumer(event Event, name string, handler MessageHandler)
-	GetVector(ctx context.Context) []struct{ Head, Tail string }
+	GetVector(ctx context.Context) []struct{ From, To string }
 }
 
 const (
@@ -145,25 +144,24 @@ func (em *eventManager) SubscribeToNewConsumer(event Event, name string, handler
 	}
 }
 
-func (em *eventManager) GetVector(ctx context.Context) []struct{ Head, Tail string } {
-	var vectors []struct{ Head, Tail string }
+func (em *eventManager) GetVector(ctx context.Context) []struct{ From, To string } {
+	var vectors []struct{ From, To string }
 	for info := range em.stream.ListConsumers(ctx).Info() {
-		if info == nil {
+		if info == nil || info.Name == natsEventPrefix+"_customer" {
 			continue
 		}
 		if len(info.Config.FilterSubjects) != 0 {
 			for _, subject := range info.Config.FilterSubjects {
-				vectors = append(vectors, struct{ Head, Tail string }{Head: subject, Tail: info.Name})
+				vectors = append(vectors, struct{ From, To string }{From: subject, To: info.Name})
 			}
 		} else {
 			vectors = append(
-				vectors, struct{ Head, Tail string }{
-					Head: info.Name, Tail: info.Config.FilterSubject,
+				vectors, struct{ From, To string }{
+					From: info.Name, To: info.Config.FilterSubject,
 				},
 			)
 		}
 	}
-	log.Print(em.eventToTask)
 	em.eventToTask.Range(
 		func(event Event, d dataTool.Map[Task, MessageHandler]) (shouldContinue bool) {
 			if d == nil {
@@ -171,7 +169,7 @@ func (em *eventManager) GetVector(ctx context.Context) []struct{ Head, Tail stri
 			}
 			d.Range(
 				func(task Task, handler MessageHandler) (shouldContinue bool) {
-					vectors = append(vectors, struct{ Head, Tail string }{Head: event.subject(), Tail: task.subject()})
+					vectors = append(vectors, struct{ From, To string }{From: event.subject(), To: task.subject()})
 					return true
 				},
 			)
