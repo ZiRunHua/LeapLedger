@@ -1,0 +1,23 @@
+FROM golang:1.23-alpine
+
+ENV GO111MODULE=on
+ENV GOPROXY=https://goproxy.io,direct
+ENV TZ=Asia/Shanghai
+
+WORKDIR /go/LeapLedger
+
+RUN sed -i 's#https\?://dl-cdn.alpinelinux.org/alpine#https://mirrors.tuna.tsinghua.edu.cn/alpine#g' /etc/apk/repositories
+RUN apk update && apk add build-base && apk add gcc
+
+COPY go.mod go.mod
+COPY go.sum go.sum
+RUN go mod download
+
+COPY . .
+
+RUN go build -o leapledger
+
+
+EXPOSE 8080
+
+CMD ["/bin/sh", "-c", "./leapledger"]

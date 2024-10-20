@@ -26,6 +26,12 @@ services:
       - "3306:3306"
     volumes:
       - ./docker/data/mysql:/var/lib/mysql
+      - ./docker/mysql.cnf:/etc/mysql/conf.d/mysql.cnf
+    command: >
+      bash -c "
+      chmod 644 /etc/mysql/conf.d/*.cnf
+      && /entrypoint.sh mysqld
+      "
     networks:
       - leap-ledger-network
   leap-ledger-redis:

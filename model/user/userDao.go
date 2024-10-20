@@ -1,9 +1,10 @@
 package userModel
 
 import (
+	"errors"
+
 	"KeepAccount/global"
 	"KeepAccount/global/constant"
-	"errors"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )
@@ -95,7 +96,9 @@ func (u *UserDao) SelectByEmail(email string) (User, error) {
 	return user, err
 }
 
-func (u *UserDao) SelectByDeviceNumber(client constant.Client, deviceNumber string) (clientBaseInfo UserClientBaseInfo, err error) {
+func (u *UserDao) SelectByDeviceNumber(client constant.Client, deviceNumber string) (
+	clientBaseInfo UserClientBaseInfo,
+	err error) {
 	err = u.db.Model(GetUserClientModel(client)).Where("device_number = ?", deviceNumber).First(&clientBaseInfo).Error
 	return
 }
@@ -228,6 +231,11 @@ func (u *UserDao) CreateTour(user User) (Tour, error) {
 }
 
 func (u *UserDao) SelectByUnusedTour() (tour Tour, err error) {
-	err = u.db.Where("status = false").Clauses(clause.Locking{Strength: "UPDATE", Options: "SKIP LOCKED"}).First(&tour).Error
+	err = u.db.Where("status = false").Clauses(
+		clause.Locking{
+			Strength: clause.LockingStrengthUpdate,
+			Options:  clause.LockingOptionsSkipLocked,
+		},
+	).First(&tour).Error
 	return tour, err
 }
