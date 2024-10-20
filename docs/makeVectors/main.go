@@ -6,47 +6,37 @@ import (
 	_ "KeepAccount/service"
 	"context"
 	"fmt"
-	"gonum.org/v1/gonum/graph"
-	"gonum.org/v1/gonum/graph/simple"
 	"os"
 	"strings"
 )
 
 func main() {
-	vectors := manager.EventManage.GetVector(context.TODO())
-	nodes := make(map[string]graph.Node)
-	nodeIDToName := make(map[int64]string)
-	g := simple.NewDirectedGraph()
-	for _, vector := range vectors {
-		fmt.Println(vector)
-		if _, exist := nodes[vector.From]; !exist {
-			nodes[vector.From] = g.NewNode()
-			nodeIDToName[nodes[vector.From].ID()] = vector.From
-			g.AddNode(nodes[vector.From])
-		}
-		if _, exist := nodes[vector.To]; !exist {
-			nodes[vector.To] = g.NewNode()
-			nodeIDToName[nodes[vector.To].ID()] = vector.To
-			g.AddNode(nodes[vector.To])
-		}
-		fromNode, toNode := nodes[vector.From], nodes[vector.To]
-		g.SetEdge(simple.Edge{F: fromNode, T: toNode})
-	}
-	file, err := os.Create(constant.WORK_PATH + "/docs/graph.dot")
+	file, err := os.Create(constant.WORK_PATH + "/docs/eventVectorGraph.dot")
 	if err != nil {
 		panic(err)
 	}
-	defer file.Close()
-	fmt.Fprintln(file, "digraph G {")
-	it := g.Edges()
-	for it.Next() {
-		e := it.Edge()
-
-		fmt.Fprintf(
-			file, "  %s -> %s;\n",
-			strings.Replace(nodeIDToName[e.From().ID()], ".", "_", -1),
-			strings.Replace(nodeIDToName[e.To().ID()], ".", "_", -1),
-		)
+	defer func() {
+		err = file.Close()
+		if err != nil {
+			panic(err)
+		}
+	}()
+	_, err = fmt.Fprintln(file, "digraph G {")
+	if err != nil {
+		panic(err)
 	}
-	fmt.Fprintln(file, "}")
+	for _, vector := range manager.EventManage.GetVector(context.TODO()) {
+		_, err = fmt.Fprintf(
+			file, "  %s -> %s;\n",
+			strings.Replace(vector.From, ".", "_", -1),
+			strings.Replace(vector.To, ".", "_", -1),
+		)
+		if err != nil {
+			panic(err)
+		}
+	}
+	_, err = fmt.Fprintln(file, "}")
+	if err != nil {
+		panic(err)
+	}
 }

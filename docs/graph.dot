@@ -1,6 +1,0 @@
-digraph G {
-  event_subject_transaction_create_event -> task_subject_statisticUpdate;
-  event_subject_transaction_delete_event -> task_subject_statisticUpdate;
-  event_subject_outbox -> outbox;
-  event_subject_transaction_update_event -> update_statistic_after_transaction_update;
-}
