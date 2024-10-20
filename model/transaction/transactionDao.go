@@ -1,12 +1,13 @@
 package transactionModel
 
 import (
+	"database/sql"
+	"time"
+
 	"KeepAccount/global"
 	"KeepAccount/global/constant"
 	accountModel "KeepAccount/model/account"
 	"KeepAccount/util/timeTool"
-	"database/sql"
-	"time"
 
 	"github.com/pkg/errors"
 	"gorm.io/gorm"
@@ -30,6 +31,11 @@ func (t *TransactionDao) SelectById(id uint, forUpdate bool) (result Transaction
 		err = t.db.First(&result, id).Error
 	}
 	return
+}
+
+func (t *TransactionDao) Create(info Info, recordType RecordType) (result Transaction, err error) {
+	result.Info, result.RecordType = info, recordType
+	return result, t.db.Create(&result).Error
 }
 
 func (t *TransactionDao) GetListByCondition(condition Condition, offset int, limit int) (

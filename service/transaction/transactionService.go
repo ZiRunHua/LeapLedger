@@ -1,6 +1,9 @@
 package transactionService
 
 import (
+	"context"
+	"time"
+
 	"KeepAccount/global"
 	"KeepAccount/global/constant"
 	"KeepAccount/global/cus"
@@ -9,8 +12,6 @@ import (
 	accountModel "KeepAccount/model/account"
 	categoryModel "KeepAccount/model/category"
 	transactionModel "KeepAccount/model/transaction"
-	"context"
-	"time"
 
 	"github.com/pkg/errors"
 	"golang.org/x/sync/errgroup"
@@ -20,24 +21,27 @@ import (
 type Transaction struct{}
 
 func (txnService *Transaction) Create(
-	transInfo transactionModel.Info, accountUser accountModel.User, option Option, ctx context.Context,
-) (transactionModel.Transaction, error) {
-	trans := transactionModel.Transaction{Info: transInfo}
-	err := db.Transaction(
+	transInfo transactionModel.Info,
+	accountUser accountModel.User,
+	recordType transactionModel.RecordType,
+	option Option,
+	ctx context.Context,
+) (trans transactionModel.Transaction, err error) {
+	return trans, db.Transaction(
 		ctx, func(ctx *cus.TxContext) error {
 			tx := ctx.GetDb()
 			// check
-			trans.AccountId = accountUser.AccountId
-			err := trans.Check(tx)
+			transInfo.AccountId = accountUser.AccountId
+			err = transInfo.Check(tx)
 			if err != nil {
 				return errors.WithStack(err)
 			}
-			err = accountUser.CheckTransAddByUserId(trans.UserId)
+			err = accountUser.CheckTransAddByUserId(transInfo.UserId)
 			if err != nil {
 				return errors.WithStack(err)
 			}
 			// handle
-			err = tx.Create(&trans).Error
+			trans, err = transactionModel.NewDao(tx).Create(transInfo, recordType)
 			if err != nil {
 				return errors.WithStack(err)
 			}
@@ -50,19 +54,17 @@ func (txnService *Transaction) Create(
 			return nats.PublishEventToOutboxWithPayload(ctx, nats.EventTransactionCreate, trans)
 		},
 	)
-	return trans, err
 }
 
 // Update only "user_id,income_expense,category_id,amount,remark,trade_time" can be changed
 func (txnService *Transaction) Update(
 	trans transactionModel.Transaction, accountUser accountModel.User, option Option, ctx context.Context,
 ) error {
-	var oldTrans transactionModel.Transaction
-	err := db.Transaction(
+	return db.Transaction(
 		ctx, func(ctx *cus.TxContext) error {
 			tx := ctx.GetDb()
 			// check
-			err := txnService.checkTransaction(trans, accountUser, tx)
+			err := trans.Check(tx)
 			if err != nil {
 				return errors.WithStack(err)
 			}
@@ -71,7 +73,7 @@ func (txnService *Transaction) Update(
 				return errors.WithStack(err)
 			}
 			// handle
-			oldTrans = trans
+			oldTrans := trans
 			if err = oldTrans.ForShare(tx); err != nil {
 				return errors.WithStack(err)
 			}
@@ -94,7 +96,6 @@ func (txnService *Transaction) Update(
 			)
 		},
 	)
-	return err
 }
 
 func (txnService *Transaction) Delete(
@@ -115,19 +116,6 @@ func (txnService *Transaction) Delete(
 		},
 	)
 	return err
-}
-
-func (txnService *Transaction) checkTransaction(
-	trans transactionModel.Transaction, accountUser accountModel.User, tx *gorm.DB,
-) error {
-	if trans.AccountId != accountUser.AccountId {
-		return global.ErrAccountId
-	}
-	err := trans.Check(tx)
-	if err != nil {
-		return err
-	}
-	return nil
 }
 
 func (txnService *Transaction) updateStatistic(data transactionModel.StatisticData, ctx context.Context) (err error) {
@@ -300,7 +288,9 @@ func (txnService *Transaction) CreateSyncTrans(
 	if err != nil {
 		return
 	}
-	newTrans, err := txnService.Create(syncTrans.Info, accountUser, txnService.NewDefaultOption(), ctx)
+	newTrans, err := txnService.Create(
+		syncTrans.Info, accountUser, transactionModel.RecordTypeOfSync, txnService.NewDefaultOption(), ctx,
+	)
 	if err != nil {
 		return
 	}

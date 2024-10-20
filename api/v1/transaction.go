@@ -1,6 +1,11 @@
 package v1
 
 import (
+	"context"
+	"errors"
+	"log"
+	"time"
+
 	"KeepAccount/api/request"
 	"KeepAccount/api/response"
 	"KeepAccount/global/constant"
@@ -11,11 +16,7 @@ import (
 	transactionModel "KeepAccount/model/transaction"
 	"KeepAccount/util/dataTool"
 	"KeepAccount/util/timeTool"
-	"context"
-	"errors"
 	"github.com/gin-gonic/gin"
-	"log"
-	"time"
 )
 
 type TransactionApi struct {
@@ -61,22 +62,22 @@ func (t *TransactionApi) CreateOne(ctx *gin.Context) {
 	}
 
 	accountUser := contextFunc.GetAccountUser(ctx)
-	transaction := transactionModel.Transaction{
-		Info: transactionModel.Info{
-			AccountId:     accountUser.AccountId,
-			UserId:        accountUser.UserId,
-			CategoryId:    requestData.CategoryId,
-			IncomeExpense: requestData.IncomeExpense,
-			Amount:        requestData.Amount,
-			Remark:        requestData.Remark,
-			TradeTime:     requestData.TradeTime,
-		},
+	transInfo := transactionModel.Info{
+		AccountId:     accountUser.AccountId,
+		UserId:        accountUser.UserId,
+		CategoryId:    requestData.CategoryId,
+		IncomeExpense: requestData.IncomeExpense,
+		Amount:        requestData.Amount,
+		Remark:        requestData.Remark,
+		TradeTime:     requestData.TradeTime,
 	}
-	option, err := transactionService.NewOptionFormConfig(transaction.Info, ctx)
+	option, err := transactionService.NewOptionFormConfig(transInfo, ctx)
 	if responseError(err, ctx) {
 		return
 	}
-	transaction, err = transactionService.Create(transaction.Info, accountUser, option, ctx)
+	transaction, err := transactionService.Create(
+		transInfo, accountUser, transactionModel.RecordTypeOfManual, option, ctx,
+	)
 	if responseError(err, ctx) {
 		return
 	}

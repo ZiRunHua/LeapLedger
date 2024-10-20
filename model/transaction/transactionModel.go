@@ -19,13 +19,22 @@ import (
 )
 
 type Transaction struct {
-	ID uint `gorm:"primarykey"`
+	ID         uint `gorm:"primarykey"`
+	RecordType RecordType
 	Info
 	CreatedAt time.Time      `gorm:"type:TIMESTAMP"`
 	UpdatedAt time.Time      `gorm:"type:TIMESTAMP"`
 	DeletedAt gorm.DeletedAt `gorm:"index;type:TIMESTAMP"`
 	commonModel.BaseModel
 }
+type RecordType int8
+
+const (
+	RecordTypeOfManual RecordType = iota
+	RecordTypeOfTiming
+	RecordTypeOfSync
+	RecordTypeOfImport
+)
 
 type Info struct {
 	UserId, AccountId, CategoryId uint
@@ -37,14 +46,6 @@ type Info struct {
 
 func (i *Info) Check(db *gorm.DB) error {
 	category, err := categoryModel.NewDao(db).SelectById(i.CategoryId)
-	if err != nil {
-		return err
-	}
-	accountUser, err := accountModel.NewDao(db).SelectUser(i.AccountId, i.UserId)
-	if err != nil {
-		return err
-	}
-	err = accountUser.CheckTransAddByUserId(accountUser.UserId)
 	if err != nil {
 		return err
 	}
@@ -81,24 +82,7 @@ func (t *Transaction) Exits(query interface{}, args ...interface{}) (bool, error
 	return queryFunc.Exist[*Transaction](query, args)
 }
 
-func (t *Transaction) Check(db *gorm.DB) error {
-	category, err := t.GetCategory(db)
-	if err != nil {
-		return err
-	}
-	if category.AccountId != t.AccountId {
-		return global.ErrAccountId
-	}
-	if t.Amount < 0 {
-		return errors.New("transaction Check:Amount")
-	}
-	if t.IncomeExpense != category.IncomeExpense {
-		return errors.New("transaction Check:IncomeExpense")
-	}
-	return nil
-}
-
-func (t *Transaction) GetCategory(db ...*gorm.DB) (category categoryModel.Category, err error) {
+func (t *Info) GetCategory(db ...*gorm.DB) (category categoryModel.Category, err error) {
 	if len(db) > 0 {
 		err = db[0].First(&category, t.CategoryId).Error
 	} else {
@@ -107,7 +91,7 @@ func (t *Transaction) GetCategory(db ...*gorm.DB) (category categoryModel.Catego
 	return
 }
 
-func (t *Transaction) GetUser(selects ...interface{}) (user userModel.User, err error) {
+func (t *Info) GetUser(selects ...interface{}) (user userModel.User, err error) {
 	if len(selects) > 0 {
 		err = global.GvaDb.Select(selects[0], selects[1:]...).First(&user, t.UserId).Error
 	} else {
@@ -116,7 +100,7 @@ func (t *Transaction) GetUser(selects ...interface{}) (user userModel.User, err 
 	return
 }
 
-func (t *Transaction) GetAccount(db ...*gorm.DB) (account accountModel.Account, err error) {
+func (t *Info) GetAccount(db ...*gorm.DB) (account accountModel.Account, err error) {
 	if len(db) > 0 {
 		err = db[0].First(&account, t.AccountId).Error
 	} else {

@@ -22,8 +22,16 @@ func (tService *Timing) CreateTiming(timing transactionModel.Timing, ctx context
 	if err := timing.TransInfo.Check(tx); err != nil {
 		return timing, err
 	}
+	accountUser, err := accountModel.NewDao(tx).SelectUser(timing.TransInfo.AccountId, timing.TransInfo.UserId)
+	if err != nil {
+		return timing, err
+	}
+	err = accountUser.CheckTransAddByUserId(accountUser.UserId)
+	if err != nil {
+		return timing, err
+	}
 	timing.TransInfo.TradeTime = timing.NextTime
-	err := tx.Create(&timing).Error
+	err = tx.Create(&timing).Error
 	return timing, err
 }
 
@@ -138,7 +146,9 @@ func (te *TimingExec) ProcessWaitExecByStartId(startId uint, limit int, ctx cont
 		if err != nil {
 			return
 		}
-		trans, err = server.Create(data.TransInfo, accountUser, server.NewDefaultOption(), ctx)
+		trans, err = server.Create(
+			data.TransInfo, accountUser, transactionModel.RecordTypeOfTiming, server.NewDefaultOption(), ctx,
+		)
 		return
 	}
 

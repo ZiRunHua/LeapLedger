@@ -36,7 +36,7 @@ func TestCreate(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	trans, err = service.Create(transInfo, user, createOption, context.TODO())
+	trans, err = service.Create(transInfo, user, transactionModel.RecordTypeOfManual, createOption, context.TODO())
 	if err != nil {
 		t.Fatal(err)
 	}

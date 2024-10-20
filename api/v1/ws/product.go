@@ -49,7 +49,12 @@ func (b *BillImportWebsocket) SendTransactionCreateSuccess(transaction transacti
 
 func (b *BillImportWebsocket) SendTransactionCreateFail(transInfo transactionModel.Info, failErr error) error {
 	var transDetail response.TransactionDetail
-	err := transDetail.SetDataIgnoreErr(transactionModel.Transaction{Info: transInfo}, &b.account)
+	err := transDetail.SetDataIgnoreErr(
+		transactionModel.Transaction{
+			Info:       transInfo,
+			RecordType: transactionModel.RecordTypeOfImport,
+		}, &b.account,
+	)
 	if err != nil {
 		return err
 	}

@@ -1,6 +1,8 @@
 package response
 
 import (
+	"time"
+
 	"KeepAccount/global"
 	"KeepAccount/global/constant"
 	"KeepAccount/global/db"
@@ -9,7 +11,6 @@ import (
 	transactionModel "KeepAccount/model/transaction"
 	userModel "KeepAccount/model/user"
 	"KeepAccount/util/dataTool"
-	"time"
 )
 
 // TransactionDetail 交易详情
@@ -26,6 +27,7 @@ type TransactionDetail struct {
 	CategoryFatherName string
 	IncomeExpense      constant.IncomeExpense
 	Remark             string
+	RecordType         transactionModel.RecordType
 	TradeTime          time.Time
 	UpdateTime         time.Time
 	CreateTime         time.Time
@@ -67,6 +69,7 @@ func (t *TransactionDetail) SetData(
 	t.CategoryFatherName = father.Name
 	t.IncomeExpense = category.IncomeExpense
 	t.Remark = trans.Remark
+	t.RecordType = trans.RecordType
 	t.TradeTime = trans.TradeTime
 	t.UpdateTime = trans.UpdatedAt
 	t.CreateTime = trans.CreatedAt
@@ -106,6 +109,7 @@ func (t *TransactionDetail) SetDataIgnoreErr(
 	t.CategoryFatherName = father.Name
 	t.IncomeExpense = category.IncomeExpense
 	t.Remark = trans.Remark
+	t.RecordType = trans.RecordType
 	t.TradeTime = trans.TradeTime
 	t.UpdateTime = trans.UpdatedAt
 	t.CreateTime = trans.CreatedAt
@@ -135,6 +139,7 @@ func (t *TransactionDetailList) SetData(transList []transactionModel.Transaction
 		(*t)[i].CategoryId = transList[i].CategoryId
 		(*t)[i].IncomeExpense = transList[i].IncomeExpense
 		(*t)[i].Remark = transList[i].Remark
+		(*t)[i].RecordType = transList[i].RecordType
 		(*t)[i].TradeTime = transList[i].TradeTime
 		(*t)[i].UpdateTime = transList[i].UpdatedAt
 		(*t)[i].CreateTime = transList[i].CreatedAt
