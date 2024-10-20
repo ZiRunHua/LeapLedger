@@ -56,9 +56,6 @@ func transAccumulate(tx *gorm.DB) error {
 				return err
 			}
 		}
-		if err != nil {
-			return err
-		}
 	}
 	return nil
 }

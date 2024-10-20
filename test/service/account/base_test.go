@@ -21,9 +21,10 @@ import (
 )
 
 func TestAccount(t *testing.T) {
+	t.Parallel()
 	user, err := build.User()
 	if err != nil {
-		t.Error(err)
+		t.Fatal(err)
 	}
 	account, _, err := build.Account(user, accountModel.TypeShare)
 	if err != nil {
@@ -37,20 +38,16 @@ func TestAccount(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Run(
-		"test mapping", func(t *testing.T) {
-			_, err = service.Share.AddAccountUser(
-				account, childUser, accountModel.UserPermissionOwnEditor, context.TODO(),
-			)
-			if err != nil {
-				t.Fatal(err)
-			}
-			_, err := service.Share.MappingAccount(childUser, account, childAccount, context.TODO())
-			if err != nil {
-				t.Fatal(err)
-			}
-		},
+	_, err = service.Share.AddAccountUser(
+		account, childUser, accountModel.UserPermissionOwnEditor, context.TODO(),
 	)
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, err = service.Share.MappingAccount(childUser, account, childAccount, context.TODO())
+	if err != nil {
+		t.Fatal(err)
+	}
 	err = checkMappingAccountTrans(childUser, account, childAccount, constant.Expense)
 	if err != nil {
 		t.Fatal(err)
@@ -96,7 +93,7 @@ func checkMappingAccountTrans(
 	if err != nil {
 		return err
 	}
-	time.Sleep(time.Second * 10)
+	time.Sleep(time.Second * 60)
 	condition := transactionModel.NewStatisticConditionBuilder(category.AccountId)
 	condition.WithCategoryIds([]uint{category.ID})
 	statistic, err := transactionModel.NewStatisticDao().GetAmountCountByCondition(

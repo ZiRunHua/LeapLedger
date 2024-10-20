@@ -105,11 +105,10 @@ func (userSvc *User) Register(addData userModel.AddData, ctx context.Context, op
 			if err != nil {
 				return
 			}
-			var isTour bool
-			if len(option) != 0 {
-				isTour = option[0].tour
+			if len(option) == 0 {
+				return
 			}
-			if isTour {
+			if option[0].tour {
 				_, err = userDao.CreateTour(user)
 				if err != nil {
 					return
@@ -118,7 +117,8 @@ func (userSvc *User) Register(addData userModel.AddData, ctx context.Context, op
 				if err != nil {
 					return
 				}
-			} else {
+			}
+			if option[0].sendEmail {
 				return nats.PublishTaskToOutboxWithPayload(
 					ctx, nats.TaskSendNotificationEmail, nats.PayloadSendNotificationEmail{
 						UserId: user.ID, Notification: constant.NotificationOfRegistrationSuccess,

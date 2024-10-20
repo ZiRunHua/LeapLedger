@@ -12,6 +12,7 @@ import (
 )
 
 func TestTiming(t *testing.T) {
+	t.Parallel()
 	transInfo := get.TransInfo()
 	now := time.Now()
 	for i := 0; i < 10; i++ {

@@ -1,9 +1,13 @@
 package templateService
 
 import (
+	"context"
+	"errors"
+
 	"KeepAccount/global/constant"
 	"KeepAccount/global/cus"
 	"KeepAccount/global/db"
+	"KeepAccount/global/nats"
 	userModel "KeepAccount/model/user"
 	_accountService "KeepAccount/service/account"
 	_categoryService "KeepAccount/service/category"
@@ -11,8 +15,6 @@ import (
 	_userService "KeepAccount/service/user"
 	"KeepAccount/util"
 	_log "KeepAccount/util/log"
-	"context"
-	"errors"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 )
@@ -47,6 +49,17 @@ func init() {
 	if errorLog, err = _log.GetNewZapLogger(constant.LOG_PATH + "/service/template/error.log"); err != nil {
 		panic(err)
 	}
+
+	nats.SubscribeTaskWithPayloadAndProcessInTransaction(
+		nats.TaskCreateTourist, func(t []byte, ctx context.Context) error {
+			user, err := userService.CreateTourist(ctx)
+			if err != nil {
+				return err
+			}
+			_, _, err = templateService.CreateExampleAccount(user, ctx)
+			return err
+		},
+	)
 	ctx := cus.WithDb(context.Background(), db.InitDb)
 	// init template User
 	err = db.Transaction(ctx, initTemplateUser)
@@ -67,11 +80,16 @@ func initTemplateUser(ctx *cus.TxContext) (err error) {
 		return
 	}
 	// create user
-	user, err = userService.Register(userModel.AddData{
-		Email:    TmplUserEmail,
-		Password: util.ClientPasswordHash(TmplUserEmail, TmplUserPassword),
-		Username: TmplUserName,
-	}, ctx)
+	option := userService.NewRegisterOption()
+	option.WithSendEmail(false)
+	user, err = userService.Register(
+		userModel.AddData{
+			Email:    TmplUserEmail,
+			Password: util.ClientPasswordHash(TmplUserEmail, TmplUserPassword),
+			Username: TmplUserName,
+		}, ctx,
+		*option,
+	)
 	if err != nil {
 		return
 	}

@@ -4,11 +4,8 @@ import (
 	"KeepAccount/initialize"
 	_ "KeepAccount/initialize/database"
 	"KeepAccount/router"
-	test "KeepAccount/test/initialize"
 )
 import (
-	"KeepAccount/global"
-	"KeepAccount/global/constant"
 	"context"
 	"fmt"
 	"log"
@@ -41,9 +38,6 @@ func main() {
 		ReadTimeout:    5 * time.Second,
 		WriteTimeout:   5 * time.Second,
 		MaxHeaderBytes: 1 << 20,
-	}
-	if global.Config.Mode == constant.Debug {
-		fmt.Println(test.Info.ToString())
 	}
 	err := httpServer.ListenAndServe()
 	if err != nil {

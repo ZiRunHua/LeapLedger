@@ -18,7 +18,7 @@ func init() {
 		nats.TaskTransactionSync, GroupApp.Transaction.SyncToMappingAccount,
 	)
 	// timing
-	_, err := cron.Scheduler.Every(1).Day().At("00:00").Do(
+	_, err := cron.Scheduler.Every(1).Hour().Do(
 		cron.PublishTaskWithMakePayload(
 			nats.TaskTransactionTimingTaskAssign, func() (taskTransactionTimingTaskAssign, error) {
 				now := time.Now()

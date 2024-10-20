@@ -1,11 +1,12 @@
 package initialize
 
 import (
-	"KeepAccount/global/constant"
-	"KeepAccount/util"
 	"context"
 	"os"
 	"time"
+
+	"KeepAccount/global/constant"
+	"KeepAccount/util"
 
 	"github.com/go-co-op/gocron"
 	"github.com/nats-io/nats-server/v2/server"
@@ -58,7 +59,6 @@ func init() {
 	group.Go(Config.Mysql.do)
 	group.Go(Config.Redis.do)
 	group.Go(Config.Nats.do)
-	group.Go(Config.Scheduler.do)
 	group.Go(Config.Scheduler.do)
 	if err = group.Wait(); err != nil {
 		panic(err)

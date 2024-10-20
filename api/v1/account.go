@@ -1,6 +1,10 @@
 package v1
 
 import (
+	"context"
+	"errors"
+	"time"
+
 	"KeepAccount/api/request"
 	"KeepAccount/api/response"
 	"KeepAccount/global"
@@ -11,12 +15,9 @@ import (
 	transactionModel "KeepAccount/model/transaction"
 	userModel "KeepAccount/model/user"
 	"KeepAccount/util/timeTool"
-	"context"
-	"errors"
 	"github.com/gin-gonic/gin"
 	"github.com/songzhibin97/gkit/egroup"
 	"gorm.io/gorm"
-	"time"
 )
 
 type AccountApi struct {
@@ -218,13 +219,7 @@ func (a *AccountApi) CreateOneByTemplate(ctx *gin.Context) {
 	if responseError(err, ctx) {
 		return
 	}
-	var account accountModel.Account
-	err = db.Db.Transaction(
-		func(tx *gorm.DB) error {
-			account, err = templateService.CreateAccount(user, tmpAccount, context.WithValue(ctx, cus.Db, tx))
-			return err
-		},
-	)
+	account, err := templateService.CreateAccount(user, tmpAccount, ctx)
 	if responseError(err, ctx) {
 		return
 	}
@@ -896,22 +891,24 @@ func (a *AccountApi) UpdateAccountMapping(ctx *gin.Context) {
 	// handle
 	var mapping accountModel.Mapping
 	var relatedAccount accountModel.Account
-	err = db.Transaction(ctx, func(ctx *cus.TxContext) error {
-		dao := accountModel.NewDao(ctx.GetDb())
-		mapping, err = dao.SelectMappingById(id)
-		if err != nil {
+	err = db.Transaction(
+		ctx, func(ctx *cus.TxContext) error {
+			dao := accountModel.NewDao(ctx.GetDb())
+			mapping, err = dao.SelectMappingById(id)
+			if err != nil {
+				return err
+			}
+			relatedAccount, err = dao.SelectById(requestData.RelatedAccountId)
+			if err != nil {
+				return err
+			}
+			mapping, err = accountService.Share.UpdateAccountMapping(user, mapping, relatedAccount, ctx)
+			if err != nil {
+				return err
+			}
 			return err
-		}
-		relatedAccount, err = dao.SelectById(requestData.RelatedAccountId)
-		if err != nil {
-			return err
-		}
-		mapping, err = accountService.Share.UpdateAccountMapping(user, mapping, relatedAccount, ctx)
-		if err != nil {
-			return err
-		}
-		return err
-	})
+		},
+	)
 	if responseError(err, ctx) {
 		return
 	}

@@ -2,6 +2,7 @@ package database
 
 import (
 	_ "KeepAccount/model"
+	"github.com/pkg/errors"
 )
 
 import (
@@ -11,23 +12,19 @@ import (
 	"KeepAccount/util"
 
 	_templateService "KeepAccount/service/template"
-	"errors"
+
+	"context"
 
 	"KeepAccount/global/cus"
 	"KeepAccount/global/db"
 	testInfo "KeepAccount/test/info"
-	"context"
 	"gorm.io/gorm"
-	"gorm.io/gorm/logger"
 )
 
 var (
 	userService = service.GroupApp.UserServiceGroup
 
 	commonService = service.GroupApp.CommonServiceGroup
-)
-var (
-	templateService = _templateService.Group{}
 )
 
 const (
@@ -36,13 +33,14 @@ const (
 
 func init() {
 	var err error
+	ctx := cus.WithDb(context.Background(), db.InitDb)
 	// init tourist User
-	err = db.Transaction(context.Background(), initTourist)
+	err = db.Transaction(ctx, initTourist)
 	if err != nil {
 		panic(err)
 	}
 	// init test User
-	err = db.Transaction(context.Background(), initTestUser)
+	err = db.Transaction(ctx, initTestUser)
 	if err != nil {
 		panic(err)
 	}
@@ -50,9 +48,6 @@ func init() {
 
 func initTestUser(ctx *cus.TxContext) (err error) {
 	tx := db.Get(ctx)
-	tx = tx.Session(&gorm.Session{Logger: tx.Logger.LogMode(logger.Silent)})
-	ctx = cus.WithTx(ctx, tx)
-	tx = tx.Session(&gorm.Session{Logger: tx.Logger.LogMode(logger.Silent)})
 	var user userModel.User
 	user, err = script.User.CreateTourist(ctx)
 	if err != nil {
@@ -90,9 +85,6 @@ func initTestUser(ctx *cus.TxContext) (err error) {
 
 func initTourist(ctx *cus.TxContext) error {
 	tx := db.Get(ctx)
-	tx = tx.Session(&gorm.Session{Logger: tx.Logger.LogMode(logger.Silent)})
-	ctx = cus.WithTx(ctx, tx)
-	tx = tx.Session(&gorm.Session{Logger: tx.Logger.LogMode(logger.Silent)})
 	_, err := userModel.NewDao(tx).SelectByUnusedTour()
 	if err == nil {
 		return nil

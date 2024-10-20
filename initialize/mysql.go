@@ -34,7 +34,8 @@ func (m *_mysql) do() error {
 	db, err = reconnection[*gorm.DB](
 		func() (*gorm.DB, error) {
 			return gorm.Open(mysql.New(mysqlConfig), m.gormConfig())
-		}, 10)
+		}, 10,
+	)
 
 	if err != nil {
 		return err
@@ -44,7 +45,6 @@ func (m *_mysql) do() error {
 	sqlDb.SetMaxOpenConns(50)
 	sqlDb.SetConnMaxLifetime(5 * time.Minute)
 	db.InstanceSet("gorm:table_options", "ENGINE=InnoDB")
-	db.InstanceSet("gorm:queryFields", "SET TRANSACTION ISOLATION LEVEL READ COMMITTED;")
 	Db = db
 	return nil
 }

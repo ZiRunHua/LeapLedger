@@ -4,6 +4,7 @@ import (
 	"KeepAccount/global/constant"
 	"KeepAccount/global/db"
 	_ "KeepAccount/global/nats"
+	"KeepAccount/global/nats/manager"
 	_ "KeepAccount/initialize/database"
 	"KeepAccount/test/info"
 )
@@ -24,6 +25,7 @@ var (
 )
 
 func init() {
+	manager.UpdateTestBackOff()
 	var err error
 	User, err = userModel.NewDao().SelectById(Info.UserId)
 	if err != nil {
