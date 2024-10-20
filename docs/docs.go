@@ -5073,6 +5073,9 @@ const docTemplate = `{
         "response.TransactionTimingConfig": {
             "type": "object",
             "properties": {
+                "AccountId": {
+                    "type": "integer"
+                },
                 "Close": {
                     "type": "boolean"
                 },
@@ -5093,6 +5096,9 @@ const docTemplate = `{
                 },
                 "UpdatedAt": {
                     "type": "string"
+                },
+                "UserId": {
+                    "type": "integer"
                 },
                 "Username": {
                     "type": "string"
@@ -5237,7 +5243,13 @@ const docTemplate = `{
         "transactionModel.Info": {
             "type": "object",
             "properties": {
+                "AccountId": {
+                    "type": "integer"
+                },
                 "Amount": {
+                    "type": "integer"
+                },
+                "CategoryId": {
                     "type": "integer"
                 },
                 "IncomeExpense": {

@@ -5065,6 +5065,9 @@
         "response.TransactionTimingConfig": {
             "type": "object",
             "properties": {
+                "AccountId": {
+                    "type": "integer"
+                },
                 "Close": {
                     "type": "boolean"
                 },
@@ -5085,6 +5088,9 @@
                 },
                 "UpdatedAt": {
                     "type": "string"
+                },
+                "UserId": {
+                    "type": "integer"
                 },
                 "Username": {
                     "type": "string"
@@ -5229,7 +5235,13 @@
         "transactionModel.Info": {
             "type": "object",
             "properties": {
+                "AccountId": {
+                    "type": "integer"
+                },
                 "Amount": {
+                    "type": "integer"
+                },
+                "CategoryId": {
                     "type": "integer"
                 },
                 "IncomeExpense": {

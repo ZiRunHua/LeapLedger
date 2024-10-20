@@ -1033,6 +1033,8 @@ definitions:
     type: object
   response.TransactionTimingConfig:
     properties:
+      AccountId:
+        type: integer
       Close:
         type: boolean
       CreatedAt:
@@ -1047,6 +1049,8 @@ definitions:
         $ref: '#/definitions/transactionModel.TimingType'
       UpdatedAt:
         type: string
+      UserId:
+        type: integer
       Username:
         type: string
     type: object
@@ -1139,7 +1143,11 @@ definitions:
     type: object
   transactionModel.Info:
     properties:
+      AccountId:
+        type: integer
       Amount:
+        type: integer
+      CategoryId:
         type: integer
       IncomeExpense:
         $ref: '#/definitions/IncomeExpense'
