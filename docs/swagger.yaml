@@ -973,6 +973,8 @@ definitions:
         type: integer
       IncomeExpense:
         $ref: '#/definitions/IncomeExpense'
+      RecordType:
+        $ref: '#/definitions/transactionModel.RecordType'
       Remark:
         type: string
       TradeTime:
@@ -1158,6 +1160,18 @@ definitions:
       UserId:
         type: integer
     type: object
+  transactionModel.RecordType:
+    enum:
+    - 0
+    - 1
+    - 2
+    - 3
+    type: integer
+    x-enum-varnames:
+    - RecordTypeOfManual
+    - RecordTypeOfTiming
+    - RecordTypeOfSync
+    - RecordTypeOfImport
   transactionModel.TimingType:
     enum:
     - once

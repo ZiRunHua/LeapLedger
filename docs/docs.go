@@ -4981,6 +4981,9 @@ const docTemplate = `{
                 "IncomeExpense": {
                     "$ref": "#/definitions/IncomeExpense"
                 },
+                "RecordType": {
+                    "$ref": "#/definitions/transactionModel.RecordType"
+                },
                 "Remark": {
                     "type": "string"
                 },
@@ -5265,6 +5268,21 @@ const docTemplate = `{
                     "type": "integer"
                 }
             }
+        },
+        "transactionModel.RecordType": {
+            "type": "integer",
+            "enum": [
+                0,
+                1,
+                2,
+                3
+            ],
+            "x-enum-varnames": [
+                "RecordTypeOfManual",
+                "RecordTypeOfTiming",
+                "RecordTypeOfSync",
+                "RecordTypeOfImport"
+            ]
         },
         "transactionModel.TimingType": {
             "type": "string",
