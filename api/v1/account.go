@@ -663,7 +663,7 @@ func (a *AccountApi) GetUserConfig(ctx *gin.Context) {
 var AccountConfigFlagMap = map[string]interface{}{"SyncMappingAccount": accountModel.Flag_Trans_Sync_Mapping_Account}
 
 func (a *AccountApi) getUserConfigFlagByCtx(ctx *gin.Context) interface{} {
-	return AccountConfigFlagMap[ctx.Param("type")]
+	return AccountConfigFlagMap[ctx.Param("flag")]
 }
 
 // UpdateUserConfigFlag
