@@ -204,13 +204,6 @@ func (u *UserInvitation) Accept(tx *gorm.DB) (user User, err error) {
 	}
 
 	err = u.UpdateStatus(UserInvitationStatsOfAccept, tx)
-	if err != nil {
-		return
-	}
-	user, err = u.AddUser(tx)
-	if err != nil {
-		return
-	}
 	return
 }
 
@@ -230,11 +223,6 @@ func (u *UserInvitation) Refuse(tx *gorm.DB) (err error) {
 	if err != nil {
 		return
 	}
-	return
-}
-
-func (u *UserInvitation) AddUser(tx *gorm.DB) (user User, err error) {
-	user, err = NewDao(tx).CreateUser(u.AccountId, u.Invitee, u.Permission)
 	return
 }
 

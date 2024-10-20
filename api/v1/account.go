@@ -424,11 +424,25 @@ func (a *AccountApi) AcceptAccountUserInvitation(ctx *gin.Context) {
 		return
 	}
 	// handle
-	txFunc := func(tx *gorm.DB) error {
-		_, err := invitation.Accept(tx)
-		return err
-	}
-	err := db.Db.Transaction(txFunc)
+	err := db.Transaction(
+		ctx, func(ctx *cus.TxContext) error {
+			tx := ctx.GetDb()
+			_, err := invitation.Accept(tx)
+			if err != nil {
+				return err
+			}
+			account, err := accountModel.NewDao(tx).SelectById(invitation.AccountId)
+			if err != nil {
+				return err
+			}
+			user, err := userModel.NewDao(tx).SelectById(invitation.Invitee)
+			if err != nil {
+				return err
+			}
+			_, err = accountService.Share.AddAccountUser(account, user, invitation.Permission, ctx)
+			return err
+		},
+	)
 	if responseError(err, ctx) {
 		return
 	}
