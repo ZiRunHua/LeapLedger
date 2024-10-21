@@ -223,7 +223,7 @@ func (t *Timing) UpdateNextTime(db *gorm.DB) error {
 	}
 	return db.Model(t).Updates(
 		map[string]interface{}{
-			"trans_info": datatypes.JSONSet("trans_info").Set("trade_time", nextTime),
+			"trans_info": datatypes.JSONSet("trans_info").Set("TradeTime", nextTime),
 			"next_time":  datatypes.Date(nextTime),
 		},
 	).Error
