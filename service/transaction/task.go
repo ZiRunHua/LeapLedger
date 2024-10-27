@@ -2,6 +2,8 @@ package transactionService
 
 import (
 	"context"
+	"fmt"
+	"strings"
 	"time"
 
 	"KeepAccount/global/cron"
@@ -18,12 +20,16 @@ func init() {
 		nats.TaskTransactionSync, GroupApp.Transaction.SyncToMappingAccount,
 	)
 	// timing
-	_, err := cron.Scheduler.Every(1).Hour().Do(
+	var moments []string
+	for i := 0; i < 24; i++ {
+		moments = append(moments, fmt.Sprintf("%02d:00", i))
+	}
+	_, err := cron.Scheduler.Every(1).Day().At(strings.Join(moments, ";")).Do(
 		cron.PublishTaskWithMakePayload(
 			nats.TaskTransactionTimingTaskAssign, func() (taskTransactionTimingTaskAssign, error) {
 				now := time.Now()
 				return taskTransactionTimingTaskAssign{
-					Deadline: time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.Local),
+					Deadline: time.Date(now.Year(), now.Month(), now.Day(), now.Hour(), 0, 0, 0, time.Local),
 					TaskSize: 50,
 				}, nil
 			},
