@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
 	"reflect"
 	"time"
 
@@ -130,7 +129,6 @@ func CreateMultiTransByCategory(
 	option.IsSyncTrans()
 	for i := 0; i < count; i++ {
 		data := build.TransInfo(user, category)
-		log.Print(data)
 		_, err = transService.Create(data, aUser, transactionModel.RecordTypeOfManual, option, context.TODO())
 		if err != nil {
 			return

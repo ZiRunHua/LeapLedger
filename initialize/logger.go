@@ -1,10 +1,11 @@
 package initialize
 
 import (
+	"os"
+
 	"KeepAccount/global/constant"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
-	"os"
 )
 
 type _logger struct {
@@ -12,12 +13,9 @@ type _logger struct {
 }
 
 const (
-	_requestLogPath    = constant.WORK_PATH + "/log/request.log"
-	_errorLogPath      = constant.WORK_PATH + "/log/error.log"
-	_panicLogPath      = constant.WORK_PATH + "/log/panic.log"
-	_natsLogPath       = constant.WORK_PATH + "/log/nats.log"
-	_cronLogPath       = constant.WORK_PATH + "/log/cron.log"
-	_natsServerLogPath = constant.WORK_PATH + "/log/natsServer.log"
+	_requestLogPath = constant.WORK_PATH + "/log/request.log"
+	_errorLogPath   = constant.WORK_PATH + "/log/error.log"
+	_panicLogPath   = constant.WORK_PATH + "/log/panic.log"
 )
 
 func (l *_logger) do() error {
@@ -30,12 +28,6 @@ func (l *_logger) do() error {
 		return err
 	}
 	if PanicLogger, err = l.initLogger(_panicLogPath); err != nil {
-		return err
-	}
-	if NatsLogger, err = l.initLogger(_natsLogPath); err != nil {
-		return err
-	}
-	if CronLogger, err = l.initLogger(_cronLogPath); err != nil {
 		return err
 	}
 	return nil

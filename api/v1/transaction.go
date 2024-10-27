@@ -3,7 +3,6 @@ package v1
 import (
 	"context"
 	"errors"
-	"log"
 	"time"
 
 	"KeepAccount/api/request"
@@ -309,7 +308,6 @@ func (t *TransactionApi) GetDayStatistic(ctx *gin.Context) {
 	requestData.SetLocal(timeLocation)
 	// 处理请求
 	var startTime, endTime = requestData.FormatDayTime()
-	log.Print(startTime.Hour(), startTime.Location(), endTime.Hour())
 	days := timeTool.SplitDays(startTime, endTime)
 	dayMap := make(map[time.Time]*response.TransactionDayStatistic, len(days))
 	condition := transactionModel.StatisticCondition{
@@ -326,10 +324,6 @@ func (t *TransactionApi) GetDayStatistic(ctx *gin.Context) {
 			return err
 		}
 		for _, item := range statistics {
-			log.Print(
-				item.Date.In(timeLocation).Day(), item.Date.In(timeLocation).Hour(),
-				item.Date.In(timeLocation).Location(),
-			)
 			dayMap[item.Date.In(timeLocation)].Amount += item.Amount
 			dayMap[item.Date.In(timeLocation)].Count += item.Count
 		}
