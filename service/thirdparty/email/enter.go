@@ -1,13 +1,14 @@
 package email
 
 import (
+	"KeepAccount/global/cron"
 	"fmt"
 )
 
 type emailService interface {
-	email() //避免其他实现
 	init()
 	Send(emails []string, subject string, contest string) error
+	getToken() error
 }
 
 // 初始化
@@ -38,4 +39,13 @@ type thirdPartyResponseError struct {
 
 func (e *thirdPartyResponseError) Error() string {
 	return fmt.Sprintf("第三方响应错误，状态码：%d，错误码：%d，消息：%s", e.StatusCode, e.ErrorCode, e.Message)
+}
+
+func init() {
+	_, err := cron.Scheduler.Every(30).Minute().Do(
+		cron.MakeJobFunc(Service.getToken),
+	)
+	if err != nil {
+		panic(err)
+	}
 }

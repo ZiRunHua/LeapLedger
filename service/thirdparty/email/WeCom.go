@@ -21,8 +21,6 @@ type weComRequestUrl struct {
 	sendEmail string
 }
 
-func (w *WeCom) email() {}
-
 func (w *WeCom) init() {
 	w.corpId = global.Config.ThirdParty.WeCom.CorpId
 	w.corpSecret = global.Config.ThirdParty.WeCom.CorpSecret
