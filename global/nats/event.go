@@ -39,7 +39,7 @@ func SubscribeEvent[T PayloadType](event Event, name string, handleTransaction h
 	eventManage.SubscribeToNewConsumer(
 		event, name, func(payload []byte) error {
 			var data T
-			if err := json.Unmarshal(payload, &data); err != nil {
+			if err := fromJson(payload, &data); err != nil {
 				return err
 			}
 			return db.Transaction(
@@ -66,7 +66,7 @@ func BindTaskToEventAndMakePayload[T PayloadType, TriggerTaskDataType PayloadTyp
 	eventManage.Subscribe(
 		event, triggerTask, func(eventData []byte) ([]byte, error) {
 			var data T
-			if err := json.Unmarshal(eventData, &data); err != nil {
+			if err := fromJson(eventData, &data); err != nil {
 				return nil, err
 			}
 			taskData, err := fetchTaskData(data)

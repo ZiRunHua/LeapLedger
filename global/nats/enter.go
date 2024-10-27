@@ -4,6 +4,7 @@ import (
 	"KeepAccount/global/db"
 	"KeepAccount/global/nats/manager"
 	"context"
+	"encoding/json"
 )
 
 type PayloadType interface{}
@@ -27,4 +28,13 @@ func init() {
 	SubscribeEvent(
 		EventOutbox, "outbox", outboxService.getHandleTransaction(outboxTypeEvent),
 	)
+}
+
+func fromJson[T PayloadType](jsonStr []byte, data *T) error {
+	if len(jsonStr) != 0 {
+		if err := json.Unmarshal(jsonStr, &data); err != nil {
+			return err
+		}
+	}
+	return nil
 }

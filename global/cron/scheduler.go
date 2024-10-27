@@ -6,6 +6,7 @@ import (
 	"context"
 	"errors"
 	"go.uber.org/zap"
+	"runtime/debug"
 )
 
 const lockKeyPrefix = "cron:"
@@ -77,7 +78,7 @@ func MakeJobFunc(f func() error) func() {
 		defer func() {
 			r := recover()
 			if r != nil {
-				logger.Error("job exec panic", zap.Any("panic", r))
+				logger.Error("job exec panic", zap.Any("panic", r), zap.Stack(string(debug.Stack())))
 			}
 		}()
 		err := f()

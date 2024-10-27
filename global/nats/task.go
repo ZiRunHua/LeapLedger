@@ -62,7 +62,7 @@ func PublishTaskWithPayload[T PayloadType](task Task, payload T) (isSuccess bool
 func SubscribeTaskWithPayload[T PayloadType](task Task, handle handler[T]) {
 	msgHandler := func(payload []byte) error {
 		var data T
-		if err := json.Unmarshal(payload, &data); err != nil {
+		if err := fromJson(payload, &data); err != nil {
 			return err
 		}
 		return handle(data, context.Background())
@@ -74,7 +74,7 @@ func SubscribeTaskWithPayloadAndProcessInTransaction[T PayloadType](task Task, h
 	taskManage.Subscribe(
 		task, func(payload []byte) error {
 			var data T
-			if err := json.Unmarshal(payload, &data); err != nil {
+			if err := fromJson(payload, &data); err != nil {
 				return err
 			}
 			return db.Transaction(
@@ -92,7 +92,7 @@ func PublishTaskToOutbox(ctx context.Context, task Task) error {
 	if task == TaskOutbox {
 		return errors.New("task cannot be TaskOutbox")
 	}
-	id, err := outboxService.sendToOutbox(db.Get(ctx), outboxTypeTask, string(task), []byte{})
+	id, err := outboxService.sendToOutbox(db.Get(ctx), outboxTypeTask, string(task), nil)
 	if err != nil {
 		return err
 	}

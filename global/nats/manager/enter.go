@@ -6,6 +6,7 @@ import (
 	"KeepAccount/util/log"
 	"github.com/nats-io/nats.go/jetstream"
 	"go.uber.org/zap"
+	"runtime/debug"
 )
 
 var (
@@ -96,7 +97,7 @@ func receiveMsg(msg jetstream.Msg, handle func(msg jetstream.Msg) error, logger 
 				err = msg.Ack()
 			}
 		} else {
-			logger.Error("receiveMsg panic", zap.Any("panic", r))
+			logger.Error("receiveMsg panic", zap.Any("panic", r), zap.Stack(string(debug.Stack())))
 			err = msg.Nak()
 		}
 		if err != nil {
