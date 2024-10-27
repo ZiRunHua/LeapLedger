@@ -1,6 +1,8 @@
 package v1
 
 import (
+	"time"
+
 	"KeepAccount/api/request"
 	"KeepAccount/api/response"
 	"KeepAccount/global"
@@ -16,7 +18,6 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/pkg/errors"
 	"github.com/songzhibin97/gkit/egroup"
-	"time"
 )
 
 type UserApi struct {
@@ -67,17 +68,13 @@ func (p *PublicApi) Login(ctx *gin.Context) {
 	var loginFailResponseFunc = func() {
 		if err != nil {
 			key := global.Cache.GetKey(constant.LoginFailCount, requestData.Email)
-			count, existCache := global.Cache.Get(key)
+			count, existCache := global.Cache.GetInt(key)
 			if existCache {
-				if intCount, ok := count.(int); ok {
-					if intCount > 5 {
-						response.FailToError(ctx, errors.New("错误次数过的，请稍后再试"))
-						return
-					} else {
-						_ = global.Cache.Increment(key, 1)
-					}
+				if count > 5 {
+					response.FailToError(ctx, errors.New("错误次数过的，请稍后再试"))
+					return
 				} else {
-					panic("cache计数数据转断言int失败")
+					_ = global.Cache.Increment(key, 1)
 				}
 			} else {
 				global.Cache.Set(key, 1, time.Hour*12)
@@ -182,8 +179,16 @@ func (p *PublicApi) TourRequest(ctx *gin.Context) {
 		response.FailToParameter(ctx, err)
 		return
 	}
+	if !requestData.CheckSign() {
+		response.Forbidden(ctx)
+		return
+	}
 	user, err := userService.EnableTourist(requestData.DeviceNumber, contextFunc.GetClient(ctx), ctx)
-	if responseError(err, ctx) {
+	if err != nil {
+		if errors.Is(err, global.ErrTooManyTourists) {
+			ctx.Header("Cache-Control", "max-age=300")
+		}
+		response.FailToError(ctx, err)
 		return
 	}
 	// response
@@ -205,7 +210,7 @@ func (p *PublicApi) TourRequest(ctx *gin.Context) {
 	if responseError(err, ctx) {
 		return
 	}
-	response.OkWithDetailed(responseData, "欢迎", ctx)
+	response.OkWithDetailed(responseData, "welcome", ctx)
 }
 
 // UpdatePassword
@@ -424,9 +429,11 @@ func (u *UserApi) SendCaptchaEmail(ctx *gin.Context) {
 	if responseError(err, ctx) {
 		return
 	}
-	isSuccess := nats.PublishTaskWithPayload(nats.TaskSendCaptchaEmail, nats.PayloadSendCaptchaEmail{
-		Email: user.Email, Action: requestData.Type,
-	})
+	isSuccess := nats.PublishTaskWithPayload(
+		nats.TaskSendCaptchaEmail, nats.PayloadSendCaptchaEmail{
+			Email: user.Email, Action: requestData.Type,
+		},
+	)
 	if !isSuccess {
 		response.FailToError(ctx, errors.New("发送失败"))
 	}

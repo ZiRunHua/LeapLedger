@@ -210,6 +210,9 @@ func (userSvc *User) RecordActionAndRemark(
 	return log, err
 }
 
+// EnableTourist is used to enable a tourist account.
+// If no tourist account exists, global.ErrTooManyTourists will be returned.
+// The high probability that no tourist account exists is due to stream limiting
 func (userSvc *User) EnableTourist(
 	deviceNumber string, client constant.Client, ctx context.Context,
 ) (user userModel.User, err error) {
@@ -235,7 +238,7 @@ func (userSvc *User) EnableTourist(
 			userTour, err := userDao.SelectByUnusedTour()
 			if err != nil {
 				if errors.Is(err, gorm.ErrRecordNotFound) {
-					err = errors.New("访问游客过多稍后再试")
+					err = global.ErrTooManyTourists
 					return
 				}
 				return

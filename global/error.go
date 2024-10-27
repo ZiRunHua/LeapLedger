@@ -2,6 +2,7 @@ package global
 
 import (
 	"fmt"
+
 	"github.com/pkg/errors"
 )
 
@@ -11,6 +12,8 @@ var (
 
 	ErrFrequentOperation  = errors.New("操作太频繁，稍后再试")
 	ErrDeviceNotSupported = errors.New("当前设备不支持")
+
+	ErrTooManyTourists = errors.New("游客过多稍后再试")
 )
 
 // 数据校验

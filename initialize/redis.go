@@ -1,11 +1,13 @@
 package initialize
 
 import (
-	"KeepAccount/global/constant"
 	"context"
-	"fmt"
-	"github.com/go-redis/redis/v8"
+	"log"
 	"time"
+
+	"KeepAccount/global/constant"
+	"KeepAccount/util"
+	"github.com/go-redis/redis/v8"
 )
 
 type _redis struct {
@@ -30,7 +32,8 @@ func (r *_redis) do() error {
 	if err != nil {
 		return err
 	}
-	return nil
+	Cache = &util.RedisCache{DB: r.Db, Addr: r.Addr, Password: r.Password}
+	return Cache.Init()
 }
 
 func (r *_redis) getNewRedisClient(name string, dbNum int) (*redis.Client, error) {
@@ -56,36 +59,36 @@ type RedisHook struct {
 
 func (rh RedisHook) BeforeProcess(ctx context.Context, cmd redis.Cmder) (context.Context, error) {
 	if len(rh.name) == 0 {
-		fmt.Printf("exec  => <%s>\n", cmd)
+		log.Printf("exec  => <%s>\n", cmd)
 	} else {
-		fmt.Printf("%s exec  => <%s>\n", rh.name, cmd)
+		log.Printf("%s exec  => <%s>\n", rh.name, cmd)
 	}
 	return ctx, nil
 }
 
 func (rh RedisHook) AfterProcess(_ context.Context, cmd redis.Cmder) error {
 	if len(rh.name) == 0 {
-		fmt.Printf("finish => <%s>\n", cmd)
+		log.Printf("finish => <%s>\n", cmd)
 	} else {
-		fmt.Printf("%s finish => <%s>\n", rh.name, cmd)
+		log.Printf("%s finish => <%s>\n", rh.name, cmd)
 	}
 	return nil
 }
 
 func (rh RedisHook) BeforeProcessPipeline(ctx context.Context, cmds []redis.Cmder) (context.Context, error) {
 	if len(rh.name) == 0 {
-		fmt.Printf("pipeline exec   => %v\n", cmds)
+		log.Printf("pipeline exec   => %v\n", cmds)
 	} else {
-		fmt.Printf("%s pipeline exec   => %v\n", rh.name, cmds)
+		log.Printf("%s pipeline exec   => %v\n", rh.name, cmds)
 	}
 	return ctx, nil
 }
 
 func (rh RedisHook) AfterProcessPipeline(_ context.Context, cmds []redis.Cmder) error {
 	if len(rh.name) == 0 {
-		fmt.Printf("pipeline finish => %v\n", cmds)
+		log.Printf("pipeline finish => %v\n", cmds)
 	} else {
-		fmt.Printf("%s pipeline finish => %v\n", rh.name, cmds)
+		log.Printf("%s pipeline finish => %v\n", rh.name, cmds)
 	}
 	return nil
 }

@@ -1,15 +1,16 @@
 package commonService
 
 import (
+	"crypto/sha1"
+	"encoding/hex"
+	"strconv"
+	"time"
+
 	"KeepAccount/global"
 	"KeepAccount/global/constant"
 	utilJwt "KeepAccount/util/jwtTool"
-	"crypto/sha1"
-	"encoding/hex"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/pkg/errors"
-	"strconv"
-	"time"
 )
 
 type common struct{}
@@ -20,11 +21,11 @@ var Common = new(common)
 func (cm *common) CheckCaptchaStatus(key string) bool {
 	openCaptcha := global.Config.Captcha.OpenCaptcha               // 是否开启防爆次数
 	openCaptchaTimeOut := global.Config.Captcha.OpenCaptchaTimeOut // 缓存超时时间
-	v, ok := global.Cache.Get(key)
+	v, ok := global.Cache.GetInt(key)
 	if !ok {
 		global.Cache.Set(key, 1, time.Second*time.Duration(openCaptchaTimeOut))
 	}
-	return openCaptcha == 0 || openCaptcha < interfaceToInt(v)
+	return openCaptcha == 0 || openCaptcha < v
 }
 func (cm *common) HashPassword(username string, password string) string {
 	data := []byte(username + password)
@@ -80,7 +81,7 @@ func (cm *common) RefreshJWT(custom jwt.RegisteredClaims) (token string, newCust
 // 设置邮件验证码缓存 如果该缓存已存在未过期 则返回ErrOperationTooFrequent 以此避免重复发送和频繁操作
 func (cm *common) SetEmailCaptchaCache(email string, emailCaptcha string, expirationTime time.Duration) error {
 	key := global.Cache.GetKey(constant.EmailCaptcha, email)
-	if _, ok := global.Cache.Get(key); true == ok {
+	if _, ok := global.Cache.GetInt(key); true == ok {
 		return global.ErrOperationTooFrequent
 	}
 	key = global.Cache.GetKey(constant.EmailCaptcha, email)
@@ -93,16 +94,11 @@ func (cm *common) CheckEmailCaptcha(email string, captcha string) error {
 	countKey := global.Cache.GetKey(constant.CaptchaEmailErrorCount, email)
 	// 检查错误次数
 	if global.Config.Captcha.EmailCaptcha > 0 {
-		count, ok := global.Cache.Get(countKey)
+		count, ok := global.Cache.GetInt(countKey)
 		if false == ok {
 			global.Cache.Set(countKey, 1, time.Second*time.Duration(global.Config.Captcha.EmailCaptchaTimeOut))
 		} else {
-			var intCount int
-			intCount, ok = count.(int)
-			if false == ok {
-				panic("cache计数数据转断言int失败")
-			}
-			if intCount > global.Config.Captcha.EmailCaptcha {
+			if count > global.Config.Captcha.EmailCaptcha {
 				return global.ErrOperationTooFrequent
 			} else {
 				err := global.Cache.Increment(countKey, 1)

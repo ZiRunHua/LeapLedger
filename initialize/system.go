@@ -5,5 +5,6 @@ type _system struct {
 	RouterPrefix string `yaml:"RouterPrefix"`
 	LockMode     string `yaml:"LockMode"`
 
-	JwtKey string `yaml:"JwtKey"`
+	JwtKey        string `yaml:"JwtKey"`
+	ClientSignKey string `yaml:"ClientSignKey"`
 }

@@ -1,9 +1,15 @@
 package request
 
 import (
+	"crypto/hmac"
+	"crypto/sha256"
+	"encoding/hex"
+	"errors"
+	"strings"
+
+	"KeepAccount/global"
 	"KeepAccount/global/constant"
 	userModel "KeepAccount/model/user"
-	"errors"
 )
 
 type UserLogin struct {
@@ -51,6 +57,15 @@ type UserHome struct {
 
 type TourApply struct {
 	DeviceNumber string
+	Key          string
+	Sign         string
+}
+
+func (t *TourApply) CheckSign() bool {
+	h := hmac.New(sha256.New, []byte(global.Config.System.ClientSignKey))
+	h.Write([]byte(t.DeviceNumber + t.Key))
+	s := hex.EncodeToString(h.Sum(nil))
+	return strings.Compare(t.Sign, s) == 0
 }
 
 type TransactionShareConfigName string
