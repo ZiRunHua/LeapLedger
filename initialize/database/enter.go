@@ -25,6 +25,8 @@ var (
 	userService = service.GroupApp.UserServiceGroup
 
 	commonService = service.GroupApp.CommonServiceGroup
+
+	templateService = service.GroupApp.TemplateServiceGroup
 )
 
 const (
@@ -66,7 +68,7 @@ func initTestUser(ctx *cus.TxContext) (err error) {
 	if err != nil {
 		return
 	}
-	account, _, err := script.Account.CreateExample(user, ctx)
+	account, _, err := templateService.CreateExampleAccount(user, ctx)
 	if err != nil {
 		return
 	}
@@ -95,7 +97,7 @@ func initTourist(ctx *cus.TxContext) error {
 	if err != nil {
 		return err
 	}
-	_, accountUser, err := script.Account.CreateExample(user, ctx)
+	_, accountUser, err := templateService.CreateExampleAccount(user, ctx)
 	if err != nil {
 		return err
 	}

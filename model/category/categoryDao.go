@@ -66,7 +66,7 @@ func (cd *CategoryDao) SelectFirstChild(categoryId uint) (Category, error) {
 func (cd *CategoryDao) SelectFatherFirstChild(fatherId uint) (Father, error) {
 	var result Father
 	query := cd.db.Where("previous = ?", fatherId)
-	err := query.Order("income_expense asc,previous asc,order_updated_at desc").First(&result).Error
+	err := query.Order("income_expense asc,previous asc,order_updated_at desc,id desc").First(&result).Error
 	return result, err
 }
 
@@ -117,15 +117,21 @@ func (cd *CategoryDao) GetListByFather(father Father) ([]Category, error) {
 	return list, err
 }
 
-func (cd *CategoryDao) GetListByAccount(account accountModel.Account, ie *constant.IncomeExpense) (list []Category, err error) {
+func (cd *CategoryDao) GetListByAccount(account accountModel.Account, ie *constant.IncomeExpense) (
+	list []Category,
+	err error) {
 	condition := &Condition{account: account, ie: ie}
 	return list, condition.buildWhere(cd.db).Find(&list).Error
 }
 
-func (cd *CategoryDao) GetUnmappedList(mainAccount, mappingAccount accountModel.Account, ie *constant.IncomeExpense) (list []Category, err error) {
+func (cd *CategoryDao) GetUnmappedList(
+	mainAccount, mappingAccount accountModel.Account,
+	ie *constant.IncomeExpense) (list []Category, err error) {
 	childSelect := cd.db.Model(&Mapping{}).Select("child_category_id")
 	childSelect.Where("parent_account_id = ? AND child_account_id = ?", mainAccount.ID, mappingAccount.ID)
-	err = cd.db.Where("account_id = ? AND income_expense = ? ", mappingAccount.ID, ie).Not("id IN (?)", childSelect).Find(&list).Error
+	err = cd.db.Where("account_id = ? AND income_expense = ? ", mappingAccount.ID, ie).Not(
+		"id IN (?)", childSelect,
+	).Find(&list).Error
 	return
 }
 
@@ -157,10 +163,12 @@ func (cd *CategoryDao) OrderFather(list []Father) {
 	makeSequenceFunc()
 }
 
-func (cd *CategoryDao) GetFatherList(account accountModel.Account, incomeExpense *constant.IncomeExpense) ([]Father, error) {
+func (cd *CategoryDao) GetFatherList(account accountModel.Account, incomeExpense *constant.IncomeExpense) (
+	[]Father,
+	error) {
 	condition := &Condition{account: account, ie: incomeExpense}
 	var list []Father
-	return list, condition.buildWhere(cd.db).Order("income_expense asc,previous asc,order_updated_at desc").Find(&list).Error
+	return list, condition.buildWhere(cd.db).Order("income_expense asc,previous asc,order_updated_at desc,id desc").Find(&list).Error
 }
 
 func (cd *CategoryDao) GetAll(account accountModel.Account, incomeExpense *constant.IncomeExpense) ([]Category, error) {
@@ -193,14 +201,18 @@ func (cd *CategoryDao) CreateMapping(parent, child Category) (Mapping, error) {
 
 func (cd *CategoryDao) SelectMapping(parentAccountId, childCategoryId uint) (Mapping, error) {
 	var result Mapping
-	err := cd.db.Where("parent_account_id = ? AND child_category_id = ?", parentAccountId, childCategoryId).First(&result).Error
+	err := cd.db.Where(
+		"parent_account_id = ? AND child_category_id = ?", parentAccountId, childCategoryId,
+	).First(&result).Error
 	return result, err
 }
 
 // SelectMappingByCAccountIdAndPCategoryId 通过子账本这父交易类型查询关联交易类型
 func (cd *CategoryDao) SelectMappingByCAccountIdAndPCategoryId(childAccountId, parentCategoryId uint) (Mapping, error) {
 	var result Mapping
-	err := cd.db.Where("child_account_id = ? AND parent_category_id = ?", childAccountId, parentCategoryId).First(&result).Error
+	err := cd.db.Where(
+		"child_account_id = ? AND parent_category_id = ?", childAccountId, parentCategoryId,
+	).First(&result).Error
 	return result, err
 }
 
@@ -218,5 +230,5 @@ func (cd *CategoryDao) GetMappingByAccountMappingOrderByParentCategory(parentAcc
 }
 
 func (cd *CategoryDao) setCategoryOrder(db *gorm.DB) *gorm.DB {
-	return db.Order("category.income_expense asc,category.previous asc,category.order_updated_at desc")
+	return db.Order("category.income_expense asc,category.previous asc,category.order_updated_at desc,category.id desc")
 }

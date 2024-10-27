@@ -224,7 +224,7 @@ func (ft *fatherTmpl) create(account accountModel.Account, ctx context.Context) 
 	if err != nil {
 		return err
 	}
-	for _, child := range ft.Children {
+	for _, child := range dataTool.CopyReverse(ft.Children) {
 		_, err = child.create(father, ctx)
 		if err != nil {
 			return err
