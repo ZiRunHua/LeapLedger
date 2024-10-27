@@ -3,6 +3,8 @@ package initialize
 import (
 	"time"
 
+	"KeepAccount/global/constant"
+
 	_ "github.com/go-sql-driver/mysql"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
@@ -57,7 +59,14 @@ func (m *_mysql) gormConfig() *gorm.Config {
 		},
 		DisableForeignKeyConstraintWhenMigrating: true,
 		TranslateError:                           true,
-		Logger:                                   logger.Default.LogMode(logger.Info),
+	}
+	switch Config.Mode {
+	case constant.Debug:
+		config.Logger = logger.Default.LogMode(logger.Info)
+	case constant.Production:
+		config.Logger = logger.Default.LogMode(logger.Silent)
+	default:
+		panic("error Mode")
 	}
 	return config
 }
