@@ -3879,6 +3879,12 @@ const docTemplate = `{
             "properties": {
                 "DeviceNumber": {
                     "type": "string"
+                },
+                "Key": {
+                    "type": "string"
+                },
+                "Sign": {
+                    "type": "string"
                 }
             }
         },
