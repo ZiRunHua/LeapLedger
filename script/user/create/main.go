@@ -1,31 +1,34 @@
 package main
 
 import (
+	"context"
+	"fmt"
+
 	userModel "KeepAccount/model/user"
 	userService "KeepAccount/service/user"
 	"KeepAccount/util"
-	"context"
-	"fmt"
 )
 
 func main() {
-	create()
+	email := GetInput("email:")
+	password := GetInput("password:")
+	username := GetInput("username:")
+	create(email, password, username)
 }
-func create() {
-	email := "share_account_child@gmail.com"
-	password := "1999123456"
-	username := "child"
+func create(email, password, username string) {
 	addData := userModel.AddData{
 		Email:    email,
 		Password: util.ClientPasswordHash(email, password),
 		Username: username,
 	}
-	user, err := userService.GroupApp.Register(addData, context.Background(),
-		*userService.GroupApp.NewRegisterOption().WithSendEmail(false))
+	user, err := userService.GroupApp.Register(
+		addData, context.Background(),
+		*userService.GroupApp.NewRegisterOption().WithSendEmail(false),
+	)
 	if err != nil {
 		panic(err)
 	}
-	fmt.Println(user.Email, user.Username, password)
+	fmt.Println("create success:", user.Email, user.Username, password)
 }
 
 func GetInput(tip string) (userInput string) {
