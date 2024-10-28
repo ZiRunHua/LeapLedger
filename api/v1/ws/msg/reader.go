@@ -3,9 +3,11 @@ package msg
 import (
 	"bytes"
 	"encoding/json"
-	"github.com/gorilla/websocket"
 	"io"
 	"sync"
+
+	"KeepAccount/util/fileTool"
+	"github.com/gorilla/websocket"
 )
 
 func NewReader() Reader {
@@ -13,14 +15,16 @@ func NewReader() Reader {
 }
 
 func RegisterHandle[T any](reader Reader, msgType MsgType, handler func(data T) error) {
-	reader.registerHandle(msgType, func(bytes []byte) error {
-		var data T
-		err := json.Unmarshal(bytes, &data)
-		if err != nil {
-			return err
-		}
-		return handler(data)
-	})
+	reader.registerHandle(
+		msgType, func(bytes []byte) error {
+			var data T
+			err := json.Unmarshal(bytes, &data)
+			if err != nil {
+				return err
+			}
+			return handler(data)
+		},
+	)
 }
 
 func ForReadAndHandleJsonMsg(reader Reader, conn *websocket.Conn) error {
@@ -91,5 +95,6 @@ func (mr *reader) readFile(conn *websocket.Conn) (io.Reader, error) {
 	if err != nil {
 		return nil, err
 	}
-	return bytes.NewBuffer(fileData), nil
+	r := bytes.NewBuffer(fileData)
+	return fileTool.GetUTF8Reader(r, fileData)
 }

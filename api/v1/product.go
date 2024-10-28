@@ -250,7 +250,7 @@ func (p *ProductApi) ImportProductBill(conn *websocket.Conn, ctx *gin.Context) e
 		var err error
 		err = db.Transaction(
 			ctx, func(ctx *cus.TxContext) error {
-				transInfo.UserId = accountUser.ID
+				transInfo.UserId = accountUser.UserId
 				trans, err = transactionService.Create(
 					transInfo, accountUser, transactionModel.RecordTypeOfImport, transOption, ctx,
 				)

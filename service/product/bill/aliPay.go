@@ -1,13 +1,15 @@
 package bill
 
 import (
-	"KeepAccount/global/constant"
-	transactionModel "KeepAccount/model/transaction"
 	"errors"
 	"fmt"
 	"strconv"
 	"strings"
 	"time"
+
+	"KeepAccount/global/constant"
+	transactionModel "KeepAccount/model/transaction"
+	"github.com/araddon/dateparse"
 )
 
 type AliPayReader struct {
@@ -94,9 +96,12 @@ func (r *AliPayReader) setRemark(t *ReaderTemplate) {
 }
 
 func (r *AliPayReader) setTradeTime(t *ReaderTemplate) error {
-	var err error
+	layout, err := dateparse.ParseFormat(t.currentRow[t.transDataMapping.TradeTime])
+	if err != nil {
+		return err
+	}
 	t.currentTransaction.TradeTime, err = time.ParseInLocation(
-		t.info.DateFormat,
+		layout,
 		t.currentRow[t.transDataMapping.TradeTime], t.location,
 	)
 	return err

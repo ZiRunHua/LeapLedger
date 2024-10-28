@@ -7,32 +7,35 @@ import (
 	"path"
 	"strings"
 
-	"KeepAccount/global/constant"
+	"github.com/saintfish/chardet"
 	"github.com/xuri/excelize/v2"
+	"golang.org/x/text/encoding/charmap"
 	"golang.org/x/text/encoding/simplifiedchinese"
 	"golang.org/x/text/transform"
 	"gorm.io/gorm"
 )
 
-type FileWithSuffix struct {
-	Filename string
-	Suffix   string
-	reader   io.ReadCloser
-}
-
-func (fws *FileWithSuffix) GetReaderByEncoding(encoding constant.Encoding) io.Reader {
-	return GetReaderByEncoding(fws.reader, encoding)
-}
-
-func (fws *FileWithSuffix) Close() error {
-	return fws.reader.Close()
-}
-
-func GetReaderByEncoding(reader io.Reader, encoding constant.Encoding) io.Reader {
-	if encoding == constant.GBK {
-		return transform.NewReader(reader, simplifiedchinese.GBK.NewDecoder())
+func GetUTF8Reader(reader io.Reader, checkBytes []byte) (io.Reader, error) {
+	encoding, err := DetectEncoding(checkBytes)
+	if err != nil {
+		return reader, err
 	}
-	return reader
+	switch encoding {
+	case "ISO-8859-1":
+		reader = transform.NewReader(reader, charmap.ISO8859_1.NewDecoder())
+	case "GB-18030":
+		reader = transform.NewReader(reader, simplifiedchinese.GBK.NewDecoder())
+	}
+	return reader, nil
+}
+
+func DetectEncoding(data []byte) (string, error) {
+	detector := chardet.NewTextDetector()
+	result, err := detector.DetectBest(data)
+	if err != nil {
+		return "", err
+	}
+	return result.Charset, nil
 }
 
 func GetFileSuffix(filename string) string {

@@ -3,6 +3,7 @@ module KeepAccount
 go 1.23
 
 require (
+	github.com/araddon/dateparse v0.0.0-20210429162001-6b43995a97de
 	github.com/gin-gonic/gin v1.10.0
 	github.com/go-co-op/gocron v1.37.0
 	github.com/go-redis/redis/v8 v8.11.5
@@ -15,6 +16,7 @@ require (
 	github.com/nats-io/nats-server/v2 v2.10.21
 	github.com/nats-io/nats.go v1.37.0
 	github.com/pkg/errors v0.9.1
+	github.com/saintfish/chardet v0.0.0-20230101081208-5e3ef4b5456d
 	github.com/songzhibin97/gkit v1.2.13
 	github.com/swaggo/files v1.0.1
 	github.com/swaggo/gin-swagger v1.6.0

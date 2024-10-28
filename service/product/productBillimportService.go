@@ -1,15 +1,15 @@
 package productService
 
 import (
-	"KeepAccount/global/constant"
+	"context"
+	"io"
+
 	"KeepAccount/global/db"
 	accountModel "KeepAccount/model/account"
 	productModel "KeepAccount/model/product"
 	transactionModel "KeepAccount/model/transaction"
 	"KeepAccount/service/product/bill"
 	"KeepAccount/util/fileTool"
-	"context"
-	"io"
 )
 
 type BillFile struct {
@@ -17,9 +17,9 @@ type BillFile struct {
 	fileReader io.Reader
 }
 
-func (bf *BillFile) GetRowReader(encoding constant.Encoding) (func(yield func([]string) bool), error) {
+func (bf *BillFile) GetRowReader() (func(yield func([]string) bool), error) {
 	return fileTool.NewRowReader(
-		fileTool.GetReaderByEncoding(bf.fileReader, encoding),
+		bf.fileReader,
 		fileTool.GetFileSuffix(bf.fileName),
 	)
 }
@@ -32,11 +32,7 @@ func (proService *Product) ProcessesBill(
 	file BillFile, product productModel.Product, accountUser accountModel.User,
 	handler func(transInfo transactionModel.Info, err error) error, ctx context.Context,
 ) error {
-	billConfig, err := productModel.NewDao(db.Get(ctx)).SelectBillByKey(product.Key)
-	if err != nil {
-		return err
-	}
-	rowReader, err := file.GetRowReader(billConfig.Encoding)
+	rowReader, err := file.GetRowReader()
 	if err != nil {
 		return err
 	}
