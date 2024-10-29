@@ -14,6 +14,10 @@ import (
 	"os/signal"
 	"syscall"
 	"time"
+	// Import "time/tzdata" for loading time zone data,
+	// so in order to make the binary files can be run independently,
+	// or in need of extra "$GOROOT/lib/time/zoneinfo.Zip" file, see time.LoadLocation
+	_ "time/tzdata"
 )
 
 var httpServer *http.Server
