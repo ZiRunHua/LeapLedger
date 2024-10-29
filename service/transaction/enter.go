@@ -1,8 +1,8 @@
 package transactionService
 
 import (
-	"KeepAccount/global/constant"
-	_log "KeepAccount/util/log"
+	"github.com/ZiRunHua/LeapLedger/global/constant"
+	_log "github.com/ZiRunHua/LeapLedger/util/log"
 	"go.uber.org/zap"
 )
 

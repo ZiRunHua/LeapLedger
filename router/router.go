@@ -1,12 +1,12 @@
 package router
 
 import (
-	_ "KeepAccount/docs"
-	"KeepAccount/global"
-	"KeepAccount/global/constant"
-	routerEngine "KeepAccount/router/engine"
-	"KeepAccount/router/group"
-	_ "KeepAccount/router/v1"
+	_ "github.com/ZiRunHua/LeapLedger/docs"
+	"github.com/ZiRunHua/LeapLedger/global"
+	"github.com/ZiRunHua/LeapLedger/global/constant"
+	routerEngine "github.com/ZiRunHua/LeapLedger/router/engine"
+	"github.com/ZiRunHua/LeapLedger/router/group"
+	_ "github.com/ZiRunHua/LeapLedger/router/v1"
 	"github.com/gin-gonic/gin"
 	"github.com/swaggo/files"
 	"github.com/swaggo/gin-swagger"
@@ -23,9 +23,13 @@ func init() {
 		},
 	)
 	if global.Config.Mode == constant.Debug {
-		group.Public.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler, func(config *ginSwagger.Config) {
-			config.DocExpansion = "none"
-			config.DeepLinking = true
-		}))
+		group.Public.GET(
+			"/swagger/*any", ginSwagger.WrapHandler(
+				swaggerFiles.Handler, func(config *ginSwagger.Config) {
+					config.DocExpansion = "none"
+					config.DeepLinking = true
+				},
+			),
+		)
 	}
 }

@@ -3,19 +3,19 @@ package transaction
 import (
 	"context"
 
-	_ "KeepAccount/test/initialize"
+	_ "github.com/ZiRunHua/LeapLedger/test/initialize"
 )
 import (
 	"reflect"
 	"testing"
 	"time"
 
-	"KeepAccount/global"
-	"KeepAccount/global/constant"
-	"KeepAccount/global/nats"
-	accountModel "KeepAccount/model/account"
-	transactionModel "KeepAccount/model/transaction"
-	"KeepAccount/test"
+	"github.com/ZiRunHua/LeapLedger/global"
+	"github.com/ZiRunHua/LeapLedger/global/constant"
+	"github.com/ZiRunHua/LeapLedger/global/nats"
+	accountModel "github.com/ZiRunHua/LeapLedger/model/account"
+	transactionModel "github.com/ZiRunHua/LeapLedger/model/transaction"
+	"github.com/ZiRunHua/LeapLedger/test"
 )
 
 func TestCreate(t *testing.T) {

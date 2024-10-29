@@ -1,11 +1,11 @@
 package group
 
 import (
-	"KeepAccount/global"
-	"KeepAccount/global/cus"
-	accountModel "KeepAccount/model/account"
-	routerEngine "KeepAccount/router/engine"
-	"KeepAccount/router/middleware"
+	"github.com/ZiRunHua/LeapLedger/global"
+	"github.com/ZiRunHua/LeapLedger/global/cus"
+	accountModel "github.com/ZiRunHua/LeapLedger/model/account"
+	routerEngine "github.com/ZiRunHua/LeapLedger/router/engine"
+	"github.com/ZiRunHua/LeapLedger/router/middleware"
 	"github.com/gin-gonic/gin"
 )
 

@@ -4,12 +4,12 @@ import (
 	"context"
 	"io"
 
-	"KeepAccount/global/db"
-	accountModel "KeepAccount/model/account"
-	productModel "KeepAccount/model/product"
-	transactionModel "KeepAccount/model/transaction"
-	"KeepAccount/service/product/bill"
-	"KeepAccount/util/fileTool"
+	"github.com/ZiRunHua/LeapLedger/global/db"
+	accountModel "github.com/ZiRunHua/LeapLedger/model/account"
+	productModel "github.com/ZiRunHua/LeapLedger/model/product"
+	transactionModel "github.com/ZiRunHua/LeapLedger/model/transaction"
+	"github.com/ZiRunHua/LeapLedger/service/product/bill"
+	"github.com/ZiRunHua/LeapLedger/util/fileTool"
 )
 
 type BillFile struct {

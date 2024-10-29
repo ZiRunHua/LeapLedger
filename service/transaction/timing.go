@@ -4,11 +4,11 @@ import (
 	"context"
 	"time"
 
-	"KeepAccount/global/db"
-	"KeepAccount/global/lock"
-	"KeepAccount/global/nats"
-	accountModel "KeepAccount/model/account"
-	transactionModel "KeepAccount/model/transaction"
+	"github.com/ZiRunHua/LeapLedger/global/db"
+	"github.com/ZiRunHua/LeapLedger/global/lock"
+	"github.com/ZiRunHua/LeapLedger/global/nats"
+	accountModel "github.com/ZiRunHua/LeapLedger/model/account"
+	transactionModel "github.com/ZiRunHua/LeapLedger/model/transaction"
 )
 
 type Timing struct {

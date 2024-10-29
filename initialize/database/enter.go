@@ -1,23 +1,25 @@
 package database
 
 import (
-	_ "KeepAccount/model"
+	"fmt"
+
+	_ "github.com/ZiRunHua/LeapLedger/model"
 	"github.com/pkg/errors"
 )
 
 import (
-	userModel "KeepAccount/model/user"
-	"KeepAccount/script"
-	"KeepAccount/service"
-	"KeepAccount/util"
+	userModel "github.com/ZiRunHua/LeapLedger/model/user"
+	"github.com/ZiRunHua/LeapLedger/script"
+	"github.com/ZiRunHua/LeapLedger/service"
+	"github.com/ZiRunHua/LeapLedger/util"
 
-	_templateService "KeepAccount/service/template"
+	_templateService "github.com/ZiRunHua/LeapLedger/service/template"
 
 	"context"
 
-	"KeepAccount/global/cus"
-	"KeepAccount/global/db"
-	testInfo "KeepAccount/test/info"
+	"github.com/ZiRunHua/LeapLedger/global/cus"
+	"github.com/ZiRunHua/LeapLedger/global/db"
+	testInfo "github.com/ZiRunHua/LeapLedger/test/info"
 	"gorm.io/gorm"
 )
 
@@ -27,9 +29,7 @@ var (
 	commonService = service.GroupApp.CommonServiceGroup
 
 	templateService = service.GroupApp.TemplateServiceGroup
-)
 
-const (
 	testUserPassword = _templateService.TmplUserPassword
 )
 
@@ -82,6 +82,7 @@ func initTestUser(ctx *cus.TxContext) (err error) {
 		AccountId: account.ID,
 		Token:     token,
 	}
+	fmt.Println("test user", testInfo.Data)
 	return
 }
 

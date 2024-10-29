@@ -1,8 +1,8 @@
 package logModel
 
 import (
-	"KeepAccount/global/constant"
-	"KeepAccount/global/db"
+	"github.com/ZiRunHua/LeapLedger/global/constant"
+	"github.com/ZiRunHua/LeapLedger/global/db"
 	"gorm.io/gorm"
 )
 

@@ -1,8 +1,8 @@
 package accountService
 
 import (
-	log "KeepAccount/service/log"
-	userService "KeepAccount/service/user"
+	log "github.com/ZiRunHua/LeapLedger/service/log"
+	userService "github.com/ZiRunHua/LeapLedger/service/user"
 )
 
 var GroupApp = &Group{}

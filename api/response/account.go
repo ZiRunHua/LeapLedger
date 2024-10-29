@@ -1,11 +1,11 @@
 package response
 
 import (
-	"KeepAccount/global"
-	"KeepAccount/global/db"
-	accountModel "KeepAccount/model/account"
-	userModel "KeepAccount/model/user"
-	"KeepAccount/util/dataTool"
+	"github.com/ZiRunHua/LeapLedger/global"
+	"github.com/ZiRunHua/LeapLedger/global/db"
+	accountModel "github.com/ZiRunHua/LeapLedger/model/account"
+	userModel "github.com/ZiRunHua/LeapLedger/model/user"
+	"github.com/ZiRunHua/LeapLedger/util/dataTool"
 	"github.com/pkg/errors"
 	"time"
 )

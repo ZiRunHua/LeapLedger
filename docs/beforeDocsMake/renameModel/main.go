@@ -1,8 +1,8 @@
 package main
 
 import (
-	"KeepAccount/global/constant"
 	"bufio"
+	"github.com/ZiRunHua/LeapLedger/global/constant"
 	"go/ast"
 	"go/parser"
 	"go/token"

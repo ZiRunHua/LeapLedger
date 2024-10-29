@@ -1,7 +1,7 @@
 package initialize
 
 import (
-	"KeepAccount/global/constant"
+	"github.com/ZiRunHua/LeapLedger/global/constant"
 	"github.com/nats-io/nats.go"
 )
 

@@ -1,9 +1,9 @@
 package db
 
 import (
-	"KeepAccount/global/cus"
-	"KeepAccount/initialize"
 	"context"
+	"github.com/ZiRunHua/LeapLedger/global/cus"
+	"github.com/ZiRunHua/LeapLedger/initialize"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
 )

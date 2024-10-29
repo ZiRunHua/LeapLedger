@@ -4,11 +4,11 @@ import (
 	"context"
 	"time"
 
-	"KeepAccount/global/constant"
-	"KeepAccount/global/db"
-	"KeepAccount/global/nats"
-	accountModel "KeepAccount/model/account"
-	_ "KeepAccount/test/initialize"
+	"github.com/ZiRunHua/LeapLedger/global/constant"
+	"github.com/ZiRunHua/LeapLedger/global/db"
+	"github.com/ZiRunHua/LeapLedger/global/nats"
+	accountModel "github.com/ZiRunHua/LeapLedger/model/account"
+	_ "github.com/ZiRunHua/LeapLedger/test/initialize"
 	"github.com/google/uuid"
 )
 import (

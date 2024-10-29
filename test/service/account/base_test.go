@@ -7,13 +7,13 @@ import (
 	"reflect"
 	"time"
 
-	"KeepAccount/global"
-	"KeepAccount/global/constant"
-	accountModel "KeepAccount/model/account"
-	categoryModel "KeepAccount/model/category"
-	transactionModel "KeepAccount/model/transaction"
-	userModel "KeepAccount/model/user"
-	_ "KeepAccount/test/initialize"
+	"github.com/ZiRunHua/LeapLedger/global"
+	"github.com/ZiRunHua/LeapLedger/global/constant"
+	accountModel "github.com/ZiRunHua/LeapLedger/model/account"
+	categoryModel "github.com/ZiRunHua/LeapLedger/model/category"
+	transactionModel "github.com/ZiRunHua/LeapLedger/model/transaction"
+	userModel "github.com/ZiRunHua/LeapLedger/model/user"
+	_ "github.com/ZiRunHua/LeapLedger/test/initialize"
 )
 import (
 	"testing"

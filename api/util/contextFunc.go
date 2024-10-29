@@ -1,13 +1,13 @@
 package util
 
 import (
-	"KeepAccount/api/request"
-	"KeepAccount/api/response"
-	"KeepAccount/global/constant"
-	"KeepAccount/global/cus"
-	"KeepAccount/global/db"
-	accountModel "KeepAccount/model/account"
-	userModel "KeepAccount/model/user"
+	"github.com/ZiRunHua/LeapLedger/api/request"
+	"github.com/ZiRunHua/LeapLedger/api/response"
+	"github.com/ZiRunHua/LeapLedger/global/constant"
+	"github.com/ZiRunHua/LeapLedger/global/cus"
+	"github.com/ZiRunHua/LeapLedger/global/db"
+	accountModel "github.com/ZiRunHua/LeapLedger/model/account"
+	userModel "github.com/ZiRunHua/LeapLedger/model/user"
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 	"strconv"

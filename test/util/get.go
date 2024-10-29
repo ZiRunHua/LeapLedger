@@ -3,8 +3,8 @@ package tUtil
 import (
 	"math/rand"
 
-	categoryModel "KeepAccount/model/category"
-	transactionModel "KeepAccount/model/transaction"
+	categoryModel "github.com/ZiRunHua/LeapLedger/model/category"
+	transactionModel "github.com/ZiRunHua/LeapLedger/model/transaction"
 )
 
 type Get struct {

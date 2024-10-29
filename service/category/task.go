@@ -1,9 +1,9 @@
 package categoryService
 
 import (
-	"KeepAccount/global/nats"
-	accountModel "KeepAccount/model/account"
-	categoryModel "KeepAccount/model/category"
+	"github.com/ZiRunHua/LeapLedger/global/nats"
+	accountModel "github.com/ZiRunHua/LeapLedger/model/account"
+	categoryModel "github.com/ZiRunHua/LeapLedger/model/category"
 )
 
 type _task struct{}

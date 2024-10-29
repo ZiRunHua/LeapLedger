@@ -5,10 +5,10 @@ import (
 	"encoding/json"
 	"errors"
 
-	"KeepAccount/global/constant"
-	"KeepAccount/global/cus"
-	"KeepAccount/global/db"
-	"KeepAccount/global/nats/manager"
+	"github.com/ZiRunHua/LeapLedger/global/constant"
+	"github.com/ZiRunHua/LeapLedger/global/cus"
+	"github.com/ZiRunHua/LeapLedger/global/db"
+	"github.com/ZiRunHua/LeapLedger/global/nats/manager"
 )
 
 type Task = manager.Task

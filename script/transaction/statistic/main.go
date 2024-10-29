@@ -1,12 +1,12 @@
 package main
 
 import (
-	"KeepAccount/global"
-	"KeepAccount/global/constant"
-	commonModel "KeepAccount/model/common"
+	"github.com/ZiRunHua/LeapLedger/global"
+	"github.com/ZiRunHua/LeapLedger/global/constant"
+	commonModel "github.com/ZiRunHua/LeapLedger/model/common"
 
-	_ "KeepAccount/initialize"
-	transactionModel "KeepAccount/model/transaction"
+	_ "github.com/ZiRunHua/LeapLedger/initialize"
+	transactionModel "github.com/ZiRunHua/LeapLedger/model/transaction"
 	"gorm.io/gorm"
 )
 

@@ -1,8 +1,8 @@
 package request
 
 import (
-	"KeepAccount/global"
-	"KeepAccount/global/constant"
+	"github.com/ZiRunHua/LeapLedger/global"
+	"github.com/ZiRunHua/LeapLedger/global/constant"
 	"github.com/pkg/errors"
 	"time"
 )

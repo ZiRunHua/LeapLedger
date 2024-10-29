@@ -7,9 +7,9 @@ import (
 	"errors"
 	"strings"
 
-	"KeepAccount/global"
-	"KeepAccount/global/constant"
-	userModel "KeepAccount/model/user"
+	"github.com/ZiRunHua/LeapLedger/global"
+	"github.com/ZiRunHua/LeapLedger/global/constant"
+	userModel "github.com/ZiRunHua/LeapLedger/model/user"
 )
 
 type UserLogin struct {

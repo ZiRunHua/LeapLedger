@@ -3,7 +3,7 @@ package initialize
 import (
 	"time"
 
-	"KeepAccount/global/constant"
+	"github.com/ZiRunHua/LeapLedger/global/constant"
 
 	_ "github.com/go-sql-driver/mysql"
 	"gorm.io/driver/mysql"

@@ -1,7 +1,7 @@
 package categoryModel
 
 import (
-	"KeepAccount/global/db"
+	"github.com/ZiRunHua/LeapLedger/global/db"
 )
 
 func init() {

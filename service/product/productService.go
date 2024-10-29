@@ -1,11 +1,11 @@
 package productService
 
 import (
-	"KeepAccount/global"
-	"KeepAccount/global/db"
-	categoryModel "KeepAccount/model/category"
-	productModel "KeepAccount/model/product"
 	"context"
+	"github.com/ZiRunHua/LeapLedger/global"
+	"github.com/ZiRunHua/LeapLedger/global/db"
+	categoryModel "github.com/ZiRunHua/LeapLedger/model/category"
+	productModel "github.com/ZiRunHua/LeapLedger/model/product"
 	"github.com/pkg/errors"
 )
 

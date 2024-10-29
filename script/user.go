@@ -1,11 +1,11 @@
 package script
 
 import (
-	accountModel "KeepAccount/model/account"
-	userModel "KeepAccount/model/user"
-	"KeepAccount/util"
-	"KeepAccount/util/rand"
 	"context"
+	accountModel "github.com/ZiRunHua/LeapLedger/model/account"
+	userModel "github.com/ZiRunHua/LeapLedger/model/user"
+	"github.com/ZiRunHua/LeapLedger/util"
+	"github.com/ZiRunHua/LeapLedger/util/rand"
 	"gorm.io/gorm"
 )
 
@@ -43,7 +43,9 @@ func (u *_user) CreateTourist(ctx context.Context) (user userModel.User, err err
 
 func (u *_user) ChangeCurrantAccount(accountUser accountModel.User, db *gorm.DB) (err error) {
 	for _, client := range userModel.GetClients() {
-		err = db.Model(&client).Where("user_id = ?", accountUser.UserId).Update("current_account_id", accountUser.AccountId).Error
+		err = db.Model(&client).Where("user_id = ?", accountUser.UserId).Update(
+			"current_account_id", accountUser.AccountId,
+		).Error
 		if err != nil {
 			return
 		}

@@ -1,8 +1,8 @@
 package query
 
 import (
-	"KeepAccount/global"
-	commonModel "KeepAccount/model/common"
+	"github.com/ZiRunHua/LeapLedger/global"
+	commonModel "github.com/ZiRunHua/LeapLedger/model/common"
 
 	"github.com/pkg/errors"
 	"gorm.io/gorm"

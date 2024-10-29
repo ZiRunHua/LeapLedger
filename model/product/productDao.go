@@ -1,8 +1,8 @@
 package productModel
 
 import (
-	"KeepAccount/global"
-	"KeepAccount/global/constant"
+	"github.com/ZiRunHua/LeapLedger/global"
+	"github.com/ZiRunHua/LeapLedger/global/constant"
 	"gorm.io/gorm"
 )
 

@@ -6,8 +6,8 @@ import (
 	"strings"
 	"time"
 
-	"KeepAccount/global/cron"
-	"KeepAccount/global/nats"
+	"github.com/ZiRunHua/LeapLedger/global/cron"
+	"github.com/ZiRunHua/LeapLedger/global/nats"
 )
 
 type _task struct{}

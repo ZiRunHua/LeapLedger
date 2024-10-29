@@ -1,7 +1,7 @@
 package accountModel
 
 import (
-	logModel "KeepAccount/model/log"
+	logModel "github.com/ZiRunHua/LeapLedger/model/log"
 	"gorm.io/gorm"
 	"time"
 )

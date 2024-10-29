@@ -1,11 +1,11 @@
 package email
 
 import (
-	"KeepAccount/global"
 	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/ZiRunHua/LeapLedger/global"
 	"io"
 	"net/http"
 )

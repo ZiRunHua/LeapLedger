@@ -1,9 +1,9 @@
 package accountModel
 
 import (
-	"KeepAccount/global"
-	userModel "KeepAccount/model/user"
 	"errors"
+	"github.com/ZiRunHua/LeapLedger/global"
+	userModel "github.com/ZiRunHua/LeapLedger/model/user"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 	"time"

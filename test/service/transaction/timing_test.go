@@ -5,10 +5,10 @@ import (
 	"testing"
 	"time"
 
-	"KeepAccount/global/cus"
-	"KeepAccount/global/db"
-	transactionModel "KeepAccount/model/transaction"
-	"KeepAccount/util/timeTool"
+	"github.com/ZiRunHua/LeapLedger/global/cus"
+	"github.com/ZiRunHua/LeapLedger/global/db"
+	transactionModel "github.com/ZiRunHua/LeapLedger/model/transaction"
+	"github.com/ZiRunHua/LeapLedger/util/timeTool"
 )
 
 func TestTiming(t *testing.T) {

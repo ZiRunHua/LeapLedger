@@ -1,8 +1,8 @@
 package email
 
 import (
-	"KeepAccount/global/cron"
 	"fmt"
+	"github.com/ZiRunHua/LeapLedger/global/cron"
 )
 
 type emailService interface {

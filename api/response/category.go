@@ -1,10 +1,10 @@
 package response
 
 import (
-	"KeepAccount/global/constant"
-	"KeepAccount/global/db"
-	categoryModel "KeepAccount/model/category"
-	"KeepAccount/util/dataTool"
+	"github.com/ZiRunHua/LeapLedger/global/constant"
+	"github.com/ZiRunHua/LeapLedger/global/db"
+	categoryModel "github.com/ZiRunHua/LeapLedger/model/category"
+	"github.com/ZiRunHua/LeapLedger/util/dataTool"
 	"github.com/pkg/errors"
 )
 

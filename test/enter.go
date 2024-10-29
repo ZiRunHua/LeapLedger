@@ -1,8 +1,8 @@
 package test
 
 import (
-	categoryModel "KeepAccount/model/category"
-	"KeepAccount/test/initialize"
+	categoryModel "github.com/ZiRunHua/LeapLedger/model/category"
+	"github.com/ZiRunHua/LeapLedger/test/initialize"
 )
 
 var (

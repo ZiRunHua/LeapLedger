@@ -3,14 +3,14 @@ package response
 import (
 	"time"
 
-	"KeepAccount/global"
-	"KeepAccount/global/constant"
-	"KeepAccount/global/db"
-	accountModel "KeepAccount/model/account"
-	categoryModel "KeepAccount/model/category"
-	transactionModel "KeepAccount/model/transaction"
-	userModel "KeepAccount/model/user"
-	"KeepAccount/util/dataTool"
+	"github.com/ZiRunHua/LeapLedger/global"
+	"github.com/ZiRunHua/LeapLedger/global/constant"
+	"github.com/ZiRunHua/LeapLedger/global/db"
+	accountModel "github.com/ZiRunHua/LeapLedger/model/account"
+	categoryModel "github.com/ZiRunHua/LeapLedger/model/category"
+	transactionModel "github.com/ZiRunHua/LeapLedger/model/transaction"
+	userModel "github.com/ZiRunHua/LeapLedger/model/user"
+	"github.com/ZiRunHua/LeapLedger/util/dataTool"
 )
 
 // TransactionDetail 交易详情

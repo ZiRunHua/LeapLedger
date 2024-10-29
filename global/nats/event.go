@@ -5,10 +5,10 @@ import (
 	"encoding/json"
 	"errors"
 
-	"KeepAccount/global/cus"
-	"KeepAccount/global/db"
-	"KeepAccount/global/nats/manager"
-	transactionModel "KeepAccount/model/transaction"
+	"github.com/ZiRunHua/LeapLedger/global/cus"
+	"github.com/ZiRunHua/LeapLedger/global/db"
+	"github.com/ZiRunHua/LeapLedger/global/nats/manager"
+	transactionModel "github.com/ZiRunHua/LeapLedger/model/transaction"
 )
 
 type Event = manager.Event

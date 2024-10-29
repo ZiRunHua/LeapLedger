@@ -4,17 +4,18 @@ import (
 	"context"
 	"errors"
 
-	"KeepAccount/global/constant"
-	"KeepAccount/global/cus"
-	"KeepAccount/global/db"
-	"KeepAccount/global/nats"
-	userModel "KeepAccount/model/user"
-	_accountService "KeepAccount/service/account"
-	_categoryService "KeepAccount/service/category"
-	_productService "KeepAccount/service/product"
-	_userService "KeepAccount/service/user"
-	"KeepAccount/util"
-	_log "KeepAccount/util/log"
+	"github.com/ZiRunHua/LeapLedger/global/constant"
+	"github.com/ZiRunHua/LeapLedger/global/cus"
+	"github.com/ZiRunHua/LeapLedger/global/db"
+	"github.com/ZiRunHua/LeapLedger/global/nats"
+	userModel "github.com/ZiRunHua/LeapLedger/model/user"
+	_accountService "github.com/ZiRunHua/LeapLedger/service/account"
+	_categoryService "github.com/ZiRunHua/LeapLedger/service/category"
+	_productService "github.com/ZiRunHua/LeapLedger/service/product"
+	_userService "github.com/ZiRunHua/LeapLedger/service/user"
+	"github.com/ZiRunHua/LeapLedger/util"
+	_log "github.com/ZiRunHua/LeapLedger/util/log"
+	"github.com/ZiRunHua/LeapLedger/util/rand"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 )
@@ -31,10 +32,11 @@ var (
 var TmplUserId uint = 1
 
 const (
-	TmplUserEmail    = "template@gmail.com"
-	TmplUserPassword = "1999123456"
-	TmplUserName     = "template"
+	TmplUserEmail = "template@gmail.com"
+	TmplUserName  = "template"
 )
+
+var TmplUserPassword = rand.String(15)
 
 var (
 	templateService = GroupApp

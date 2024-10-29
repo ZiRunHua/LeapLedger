@@ -1,10 +1,10 @@
 package categoryModel
 
 import (
-	"KeepAccount/global"
-	"KeepAccount/global/constant"
-	accountModel "KeepAccount/model/account"
-	"KeepAccount/util"
+	"github.com/ZiRunHua/LeapLedger/global"
+	"github.com/ZiRunHua/LeapLedger/global/constant"
+	accountModel "github.com/ZiRunHua/LeapLedger/model/account"
+	"github.com/ZiRunHua/LeapLedger/util"
 
 	"github.com/pkg/errors"
 	"gorm.io/gorm"

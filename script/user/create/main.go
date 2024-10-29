@@ -4,9 +4,9 @@ import (
 	"context"
 	"fmt"
 
-	userModel "KeepAccount/model/user"
-	userService "KeepAccount/service/user"
-	"KeepAccount/util"
+	userModel "github.com/ZiRunHua/LeapLedger/model/user"
+	userService "github.com/ZiRunHua/LeapLedger/service/user"
+	"github.com/ZiRunHua/LeapLedger/util"
 )
 
 func main() {

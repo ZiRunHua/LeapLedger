@@ -5,8 +5,8 @@ import (
 	"log"
 	"time"
 
-	"KeepAccount/global/constant"
-	"KeepAccount/util"
+	"github.com/ZiRunHua/LeapLedger/global/constant"
+	"github.com/ZiRunHua/LeapLedger/util"
 	"github.com/go-redis/redis/v8"
 )
 

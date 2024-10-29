@@ -1,7 +1,7 @@
 package transactionModel
 
 import (
-	commonModel "KeepAccount/model/common"
+	commonModel "github.com/ZiRunHua/LeapLedger/model/common"
 	"gorm.io/gorm"
 	"time"
 )

@@ -1,11 +1,11 @@
 package accountModel
 
 import (
-	"KeepAccount/global"
-	"KeepAccount/global/cus"
-	"KeepAccount/global/db"
 	"context"
 	"fmt"
+	"github.com/ZiRunHua/LeapLedger/global"
+	"github.com/ZiRunHua/LeapLedger/global/cus"
+	"github.com/ZiRunHua/LeapLedger/global/db"
 )
 
 func init() {

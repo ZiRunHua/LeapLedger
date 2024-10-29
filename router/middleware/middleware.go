@@ -1,12 +1,12 @@
 package middleware
 
 import (
-	"KeepAccount/api/response"
-	apiUtil "KeepAccount/api/util"
-	"KeepAccount/global"
-	accountModel "KeepAccount/model/account"
-	commonService "KeepAccount/service/common"
 	"bytes"
+	"github.com/ZiRunHua/LeapLedger/api/response"
+	apiUtil "github.com/ZiRunHua/LeapLedger/api/util"
+	"github.com/ZiRunHua/LeapLedger/global"
+	accountModel "github.com/ZiRunHua/LeapLedger/model/account"
+	commonService "github.com/ZiRunHua/LeapLedger/service/common"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 	"io"

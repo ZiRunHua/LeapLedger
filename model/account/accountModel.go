@@ -1,10 +1,10 @@
 package accountModel
 
 import (
-	"KeepAccount/global"
-	commonModel "KeepAccount/model/common"
-	userModel "KeepAccount/model/user"
-	"KeepAccount/util"
+	"github.com/ZiRunHua/LeapLedger/global"
+	commonModel "github.com/ZiRunHua/LeapLedger/model/common"
+	userModel "github.com/ZiRunHua/LeapLedger/model/user"
+	"github.com/ZiRunHua/LeapLedger/util"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 	"time"

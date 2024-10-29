@@ -1,13 +1,13 @@
 package v1
 
 import (
-	"KeepAccount/api/request"
-	"KeepAccount/api/response"
-	"KeepAccount/global"
-	"KeepAccount/global/db"
-	accountModel "KeepAccount/model/account"
-	categoryModel "KeepAccount/model/category"
-	userModel "KeepAccount/model/user"
+	"github.com/ZiRunHua/LeapLedger/api/request"
+	"github.com/ZiRunHua/LeapLedger/api/response"
+	"github.com/ZiRunHua/LeapLedger/global"
+	"github.com/ZiRunHua/LeapLedger/global/db"
+	accountModel "github.com/ZiRunHua/LeapLedger/model/account"
+	categoryModel "github.com/ZiRunHua/LeapLedger/model/category"
+	userModel "github.com/ZiRunHua/LeapLedger/model/user"
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
 	"gorm.io/gorm"
@@ -75,7 +75,9 @@ func (catApi *CategoryApi) CreateOneFather(ctx *gin.Context) {
 		return
 	}
 
-	father, err := categoryService.CreateOneFather(contextFunc.GetAccount(ctx), requestData.IncomeExpense, requestData.Name, ctx)
+	father, err := categoryService.CreateOneFather(
+		contextFunc.GetAccount(ctx), requestData.IncomeExpense, requestData.Name, ctx,
+	)
 	if responseError(err, ctx) {
 		return
 	}
@@ -162,7 +164,9 @@ func (catApi *CategoryApi) MoveFather(ctx *gin.Context) {
 		return
 	}
 	if requestData.Previous != nil {
-		previous, pass := checkFunc.CategoryFatherBelongAndGet(*requestData.Previous, contextFunc.GetAccountId(ctx), ctx)
+		previous, pass := checkFunc.CategoryFatherBelongAndGet(
+			*requestData.Previous, contextFunc.GetAccountId(ctx), ctx,
+		)
 		if !pass {
 			return
 		}

@@ -1,8 +1,8 @@
 package productModel
 
 import (
-	"KeepAccount/global"
-	commonModel "KeepAccount/model/common"
+	"github.com/ZiRunHua/LeapLedger/global"
+	commonModel "github.com/ZiRunHua/LeapLedger/model/common"
 )
 
 type Product struct {

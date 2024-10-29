@@ -1,9 +1,9 @@
 package categoryService
 
 import (
-	"KeepAccount/global/constant"
-	_thirdpartyService "KeepAccount/service/thirdparty"
-	_log "KeepAccount/util/log"
+	"github.com/ZiRunHua/LeapLedger/global/constant"
+	_thirdpartyService "github.com/ZiRunHua/LeapLedger/service/thirdparty"
+	_log "github.com/ZiRunHua/LeapLedger/util/log"
 	"go.uber.org/zap"
 )
 

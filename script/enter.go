@@ -1,6 +1,6 @@
 package script
 
-import "KeepAccount/service"
+import "github.com/ZiRunHua/LeapLedger/service"
 
 var (
 	userService = service.GroupApp.UserServiceGroup

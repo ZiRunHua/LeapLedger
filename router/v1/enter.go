@@ -1,7 +1,7 @@
 package v1
 
 import (
-	v1 "KeepAccount/api/v1"
+	v1 "github.com/ZiRunHua/LeapLedger/api/v1"
 )
 
 var (

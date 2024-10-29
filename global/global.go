@@ -1,7 +1,7 @@
 package global
 
 import (
-	"KeepAccount/initialize"
+	"github.com/ZiRunHua/LeapLedger/initialize"
 	"go.uber.org/zap"
 )
 

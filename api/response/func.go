@@ -1,8 +1,8 @@
 package response
 
 import (
-	"KeepAccount/global"
 	"fmt"
+	"github.com/ZiRunHua/LeapLedger/global"
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
 	"gorm.io/gorm"

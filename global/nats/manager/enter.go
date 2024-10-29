@@ -1,9 +1,9 @@
 package manager
 
 import (
-	"KeepAccount/global/constant"
-	"KeepAccount/initialize"
-	"KeepAccount/util/log"
+	"github.com/ZiRunHua/LeapLedger/global/constant"
+	"github.com/ZiRunHua/LeapLedger/initialize"
+	"github.com/ZiRunHua/LeapLedger/util/log"
 	"github.com/nats-io/nats.go/jetstream"
 	"go.uber.org/zap"
 	"runtime/debug"

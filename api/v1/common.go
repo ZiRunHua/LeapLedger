@@ -1,10 +1,10 @@
 package v1
 
 import (
-	"KeepAccount/api/request"
-	"KeepAccount/api/response"
-	"KeepAccount/global"
-	"KeepAccount/global/nats"
+	"github.com/ZiRunHua/LeapLedger/api/request"
+	"github.com/ZiRunHua/LeapLedger/api/response"
+	"github.com/ZiRunHua/LeapLedger/global"
+	"github.com/ZiRunHua/LeapLedger/global/nats"
 	"github.com/gin-gonic/gin"
 	"github.com/mojocn/base64Captcha"
 	"github.com/pkg/errors"
@@ -61,9 +61,11 @@ func (p *PublicApi) SendEmailCaptcha(ctx *gin.Context) {
 		return
 	}
 
-	isSuccess := nats.PublishTaskWithPayload(nats.TaskSendCaptchaEmail, nats.PayloadSendCaptchaEmail{
-		Email: requestData.Email, Action: requestData.Type,
-	})
+	isSuccess := nats.PublishTaskWithPayload(
+		nats.TaskSendCaptchaEmail, nats.PayloadSendCaptchaEmail{
+			Email: requestData.Email, Action: requestData.Type,
+		},
+	)
 	if !isSuccess {
 		response.FailToError(ctx, errors.New("发送失败"))
 	}

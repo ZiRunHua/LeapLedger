@@ -1,9 +1,9 @@
 package templateService
 
 import (
-	accountModel "KeepAccount/model/account"
-	tmplRank "KeepAccount/service/template/rank"
 	"context"
+	accountModel "github.com/ZiRunHua/LeapLedger/model/account"
+	tmplRank "github.com/ZiRunHua/LeapLedger/service/template/rank"
 	"strconv"
 	"time"
 )

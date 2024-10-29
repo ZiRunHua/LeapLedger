@@ -1,6 +1,6 @@
 package request
 
-import accountModel "KeepAccount/model/account"
+import accountModel "github.com/ZiRunHua/LeapLedger/model/account"
 
 // AccountCreateOne 账本新建
 type AccountCreateOne struct {

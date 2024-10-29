@@ -1,12 +1,12 @@
 package accountService
 
 import (
-	"KeepAccount/global"
-	"KeepAccount/global/cus"
-	"KeepAccount/global/db"
-	accountModel "KeepAccount/model/account"
-	userModel "KeepAccount/model/user"
 	"context"
+	"github.com/ZiRunHua/LeapLedger/global"
+	"github.com/ZiRunHua/LeapLedger/global/cus"
+	"github.com/ZiRunHua/LeapLedger/global/db"
+	accountModel "github.com/ZiRunHua/LeapLedger/model/account"
+	userModel "github.com/ZiRunHua/LeapLedger/model/user"
 	"github.com/pkg/errors"
 	"strings"
 )

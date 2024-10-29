@@ -1,12 +1,12 @@
 package util
 
 import (
-	"KeepAccount/api/response"
-	"KeepAccount/global"
-	"KeepAccount/global/db"
-	accountModel "KeepAccount/model/account"
-	categoryModel "KeepAccount/model/category"
-	userModel "KeepAccount/model/user"
+	"github.com/ZiRunHua/LeapLedger/api/response"
+	"github.com/ZiRunHua/LeapLedger/global"
+	"github.com/ZiRunHua/LeapLedger/global/db"
+	accountModel "github.com/ZiRunHua/LeapLedger/model/account"
+	categoryModel "github.com/ZiRunHua/LeapLedger/model/category"
+	userModel "github.com/ZiRunHua/LeapLedger/model/user"
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
 	"gorm.io/gorm"
@@ -22,7 +22,10 @@ type Checker interface {
 	AccountPermission(accountId uint, permission accountModel.UserPermission, ctx *gin.Context) bool
 	CategoryBelongAndGet(categoryId uint, accountId uint, ctx *gin.Context) (categoryModel.Category, bool)
 	CategoryFatherBelongAndGet(fatherId uint, accountId uint, ctx *gin.Context) (categoryModel.Father, bool)
-	TransactionCategoryBelongAndGet(id interface{}, ctx *gin.Context) (bool, categoryModel.Category, accountModel.Account)
+	TransactionCategoryBelongAndGet(id interface{}, ctx *gin.Context) (
+		bool,
+		categoryModel.Category,
+		accountModel.Account)
 	FriendInvitationBelongAndGet(id interface{}, ctx *gin.Context) (bool, userModel.FriendInvitation)
 }
 
@@ -67,7 +70,10 @@ func (ckf *checkFunc) AccountPermission(accountId uint, permission accountModel.
 
 // CategoryBelongAndGet
 // Check whether the category belongs to account
-func (ckf *checkFunc) CategoryBelongAndGet(categoryId uint, accountId uint, ctx *gin.Context) (category categoryModel.Category, pass bool) {
+func (ckf *checkFunc) CategoryBelongAndGet(
+	categoryId uint,
+	accountId uint,
+	ctx *gin.Context) (category categoryModel.Category, pass bool) {
 	err := db.Db.First(&category, categoryId).Error
 	if err != nil {
 		response.FailToError(ctx, err)
@@ -82,7 +88,10 @@ func (ckf *checkFunc) CategoryBelongAndGet(categoryId uint, accountId uint, ctx 
 
 // CategoryFatherBelongAndGet
 // Check whether the category father belongs to account
-func (ckf *checkFunc) CategoryFatherBelongAndGet(fatherId uint, accountId uint, ctx *gin.Context) (father categoryModel.Father, pass bool) {
+func (ckf *checkFunc) CategoryFatherBelongAndGet(
+	fatherId uint,
+	accountId uint,
+	ctx *gin.Context) (father categoryModel.Father, pass bool) {
 	err := db.Db.First(&father, fatherId).Error
 	if err != nil {
 		response.FailToError(ctx, err)

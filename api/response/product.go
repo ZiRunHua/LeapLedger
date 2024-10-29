@@ -1,7 +1,7 @@
 package response
 
 import (
-	"KeepAccount/global/constant"
+	"github.com/ZiRunHua/LeapLedger/global/constant"
 )
 
 type ProductOne struct {

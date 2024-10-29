@@ -1,9 +1,9 @@
 package test
 
 import (
-	categoryModel "KeepAccount/model/category"
-	transactionModel "KeepAccount/model/transaction"
-	"KeepAccount/util/rand"
+	categoryModel "github.com/ZiRunHua/LeapLedger/model/category"
+	transactionModel "github.com/ZiRunHua/LeapLedger/model/transaction"
+	"github.com/ZiRunHua/LeapLedger/util/rand"
 	"time"
 )
 

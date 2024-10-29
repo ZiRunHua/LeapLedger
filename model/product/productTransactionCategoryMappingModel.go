@@ -1,10 +1,10 @@
 package productModel
 
 import (
-	"KeepAccount/global"
-	accountModel "KeepAccount/model/account"
-	commonModel "KeepAccount/model/common"
 	"database/sql"
+	"github.com/ZiRunHua/LeapLedger/global"
+	accountModel "github.com/ZiRunHua/LeapLedger/model/account"
+	commonModel "github.com/ZiRunHua/LeapLedger/model/common"
 	"time"
 )
 

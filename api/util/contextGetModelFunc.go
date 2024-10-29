@@ -1,12 +1,12 @@
 package util
 
 import (
-	"KeepAccount/api/response"
-	"KeepAccount/global"
-	"KeepAccount/global/cus"
-	accountModel "KeepAccount/model/account"
-	categoryModel "KeepAccount/model/category"
-	transactionModel "KeepAccount/model/transaction"
+	"github.com/ZiRunHua/LeapLedger/api/response"
+	"github.com/ZiRunHua/LeapLedger/global"
+	"github.com/ZiRunHua/LeapLedger/global/cus"
+	accountModel "github.com/ZiRunHua/LeapLedger/model/account"
+	categoryModel "github.com/ZiRunHua/LeapLedger/model/category"
+	transactionModel "github.com/ZiRunHua/LeapLedger/model/transaction"
 	"github.com/gin-gonic/gin"
 )
 

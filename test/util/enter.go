@@ -1,13 +1,13 @@
 package tUtil
 
 import (
-	"KeepAccount/global/constant"
-	"KeepAccount/global/db"
-	accountModel "KeepAccount/model/account"
-	categoryModel "KeepAccount/model/category"
-	userModel "KeepAccount/model/user"
-	_service "KeepAccount/service"
-	"KeepAccount/test/initialize"
+	"github.com/ZiRunHua/LeapLedger/global/constant"
+	"github.com/ZiRunHua/LeapLedger/global/db"
+	accountModel "github.com/ZiRunHua/LeapLedger/model/account"
+	categoryModel "github.com/ZiRunHua/LeapLedger/model/category"
+	userModel "github.com/ZiRunHua/LeapLedger/model/user"
+	_service "github.com/ZiRunHua/LeapLedger/service"
+	"github.com/ZiRunHua/LeapLedger/test/initialize"
 )
 
 var (

@@ -1,14 +1,14 @@
 package service
 
 import (
-	accountService "KeepAccount/service/account"
-	categoryService "KeepAccount/service/category"
-	commonService "KeepAccount/service/common"
-	productService "KeepAccount/service/product"
-	templateService "KeepAccount/service/template"
-	thirdpartyService "KeepAccount/service/thirdparty"
-	transactionService "KeepAccount/service/transaction"
-	userService "KeepAccount/service/user"
+	accountService "github.com/ZiRunHua/LeapLedger/service/account"
+	categoryService "github.com/ZiRunHua/LeapLedger/service/category"
+	commonService "github.com/ZiRunHua/LeapLedger/service/common"
+	productService "github.com/ZiRunHua/LeapLedger/service/product"
+	templateService "github.com/ZiRunHua/LeapLedger/service/template"
+	thirdpartyService "github.com/ZiRunHua/LeapLedger/service/thirdparty"
+	transactionService "github.com/ZiRunHua/LeapLedger/service/transaction"
+	userService "github.com/ZiRunHua/LeapLedger/service/user"
 )
 
 var GroupApp = new(Group)

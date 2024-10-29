@@ -9,18 +9,18 @@
 package bill
 
 import (
-	"KeepAccount/global/constant"
-	accountModel "KeepAccount/model/account"
-	productModel "KeepAccount/model/product"
-	transactionModel "KeepAccount/model/transaction"
-	"KeepAccount/util/log"
+	"github.com/ZiRunHua/LeapLedger/global/constant"
+	accountModel "github.com/ZiRunHua/LeapLedger/model/account"
+	productModel "github.com/ZiRunHua/LeapLedger/model/product"
+	transactionModel "github.com/ZiRunHua/LeapLedger/model/transaction"
+	"github.com/ZiRunHua/LeapLedger/util/log"
 	"go.uber.org/zap"
 	"strings"
 )
 
 import (
-	"KeepAccount/global/db"
 	"context"
+	"github.com/ZiRunHua/LeapLedger/global/db"
 	"github.com/pkg/errors"
 )
 

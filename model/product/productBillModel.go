@@ -1,9 +1,9 @@
 package productModel
 
 import (
-	"KeepAccount/global/constant"
-	commonModel "KeepAccount/model/common"
-	queryFunc "KeepAccount/model/common/query"
+	"github.com/ZiRunHua/LeapLedger/global/constant"
+	commonModel "github.com/ZiRunHua/LeapLedger/model/common"
+	queryFunc "github.com/ZiRunHua/LeapLedger/model/common/query"
 )
 
 type Bill struct {

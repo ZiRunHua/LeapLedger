@@ -1,17 +1,17 @@
 package initialize
 
 import (
-	"KeepAccount/global/constant"
-	"KeepAccount/global/db"
-	_ "KeepAccount/global/nats"
-	"KeepAccount/global/nats/manager"
-	_ "KeepAccount/initialize/database"
-	"KeepAccount/test/info"
+	"github.com/ZiRunHua/LeapLedger/global/constant"
+	"github.com/ZiRunHua/LeapLedger/global/db"
+	_ "github.com/ZiRunHua/LeapLedger/global/nats"
+	"github.com/ZiRunHua/LeapLedger/global/nats/manager"
+	_ "github.com/ZiRunHua/LeapLedger/initialize/database"
+	"github.com/ZiRunHua/LeapLedger/test/info"
 )
 import (
-	accountModel "KeepAccount/model/account"
-	categoryModel "KeepAccount/model/category"
-	userModel "KeepAccount/model/user"
+	accountModel "github.com/ZiRunHua/LeapLedger/model/account"
+	categoryModel "github.com/ZiRunHua/LeapLedger/model/category"
+	userModel "github.com/ZiRunHua/LeapLedger/model/user"
 )
 
 var (

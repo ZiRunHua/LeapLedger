@@ -1,8 +1,8 @@
 package accountModel
 
 import (
-	"KeepAccount/global"
 	"context"
+	"github.com/ZiRunHua/LeapLedger/global"
 	"time"
 
 	"gorm.io/gorm"

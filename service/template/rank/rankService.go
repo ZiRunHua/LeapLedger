@@ -1,9 +1,9 @@
 package tmplRank
 
 import (
-	"KeepAccount/global"
 	"context"
 	"fmt"
+	"github.com/ZiRunHua/LeapLedger/global"
 	"github.com/go-redis/redis/v8"
 	"strconv"
 	"sync"
@@ -92,8 +92,10 @@ func (r *Rank[memberType]) updateRank(ctx context.Context) (err error) {
 }
 
 func (r *Rank[memberType]) GetAll(ctx context.Context) ([]memberType, error) {
-	members, err := rdb.ZRevRangeByScoreWithScores(ctx, r.rankZsetKey,
-		&redis.ZRangeBy{Min: "-inf", Max: "+inf"}).Result()
+	members, err := rdb.ZRevRangeByScoreWithScores(
+		ctx, r.rankZsetKey,
+		&redis.ZRangeBy{Min: "-inf", Max: "+inf"},
+	).Result()
 	if err != nil {
 		return nil, err
 	}

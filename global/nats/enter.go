@@ -1,10 +1,10 @@
 package nats
 
 import (
-	"KeepAccount/global/db"
-	"KeepAccount/global/nats/manager"
 	"context"
 	"encoding/json"
+	"github.com/ZiRunHua/LeapLedger/global/db"
+	"github.com/ZiRunHua/LeapLedger/global/nats/manager"
 )
 
 type PayloadType interface{}

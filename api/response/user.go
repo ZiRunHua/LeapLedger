@@ -1,10 +1,10 @@
 package response
 
 import (
-	accountModel "KeepAccount/model/account"
-	userModel "KeepAccount/model/user"
-	"KeepAccount/util"
 	"errors"
+	accountModel "github.com/ZiRunHua/LeapLedger/model/account"
+	userModel "github.com/ZiRunHua/LeapLedger/model/user"
+	"github.com/ZiRunHua/LeapLedger/util"
 	"gorm.io/gorm"
 	"time"
 )

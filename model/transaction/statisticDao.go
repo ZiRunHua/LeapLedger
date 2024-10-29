@@ -1,10 +1,10 @@
 package transactionModel
 
 import (
-	"KeepAccount/global"
-	"KeepAccount/global/constant"
-	accountModel "KeepAccount/model/account"
 	"errors"
+	"github.com/ZiRunHua/LeapLedger/global"
+	"github.com/ZiRunHua/LeapLedger/global/constant"
+	accountModel "github.com/ZiRunHua/LeapLedger/model/account"
 	"gorm.io/gorm"
 	"time"
 )

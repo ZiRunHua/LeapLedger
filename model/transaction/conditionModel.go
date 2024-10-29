@@ -1,9 +1,9 @@
 package transactionModel
 
 import (
-	"KeepAccount/global/constant"
-	accountModel "KeepAccount/model/account"
-	"KeepAccount/util/timeTool"
+	"github.com/ZiRunHua/LeapLedger/global/constant"
+	accountModel "github.com/ZiRunHua/LeapLedger/model/account"
+	"github.com/ZiRunHua/LeapLedger/util/timeTool"
 	"gorm.io/gorm"
 	"time"
 )
@@ -159,8 +159,10 @@ func (s *StatisticCondition) addConditionToQuery(db *gorm.DB) *gorm.DB {
 	query := s.ForeignKeyCondition.addConditionToQuery(db)
 	switch true {
 	case !s.StartTime.IsZero() && !s.EndTime.IsZero():
-		query = query.Where("date BETWEEN ? AND ?", timeTool.ToDay(s.StartTime.In(s.getLocation())),
-			timeTool.ToDay(s.EndTime.In(s.getLocation())))
+		query = query.Where(
+			"date BETWEEN ? AND ?", timeTool.ToDay(s.StartTime.In(s.getLocation())),
+			timeTool.ToDay(s.EndTime.In(s.getLocation())),
+		)
 	case !s.StartTime.IsZero():
 		query = query.Where("date >=", timeTool.ToDay(s.StartTime.In(s.getLocation())))
 	case !s.EndTime.IsZero():

@@ -1,11 +1,11 @@
 package thirdparty
 
 import (
-	_ "KeepAccount/test/initialize"
+	_ "github.com/ZiRunHua/LeapLedger/test/initialize"
 )
 import (
-	_thirdpartyService "KeepAccount/service/thirdparty"
 	"context"
+	_thirdpartyService "github.com/ZiRunHua/LeapLedger/service/thirdparty"
 	"testing"
 )
 

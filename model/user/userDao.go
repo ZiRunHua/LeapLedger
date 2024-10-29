@@ -3,8 +3,8 @@ package userModel
 import (
 	"errors"
 
-	"KeepAccount/global"
-	"KeepAccount/global/constant"
+	"github.com/ZiRunHua/LeapLedger/global"
+	"github.com/ZiRunHua/LeapLedger/global/constant"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )

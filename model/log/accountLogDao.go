@@ -1,7 +1,7 @@
 package logModel
 
 import (
-	"KeepAccount/global"
+	"github.com/ZiRunHua/LeapLedger/global"
 	"gorm.io/gorm"
 )
 

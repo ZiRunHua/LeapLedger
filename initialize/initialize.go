@@ -5,8 +5,8 @@ import (
 	"os"
 	"time"
 
-	"KeepAccount/global/constant"
-	"KeepAccount/util"
+	"github.com/ZiRunHua/LeapLedger/global/constant"
+	"github.com/ZiRunHua/LeapLedger/util"
 
 	"github.com/go-co-op/gocron"
 	"github.com/nats-io/nats.go"

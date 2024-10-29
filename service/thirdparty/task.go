@@ -1,9 +1,9 @@
 package thirdpartyService
 
 import (
-	"KeepAccount/global/nats"
-	userModel "KeepAccount/model/user"
 	"context"
+	"github.com/ZiRunHua/LeapLedger/global/nats"
+	userModel "github.com/ZiRunHua/LeapLedger/model/user"
 )
 
 func init() {

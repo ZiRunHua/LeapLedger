@@ -1,10 +1,10 @@
 package transaction
 
 import (
-	_ "KeepAccount/test/initialize"
+	_ "github.com/ZiRunHua/LeapLedger/test/initialize"
 )
 import (
-	_service "KeepAccount/service"
+	_service "github.com/ZiRunHua/LeapLedger/service"
 )
 
 var (

@@ -1,9 +1,9 @@
 package userModel
 
 import (
-	"KeepAccount/global"
-	"KeepAccount/global/constant"
-	commonModel "KeepAccount/model/common"
+	"github.com/ZiRunHua/LeapLedger/global"
+	"github.com/ZiRunHua/LeapLedger/global/constant"
+	commonModel "github.com/ZiRunHua/LeapLedger/model/common"
 	"gorm.io/gorm"
 	"strings"
 	"time"

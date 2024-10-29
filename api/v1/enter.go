@@ -1,9 +1,9 @@
 package v1
 
 import (
-	"KeepAccount/api/response"
-	apiUtil "KeepAccount/api/util"
-	"KeepAccount/service"
+	"github.com/ZiRunHua/LeapLedger/api/response"
+	apiUtil "github.com/ZiRunHua/LeapLedger/api/util"
+	"github.com/ZiRunHua/LeapLedger/service"
 	"github.com/gin-gonic/gin"
 )
 

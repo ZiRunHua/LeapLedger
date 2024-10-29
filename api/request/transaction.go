@@ -1,8 +1,8 @@
 package request
 
 import (
-	"KeepAccount/global/constant"
-	transactionModel "KeepAccount/model/transaction"
+	"github.com/ZiRunHua/LeapLedger/global/constant"
+	transactionModel "github.com/ZiRunHua/LeapLedger/model/transaction"
 	"time"
 )
 

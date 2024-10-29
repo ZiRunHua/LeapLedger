@@ -1,8 +1,8 @@
 package lock
 
 import (
-	"KeepAccount/initialize"
 	"context"
+	"github.com/ZiRunHua/LeapLedger/initialize"
 	"github.com/go-redis/redis/v8"
 	"github.com/google/uuid"
 	"time"

@@ -6,9 +6,9 @@ import (
 	"strconv"
 	"time"
 
-	"KeepAccount/global"
-	"KeepAccount/global/constant"
-	utilJwt "KeepAccount/util/jwtTool"
+	"github.com/ZiRunHua/LeapLedger/global"
+	"github.com/ZiRunHua/LeapLedger/global/constant"
+	utilJwt "github.com/ZiRunHua/LeapLedger/util/jwtTool"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/pkg/errors"
 )

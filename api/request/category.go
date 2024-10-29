@@ -1,7 +1,7 @@
 package request
 
 import (
-	"KeepAccount/global/constant"
+	"github.com/ZiRunHua/LeapLedger/global/constant"
 )
 
 type CategoryOne struct {

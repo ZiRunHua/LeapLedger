@@ -4,7 +4,7 @@ import (
 	"context"
 	"strings"
 
-	"KeepAccount/global"
+	"github.com/ZiRunHua/LeapLedger/global"
 	"github.com/go-resty/resty/v2"
 )
 

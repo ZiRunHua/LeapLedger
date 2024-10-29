@@ -1,9 +1,9 @@
 package main
 
 import (
-	"KeepAccount/initialize"
-	_ "KeepAccount/initialize/database"
-	"KeepAccount/router"
+	"github.com/ZiRunHua/LeapLedger/initialize"
+	_ "github.com/ZiRunHua/LeapLedger/initialize/database"
+	"github.com/ZiRunHua/LeapLedger/router"
 )
 import (
 	"context"

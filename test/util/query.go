@@ -1,9 +1,9 @@
 package tUtil
 
 import (
-	"KeepAccount/global/constant"
-	"KeepAccount/global/db"
-	categoryModel "KeepAccount/model/category"
+	"github.com/ZiRunHua/LeapLedger/global/constant"
+	"github.com/ZiRunHua/LeapLedger/global/db"
+	categoryModel "github.com/ZiRunHua/LeapLedger/model/category"
 )
 
 type Query struct {

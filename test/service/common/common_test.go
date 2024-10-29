@@ -1,10 +1,10 @@
 package thirdparty
 
 import (
-	_ "KeepAccount/test/initialize"
+	_ "github.com/ZiRunHua/LeapLedger/test/initialize"
 )
 import (
-	_commonService "KeepAccount/service/common"
+	_commonService "github.com/ZiRunHua/LeapLedger/service/common"
 	"testing"
 )
 

@@ -1,11 +1,11 @@
 package productModel
 
 import (
-	"KeepAccount/global/constant"
-	"KeepAccount/global/cus"
-	"KeepAccount/global/db"
-	"KeepAccount/util/fileTool"
 	"context"
+	"github.com/ZiRunHua/LeapLedger/global/constant"
+	"github.com/ZiRunHua/LeapLedger/global/cus"
+	"github.com/ZiRunHua/LeapLedger/global/db"
+	"github.com/ZiRunHua/LeapLedger/util/fileTool"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
 	"os"
@@ -28,11 +28,13 @@ func init() {
 	if err != nil {
 		panic(err)
 	}
-	err = db.Transaction(context.Background(), func(ctx *cus.TxContext) error {
-		tx := ctx.GetDb()
-		tx = tx.Session(&gorm.Session{Logger: tx.Logger.LogMode(logger.Silent)})
-		return fileTool.ExecSqlFile(sqlFile, tx)
-	})
+	err = db.Transaction(
+		context.Background(), func(ctx *cus.TxContext) error {
+			tx := ctx.GetDb()
+			tx = tx.Session(&gorm.Session{Logger: tx.Logger.LogMode(logger.Silent)})
+			return fileTool.ExecSqlFile(sqlFile, tx)
+		},
+	)
 	if err != nil {
 		panic(err)
 	}

@@ -1,13 +1,13 @@
 package thirdpartyService
 
 import (
-	"KeepAccount/global"
-	"KeepAccount/global/constant"
-	userModel "KeepAccount/model/user"
-	commonService "KeepAccount/service/common"
-	"KeepAccount/util/rand"
 	"bytes"
 	"fmt"
+	"github.com/ZiRunHua/LeapLedger/global"
+	"github.com/ZiRunHua/LeapLedger/global/constant"
+	userModel "github.com/ZiRunHua/LeapLedger/model/user"
+	commonService "github.com/ZiRunHua/LeapLedger/service/common"
+	"github.com/ZiRunHua/LeapLedger/util/rand"
 	"github.com/pkg/errors"
 	"os"
 	"time"

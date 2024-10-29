@@ -1,7 +1,7 @@
 package commonModel
 
 import (
-	"KeepAccount/global"
+	"github.com/ZiRunHua/LeapLedger/global"
 	"github.com/pkg/errors"
 	"gorm.io/gorm"
 )

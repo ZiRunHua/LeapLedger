@@ -1,6 +1,6 @@
 package userModel
 
-import "KeepAccount/global/db"
+import "github.com/ZiRunHua/LeapLedger/global/db"
 
 func init() {
 	tables := []interface{}{

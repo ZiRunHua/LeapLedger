@@ -3,7 +3,7 @@ package initialize
 import (
 	"os"
 
-	"KeepAccount/global/constant"
+	"github.com/ZiRunHua/LeapLedger/global/constant"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )

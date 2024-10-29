@@ -1,12 +1,12 @@
 package bill
 
 import (
-	"KeepAccount/global/constant"
-	"KeepAccount/global/db"
-	accountModel "KeepAccount/model/account"
-	productModel "KeepAccount/model/product"
-	"KeepAccount/util/dataTool"
 	"context"
+	"github.com/ZiRunHua/LeapLedger/global/constant"
+	"github.com/ZiRunHua/LeapLedger/global/db"
+	accountModel "github.com/ZiRunHua/LeapLedger/model/account"
+	productModel "github.com/ZiRunHua/LeapLedger/model/product"
+	"github.com/ZiRunHua/LeapLedger/util/dataTool"
 	"github.com/pkg/errors"
 	"strings"
 	"time"
