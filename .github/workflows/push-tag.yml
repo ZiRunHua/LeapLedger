@@ -1,21 +1,21 @@
-name: CI
+name: Push Tag
 
 on:
-  workflow_dispatch:
   push:
-    branches: [ "main" ]
+    tags:
+      - '*'
 
 jobs:
-  test-and-update-docs:
-    uses: ./.github/workflows/common-test-and-update-docs.yml
+  create-release:
+    uses: ./.github/workflows/common-create-release.yml
     with:
-      ref: ${{ github.ref }}
+      draft: true
 
   push-image:
-    needs: test-and-update-docs
+    needs: create-release
     uses: ./.github/workflows/common-push-image.yml
     with:
-      tag: latest
+      tag: ${{ github.ref_name }}
     secrets:
       DOCKER_HUB_USERNAME: ${{ secrets.DOCKER_HUB_USERNAME }}
       DOCKER_HUB_ACCESS_TOKEN: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
