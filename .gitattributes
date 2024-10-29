@@ -1,0 +1,28 @@
+*.go whitespace=fix
+
+# Auto detect text files and perform LF normalization
+*        text=auto
+
+# Always perform LF normalization on Go source files and related text files
+*.go     text
+*.md     text
+*.yaml   text
+*.yml    text
+*.json   text
+*.sh     text
+*.txt    text
+*.xml    text
+
+# Make sure that these Windows files always have CRLF line endings in checkout
+*.bat    text eol=crlf
+*.ps1    text eol=crlf
+
+# Never perform LF normalization on these binary files
+*.zip    binary
+*.tar    binary
+*.gz     binary
+*.bz2    binary
+*.7z     binary
+*.rar    binary
+*.xls    binary
+*.xlsx   binary

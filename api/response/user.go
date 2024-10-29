@@ -1,35 +1,70 @@
 package response
 
 import (
-	accountModel "KeepAccount/model/account"
-	userModel "KeepAccount/model/user"
-	"KeepAccount/util"
+	"errors"
+	accountModel "github.com/ZiRunHua/LeapLedger/model/account"
+	userModel "github.com/ZiRunHua/LeapLedger/model/user"
+	"github.com/ZiRunHua/LeapLedger/util"
+	"gorm.io/gorm"
+	"time"
 )
 
 type Login struct {
 	Token               string
+	TokenExpirationTime time.Time
 	CurrentAccount      AccountDetail
 	CurrentShareAccount AccountDetail
 	User                UserOne
 }
 
+func (l *Login) SetDataFormClientInto(data userModel.UserClientBaseInfo) error {
+	var err error
+	accountDao := accountModel.NewDao()
+	// 当前客户端操作账本
+	if data.CurrentAccountId != 0 {
+		var account accountModel.Account
+		account, err = accountDao.SelectById(data.CurrentAccountId)
+		if err != nil {
+			return err
+		}
+		err = l.CurrentAccount.SetDataFromAccount(account)
+		if err != nil {
+			return err
+		}
+	}
+	// 当前客户端操作共享账本
+	if data.CurrentShareAccountId != 0 {
+		var accountUser accountModel.User
+		accountUser, err = accountDao.SelectUser(data.CurrentShareAccountId, data.UserId)
+		if err != nil && false == errors.Is(err, gorm.ErrRecordNotFound) {
+			return err
+		}
+		err = l.CurrentShareAccount.SetData(accountUser)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 type Register struct {
-	User  UserOne
-	Token string
+	User                UserOne
+	Token               string
+	TokenExpirationTime time.Time
 }
 
 type UserOne struct {
 	Id         uint
 	Username   string
 	Email      string
-	CreateTime int64
+	CreateTime time.Time
 }
 
 func (u *UserOne) SetData(data userModel.User) error {
 	u.Id = data.ID
 	u.Email = data.Email
 	u.Username = data.Username
-	u.CreateTime = data.CreatedAt.Unix()
+	u.CreateTime = data.CreatedAt
 	return nil
 }
 
@@ -68,7 +103,7 @@ type UserFriendInvitation struct {
 	Id         uint
 	Inviter    UserInfo
 	Invitee    UserInfo
-	CreateTime int64
+	CreateTime time.Time
 }
 
 type UserInfo struct {
@@ -86,11 +121,11 @@ func (u *UserInfo) SetMaskData(data userModel.UserInfo) {
 type UserCurrentClientInfo struct {
 	CurrentAccount      AccountDetail
 	CurrentShareAccount AccountDetail
-	LoginTime           int64
+	LoginTime           time.Time
 }
 
 func (u *UserCurrentClientInfo) SetData(info userModel.UserClientBaseInfo) error {
-	u.LoginTime = info.LoginTime.Unix()
+	u.LoginTime = info.LoginTime
 	var accountUser accountModel.User
 	var err error
 	if info.CurrentAccountId > 0 {

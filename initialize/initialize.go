@@ -1,35 +1,43 @@
 package initialize
 
 import (
-	"KeepAccount/util"
+	"context"
+	"os"
+	"time"
+
+	"github.com/ZiRunHua/LeapLedger/global/constant"
+	"github.com/ZiRunHua/LeapLedger/util"
+
+	"github.com/go-co-op/gocron"
+	"github.com/nats-io/nats.go"
 	"go.uber.org/zap"
+	"golang.org/x/sync/errgroup"
 	"gopkg.in/yaml.v3"
 	"gorm.io/gorm"
-	"os"
 )
 
 type _config struct {
-	Redis      _redis      `yaml:"Redis"`
-	Mysql      _mysql      `yaml:"Mysql"`
-	Nats       _nats       `yaml:"Nats"`
-	Logger     _logger     `yaml:"Logger"`
-	System     _system     `yaml:"System"`
-	Captcha    _captcha    `yaml:"Captcha"`
-	ThirdParty _thirdParty `yaml:"ThirdParty"`
+	Mode       constant.ServerMode `yaml:"Mode"`
+	Redis      _redis              `yaml:"Redis"`
+	Mysql      _mysql              `yaml:"Mysql"`
+	Nats       _nats               `yaml:"Nats"`
+	Scheduler  _scheduler          `yaml:"Scheduler"`
+	Logger     _logger             `yaml:"Logger"`
+	System     _system             `yaml:"System"`
+	Captcha    _captcha            `yaml:"Captcha"`
+	ThirdParty _thirdParty         `yaml:"ThirdParty"`
 }
 
 var (
 	Config        *_config
 	Cache         util.Cache
 	Db            *gorm.DB
+	Nats          *nats.Conn
+	Scheduler     *gocron.Scheduler
 	RequestLogger *zap.Logger
 	ErrorLogger   *zap.Logger
 	PanicLogger   *zap.Logger
 )
-
-type initializer interface {
-	do() error
-}
 
 func init() {
 	var err error
@@ -37,31 +45,30 @@ func init() {
 		Redis: _redis{}, Mysql: _mysql{}, Logger: _logger{}, System: _system{}, Captcha: _captcha{}, Nats: _nats{},
 		ThirdParty: _thirdParty{WeCom: _weCom{}},
 	}
+
 	if err = initConfig(); err != nil {
-		print("配置初始化失败 err: %v", err)
+		panic(err)
 	}
-	if err = Config.Logger.do(); err != nil {
-		print("初始化logger错误 err: %v", err)
-	}
-	if err = Config.Mysql.do(); err != nil {
-		print("初始化Mysql错误 err: %v", err)
-	}
-	if err = Config.Redis.do(); err != nil {
-		print("初始化Redis错误 err: %v", err)
-	}
-	if err = Config.Nats.do(); err != nil {
-		print("初始化nast错误 err: %v", err)
+
+	group, _ := errgroup.WithContext(context.TODO())
+	group.Go(Config.Logger.do)
+	group.Go(Config.Mysql.do)
+	group.Go(Config.Redis.do)
+	group.Go(Config.Nats.do)
+	group.Go(Config.Scheduler.do)
+	if err = group.Wait(); err != nil {
+		panic(err)
 	}
 }
 
-const _configDirectoryPath = ""
+const _configDirectoryPath = constant.WORK_PATH
 
 func initConfig() error {
 	configFileName := os.Getenv("CONFIG_FILE_NAME")
 	if len(configFileName) == 0 {
 		configFileName = "config.yaml"
 	}
-	configPath := _configDirectoryPath + configFileName
+	configPath := _configDirectoryPath + "/" + configFileName
 	yamlFile, err := os.ReadFile(configPath)
 	if err != nil {
 		return err
@@ -70,5 +77,21 @@ func initConfig() error {
 	if err != nil {
 		return err
 	}
+	return setConfigDefault()
+}
+func setConfigDefault() error {
+	if Config.System.LockMode == "" {
+		Config.System.LockMode = "redis"
+	}
 	return nil
+}
+func reconnection[T any](connect func() (T, error), retryTimes int) (result T, err error) {
+	defer func() {
+		if err != nil && retryTimes > 0 {
+			time.Sleep(time.Second * 3)
+			result, err = reconnection[T](connect, retryTimes-1)
+		}
+	}()
+	result, err = connect()
+	return
 }

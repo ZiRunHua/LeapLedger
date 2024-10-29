@@ -1,25 +1,21 @@
 package util
 
 import (
-	"KeepAccount/api/response"
-	accountModel "KeepAccount/model/account"
-	categoryModel "KeepAccount/model/category"
-	transactionModel "KeepAccount/model/transaction"
+	"github.com/ZiRunHua/LeapLedger/api/response"
+	"github.com/ZiRunHua/LeapLedger/global"
+	"github.com/ZiRunHua/LeapLedger/global/cus"
+	accountModel "github.com/ZiRunHua/LeapLedger/model/account"
+	categoryModel "github.com/ZiRunHua/LeapLedger/model/category"
+	transactionModel "github.com/ZiRunHua/LeapLedger/model/transaction"
 	"github.com/gin-gonic/gin"
-	"github.com/pkg/errors"
 )
-
-type _getModelByContextFunc interface {
-	// 获取交易从urlParam
-	GetTransByParam(ctx *gin.Context) (*transactionModel.Transaction, bool)
-}
 
 func (cf *contextFunc) GetTransByParam(ctx *gin.Context) (result transactionModel.Transaction, pass bool) {
 	id, ok := cf.GetParamId(ctx)
 	if false == ok {
-		response.FailToError(ctx, errors.New("error param id"))
 		return
 	}
+
 	trans := transactionModel.Transaction{}
 	if err := trans.SelectById(id); err != nil {
 		response.FailToError(ctx, err)
@@ -28,14 +24,25 @@ func (cf *contextFunc) GetTransByParam(ctx *gin.Context) (result transactionMode
 	if pass = CheckFunc.AccountBelong(trans.AccountId, ctx); false == pass {
 		return
 	}
+	accountId, exist := ctx.Get(string(cus.AccountId))
+	if exist && accountId != trans.AccountId {
+		response.FailToParameter(ctx, global.ErrAccountId)
+		return
+	}
 	return trans, true
+}
+
+func (cf *contextFunc) GetAccountAndCheckByParam(ctx *gin.Context) (
+	account accountModel.Account, accountUser accountModel.User, pass bool,
+) {
+	return cf.GetAccountByParam(ctx, true)
 }
 
 // GetAccountByParam 返回pass表示是否获取成功
 func (cf *contextFunc) GetAccountByParam(ctx *gin.Context, checkBelong bool) (
 	account accountModel.Account, accountUser accountModel.User, pass bool,
 ) {
-	id, ok := cf.GetUintParamByKey("id", ctx)
+	id, ok := cf.GetAccountIdByParam(ctx)
 	if false == ok {
 		return
 	}
@@ -64,7 +71,6 @@ func (cf *contextFunc) GetAccountUserByParam(ctx *gin.Context) (
 ) {
 	id, ok := cf.GetParamId(ctx)
 	if false == ok {
-		response.FailToError(ctx, errors.New("error param id"))
 		return
 	}
 	err := accountUser.SelectById(id)
@@ -83,7 +89,6 @@ func (cf *contextFunc) GetCategoryByParam(ctx *gin.Context) (
 ) {
 	id, ok := cf.GetUintParamByKey("id", ctx)
 	if false == ok {
-		response.FailToError(ctx, errors.New("error param id"))
 		return
 	}
 	var err error
@@ -92,8 +97,28 @@ func (cf *contextFunc) GetCategoryByParam(ctx *gin.Context) (
 		response.FailToError(ctx, err)
 		return
 	}
-	if pass = CheckFunc.AccountBelong(category.AccountId, ctx); false == pass {
+	if category.AccountId != cf.GetAccountId(ctx) {
+		response.FailToError(ctx, global.ErrAccountId)
 		return
 	}
 	return category, true
+}
+func (cf *contextFunc) GetCategoryFatherByParam(ctx *gin.Context) (
+	father categoryModel.Father, pass bool,
+) {
+	id, ok := cf.GetUintParamByKey("id", ctx)
+	if false == ok {
+		return
+	}
+	var err error
+	father, err = categoryModel.NewDao().SelectFatherById(id)
+	if err != nil {
+		response.FailToError(ctx, err)
+		return
+	}
+	if father.AccountId != cf.GetAccountId(ctx) {
+		response.FailToError(ctx, global.ErrAccountId)
+		return
+	}
+	return father, true
 }

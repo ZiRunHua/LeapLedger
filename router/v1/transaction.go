@@ -1,24 +1,31 @@
 package v1
 
 import (
-	v1 "KeepAccount/api/v1"
-	"github.com/gin-gonic/gin"
+	"github.com/ZiRunHua/LeapLedger/router/group"
 )
 
-type TransactionRouter struct{}
-
-func (c *TransactionRouter) InitTransactionRouter(Router *gin.RouterGroup) {
-	router := Router.Group("transaction")
-	baseApi := v1.ApiGroupApp.TransactionApi
+func init() {
+	// base path: /account/{accountId}/transaction
+	readRouter := group.AccountReader.Group("transaction")
+	editRouter := group.AccountOwnEditor.Group("transaction")
+	baseApi := apiApp.TransactionApi
 	{
-		router.GET("/:id", baseApi.GetOne)
-		router.POST("", baseApi.CreateOne)
-		router.PUT("/:id", baseApi.Update)
-		router.DELETE("/:id", baseApi.Delete)
-		router.GET("/list", baseApi.GetList)
-		router.GET("/total", baseApi.GetTotal)
-		router.GET("/month/statistic", baseApi.GetMonthStatistic)
-		router.GET("/day/statistic", baseApi.GetDayStatistic)
-		router.GET("/category/amount/rank", baseApi.GetCategoryAmountRank)
+		readRouter.GET("/:id", baseApi.GetOne)
+		editRouter.POST("", baseApi.CreateOne)
+		editRouter.PUT("/:id", baseApi.Update)
+		editRouter.DELETE("/:id", baseApi.Delete)
+
+		readRouter.GET("/list", baseApi.GetList)
+		readRouter.GET("/total", baseApi.GetTotal)
+		readRouter.GET("/month/statistic", baseApi.GetMonthStatistic)
+		readRouter.GET("/day/statistic", baseApi.GetDayStatistic)
+		readRouter.GET("/category/amount/rank", baseApi.GetCategoryAmountRank)
+		readRouter.GET("/amount/rank", baseApi.GetAmountRank)
+		// timing
+		editRouter.GET("/timing/list", baseApi.GetTimingList)
+		editRouter.POST("/timing", baseApi.CreateTiming)
+		editRouter.PUT("/timing/:id", baseApi.UpdateTiming)
+		editRouter.DELETE("/timing/:id", baseApi.DeleteTiming)
+		editRouter.PUT("/timing/:id/:operate", baseApi.HandleTiming)
 	}
 }

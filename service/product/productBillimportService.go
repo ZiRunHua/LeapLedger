@@ -1,58 +1,61 @@
 package productService
 
 import (
-	accountModel "KeepAccount/model/account"
-	productModel "KeepAccount/model/product"
-	"KeepAccount/service/product/bill"
-	"KeepAccount/util"
-	"gorm.io/gorm"
+	"context"
+	"io"
+
+	"github.com/ZiRunHua/LeapLedger/global/db"
+	accountModel "github.com/ZiRunHua/LeapLedger/model/account"
+	productModel "github.com/ZiRunHua/LeapLedger/model/product"
+	transactionModel "github.com/ZiRunHua/LeapLedger/model/transaction"
+	"github.com/ZiRunHua/LeapLedger/service/product/bill"
+	"github.com/ZiRunHua/LeapLedger/util/fileTool"
 )
 
-type ProductBillImport struct {
-	accountUser accountModel.User
-	account     accountModel.Account
-	product     productModel.Product
-	billReader  *bill.ReaderTemplate
+type BillFile struct {
+	fileName   string
+	fileReader io.Reader
 }
 
-func newProductBillImport(
-	accountUser accountModel.User, account accountModel.Account, product productModel.Product,
-) *ProductBillImport {
-	var currentBill bill.ReaderTemplate
-	//根据第三方产品设置当前账单的读取器
-	switch product.Key {
-	case productModel.AliPay:
-		aliPayReader := &bill.AliPayReader{ReaderTemplate: &currentBill}
-		currentBill = bill.ReaderTemplate{TransactionReader: aliPayReader}
-	case productModel.WeChatPay:
-		weChatPayReader := &bill.WeChatPayReader{ReaderTemplate: &currentBill}
-		currentBill = bill.ReaderTemplate{TransactionReader: weChatPayReader}
-	default:
-		panic("未开放该第三方账本导入功能")
-	}
-	return &ProductBillImport{
-		accountUser: accountUser,
-		account:     account,
-		product:     product,
-		billReader:  &currentBill,
-	}
+func (bf *BillFile) GetRowReader() (func(yield func([]string) bool), error) {
+	return fileTool.NewRowReader(
+		bf.fileReader,
+		fileTool.GetFileSuffix(bf.fileName),
+	)
 }
 
-func (pbiService *ProductBillImport) init() error {
-	var err error
-	err = pbiService.billReader.Init(&pbiService.account, &pbiService.product)
+func (proService *Product) GetNewBillFile(fileName string, fileReader io.Reader) BillFile {
+	return BillFile{fileName: fileName, fileReader: fileReader}
+}
+
+func (proService *Product) ProcessesBill(
+	file BillFile, product productModel.Product, accountUser accountModel.User,
+	handler func(transInfo transactionModel.Info, err error) error, ctx context.Context,
+) error {
+	rowReader, err := file.GetRowReader()
 	if err != nil {
 		return err
 	}
-	return nil
-}
-
-func (pbiService *ProductBillImport) doImport(file *util.FileWithSuffix, tx *gorm.DB) error {
-	if err := pbiService.billReader.ReaderTransFormFile(file); err != nil {
+	account, err := accountModel.NewDao(db.Get(ctx)).SelectById(accountUser.AccountId)
+	transReader, err := bill.NewReader(account, product, ctx)
+	if err != nil {
 		return err
 	}
-	_, err := transactionServer.CreateMultiple(
-		pbiService.accountUser, pbiService.account, pbiService.billReader.SuccessTransList, tx,
+
+	var (
+		transInfo transactionModel.Info
+		ignore    bool
 	)
-	return err
+	for row := range rowReader {
+		transInfo, ignore, err = transReader.ReaderTrans(row, ctx)
+		if ignore {
+			continue
+		}
+		transInfo.AccountId, transInfo.UserId = accountUser.AccountId, accountUser.UserId
+		err = handler(transInfo, err)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }

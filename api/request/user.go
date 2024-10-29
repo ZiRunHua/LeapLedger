@@ -1,9 +1,15 @@
 package request
 
 import (
-	"KeepAccount/global/constant"
-	userModel "KeepAccount/model/user"
+	"crypto/hmac"
+	"crypto/sha256"
+	"encoding/hex"
 	"errors"
+	"strings"
+
+	"github.com/ZiRunHua/LeapLedger/global"
+	"github.com/ZiRunHua/LeapLedger/global/constant"
+	userModel "github.com/ZiRunHua/LeapLedger/model/user"
 )
 
 type UserLogin struct {
@@ -47,6 +53,19 @@ type UserSendEmail struct {
 
 type UserHome struct {
 	AccountId uint
+}
+
+type TourApply struct {
+	DeviceNumber string
+	Key          string
+	Sign         string
+}
+
+func (t *TourApply) CheckSign() bool {
+	h := hmac.New(sha256.New, []byte(global.Config.System.ClientSignKey))
+	h.Write([]byte(t.DeviceNumber + t.Key))
+	s := hex.EncodeToString(h.Sum(nil))
+	return strings.Compare(t.Sign, s) == 0
 }
 
 type TransactionShareConfigName string

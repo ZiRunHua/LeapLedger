@@ -1,10 +1,12 @@
 package userModel
 
 import (
-	"KeepAccount/global"
-	"KeepAccount/global/constant"
 	"errors"
+
+	"github.com/ZiRunHua/LeapLedger/global"
+	"github.com/ZiRunHua/LeapLedger/global/constant"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 type UserDao struct {
@@ -66,6 +68,17 @@ func (u *UserDao) SelectById(id uint, args ...interface{}) (User, error) {
 	return user, err
 }
 
+func (u *UserDao) CheckEmail(email string) error {
+	err := u.db.Where("email = ?", email).Take(&User{}).Error
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil
+	} else if err == nil {
+		return errors.New("邮箱已存在")
+	} else {
+		return err
+	}
+}
+
 func (u *UserDao) SelectUserInfoById(id uint) (result UserInfo, err error) {
 	err = u.db.Select("id", "username", "email").Where("id = ?", id).Model(&User{}).First(&result).Error
 	return result, err
@@ -73,7 +86,7 @@ func (u *UserDao) SelectUserInfoById(id uint) (result UserInfo, err error) {
 
 func (u *UserDao) PluckNameById(id uint) (string, error) {
 	var name string
-	err := u.db.Model(&User{}).Where("Id = ?", id).Pluck("name", &name).Error
+	err := u.db.Model(&User{}).Where("Id = ?", id).Pluck("username", &name).Error
 	return name, err
 }
 
@@ -81,6 +94,13 @@ func (u *UserDao) SelectByEmail(email string) (User, error) {
 	user := User{}
 	err := u.db.Where("email = ?", email).First(&user).Error
 	return user, err
+}
+
+func (u *UserDao) SelectByDeviceNumber(client constant.Client, deviceNumber string) (
+	clientBaseInfo UserClientBaseInfo,
+	err error) {
+	err = u.db.Model(GetUserClientModel(client)).Where("device_number = ?", deviceNumber).First(&clientBaseInfo).Error
+	return
 }
 
 type Condition struct {
@@ -115,9 +135,6 @@ func (u *UserDao) SelectClientInfoByUserAndAccount(
 }
 
 func (u *UserDao) SelectUserClientBaseInfo(userId uint, client constant.Client) (result UserClientBaseInfo, err error) {
-	if err != nil {
-		return
-	}
 	err = u.db.Model(GetUserClientModel(client)).First(&result, userId).Error
 	if err != nil {
 		return
@@ -125,10 +142,13 @@ func (u *UserDao) SelectUserClientBaseInfo(userId uint, client constant.Client) 
 	return
 }
 
+func (u *UserDao) SelectUserClient(userId uint, client constant.Client) (Client, error) {
+	clientModel := GetUserClientModel(client)
+	err := u.db.Model(clientModel).First(clientModel, userId).Error
+	return clientModel, err
+}
+
 func (u *UserDao) UpdateUserClientBaseInfo(userId uint, client constant.Client) (result UserClientBaseInfo, err error) {
-	if err != nil {
-		return
-	}
 	err = u.db.Model(GetUserClientModel(client)).First(&result, userId).Error
 	if err != nil {
 		return
@@ -194,4 +214,28 @@ func (u *UserDao) AddFriend(userId uint, friendId uint, add AddMode) (mapping Fr
 func (u *UserDao) SelectFriendList(userId uint) (result []Friend, err error) {
 	err = u.db.Model(&Friend{}).Where("user_id = ?", userId).Find(&result).Error
 	return
+}
+
+func (u *UserDao) SelectTour(userId uint) (Tour, error) {
+	var tour Tour
+	return tour, u.db.Where("user_id = ?", userId).First(&tour).Error
+}
+
+func (u *UserDao) CreateTour(user User) (Tour, error) {
+	tour := Tour{
+		UserId: user.ID,
+		Status: false,
+	}
+	err := u.db.Create(&tour).Error
+	return tour, err
+}
+
+func (u *UserDao) SelectByUnusedTour() (tour Tour, err error) {
+	err = u.db.Where("status = false").Clauses(
+		clause.Locking{
+			Strength: clause.LockingStrengthUpdate,
+			Options:  clause.LockingOptionsSkipLocked,
+		},
+	).First(&tour).Error
+	return tour, err
 }

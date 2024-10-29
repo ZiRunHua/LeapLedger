@@ -1,25 +1,22 @@
 package userModel
 
 import (
-	"KeepAccount/global"
-	"KeepAccount/global/constant"
-	commonModel "KeepAccount/model/common"
+	"github.com/ZiRunHua/LeapLedger/global"
+	"github.com/ZiRunHua/LeapLedger/global/constant"
+	commonModel "github.com/ZiRunHua/LeapLedger/model/common"
 	"gorm.io/gorm"
+	"time"
 )
 
 type Log struct {
-	gorm.Model
-	UserId uint                `gorm:"comment:用户id;not null"`
-	Action constant.UserAction `gorm:"comment:操作;not null;size:32"`
-	Remark string              `gorm:"comment:备注;not null;size:255"`
+	ID        uint                `gorm:"primarykey"`
+	UserId    uint                `gorm:"comment:用户id;not null"`
+	Action    constant.UserAction `gorm:"comment:操作;not null;size:32"`
+	Remark    string              `gorm:"comment:备注;not null;size:255"`
+	CreatedAt time.Time           `gorm:"type:TIMESTAMP"`
+	UpdatedAt time.Time           `gorm:"type:TIMESTAMP"`
+	DeletedAt gorm.DeletedAt      `gorm:"index;type:TIMESTAMP"`
 	commonModel.BaseModel
-}
-
-func init() {
-	err := global.GvaDb.AutoMigrate(&Log{})
-	if err != nil {
-		panic(err)
-	}
 }
 
 func (l *Log) TableName() string {

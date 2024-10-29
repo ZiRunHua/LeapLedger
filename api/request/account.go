@@ -1,12 +1,13 @@
 package request
 
-import accountModel "KeepAccount/model/account"
+import accountModel "github.com/ZiRunHua/LeapLedger/model/account"
 
 // AccountCreateOne 账本新建
 type AccountCreateOne struct {
-	Name string            `binding:"required"`
-	Icon string            `binding:"required"`
-	Type accountModel.Type `binding:"required"`
+	Name     string            `binding:"required"`
+	Icon     string            `binding:"required"`
+	Location string            `binding:"required"`
+	Type     accountModel.Type `binding:"required"`
 }
 
 // AccountUpdateOne 账本修改
@@ -62,4 +63,8 @@ func (a *AccountUpdateUser) GetUpdateData() accountModel.UserUpdateData {
 	return accountModel.UserUpdateData{
 		Permission: a.Role.ToUserPermission(),
 	}
+}
+
+type AccountUserConfigFlagUpdate struct {
+	Status bool
 }

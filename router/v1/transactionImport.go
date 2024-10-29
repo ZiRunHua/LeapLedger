@@ -1,21 +1,23 @@
 package v1
 
 import (
-	v1 "KeepAccount/api/v1"
-	"github.com/gin-gonic/gin"
+	"github.com/ZiRunHua/LeapLedger/router/group"
+	"github.com/ZiRunHua/LeapLedger/router/websocket"
 )
 
-type TransactionImportRouter struct{}
-
-func (a *TransactionImportRouter) InitTransactionImportRouter(Router *gin.RouterGroup) {
-	router := Router.Group("transaction/import")
-	baseApi := v1.ApiGroupApp.ProductApi
+func init() {
+	// base path: /product
+	router := group.Private.Group("product")
+	// base path: /account/{accountId}/product
+	accountRouter := group.Account.Group("product")
+	editRouter := group.AccountCreator.Group("product")
+	baseApi := apiApp.ProductApi
 	{
-		router.GET("/product/list", baseApi.GetList)
-		router.GET("/product/:key/transaction/category", baseApi.GetTransactionCategory)
-		router.GET("/product/category/mapping/tree", baseApi.GetMappingTree)
-		router.POST("/product/transaction/category/:id/mapping", baseApi.MappingTransactionCategory)
-		router.DELETE("/product/transaction/category/:id/mapping", baseApi.DeleteTransactionCategoryMapping)
-		router.POST("/product/:key/bill/import", baseApi.ImportProductBill)
+		router.GET("/list", baseApi.GetList)
+		router.GET("/:key/transCategory", baseApi.GetTransactionCategory)
+		accountRouter.GET("/:key/transCategory/mapping/tree", baseApi.GetMappingTree)
+		editRouter.POST("/transCategory/:id/mapping", baseApi.MappingTransactionCategory)
+		editRouter.DELETE("/transCategory/:id/mapping", baseApi.DeleteTransactionCategoryMapping)
+		editRouter.GET("/:key/bill/import", websocket.Use(baseApi.ImportProductBill))
 	}
 }

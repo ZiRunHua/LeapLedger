@@ -1,10 +1,9 @@
 package userModel
 
 import (
-	"KeepAccount/global"
-	"KeepAccount/global/constant"
-	commonModel "KeepAccount/model/common"
-	"errors"
+	"github.com/ZiRunHua/LeapLedger/global"
+	"github.com/ZiRunHua/LeapLedger/global/constant"
+	commonModel "github.com/ZiRunHua/LeapLedger/model/common"
 	"gorm.io/gorm"
 	"strings"
 	"time"
@@ -25,20 +24,34 @@ type Client interface {
 	GetByUser(User) error
 	CheckUserAgent(userAgent string) bool
 	InitByUser(User, *gorm.DB) error
+	GetUserId() uint
+	IsCurrentAccount(accountId uint) bool
+	IsCurrentShareAccount(accountId uint) bool
 }
 
 type UserClientBaseInfo struct {
-	UserId                uint `gorm:"primaryKey"`
+	UserId                uint `gorm:"primaryKey;autoIncrement:false"`
 	CurrentAccountId      uint
 	CurrentShareAccountId uint
-	LoginTime             time.Time
+	LoginTime             time.Time `gorm:"type:TIMESTAMP"`
 }
 
-func (u *UserClientBaseInfo) GetByUser(user User) error {
+func (uci *UserClientBaseInfo) GetUserId() uint {
+	return uci.UserId
+}
+func (uci *UserClientBaseInfo) IsCurrentAccount(accountId uint) bool {
+	return uci.CurrentAccountId == accountId
+}
+
+func (uci *UserClientBaseInfo) IsCurrentShareAccount(accountId uint) bool {
+	return uci.CurrentShareAccountId == accountId
+}
+
+func (u *UserClientBaseInfo) GetByUser(User) error {
 	panic("implement me")
 }
 
-func (u *UserClientBaseInfo) CheckUserAgent(userAgent string) bool {
+func (u *UserClientBaseInfo) CheckUserAgent(string) bool {
 	panic("implement me")
 }
 
@@ -49,12 +62,14 @@ type UserClientWeb struct {
 }
 type UserClientAndroid struct {
 	UserClientBaseInfo
-	Version string
+	Version      string
+	DeviceNumber string `gorm:"uniqueIndex;default:null;"`
 	commonModel.BaseModel
 }
 type UserClientIos struct {
 	UserClientBaseInfo
-	Version string
+	Version      string
+	DeviceNumber string `gorm:"uniqueIndex;default:null;"`
 	commonModel.BaseModel
 }
 
@@ -118,50 +133,4 @@ func GetUserClientModel(client constant.Client) Client {
 	default:
 		panic("unknown client")
 	}
-}
-
-var ErrClientNotFound = errors.New("client not found")
-
-func GetUserClientBaseInfo(client Client) *UserClientBaseInfo {
-	switch client.(type) {
-	case *UserClientWeb:
-		clientWeb := client.(*UserClientWeb)
-		return &UserClientBaseInfo{
-			UserId:           clientWeb.UserId,
-			CurrentAccountId: clientWeb.CurrentAccountId,
-			LoginTime:        clientWeb.LoginTime,
-		}
-	case *UserClientAndroid:
-		clientAndroid := client.(*UserClientAndroid)
-		return &UserClientBaseInfo{
-			UserId:           clientAndroid.UserId,
-			CurrentAccountId: clientAndroid.CurrentAccountId,
-			LoginTime:        clientAndroid.LoginTime,
-		}
-	case *UserClientIos:
-		clientIos := client.(*UserClientIos)
-		return &UserClientBaseInfo{
-			UserId:           clientIos.UserId,
-			CurrentAccountId: clientIos.CurrentAccountId,
-			LoginTime:        clientIos.LoginTime,
-		}
-	}
-	panic(ErrClientNotFound)
-}
-
-type UserClientDbFunc func(db *gorm.DB) error
-
-func HandleUserClient(client Client, handleFunc UserClientDbFunc, tx *gorm.DB) error {
-	switch client.(type) {
-	case *UserClientWeb:
-		clientWeb := client.(*UserClientWeb)
-		return handleFunc(tx.Model(clientWeb))
-	case *UserClientAndroid:
-		clientAndroid := client.(*UserClientAndroid)
-		return handleFunc(tx.Model(clientAndroid))
-	case *UserClientIos:
-		clientIos := client.(*UserClientIos)
-		return handleFunc(tx.Model(clientIos))
-	}
-	return nil
 }

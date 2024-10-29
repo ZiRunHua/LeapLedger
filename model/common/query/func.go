@@ -1,8 +1,9 @@
 package query
 
 import (
-	"KeepAccount/global"
-	commonModel "KeepAccount/model/common"
+	"github.com/ZiRunHua/LeapLedger/global"
+	commonModel "github.com/ZiRunHua/LeapLedger/model/common"
+
 	"github.com/pkg/errors"
 	"gorm.io/gorm"
 )
@@ -21,7 +22,7 @@ func FirstByField[T commonModel.Model](field string, value interface{}) (T, erro
 
 func Exist[T commonModel.Model](query interface{}, args ...interface{}) (bool, error) {
 	var result T
-	err := global.GvaDb.Where(query, args...).Take(&result).Error
+	err := global.GvaDb.Where(query, args...).First(&result).Error
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		return false, nil
 	} else if err == nil {

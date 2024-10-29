@@ -1,15 +1,15 @@
 package productModel
 
 import (
-	"KeepAccount/global"
-	commonModel "KeepAccount/model/common"
+	"github.com/ZiRunHua/LeapLedger/global"
+	commonModel "github.com/ZiRunHua/LeapLedger/model/common"
 )
 
 type BillHeader struct {
 	ID         uint
-	ProductKey string
+	ProductKey string `gorm:"not null;uniqueIndex:product_header_type,priority:1"`
 	Name       string
-	Type       BillHeaderType
+	Type       BillHeaderType `gorm:"not null;uniqueIndex:product_header_type,priority:2"`
 	commonModel.BaseModel
 }
 type BillHeaderType string

@@ -1,11 +1,11 @@
 package email
 
 import (
-	"KeepAccount/global"
 	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/ZiRunHua/LeapLedger/global"
 	"io"
 	"net/http"
 )
@@ -21,8 +21,6 @@ type weComRequestUrl struct {
 	sendEmail string
 }
 
-func (w *WeCom) email() {}
-
 func (w *WeCom) init() {
 	w.corpId = global.Config.ThirdParty.WeCom.CorpId
 	w.corpSecret = global.Config.ThirdParty.WeCom.CorpSecret
@@ -35,7 +33,7 @@ func (w *WeCom) init() {
 		"https://qyapi.weixin.qq.com/cgi-bin/gettoken?corpid=%s&corpsecret=%s", w.corpId, w.corpSecret,
 	)
 	if err := w.getToken(); err != nil {
-		print(fmt.Sprint("初始化WoCom邮箱服务失败 err:%v", err))
+		print(fmt.Sprintf("初始化WoCom邮箱服务失败 err:%v", err))
 	}
 }
 

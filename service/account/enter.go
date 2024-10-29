@@ -1,14 +1,18 @@
 package accountService
 
 import (
-	log "KeepAccount/service/log"
+	log "github.com/ZiRunHua/LeapLedger/service/log"
+	userService "github.com/ZiRunHua/LeapLedger/service/user"
 )
 
-var ServiceGroupApp = &Group{}
+var GroupApp = &Group{}
 
 type Group struct {
-	Base  base
+	base
 	Share share
 }
 
-var logServer = log.Log
+var (
+	logServer  = log.Log
+	userServer = userService.GroupApp
+)

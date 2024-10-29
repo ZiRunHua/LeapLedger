@@ -1,23 +1,21 @@
 package productModel
 
 import (
-	"KeepAccount/global"
-	commonModel "KeepAccount/model/common"
+	"github.com/ZiRunHua/LeapLedger/global"
+	commonModel "github.com/ZiRunHua/LeapLedger/model/common"
 )
 
 type Product struct {
-	Key    KeyValue `gorm:"primary_key;column:key"`
-	Name   string   `gorm:"column:name;comment:'名称'"`
-	Hide   uint8    `gorm:"column:hide;default:0;comment:'隐藏标识'"`
-	Weight int      `gorm:"column:weight;comment:'权重'"`
+	Key    Key    `gorm:"primary_key"`
+	Name   string `gorm:"comment:'名称'"`
+	Hide   uint8  `gorm:"default:0;comment:'隐藏标识'"`
+	Weight int    `gorm:"default:0;comment:'权重'"`
 	commonModel.BaseModel
 }
 
-const index = "key"
+type Key string
 
-type KeyValue string
-
-const AliPay, WeChatPay KeyValue = "AliPay", "WeChatPay"
+const AliPay, WeChatPay Key = "AliPay", "WeChatPay"
 
 func (p *Product) TableName() string {
 	return "product"
@@ -27,7 +25,7 @@ func (p *Product) IsEmpty() bool {
 	return p == nil || p.Key == ""
 }
 
-func (p *Product) SelectByKey(key KeyValue) (result Product, err error) {
+func (p *Product) SelectByKey(key Key) (result Product, err error) {
 	err = global.GvaDb.Where("key = ?", key).First(&result).Error
 	return
 }

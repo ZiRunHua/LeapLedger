@@ -1,0 +1,21 @@
+name: Develop CI
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ "develop" ]
+
+jobs:
+  test-and-update-docs:
+    uses: ./.github/workflows/common-test-and-update-docs.yml
+    with:
+      ref: ${{ github.ref }}
+
+  push-image:
+    needs: test-and-update-docs
+    uses: ./.github/workflows/common-push-image.yml
+    with:
+      tag: ${{ github.ref_name }}
+    secrets:
+      DOCKER_HUB_USERNAME: ${{ secrets.DOCKER_HUB_USERNAME }}
+      DOCKER_HUB_ACCESS_TOKEN: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}

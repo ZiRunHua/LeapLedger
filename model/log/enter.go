@@ -1,28 +1,20 @@
 package logModel
 
 import (
-	"KeepAccount/global"
-	"KeepAccount/global/constant"
+	"github.com/ZiRunHua/LeapLedger/global/constant"
+	"github.com/ZiRunHua/LeapLedger/global/db"
 	"gorm.io/gorm"
 )
 
 func init() {
-	tables := []interface{}{&AccountLogMapping{}, &AccountMappingLog{}}
-	var err error
-	for _, table := range tables {
-		err = global.GvaDb.AutoMigrate(table)
-		if err != nil {
-			panic(err)
-		}
+	tables := []interface{}{
+		AccountMappingLog{}, AccountLogMapping{},
+	}
+	err := db.InitDb.AutoMigrate(tables...)
+	if err != nil {
+		panic(err)
 	}
 }
-
-type dao struct {
-}
-
-var (
-	Dao = &dao{}
-)
 
 /*账本*/
 type AccountLog[T AccountLogDataRecordable] struct {

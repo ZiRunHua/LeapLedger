@@ -1,44 +1,34 @@
 package main
 
 import (
-	"KeepAccount/global"
-	userModel "KeepAccount/model/user"
-	userService "KeepAccount/service/user"
-	"crypto/sha256"
-	"encoding/hex"
+	"context"
 	"fmt"
-	"gorm.io/gorm"
-	"strconv"
-	"time"
+
+	userModel "github.com/ZiRunHua/LeapLedger/model/user"
+	userService "github.com/ZiRunHua/LeapLedger/service/user"
+	"github.com/ZiRunHua/LeapLedger/util"
 )
 
 func main() {
-	create()
+	email := GetInput("email:")
+	password := GetInput("password:")
+	username := GetInput("username:")
+	create(email, password, username)
 }
-func create() {
-	email := strconv.FormatInt(time.Now().UnixNano()%1e9, 10) + "@gmail.com"
-	password := "1999123456"
-	username := "test" + strconv.FormatInt(time.Now().UnixNano()%1e5, 10)
-	bytes := []byte(email + password)
-	hash := sha256.Sum256(bytes)
-	password = hex.EncodeToString(hash[:])
+func create(email, password, username string) {
 	addData := userModel.AddData{
 		Email:    email,
-		Password: password,
+		Password: util.ClientPasswordHash(email, password),
 		Username: username,
 	}
-	var user userModel.User
-	err := global.GvaDb.Transaction(
-		func(tx *gorm.DB) error {
-			var err error
-			user, err = userService.GroupApp.Base.Register(addData, tx)
-			return err
-		},
+	user, err := userService.GroupApp.Register(
+		addData, context.Background(),
+		*userService.GroupApp.NewRegisterOption().WithSendEmail(false),
 	)
 	if err != nil {
 		panic(err)
 	}
-	fmt.Println(user.Email, user.Username, password)
+	fmt.Println("create success:", user.Email, user.Username, password)
 }
 
 func GetInput(tip string) (userInput string) {

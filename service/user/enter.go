@@ -1,7 +1,7 @@
 package userService
 
 type Group struct {
-	Base   User
+	User
 	Friend Friend
 }
 
