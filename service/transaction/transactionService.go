@@ -80,7 +80,9 @@ func (txnService *Transaction) Update(
 			if oldTrans.UpdatedAt.Add(time.Second * 3).After(time.Now()) {
 				return errors.WithStack(global.ErrFrequentOperation)
 			}
-			err = tx.Select("income_expense", "category_id", "amount", "remark", "trade_time").Updates(trans).Error
+			err = tx.Model(&trans).Select(
+				"income_expense", "category_id", "amount", "remark", "trade_time",
+			).Updates(trans).Error
 			if err != nil {
 				return errors.WithStack(err)
 			}
