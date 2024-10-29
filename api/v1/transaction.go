@@ -1,7 +1,6 @@
 package v1
 
 import (
-	"context"
 	"errors"
 	"time"
 
@@ -49,10 +48,9 @@ func (t *TransactionApi) GetOne(ctx *gin.Context) {
 //	@Accept		json
 //	@Produce	json
 //	@Param		accountId	path		int								true	"Account ID"
-//	@Param		id			path		int								true	"Transaction ID"
 //	@Param		body		body		request.TransactionCreateOne	true	"transaction data"
 //	@Success	200			{object}	response.Data{Data=response.TransactionDetail}
-//	@Router		/account/{accountId}/transaction/{id} [post]
+//	@Router		/account/{accountId}/transaction [post]
 func (t *TransactionApi) CreateOne(ctx *gin.Context) {
 	var requestData request.TransactionCreateOne
 	if err := ctx.ShouldBindJSON(&requestData); err != nil {
@@ -95,7 +93,7 @@ func (t *TransactionApi) CreateOne(ctx *gin.Context) {
 //	@Produce	json
 //	@Param		accountId	path		int								true	"Account ID"
 //	@Param		id			path		int								true	"Transaction ID"
-//	@Param		body		body		request.TransactionCreateOne	true	"Transaction data"
+//	@Param		body		body		request.TransactionUpdateOne	true	"Transaction data"
 //	@Success	200			{object}	response.Data{Data=response.TransactionDetail}
 //	@Router		/account/{accountId}/transaction/{id} [put]
 func (t *TransactionApi) Update(ctx *gin.Context) {
@@ -108,29 +106,27 @@ func (t *TransactionApi) Update(ctx *gin.Context) {
 	if false == ok {
 		return
 	}
-	transaction := transactionModel.Transaction{
-		Info: transactionModel.Info{
-			UserId:        oldTrans.UserId,
-			AccountId:     requestData.AccountId,
-			CategoryId:    requestData.CategoryId,
-			IncomeExpense: requestData.IncomeExpense,
-			Amount:        requestData.Amount,
-			Remark:        requestData.Remark,
-			TradeTime:     requestData.TradeTime,
-		},
+	trans := oldTrans
+	trans.Info = transactionModel.Info{
+		UserId:        oldTrans.UserId,
+		AccountId:     requestData.AccountId,
+		CategoryId:    requestData.CategoryId,
+		IncomeExpense: requestData.IncomeExpense,
+		Amount:        requestData.Amount,
+		Remark:        requestData.Remark,
+		TradeTime:     requestData.TradeTime,
 	}
-	transaction.ID = oldTrans.ID
-	option, err := transactionService.NewOptionFormConfig(transaction.Info, ctx)
+	option, err := transactionService.NewOptionFormConfig(trans.Info, ctx)
 	if responseError(err, ctx) {
 		return
 	}
-	err = transactionService.Update(transaction, contextFunc.GetAccountUser(ctx), option, ctx)
+	err = transactionService.Update(trans, contextFunc.GetAccountUser(ctx), option, ctx)
 	if responseError(err, ctx) {
 		return
 	}
 
 	var responseData response.TransactionDetail
-	if err = responseData.SetData(transaction, nil); responseError(err, ctx) {
+	if err = responseData.SetData(trans, nil); responseError(err, ctx) {
 		return
 	}
 	response.OkWithData(responseData, ctx)
@@ -535,13 +531,12 @@ func (t *TransactionApi) UpdateTiming(ctx *gin.Context) {
 	}
 	requestData.Trans.AccountId = contextFunc.GetAccountId(ctx)
 	timing := requestData.GetTimingModel()
-	timing.ID = contextFunc.GetId(ctx)
+	timing.ID, timing.Close = contextFunc.GetId(ctx), false
 	// handle
 	var err error
 	err = db.Transaction(
 		ctx, func(ctx *cus.TxContext) error {
-			tx := ctx.GetDb()
-			timing, err = transactionService.Timing.UpdateTiming(timing, context.WithValue(ctx, cus.Db, tx))
+			timing, err = transactionService.Timing.UpdateTiming(timing, ctx)
 			return err
 		},
 	)
