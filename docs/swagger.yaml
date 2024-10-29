@@ -429,6 +429,23 @@ definitions:
     required:
     - AccountId
     type: object
+  request.TransactionUpdateOne:
+    properties:
+      AccountId:
+        type: integer
+      Amount:
+        type: integer
+      CategoryId:
+        type: integer
+      IncomeExpense:
+        $ref: '#/definitions/IncomeExpense'
+      Remark:
+        type: string
+      TradeTime:
+        type: string
+      UserId:
+        type: integer
+    type: object
   request.UpdateAccountMapping:
     properties:
       RelatedAccountId:
@@ -1863,6 +1880,36 @@ paths:
             $ref: '#/definitions/NoContent'
       tags:
       - Product/TransCategory/Mapping
+  /account/{accountId}/transaction:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Account ID
+        in: path
+        name: accountId
+        required: true
+        type: integer
+      - description: transaction data
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/request.TransactionCreateOne'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/Response'
+            - properties:
+                Data:
+                  $ref: '#/definitions/response.TransactionDetail'
+              type: object
+      tags:
+      - Transaction
   /account/{accountId}/transaction/{id}:
     delete:
       consumes:
@@ -1915,40 +1962,6 @@ paths:
               type: object
       tags:
       - Transaction
-    post:
-      consumes:
-      - application/json
-      parameters:
-      - description: Account ID
-        in: path
-        name: accountId
-        required: true
-        type: integer
-      - description: Transaction ID
-        in: path
-        name: id
-        required: true
-        type: integer
-      - description: transaction data
-        in: body
-        name: body
-        required: true
-        schema:
-          $ref: '#/definitions/request.TransactionCreateOne'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            allOf:
-            - $ref: '#/definitions/Response'
-            - properties:
-                Data:
-                  $ref: '#/definitions/response.TransactionDetail'
-              type: object
-      tags:
-      - Transaction
     put:
       consumes:
       - application/json
@@ -1968,7 +1981,7 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/request.TransactionCreateOne'
+          $ref: '#/definitions/request.TransactionUpdateOne'
       produces:
       - application/json
       responses:
