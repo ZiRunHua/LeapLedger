@@ -1,22 +1,23 @@
 package nats
 
 import (
+	"context"
+	"errors"
+	"runtime/debug"
+
 	"KeepAccount/global/cus"
 	"KeepAccount/global/db"
 	"KeepAccount/global/nats/manager"
-	"context"
-	"errors"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
-	"runtime/debug"
 )
 
 type outbox struct {
 	Id       uint
 	ExecType outboxType
 	Type     string
-	Payload  []byte
-	FailErr  string
+	Payload  []byte `gorm:"type:TEXT"`
+	FailErr  string `gorm:"type:TEXT"`
 	gorm.Model
 }
 type outboxType string
