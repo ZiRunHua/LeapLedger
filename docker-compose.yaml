@@ -2,14 +2,16 @@ version: '3.3'
 services:
   leap-ledger-server:
     container_name: leap-ledger-server
-    image: xiaozirun/leap-ledger:latest
+    image: xiaozirun/leap-ledger:${SERVICE_VERSION:-latest}
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.build
     ports:
       - "8080:8080"
       - "2345:2345"
     volumes:
       - ./log:/go/LeapLedger/log
       - ./docs:/go/LeapLedger/docs
-      - ./docker/test:/go/LeapLedger/docker/test
     networks:
       - leap-ledger-network
     depends_on:

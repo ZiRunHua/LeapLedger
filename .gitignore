@@ -15,11 +15,13 @@ runtime
 
 docker/*
 !docker/redis.conf
-!mysql.cnf
+!docker/mysql.cnf
 
 !docker/Dockerfile
 !docker/Dockerfile.build
 !docker/Dockerfile.debug
 !docker/Dockerfile.test
+
+docker-compose.override.yaml
 
 production_config.yaml
