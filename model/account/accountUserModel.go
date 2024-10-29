@@ -1,11 +1,12 @@
 package accountModel
 
 import (
-	"KeepAccount/global"
-	userModel "KeepAccount/model/user"
 	"errors"
+	"github.com/ZiRunHua/LeapLedger/global"
+	userModel "github.com/ZiRunHua/LeapLedger/model/user"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
+	"time"
 )
 
 type User struct {
@@ -13,7 +14,9 @@ type User struct {
 	AccountId  uint `gorm:"not null;uniqueIndex:idx_mapping,priority:1"`
 	UserId     uint `gorm:"not null;uniqueIndex:idx_mapping,priority:2"`
 	Permission UserPermission
-	gorm.Model
+	CreatedAt  time.Time      `gorm:"type:TIMESTAMP"`
+	UpdatedAt  time.Time      `gorm:"type:TIMESTAMP"`
+	DeletedAt  gorm.DeletedAt `gorm:"index;type:TIMESTAMP"`
 }
 
 type UserUpdateData struct {
@@ -38,7 +41,7 @@ const (
 const UserPermissionReader = UserPermissionReadOther + UserPermissionReadOwn
 const UserPermissionOwnEditor = UserPermissionReader + UserPermissionAddOwn + UserPermissionEditOwn + UserPermissionInvite
 const UserPermissionAdministrator = UserPermissionOwnEditor + UserPermissionEditOther
-const UserPermissionCreator = UserPermissionOwnEditor + +UserPermissionEditUser + UserPermissionEditAccount
+const UserPermissionCreator = UserPermissionOwnEditor + UserPermissionEditUser + UserPermissionEditAccount
 
 func (up *UserPermission) ToRole() UserRole {
 	switch *up {
@@ -87,12 +90,12 @@ func (u *User) SelectById(id uint) error {
 }
 
 func (u *User) HavePermission(permission UserPermission) bool {
-	return u.Permission&permission > 0
+	return (u.Permission & permission) > 0
 }
 
-func (u *User) CheckTransEditByUserId(userId uint) error {
+func (u *User) CheckTransEditByUserId(transOwner uint) error {
 	var pass bool
-	if userId == u.UserId {
+	if transOwner == u.UserId {
 		pass = u.HavePermission(UserPermissionEditOwn)
 	} else {
 		pass = u.HavePermission(UserPermissionEditOther)
@@ -103,9 +106,9 @@ func (u *User) CheckTransEditByUserId(userId uint) error {
 	return nil
 }
 
-func (u *User) CheckTransAddByUserId(userId uint) error {
+func (u *User) CheckTransAddByUserId(transOwner uint) error {
 	var pass bool
-	if userId == u.UserId {
+	if transOwner == u.UserId {
 		pass = u.HavePermission(UserPermissionAddOwn)
 	} else {
 		pass = u.HavePermission(UserPermissionAddOther)
@@ -120,6 +123,11 @@ func (u *User) GetAccount() (account Account, err error) {
 	err = account.SelectById(u.AccountId)
 	return
 }
+
+func (u *User) GetConfig() (config UserConfig, err error) {
+	return NewDao().SelectUserConfig(u.AccountId, u.UserId)
+}
+
 func (u *User) GetUserInfo() (userModel.UserInfo, error) {
 	return userModel.NewDao().SelectUserInfoById(u.UserId)
 }
@@ -135,7 +143,9 @@ type UserInvitation struct {
 	Invitee    uint `gorm:"uniqueIndex:idx_mapping,priority:2"`
 	Status     UserInvitationStatus
 	Permission UserPermission
-	gorm.Model
+	CreatedAt  time.Time      `gorm:"type:TIMESTAMP"`
+	UpdatedAt  time.Time      `gorm:"type:TIMESTAMP"`
+	DeletedAt  gorm.DeletedAt `gorm:"index;type:TIMESTAMP"`
 }
 
 type UserInvitationStatus int
@@ -152,6 +162,13 @@ func (u *UserInvitation) TableName() string {
 
 func (u *UserInvitation) ForUpdate(tx *gorm.DB) error {
 	if err := tx.Model(u).Clauses(clause.Locking{Strength: "UPDATE"}).First(u, u.ID).Error; err != nil {
+		return err
+	}
+	return nil
+}
+
+func (u *UserInvitation) ForShare(tx *gorm.DB) error {
+	if err := tx.Model(u).Clauses(clause.Locking{Strength: "SHARE"}).First(u, u.ID).Error; err != nil {
 		return err
 	}
 	return nil
@@ -174,7 +191,7 @@ func (u *UserInvitation) GetRole() UserRole {
 }
 
 func (u *UserInvitation) Accept(tx *gorm.DB) (user User, err error) {
-	err = u.ForUpdate(tx)
+	err = u.ForShare(tx)
 	if err != nil {
 		return
 	}
@@ -187,18 +204,11 @@ func (u *UserInvitation) Accept(tx *gorm.DB) (user User, err error) {
 	}
 
 	err = u.UpdateStatus(UserInvitationStatsOfAccept, tx)
-	if err != nil {
-		return
-	}
-	user, err = u.AddUser(tx)
-	if err != nil {
-		return
-	}
 	return
 }
 
 func (u *UserInvitation) Refuse(tx *gorm.DB) (err error) {
-	err = u.ForUpdate(tx)
+	err = u.ForShare(tx)
 	if err != nil {
 		return
 	}
@@ -213,11 +223,6 @@ func (u *UserInvitation) Refuse(tx *gorm.DB) (err error) {
 	if err != nil {
 		return
 	}
-	return
-}
-
-func (u *UserInvitation) AddUser(tx *gorm.DB) (user User, err error) {
-	user, err = NewDao(tx).CreateUser(u.AccountId, u.Invitee, u.Permission)
 	return
 }
 
@@ -240,4 +245,82 @@ func (u *UserInvitation) Updates(
 		},
 	).Error
 	return err
+}
+
+type UserConfig struct {
+	ID         uint           `gorm:"primarykey"`
+	AccountId  uint           `gorm:"not null;uniqueIndex:idx_mapping,priority:1"`
+	UserId     uint           `gorm:"not null;uniqueIndex:idx_mapping,priority:2"`
+	TransFlags TransFlag      `gorm:"type:smallint;unsigned;comment:'交易配置标志'"`
+	CreatedAt  time.Time      `gorm:"type:TIMESTAMP"`
+	UpdatedAt  time.Time      `gorm:"type:TIMESTAMP"`
+	DeletedAt  gorm.DeletedAt `gorm:"index;type:TIMESTAMP"`
+}
+
+func (uc *UserConfig) TableName() string {
+	return "account_user_config"
+}
+
+type UserConfigFlag uint
+type TransFlag UserConfigFlag
+
+const (
+	Flag_Trans_Sync_Mapping_Account TransFlag = 1 << iota
+)
+const DefaultTransFlags = Flag_Trans_Sync_Mapping_Account
+
+func (uc *UserConfig) GetFlagStatus(flag interface{}) bool {
+	switch f := flag.(type) {
+	case TransFlag:
+		return uc.TransFlags&f > 0
+	default:
+		panic("Unknown [UserConfigFlag] type")
+	}
+}
+
+func (uc *UserConfig) ForUpdate(tx *gorm.DB) error {
+	if err := tx.Model(uc).Clauses(clause.Locking{Strength: "UPDATE"}).First(uc, uc.ID).Error; err != nil {
+		return err
+	}
+	return nil
+}
+
+func (uc *UserConfig) ForShare(tx *gorm.DB) error {
+	if err := tx.Model(uc).Clauses(clause.Locking{Strength: "SHARE"}).First(uc, uc.ID).Error; err != nil {
+		return err
+	}
+	return nil
+}
+
+func (uc *UserConfig) OpenUserConfigFlag(flag interface{}, tx *gorm.DB) error {
+	if true == uc.GetFlagStatus(flag) {
+		return nil
+	}
+	var fileName = getUserConfigFlagName(flag)
+	err := tx.Model(uc).Clauses(clause.Returning{}).Update(fileName, gorm.Expr(fileName+" | ?", flag)).Error
+	if err != nil {
+		return err
+	}
+	return tx.Model(uc).Select(fileName).First(uc).Error
+}
+
+func (uc *UserConfig) CloseUserConfigFlag(flag interface{}, tx *gorm.DB) error {
+	if false == uc.GetFlagStatus(flag) {
+		return nil
+	}
+	var fileName = getUserConfigFlagName(flag)
+	err := tx.Model(uc).Update(fileName, gorm.Expr(fileName+" ^ ?", flag)).Error
+	if err != nil {
+		return err
+	}
+	return tx.Model(uc).Select(fileName).First(uc).Error
+}
+
+func getUserConfigFlagName(flag interface{}) string {
+	switch flag.(type) {
+	case TransFlag:
+		return "trans_flags"
+	default:
+		panic("Unknown [UserConfigFlag] type")
+	}
 }

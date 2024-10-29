@@ -1,26 +1,19 @@
 package constant
 
-import (
-	"os"
-)
+type ServerMode string
 
-var WORK_PATH string
+var Debug, Production ServerMode = "debug", "production"
 
-var LOG_PAYH = WORK_PATH + "/log"
-var DATA_PATH = WORK_PATH + "/data"
+const WORK_PATH = "/go/LeapLedger"
+const RUNTIME_DATA_PATH = WORK_PATH + "/runtime/data"
 
-func init() {
-	var err error
-	WORK_PATH, err = os.Getwd()
-	if err != nil {
-		panic(err)
-	}
-	LOG_PAYH = WORK_PATH + "/log"
-	DATA_PATH = WORK_PATH + "/data"
-}
+const LOG_PATH = WORK_PATH + "/log"
+const DATA_PATH = WORK_PATH + "/data"
+
+var ExampleAccountJsonPath = DATA_PATH + "/template/account/example.json"
 
 // IncomeExpense 收支类型
-type IncomeExpense string
+type IncomeExpense string //@name IncomeExpense `example:"expense" enums:"income,expense" swaggertype:"string"`
 
 const (
 	Income  IncomeExpense = "income"
@@ -85,3 +78,7 @@ const (
 	LogOperationOfUpdate LogOperation = "update"
 	LogOperationOfDelete LogOperation = "delete"
 )
+
+// nats
+
+type Subject string

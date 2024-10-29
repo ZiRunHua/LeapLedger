@@ -24,5 +24,5 @@ func (a *AccountMappingLog) TableName() string {
 }
 
 func (a *AccountMappingLog) RecordMapping(tx *gorm.DB) (AccountLogMapping, error) {
-	return Dao.NewAccountDao(tx).RecordAccountLogMapping(a)
+	return NewDao(tx).RecordAccountLogMapping(a)
 }

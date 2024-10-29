@@ -1,12 +1,13 @@
 package v1
 
 import (
-	"KeepAccount/api/request"
-	"KeepAccount/api/response"
-	"KeepAccount/global"
-	accountModel "KeepAccount/model/account"
-	categoryModel "KeepAccount/model/category"
-	userModel "KeepAccount/model/user"
+	"github.com/ZiRunHua/LeapLedger/api/request"
+	"github.com/ZiRunHua/LeapLedger/api/response"
+	"github.com/ZiRunHua/LeapLedger/global"
+	"github.com/ZiRunHua/LeapLedger/global/db"
+	accountModel "github.com/ZiRunHua/LeapLedger/model/account"
+	categoryModel "github.com/ZiRunHua/LeapLedger/model/category"
+	userModel "github.com/ZiRunHua/LeapLedger/model/user"
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
 	"gorm.io/gorm"
@@ -15,65 +16,92 @@ import (
 type CategoryApi struct {
 }
 
+// CreateOne
+//
+//	@Tags		Category
+//	@Accept		json
+//	@Produce	json
+//	@Param		accountId	path		int							true	"Account ID"
+//	@Param		body		body		request.CategoryCreateOne	true	"category data"
+//	@Success	200			{object}	response.Data{Data=response.CategoryOne}
+//	@Router		/account/{accountId}/category [post]
 func (catApi *CategoryApi) CreateOne(ctx *gin.Context) {
 	var requestData request.CategoryCreateOne
 	if err := ctx.ShouldBindJSON(&requestData); err != nil {
 		response.FailToParameter(ctx, err)
 		return
 	}
-	father := categoryModel.Father{}
+	var father categoryModel.Father
 	err := father.SelectById(requestData.FatherId)
-	if pass := checkFunc.AccountBelong(father.AccountId, ctx); false == pass {
-		return
-	}
-	if err != nil {
-		response.FailToError(ctx, err)
-		return
-	}
-	var category categoryModel.Category
-	err = global.GvaDb.Transaction(
-		func(tx *gorm.DB) error {
-			category, err = categoryService.CreateOne(
-				father,
-				categoryService.NewCategoryData(categoryModel.Category{Name: requestData.Name, Icon: requestData.Icon}),
-				tx,
-			)
-			return err
-		},
-	)
-
 	if responseError(err, ctx) {
 		return
 	}
-	response.OkWithData(response.Id{Id: category.ID}, ctx)
+	if father.AccountId != contextFunc.GetAccountId(ctx) {
+		response.FailToError(ctx, global.ErrAccountId)
+		return
+	}
+
+	var category categoryModel.Category
+	category, err = categoryService.CreateOne(
+		father,
+		categoryService.NewCategoryData(requestData.Name, requestData.Icon),
+		ctx,
+	)
+	if responseError(err, ctx) {
+		return
+	}
+
+	var responseData response.CategoryOne
+	err = responseData.SetData(category)
+	if responseError(err, ctx) {
+		return
+	}
+	response.OkWithData(responseData, ctx)
 }
 
+// CreateOneFather
+//
+//	@Tags		Category/Father
+//	@Accept		json
+//	@Produce	json
+//	@Param		accountId	path		int								true	"Account ID"
+//	@Param		body		body		request.CategoryCreateOneFather	true	"father category data"
+//	@Success	200			{object}	response.Data{Data=response.FatherOne}
+//	@Router		/account/{accountId}/category/father [post]
 func (catApi *CategoryApi) CreateOneFather(ctx *gin.Context) {
 	var requestData request.CategoryCreateOneFather
 	if err := ctx.ShouldBindJSON(&requestData); err != nil {
 		response.FailToParameter(ctx, err)
 		return
 	}
-	var account accountModel.Account
-	err := account.SelectById(requestData.AccountId)
-	if responseError(err, ctx) {
-		return
-	}
-	var father categoryModel.Father
-	err = global.GvaDb.Transaction(
-		func(tx *gorm.DB) error {
-			father, err = categoryService.CreateOneFather(account, requestData.IncomeExpense, requestData.Name, tx)
-			return err
-		},
+
+	father, err := categoryService.CreateOneFather(
+		contextFunc.GetAccount(ctx), requestData.IncomeExpense, requestData.Name, ctx,
 	)
 	if responseError(err, ctx) {
 		return
 	}
-	response.OkWithData(response.Id{Id: father.ID}, ctx)
+
+	var responseData response.FatherOne
+	err = responseData.SetData(father, []categoryModel.Category{})
+	if responseError(err, ctx) {
+		return
+	}
+	response.OkWithData(responseData, ctx)
 }
 
+// MoveCategory
+//
+//	@Tags		Category
+//	@Accept		json
+//	@Produce	json
+//	@Param		accountId	path		int						true	"Account ID"
+//	@Param		id			path		int						true	"Category ID"
+//	@Param		body		body		request.CategoryMove	true	"move data"
+//	@Success	204			{object}	response.NoContent
+//	@Router		/account/{accountId}/category/{id}/move [put]
 func (catApi *CategoryApi) MoveCategory(ctx *gin.Context) {
-	var requestData request.CategoryMoveCategory
+	var requestData request.CategoryMove
 	if err := ctx.ShouldBindJSON(&requestData); err != nil {
 		response.FailToParameter(ctx, err)
 		return
@@ -82,110 +110,151 @@ func (catApi *CategoryApi) MoveCategory(ctx *gin.Context) {
 	if !pass {
 		return
 	}
-	txFunc := func(tx *gorm.DB) error {
-		user, err := contextFunc.GetUser(ctx)
-		if err != nil {
-			return err
+	var (
+		pPrevious *categoryModel.Category
+		pFather   *categoryModel.Father
+	)
+	if requestData.Previous != nil {
+		previous, pass := checkFunc.CategoryBelongAndGet(*requestData.Previous, contextFunc.GetAccountId(ctx), ctx)
+		if !pass {
+			return
 		}
-		var previous *categoryModel.Category
-		if requestData.Previous != nil {
-			previous = &categoryModel.Category{}
-			err = global.GvaDb.First(previous, requestData.Previous).Error
-			if err != nil {
-				return err
-			}
-		}
-
-		var father *categoryModel.Father
-		if requestData.FatherId != nil {
-			father = &categoryModel.Father{}
-			err = global.GvaDb.First(father, requestData.FatherId).Error
-			if err != nil {
-				return err
-			}
-		}
-		return categoryService.MoveCategory(category, previous, father, user, tx)
+		pPrevious = &previous
 	}
-	err := global.GvaDb.Transaction(txFunc)
+	if requestData.FatherId != nil {
+		father, pass := checkFunc.CategoryFatherBelongAndGet(*requestData.FatherId, contextFunc.GetAccountId(ctx), ctx)
+		if !pass {
+			return
+		}
+		pFather = &father
+	}
+	user, err := contextFunc.GetUser(ctx)
+	if responseError(err, ctx) {
+		return
+	}
+	err = categoryService.MoveCategory(category, pPrevious, pFather, user, ctx)
 	if responseError(err, ctx) {
 		return
 	}
 	response.Ok(ctx)
 }
 
+// MoveFather
+//
+//	@Tags		Category/Father
+//	@Accept		json
+//	@Produce	json
+//	@Param		accountId	path		int							true	"Account ID"
+//	@Param		id			path		int							true	"Father ID"
+//	@Param		body		body		request.CategoryMoveFather	true	"move data"
+//	@Success	204			{object}	response.NoContent
+//	@Router		/account/{accountId}/category/father/{id}/move [put]
 func (catApi *CategoryApi) MoveFather(ctx *gin.Context) {
 	var requestData request.CategoryMoveFather
 	if err := ctx.ShouldBindJSON(&requestData); err != nil {
 		response.FailToParameter(ctx, err)
 		return
 	}
-	txFunc := func(tx *gorm.DB) error {
-		var father categoryModel.Father
-		err := global.GvaDb.First(&father, ctx.Param("id")).Error
-		if err != nil {
-			return err
-		}
-
-		var previous *categoryModel.Father
-		if requestData.Previous != nil {
-			previous = &categoryModel.Father{}
-			err = global.GvaDb.First(previous, requestData.Previous).Error
-			if err != nil {
-				return err
-			}
-		}
-		return categoryService.MoveFather(father, previous, tx)
+	var (
+		father    categoryModel.Father
+		pPrevious *categoryModel.Father
+	)
+	father, pass := checkFunc.CategoryFatherBelongAndGet(contextFunc.GetId(ctx), contextFunc.GetAccountId(ctx), ctx)
+	if !pass {
+		return
 	}
-	err := global.GvaDb.Transaction(txFunc)
+	if requestData.Previous != nil {
+		previous, pass := checkFunc.CategoryFatherBelongAndGet(
+			*requestData.Previous, contextFunc.GetAccountId(ctx), ctx,
+		)
+		if !pass {
+			return
+		}
+		pPrevious = &previous
+	}
+	err := categoryService.MoveFather(father, pPrevious, ctx)
 	if handelError(err, ctx) {
 		return
 	}
 	response.Ok(ctx)
 }
 
+// Update
+//
+//	@Tags		Category
+//	@Accept		json
+//	@Produce	json
+//	@Param		accountId	path		int							true	"Account ID"
+//	@Param		id			path		int							true	"Category ID"
+//	@Param		body		body		request.CategoryUpdateOne	true	"update data"
+//	@Success	204			{object}	response.NoContent
+//	@Router		/account/{accountId}/category/{id} [put]
 func (catApi *CategoryApi) Update(ctx *gin.Context) {
 	var requestData request.CategoryUpdateOne
 	if err := ctx.ShouldBindJSON(&requestData); err != nil {
 		response.FailToParameter(ctx, err)
 		return
 	}
-	var category categoryModel.Category
-	err := global.GvaDb.First(&category, ctx.Param("id")).Error
-	if err != nil {
-		response.FailToError(ctx, err)
+	category, pass := contextFunc.GetCategoryByParam(ctx)
+	if !pass {
 		return
 	}
-	txFunc := func(tx *gorm.DB) error {
-		return categoryService.Update(
-			category, categoryModel.CategoryUpdateData{Name: requestData.Name, Icon: requestData.Icon}, tx,
-		)
-	}
-	if err = global.GvaDb.Transaction(txFunc); responseError(err, ctx) {
+	var err error
+	category, err = categoryService.Update(
+		contextFunc.GetId(ctx), categoryModel.CategoryUpdateData{Name: requestData.Name, Icon: requestData.Icon}, ctx,
+	)
+	if responseError(err, ctx) {
 		return
 	}
-	response.Ok(ctx)
+	var responseData response.CategoryOne
+	err = responseData.SetData(category)
+	if responseError(err, ctx) {
+		return
+	}
+	response.OkWithData(responseData, ctx)
 }
 
+// UpdateFather
+//
+//	@Tags		Category/Father
+//	@Accept		json
+//	@Produce	json
+//	@Param		accountId	path		int				true	"Account ID"
+//	@Param		id			path		int				true	"Father ID"
+//	@Param		body		body		request.Name	true	"update data"
+//	@Success	200			{object}	response.Data{Data=response.FatherOne}
+//	@Router		/account/{accountId}/category/father/{id} [put]
 func (catApi *CategoryApi) UpdateFather(ctx *gin.Context) {
 	var requestData request.Name
 	if err := ctx.ShouldBindJSON(&requestData); err != nil {
 		response.FailToParameter(ctx, err)
 		return
 	}
-	var father categoryModel.Father
-	err := global.GvaDb.First(&father, ctx.Param("id")).Error
-	if err != nil {
-		response.FailToError(ctx, err)
+	father, pass := contextFunc.GetCategoryFatherByParam(ctx)
+	if !pass {
 		return
 	}
-	err = categoryService.UpdateFather(father, requestData.Name)
-	if err != nil {
-		response.FailToError(ctx, err)
+	father, err := categoryService.UpdateFather(father, requestData.Name)
+	if responseError(err, ctx) {
 		return
 	}
-	response.Ok(ctx)
+	var responseData response.FatherOne
+	err = responseData.SetData(father, []categoryModel.Category{})
+	if responseError(err, ctx) {
+		return
+	}
+	response.OkWithData(responseData, ctx)
 }
 
+// GetTree
+//
+//	@Tags		Category
+//	@Accept		json
+//	@Produce	json
+//	@Param		accountId	path		int						true	"Account ID"
+//	@Param		body		body		request.CategoryGetTree	true	"query condition"
+//	@Success	200			{object}	response.Data{Data=response.CategoryTree}
+//	@Router		/account/{accountId}/category/tree [get]
 func (catApi *CategoryApi) GetTree(ctx *gin.Context) {
 	var requestData request.CategoryGetTree
 	var err error
@@ -193,13 +262,9 @@ func (catApi *CategoryApi) GetTree(ctx *gin.Context) {
 		response.FailToParameter(ctx, err)
 		return
 	}
-	account, _, pass := checkFunc.AccountBelongAndGet(requestData.AccountId, ctx)
-	if false == pass {
-		return
-	}
+	account := contextFunc.GetAccount(ctx)
 	fatherSequence, err := categoryService.GetSequenceFather(account, requestData.IncomeExpense)
-	if err != nil {
-		response.FailToError(ctx, err)
+	if responseError(err, ctx) {
 		return
 	}
 	// 响应
@@ -220,53 +285,15 @@ func (catApi *CategoryApi) GetTree(ctx *gin.Context) {
 	response.OkWithData(responseTree, ctx)
 }
 
-func (catApi *CategoryApi) Delete(ctx *gin.Context) {
-	var category categoryModel.Category
-	err := global.GvaDb.First(&category, ctx.Param("id")).Error
-	if err != nil {
-		response.FailToError(ctx, err)
-		return
-	}
-	if pass := checkFunc.AccountBelong(category.AccountId, ctx); pass == false {
-		return
-	}
-	err = global.GvaDb.Transaction(
-		func(tx *gorm.DB) error {
-			return categoryService.Delete(category, tx)
-		},
-	)
-	if responseError(err, ctx) {
-		return
-	}
-	response.Ok(ctx)
-}
-
-func (catApi *CategoryApi) DeleteFather(ctx *gin.Context) {
-	var father categoryModel.Father
-	err := global.GvaDb.First(&father, ctx.Param("id")).Error
-	if err != nil {
-		response.FailToError(ctx, err)
-		return
-	}
-	if pass := checkFunc.AccountBelong(father.AccountId, ctx); pass == false {
-		return
-	}
-	err = global.GvaDb.Transaction(
-		func(tx *gorm.DB) error {
-			err = categoryService.DeleteFather(father, tx)
-			if err != nil {
-				return err
-			}
-			return nil
-		},
-	)
-	if err != nil {
-		response.FailToError(ctx, err)
-		return
-	}
-	response.Ok(ctx)
-}
-
+// GetList
+//
+//	@Tags		Category
+//	@Accept		json
+//	@Produce	json
+//	@Param		accountId	path		int						true	"Account ID"
+//	@Param		body		body		request.CategoryGetList	true	"query condition"
+//	@Success	200			{object}	response.Data{Data=response.List[response.CategoryDetail]{}}
+//	@Router		/account/{accountId}/category/tree [get]
 func (catApi *CategoryApi) GetList(ctx *gin.Context) {
 	var requestData request.CategoryGetList
 	var err error
@@ -274,25 +301,85 @@ func (catApi *CategoryApi) GetList(ctx *gin.Context) {
 		response.FailToParameter(ctx, err)
 		return
 	}
-	account, _, pass := checkFunc.AccountBelongAndGet(requestData.AccountId, ctx)
-	if false == pass {
-		return
-	}
-	categoryList, err := categoryModel.NewDao().GetListByAccount(account)
+	account := contextFunc.GetAccount(ctx)
+	fatherSequence, err := categoryService.GetSequenceFather(account, requestData.IncomeExpense)
 	if responseError(err, ctx) {
 		return
 	}
-
+	// 响应
+	var list, categoryList []categoryModel.Category
 	var responseData response.CategoryDetailList
-	err = responseData.SetData(categoryList)
+	for _, father := range fatherSequence {
+		categoryList, err = categoryService.GetSequenceCategoryByFather(father)
+		if responseError(err, ctx) {
+			return
+		}
+		list = append(list, categoryList...)
+	}
+	err = responseData.SetData(list)
 	if responseError(err, ctx) {
 		return
 	}
 	response.OkWithData(response.List[response.CategoryDetail]{List: responseData}, ctx)
 }
 
+// Delete
+//
+//	@Tags		Category
+//	@Produce	json
+//	@Param		accountId	path		int	true	"Account ID"
+//	@Param		id			path		int	true	"Category ID"
+//	@Success	204			{object}	response.NoContent
+//	@Router		/account/{accountId}/category/{id} [delete]
+func (catApi *CategoryApi) Delete(ctx *gin.Context) {
+	var category categoryModel.Category
+	err := db.Db.First(&category, ctx.Param("id")).Error
+	if responseError(err, ctx) {
+		return
+	}
+	if contextFunc.GetAccountId(ctx) != category.AccountId {
+		response.FailToParameter(ctx, global.ErrAccountId)
+		return
+	}
+	err = categoryService.Delete(category, ctx)
+	if responseError(err, ctx) {
+		return
+	}
+	response.Ok(ctx)
+}
+
+// DeleteFather
+//
+//	@Tags		Category/Father
+//	@Produce	json
+//	@Param		accountId	path		int	true	"Account ID"
+//	@Param		id			path		int	true	"Father ID"
+//	@Success	204			{object}	response.NoContent
+//	@Router		/account/{accountId}/category/father/{id} [delete]
+func (catApi *CategoryApi) DeleteFather(ctx *gin.Context) {
+	var father categoryModel.Father
+	err := db.Db.First(&father, ctx.Param("id")).Error
+	if responseError(err, ctx) {
+		return
+	}
+	err = categoryService.DeleteFather(father, ctx)
+	if responseError(err, ctx) {
+		return
+	}
+	response.Ok(ctx)
+}
+
+// MappingCategory
+//
+//	@Tags		Category
+//	@Accept		json
+//	@Produce	json
+//	@Param		accountId	path		int						true	"Account ID"
+//	@Param		id			path		int						true	"Category ID"
+//	@Param		body		body		request.CategoryMapping	true	"data"
+//	@Success	204			{object}	response.NoContent
+//	@Router		/account/{accountId}/category/{id}/mapping [post]
 func (catApi *CategoryApi) MappingCategory(ctx *gin.Context) {
-	// 获取数据
 	var requestData request.CategoryMapping
 	if err := ctx.ShouldBindJSON(&requestData); err != nil {
 		response.FailToParameter(ctx, err)
@@ -302,18 +389,20 @@ func (catApi *CategoryApi) MappingCategory(ctx *gin.Context) {
 	if false == pass {
 		return
 	}
-	childCategory, err := categoryModel.NewDao().SelectById(requestData.ChildCategoryId)
+	childCategory, err := categoryModel.NewDao(db.Get(ctx)).SelectById(requestData.ChildCategoryId)
 	if responseError(err, ctx) {
 		return
 	}
-	// 执行
+	if !checkFunc.AccountPermission(childCategory.AccountId, accountModel.UserPermissionAddOwn, ctx) {
+		return
+	}
+	// handle
 	var operator userModel.User
 	operator, err = contextFunc.GetUser(ctx)
-	txFunc := func(tx *gorm.DB) error {
-		_, err = categoryService.MappingCategory(parentCategory, childCategory, operator, tx)
-		return err
+	if responseError(err, ctx) {
+		return
 	}
-	err = global.GvaDb.Transaction(txFunc)
+	_, err = categoryService.MappingCategory(parentCategory, childCategory, operator, ctx)
 	if errors.Is(err, gorm.ErrDuplicatedKey) {
 	} else if responseError(err, ctx) {
 		return
@@ -321,6 +410,16 @@ func (catApi *CategoryApi) MappingCategory(ctx *gin.Context) {
 	response.Ok(ctx)
 }
 
+// MappingCategory
+//
+//	@Tags		Category
+//	@Accept		json
+//	@Produce	json
+//	@Param		accountId	path		int						true	"Account ID"
+//	@Param		id			path		int						true	"Category ID"
+//	@Param		body		body		request.CategoryMapping	true	"data"
+//	@Success	204			{object}	response.NoContent
+//	@Router		/account/{accountId}/category/{id}/mapping [delete]
 func (catApi *CategoryApi) DeleteCategoryMapping(ctx *gin.Context) {
 	// 获取数据
 	var requestData request.CategoryMapping
@@ -332,37 +431,47 @@ func (catApi *CategoryApi) DeleteCategoryMapping(ctx *gin.Context) {
 	if false == pass {
 		return
 	}
-	childCategory, err := categoryModel.NewDao().SelectById(requestData.ChildCategoryId)
+	childCategory, err := categoryModel.NewDao(db.Get(ctx)).SelectById(requestData.ChildCategoryId)
 	if responseError(err, ctx) {
+		return
+	}
+	if !checkFunc.AccountPermission(childCategory.AccountId, accountModel.UserPermissionAddOwn, ctx) {
 		return
 	}
 	// 执行
 	var operator userModel.User
 	operator, err = contextFunc.GetUser(ctx)
-	txFunc := func(tx *gorm.DB) error {
-		err = categoryService.DeleteMapping(parentCategory, childCategory, operator, tx)
-		return err
+	if responseError(err, ctx) {
+		return
 	}
-	err = global.GvaDb.Transaction(txFunc)
+	err = categoryService.DeleteMapping(parentCategory, childCategory, operator, ctx)
 	if responseError(err, ctx) {
 		return
 	}
 	response.Ok(ctx)
 }
 
+// GetMappingTree
+//
+//	@Tags		Category
+//	@Accept		json
+//	@Produce	json
+//	@Param		accountId	path		int								true	"Account ID"
+//	@Param		body		body		request.CategoryGetMappingTree	true	"query condition"
+//	@Success	200			{object}	response.Data{Data=response.CategoryMappingTree}
+//	@Router		/account/{accountId}/category/mapping/tree [get]
 func (catApi *CategoryApi) GetMappingTree(ctx *gin.Context) {
 	var requestData request.CategoryGetMappingTree
 	if err := ctx.ShouldBindJSON(&requestData); err != nil {
 		response.FailToParameter(ctx, err)
 		return
 	}
-	parentAccountId, childAccountId := requestData.ParentAccountId, requestData.ChildAccountId
-	if !checkFunc.AccountBelong(parentAccountId, ctx) || !checkFunc.AccountBelong(childAccountId, ctx) {
+	if !checkFunc.AccountBelong(requestData.MappingAccountId, ctx) {
 		return
 	}
 
-	list, err := categoryModel.NewDao().GetMappingByAccountMappingOrderByChildCategoryWeight(
-		parentAccountId, childAccountId,
+	list, err := categoryModel.NewDao().GetMappingByAccountMappingOrderByParentCategory(
+		contextFunc.GetAccountId(ctx), requestData.MappingAccountId,
 	)
 	if responseError(err, ctx) {
 		return

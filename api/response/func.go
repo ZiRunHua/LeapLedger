@@ -1,21 +1,26 @@
 package response
 
 import (
-	"KeepAccount/global"
 	"fmt"
+	"github.com/ZiRunHua/LeapLedger/global"
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
 	"gorm.io/gorm"
 )
 
-type ResponseData struct {
+type Data struct {
+	Data interface{}
+	Msg  string `example:"success"`
+} // @name Response
+
+type NoContent struct {
 	Data interface{}
 	Msg  string
-}
+} // @name NoContent
 
 func ResponseAndAbort(status int, data interface{}, msg string, ctx *gin.Context) {
 	ctx.AbortWithStatusJSON(
-		status, ResponseData{
+		status, Data{
 			data,
 			msg,
 		},
@@ -24,7 +29,7 @@ func ResponseAndAbort(status int, data interface{}, msg string, ctx *gin.Context
 
 func Response(status int, data interface{}, msg string, ctx *gin.Context) {
 	ctx.JSON(
-		status, ResponseData{
+		status, Data{
 			data,
 			msg,
 		},
@@ -96,28 +101,4 @@ func logError(ctx *gin.Context, err error) {
 			err,
 		),
 	)
-}
-
-func Handle(err error, data interface{}, ctx *gin.Context) {
-	//recover交给gin框架
-	if r := recover(); r != nil {
-		return
-	}
-	if true == ctx.IsAborted() {
-		return
-	}
-	if err != nil {
-		FailToError(ctx, err)
-	} else if data != nil {
-		OkWithData(data, ctx)
-	} else {
-		Ok(ctx)
-	}
-}
-
-func HandleAndCleanup(err error, data interface{}, closer func() error, ctx *gin.Context) {
-	if closerErr := closer(); closerErr != nil && err == nil {
-		err = closerErr
-	}
-	Handle(err, data, ctx)
 }

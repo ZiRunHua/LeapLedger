@@ -1,16 +1,17 @@
 package response
 
 import (
-	"KeepAccount/global"
-	"KeepAccount/global/constant"
-	categoryModel "KeepAccount/model/category"
-	"KeepAccount/util/dataType"
+	"github.com/ZiRunHua/LeapLedger/global/constant"
+	"github.com/ZiRunHua/LeapLedger/global/db"
+	categoryModel "github.com/ZiRunHua/LeapLedger/model/category"
+	"github.com/ZiRunHua/LeapLedger/util/dataTool"
 	"github.com/pkg/errors"
 )
 
 type CategoryOne struct {
 	Id            uint
 	Name          string
+	AccountId     uint
 	Icon          string
 	IncomeExpense constant.IncomeExpense
 }
@@ -18,6 +19,7 @@ type CategoryOne struct {
 func (co *CategoryOne) SetData(category categoryModel.Category) error {
 	co.Id = category.ID
 	co.Name = category.Name
+	co.AccountId = category.AccountId
 	co.Icon = category.Icon
 	co.IncomeExpense = category.IncomeExpense
 	return nil
@@ -44,15 +46,15 @@ func (cd *CategoryDetail) SetData(category categoryModel.Category, father catego
 
 type CategoryDetailList []CategoryDetail
 
-func (cdl *CategoryDetailList) SetData(categoryList dataType.Slice[uint, categoryModel.Category]) error {
+func (cdl *CategoryDetailList) SetData(categoryList dataTool.Slice[uint, categoryModel.Category]) error {
 	*cdl = make(CategoryDetailList, len(categoryList), len(categoryList))
 	if len(categoryList) == 0 {
 		return nil
 	}
 
 	fatherIds := categoryList.ExtractValues(func(category categoryModel.Category) uint { return category.FatherId })
-	var fatherList dataType.Slice[uint, categoryModel.Father]
-	err := global.GvaDb.Where("id IN (?)", fatherIds).Find(&fatherList).Error
+	var fatherList dataTool.Slice[uint, categoryModel.Father]
+	err := db.Db.Where("id IN (?)", fatherIds).Find(&fatherList).Error
 	if err != nil {
 		return err
 	}
@@ -70,6 +72,7 @@ func (cdl *CategoryDetailList) SetData(categoryList dataType.Slice[uint, categor
 type FatherOne struct {
 	Id            uint
 	Name          string
+	AccountId     uint
 	IncomeExpense constant.IncomeExpense
 	Children      []CategoryOne
 }
@@ -77,6 +80,7 @@ type FatherOne struct {
 func (fo *FatherOne) SetData(father categoryModel.Father, categoryList []categoryModel.Category) error {
 	fo.Id = father.ID
 	fo.Name = father.Name
+	fo.AccountId = father.AccountId
 	fo.IncomeExpense = father.IncomeExpense
 	fo.Children = make([]CategoryOne, len(categoryList), len(categoryList))
 	var err error

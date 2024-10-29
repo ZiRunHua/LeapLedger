@@ -1,7 +1,7 @@
 package transactionModel
 
 import (
-	commonModel "KeepAccount/model/common"
+	commonModel "github.com/ZiRunHua/LeapLedger/model/common"
 	"gorm.io/gorm"
 	"time"
 )
@@ -13,7 +13,7 @@ type statisticModel interface {
 }
 
 type Statistic struct {
-	Date   time.Time `gorm:"column:date;primaryKey;type:date"`
+	Date   time.Time `gorm:"primaryKey;type:TIMESTAMP"`
 	Amount int
 	Count  int
 	commonModel.BaseModel
@@ -26,8 +26,8 @@ func (s *Statistic) GetUpdatesValue(amount, count int) map[string]interface{} {
 	}
 }
 
-func (s *Statistic) GetDate(tradeTime time.Time) time.Time {
-	return time.Date(tradeTime.Year(), tradeTime.Month(), tradeTime.Day(), 0, 0, 0, 0, time.Local)
+func (s *Statistic) GetDate(t time.Time) time.Time {
+	return time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, t.Location())
 }
 
 func ExpenseAccumulate(
@@ -37,17 +37,17 @@ func ExpenseAccumulate(
 	var accountSta ExpenseAccountStatistic
 	err = accountSta.Accumulate(tradeTime, accountId, amount, count, tx)
 	if err != nil {
-		return nil
+		return err
 	}
 	var accountUserSta ExpenseAccountUserStatistic
-	err = accountUserSta.Accumulate(tradeTime, accountId, userId, amount, count, tx)
+	err = accountUserSta.Accumulate(tradeTime, accountId, userId, categoryId, amount, count, tx)
 	if err != nil {
-		return nil
+		return err
 	}
 	var categorySta ExpenseCategoryStatistic
 	err = categorySta.Accumulate(tradeTime, accountId, categoryId, amount, count, tx)
 	if err != nil {
-		return nil
+		return err
 	}
 	return err
 }
@@ -59,17 +59,17 @@ func IncomeAccumulate(
 	var accountSta IncomeAccountStatistic
 	err = accountSta.Accumulate(tradeTime, accountId, amount, count, tx)
 	if err != nil {
-		return nil
+		return err
 	}
 	var accountUserSta IncomeAccountUserStatistic
-	err = accountUserSta.Accumulate(tradeTime, accountId, userId, amount, count, tx)
+	err = accountUserSta.Accumulate(tradeTime, accountId, userId, categoryId, amount, count, tx)
 	if err != nil {
-		return nil
+		return err
 	}
 	var categorySta IncomeCategoryStatistic
 	err = categorySta.Accumulate(tradeTime, accountId, categoryId, amount, count, tx)
 	if err != nil {
-		return nil
+		return err
 	}
 	return err
 }

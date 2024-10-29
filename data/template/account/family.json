@@ -1,0 +1,210 @@
+{
+  "Name": "家庭账本",
+  "Icon": "book",
+  "Type": "share",
+  "Location": "Asia/Shanghai",
+  "Category": [
+    {
+      "Name": "日常消费",
+      "Ie": "expense",
+      "Children": [
+        {
+          "Name": "餐饮",
+          "Icon": "restaurant_outlined",
+          "Ie": "expense",
+          "MappingPtcs": [
+            {
+              "ProductKey": "AliPay",
+              "Name": "餐饮美食"
+            }
+          ]
+        },
+        {
+          "Name": "交通",
+          "Icon": "directions_bus",
+          "Ie": "expense",
+          "MappingPtcs": [
+            {
+              "ProductKey": "AliPay",
+              "Name": "交通出行"
+            },
+            {
+              "ProductKey": "AliPay",
+              "Name": "爱车养车"
+            }
+          ]
+        },
+        {
+          "Name": "日用百货",
+          "Icon": "add_shopping_cart",
+          "Ie": "expense",
+          "MappingPtcs": [
+            {
+              "ProductKey": "AliPay",
+              "Name": "日用百货"
+            },
+            {
+              "ProductKey": "AliPay",
+              "Name": "数码电器"
+            },
+            {
+              "ProductKey": "AliPay",
+              "Name": "服饰装扮"
+            }
+          ]
+        },
+        {
+          "Name": "水果茶水",
+          "Icon": "restaurant_outlined",
+          "Ie": "expense",
+          "MappingPtcs": []
+        }
+      ]
+    },
+    {
+      "Name": "休闲学习",
+      "Ie": "expense",
+      "Children": [
+        {
+          "Name": "运动",
+          "Icon": "run_circle",
+          "Ie": "expense",
+          "MappingPtcs": [
+            {
+              "ProductKey": "AliPay",
+              "Name": "运动户外"
+            }
+          ]
+        },
+        {
+          "Name": "教育",
+          "Icon": "auto_stories",
+          "Ie": "expense",
+          "MappingPtcs": [
+            {
+              "ProductKey": "AliPay",
+              "Name": "教育培训"
+            }
+          ]
+        },
+        {
+          "Name": "旅游",
+          "Icon": "luggage",
+          "Ie": "expense",
+          "MappingPtcs": [
+            {
+              "ProductKey": "AliPay",
+              "Name": "酒店旅游"
+            }
+          ]
+        },
+        {
+          "Name": "文化休闲",
+          "Icon": "swap_horiz",
+          "Ie": "expense",
+          "MappingPtcs": [
+            {
+              "ProductKey": "AliPay",
+              "Name": "文化休闲"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "Name": "固定支出",
+      "Ie": "expense",
+      "Children": [
+        {
+          "Name": "住房",
+          "Icon": "home_outlined",
+          "Ie": "expense",
+          "MappingPtcs": [
+            {
+              "ProductKey": "AliPay",
+              "Name": "住房物业"
+            },
+            {
+              "ProductKey": "AliPay",
+              "Name": "家居家装"
+            }
+          ]
+        },
+        {
+          "Name": "通讯",
+          "Icon": "perm_phone_msg",
+          "Ie": "expense",
+          "MappingPtcs": [
+            {
+              "ProductKey": "AliPay",
+              "Name": "充值缴费"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "Name": "其他",
+      "Ie": "expense",
+      "Children": [
+        {
+          "Name": "医疗",
+          "Icon": "medical_information",
+          "Ie": "expense",
+          "MappingPtcs": [
+            {
+              "ProductKey": "AliPay",
+              "Name": "医疗健康"
+            }
+          ]
+        },
+        {
+          "Name": "杂项",
+          "Icon": "payment",
+          "Ie": "expense",
+          "MappingPtcs": [
+            {
+              "ProductKey": "AliPay",
+              "Name": "美容美发"
+            },
+            {
+              "ProductKey": "AliPay",
+              "Name": "宠物"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "Name": "固定收入",
+      "Ie": "income",
+      "Children": [
+        {
+          "Name": "工资",
+          "Icon": "payment",
+          "Ie": "income",
+          "MappingPtcs": [
+          ]
+        }
+      ]
+    },
+    {
+      "Name": "理财收入",
+      "Ie": "income",
+      "Children": [
+        {
+          "Name": "股票基金",
+          "Icon": "payment",
+          "Ie": "income",
+          "MappingPtcs": []
+        },
+        {
+          "Name": "保险",
+          "Icon": "payment",
+          "Ie": "income",
+          "MappingPtcs": []
+        }
+      ]
+    }
+  ]
+}

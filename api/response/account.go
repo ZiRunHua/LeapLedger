@@ -1,34 +1,23 @@
 package response
 
 import (
-	"KeepAccount/global"
-	accountModel "KeepAccount/model/account"
-	userModel "KeepAccount/model/user"
-	"KeepAccount/util/dataType"
+	"github.com/ZiRunHua/LeapLedger/global"
+	"github.com/ZiRunHua/LeapLedger/global/db"
+	accountModel "github.com/ZiRunHua/LeapLedger/model/account"
+	userModel "github.com/ZiRunHua/LeapLedger/model/user"
+	"github.com/ZiRunHua/LeapLedger/util/dataTool"
 	"github.com/pkg/errors"
+	"time"
 )
-
-func AccountModelToResponse(account *accountModel.Account) AccountOne {
-	if account == nil {
-		return AccountOne{}
-	}
-	return AccountOne{
-		Id:         account.ID,
-		Name:       account.Name,
-		Icon:       account.Icon,
-		Type:       account.Type,
-		UpdateTime: account.UpdatedAt.Unix(),
-		CreateTime: account.CreatedAt.Unix(),
-	}
-}
 
 type AccountOne struct {
 	Id         uint
 	Name       string
 	Icon       string
 	Type       accountModel.Type
-	CreateTime int64
-	UpdateTime int64
+	Location   string
+	CreateTime time.Time
+	UpdateTime time.Time
 }
 
 func (a *AccountOne) SetData(data accountModel.Account) error {
@@ -36,23 +25,28 @@ func (a *AccountOne) SetData(data accountModel.Account) error {
 	a.Name = data.Name
 	a.Icon = data.Icon
 	a.Type = data.Type
-	a.CreateTime = data.CreatedAt.Unix()
-	a.UpdateTime = data.UpdatedAt.Unix()
+	a.Location = data.Location
+	a.CreateTime = data.CreatedAt
+	a.UpdateTime = data.UpdatedAt
 	return nil
 }
 
-// 账本详情
+// AccountDetail 账本详情
+
 type AccountDetail struct {
 	AccountOne
 	CreatorId   uint
 	CreatorName string
 	Role        accountModel.UserRole
-	JoinTime    int64
+	JoinTime    time.Time
 }
 
 func (a *AccountDetail) SetData(accountUser accountModel.User) error {
 	// 账本
 	account, err := accountUser.GetAccount()
+	if err != nil {
+		return err
+	}
 	if account.ID != accountUser.AccountId {
 		return errors.New("accountUser not belong account")
 	}
@@ -66,7 +60,7 @@ func (a *AccountDetail) SetData(accountUser accountModel.User) error {
 	a.CreatorName = user.Username
 
 	a.Role = accountUser.GetRole()
-	a.JoinTime = accountUser.CreatedAt.Unix()
+	a.JoinTime = accountUser.CreatedAt
 	return nil
 }
 
@@ -84,11 +78,11 @@ func (a *AccountDetail) SetDataFromAccountAndUser(account accountModel.Account, 
 		return err
 	}
 	a.Role = accountUser.GetRole()
-	a.JoinTime = accountUser.CreatedAt.Unix()
+	a.JoinTime = accountUser.CreatedAt
 	return nil
 }
 
-// SetDataFromAccount 通过account设置数据，数据中的user来源为account.userId
+// SetDataFromAccount 通过account设置数据，数据中的user来源为account.UserId
 func (a *AccountDetail) SetDataFromAccount(account accountModel.Account) error {
 	a.setAccount(account)
 
@@ -104,7 +98,7 @@ func (a *AccountDetail) SetDataFromAccount(account accountModel.Account) error {
 		return err
 	}
 	a.Role = accountUser.GetRole()
-	a.JoinTime = accountUser.CreatedAt.Unix()
+	a.JoinTime = accountUser.CreatedAt
 	return nil
 }
 
@@ -113,29 +107,30 @@ func (a *AccountDetail) setAccount(account accountModel.Account) {
 	a.Name = account.Name
 	a.Icon = account.Icon
 	a.Type = account.Type
+	a.Location = account.Location
 	a.CreatorId = account.UserId
-	a.CreateTime = account.CreatedAt.Unix()
-	a.UpdateTime = account.UpdatedAt.Unix()
+	a.CreateTime = account.CreatedAt
+	a.UpdateTime = account.UpdatedAt
 }
 
 type AccountDetailList []AccountDetail
 
-func (a *AccountDetailList) SetData(list dataType.Slice[uint, accountModel.User]) error {
+func (a *AccountDetailList) SetData(list dataTool.Slice[uint, accountModel.User]) error {
 	if len(list) == 0 {
-		*a = make([]AccountDetail, 0, 0)
+		*a = make([]AccountDetail, 0)
 		return nil
 	}
 	// 账本
 	ids := list.ExtractValues(func(user accountModel.User) uint { return user.AccountId })
-	var accountList dataType.Slice[uint, accountModel.Account]
-	err := global.GvaDb.Where("id IN (?)", ids).Find(&accountList).Error
+	var accountList dataTool.Slice[uint, accountModel.Account]
+	err := db.Db.Where("id IN (?)", ids).Find(&accountList).Error
 	if err != nil {
 		return err
 	}
 	// 创建者
 	ids = accountList.ExtractValues(func(account accountModel.Account) uint { return account.UserId })
-	var creatorList dataType.Slice[uint, userModel.User]
-	err = global.GvaDb.Select("username", "id").Where("id IN (?)", ids).Find(&creatorList).Error
+	var creatorList dataTool.Slice[uint, userModel.User]
+	err = db.Db.Select("username", "id").Where("id IN (?)", ids).Find(&creatorList).Error
 	if err != nil {
 		return err
 	}
@@ -148,7 +143,7 @@ func (a *AccountDetailList) SetData(list dataType.Slice[uint, accountModel.User]
 		(*a)[i].CreatorName = creatorMap[account.UserId].Username
 		user := userMap[account.ID]
 		(*a)[i].Role = user.GetRole()
-		(*a)[i].JoinTime = user.CreatedAt.Unix()
+		(*a)[i].JoinTime = user.CreatedAt
 	}
 	return nil
 }
@@ -169,15 +164,15 @@ type AccountMapping struct {
 	Id             uint
 	MainAccount    AccountOne
 	RelatedAccount AccountDetail
-	CreateTime     int64
-	UpdateTime     int64
+	CreateTime     time.Time
+	UpdateTime     time.Time
 }
 
 func (a *AccountMapping) SetData(data accountModel.Mapping) error {
 	a.Id = data.ID
-	a.CreateTime = data.CreatedAt.Unix()
-	a.UpdateTime = data.UpdatedAt.Unix()
-	account, err := data.GetMainAccount()
+	a.CreateTime = data.CreatedAt
+	a.UpdateTime = data.UpdatedAt
+	account, err := data.GetMainAccount(db.Db)
 	if err != nil {
 		return err
 	}
@@ -185,7 +180,7 @@ func (a *AccountMapping) SetData(data accountModel.Mapping) error {
 	if err != nil {
 		return err
 	}
-	account, err = data.GetRelatedAccount()
+	account, err = data.GetRelatedAccount(db.Db)
 	if err != nil {
 		return err
 	}
@@ -203,14 +198,14 @@ type AccountUserInvitation struct {
 	Invitee    UserInfo
 	Status     accountModel.UserInvitationStatus
 	Role       accountModel.UserRole
-	CreateTime int64
+	CreateTime time.Time
 }
 
 func (a *AccountUserInvitation) SetData(data accountModel.UserInvitation) error {
 	var err error
 	a.Id = data.ID
 	a.Status = data.Status
-	a.CreateTime = data.CreatedAt.Unix()
+	a.CreateTime = data.CreatedAt
 	a.Role = data.GetRole()
 
 	var account accountModel.Account
@@ -239,7 +234,7 @@ type AccountUser struct {
 	UserId     uint
 	Info       UserInfo
 	Role       accountModel.UserRole
-	CreateTime int64
+	CreateTime time.Time
 }
 
 func (a *AccountUser) SetData(data accountModel.User) error {
@@ -247,7 +242,7 @@ func (a *AccountUser) SetData(data accountModel.User) error {
 	a.Id = data.ID
 	a.AccountId = data.AccountId
 	a.UserId = data.UserId
-	a.CreateTime = data.CreatedAt.Unix()
+	a.CreateTime = data.CreatedAt
 	a.Role = data.GetRole()
 	var info userModel.UserInfo
 	if info, err = data.GetUserInfo(); err != nil {
@@ -258,13 +253,34 @@ func (a *AccountUser) SetData(data accountModel.User) error {
 }
 
 type AccountUserInfo struct {
-	TodayTransTotal        *global.IncomeExpenseStatistic
-	CurrentMonthTransTotal *global.IncomeExpenseStatistic
+	TodayTransTotal        *global.IEStatisticWithTime
+	CurrentMonthTransTotal *global.IEStatisticWithTime
 	RecentTrans            *TransactionDetailList
 }
 
 type AccountInfo struct {
-	TodayTransTotal        *global.IncomeExpenseStatistic
-	CurrentMonthTransTotal *global.IncomeExpenseStatistic
+	TodayTransTotal        *global.IEStatisticWithTime
+	CurrentMonthTransTotal *global.IEStatisticWithTime
 	RecentTrans            *TransactionDetailList
+}
+
+type AccountUserConfig struct {
+	Id        uint
+	AccountId uint
+	UserId    uint
+	Trans     struct {
+		SyncMappingAccount bool
+	}
+	CreateTime time.Time
+	UpdateTime time.Time
+}
+
+func (auc *AccountUserConfig) SetData(data accountModel.UserConfig) error {
+	auc.Id = data.ID
+	auc.AccountId = data.AccountId
+	auc.UserId = data.UserId
+	auc.CreateTime = data.CreatedAt
+	auc.UpdateTime = data.UpdatedAt
+	auc.Trans.SyncMappingAccount = data.GetFlagStatus(accountModel.Flag_Trans_Sync_Mapping_Account)
+	return nil
 }

@@ -3,5 +3,5 @@ package categoryService
 import "errors"
 
 var (
-	ErrExistTransacion = errors.New("exist transaction")
+	ErrExistTransaction = errors.New("exist transaction")
 )

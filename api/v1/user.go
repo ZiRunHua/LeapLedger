@@ -1,19 +1,23 @@
 package v1
 
 import (
-	"KeepAccount/api/request"
-	"KeepAccount/api/response"
-	"KeepAccount/global"
-	"KeepAccount/global/constant"
-	accountModel "KeepAccount/model/account"
-	transactionModel "KeepAccount/model/transaction"
-	userModel "KeepAccount/model/user"
-	"KeepAccount/util"
+	"time"
+
+	"github.com/ZiRunHua/LeapLedger/api/request"
+	"github.com/ZiRunHua/LeapLedger/api/response"
+	"github.com/ZiRunHua/LeapLedger/global"
+	"github.com/ZiRunHua/LeapLedger/global/constant"
+	"github.com/ZiRunHua/LeapLedger/global/db"
+	"github.com/ZiRunHua/LeapLedger/global/nats"
+	accountModel "github.com/ZiRunHua/LeapLedger/model/account"
+	transactionModel "github.com/ZiRunHua/LeapLedger/model/transaction"
+	userModel "github.com/ZiRunHua/LeapLedger/model/user"
+	"github.com/ZiRunHua/LeapLedger/util"
+	"github.com/ZiRunHua/LeapLedger/util/timeTool"
 	"github.com/gin-gonic/gin"
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/pkg/errors"
 	"github.com/songzhibin97/gkit/egroup"
-	"gorm.io/gorm"
-	"time"
 )
 
 type UserApi struct {
@@ -49,24 +53,28 @@ type _userConfig interface {
 	UpdateTransactionShareConfig(ctx *gin.Context)
 }
 
+// Login
+//
+//	@Tags		User
+//	@Accept		json
+//	@Produce	json
+//	@Param		body	body		request.UserLogin	true	"login data"
+//	@Success	200		{object}	response.Data{Data=response.Login}
+//	@Router		/public/user/login [post]
 func (p *PublicApi) Login(ctx *gin.Context) {
 	var requestData request.UserLogin
 	var err error
-	// 处理错误方法
+	// handle error
 	var loginFailResponseFunc = func() {
 		if err != nil {
 			key := global.Cache.GetKey(constant.LoginFailCount, requestData.Email)
-			count, existCache := global.Cache.Get(key)
+			count, existCache := global.Cache.GetInt(key)
 			if existCache {
-				if intCount, ok := count.(int); ok {
-					if intCount > 5 {
-						response.FailToError(ctx, errors.New("错误次数过的，请稍后再试"))
-						return
-					} else {
-						_ = global.Cache.Increment(key, 1)
-					}
+				if count > 5 {
+					response.FailToError(ctx, errors.New("错误次数过的，请稍后再试"))
+					return
 				} else {
-					panic("cache计数数据转断言int失败")
+					_ = global.Cache.Increment(key, 1)
 				}
 			} else {
 				global.Cache.Set(key, 1, time.Hour*12)
@@ -76,7 +84,7 @@ func (p *PublicApi) Login(ctx *gin.Context) {
 		}
 	}
 	defer loginFailResponseFunc()
-	// 请求数据获取与校验
+	// check
 	if err = ctx.ShouldBindJSON(&requestData); err != nil {
 		return
 	}
@@ -86,50 +94,25 @@ func (p *PublicApi) Login(ctx *gin.Context) {
 	}
 
 	client := contextFunc.GetClient(ctx)
-	// 开始处理
+	// handler
 	var user userModel.User
-	responseData := response.Login{}
-	transactionFunc := func(tx *gorm.DB) error {
-		var clientBaseInfo userModel.UserClientBaseInfo
-		user, clientBaseInfo, responseData.Token, err = userService.Base.Login(
-			requestData.Email, requestData.Password, client, tx,
-		)
-		if err != nil {
-			return err
-		}
-		err = responseData.User.SetData(user)
-		if err != nil {
-			return err
-		}
-		// 当前客户端操作账本
-		if clientBaseInfo.CurrentAccountId != 0 {
-			var account accountModel.Account
-			account, err = accountModel.NewDao().SelectById(clientBaseInfo.CurrentAccountId)
-			if err != nil {
-				return err
-			}
-			err = responseData.CurrentAccount.SetDataFromAccount(account)
-			if err != nil {
-				return err
-			}
-		}
-		// 当前客户端操作共享账本
-		if clientBaseInfo.CurrentShareAccountId != 0 {
-			var accountUser accountModel.User
-			accountUser, err = accountModel.NewDao().SelectUser(clientBaseInfo.CurrentShareAccountId, user.ID)
-			if err != nil && false == errors.Is(err, gorm.ErrRecordNotFound) {
-				return err
-			}
-			err = responseData.CurrentShareAccount.SetData(accountUser)
-			if err != nil {
-				return err
-			}
-		}
-		return err
-	}
-
-	if err = global.GvaDb.Transaction(transactionFunc); err != nil {
+	var clientBaseInfo userModel.UserClientBaseInfo
+	var responseData response.Login
+	var customClaims jwt.RegisteredClaims
+	user, clientBaseInfo, responseData.Token, customClaims, err = userService.Login(
+		requestData.Email, requestData.Password, client, ctx,
+	)
+	if err != nil {
 		err = errors.New("用户名不存在或者密码错误")
+		return
+	}
+	responseData.TokenExpirationTime = customClaims.ExpiresAt.Time
+	err = responseData.User.SetData(user)
+	if err != nil {
+		return
+	}
+	err = responseData.SetDataFormClientInto(clientBaseInfo)
+	if err != nil {
 		return
 	}
 	if responseData.Token == "" {
@@ -141,6 +124,14 @@ func (p *PublicApi) Login(ctx *gin.Context) {
 	}
 }
 
+// Register
+//
+//	@Tags		User
+//	@Accept		json
+//	@Produce	json
+//	@Param		body	body		request.UserRegister	true	"register data"
+//	@Success	200		{object}	response.Data{Data=response.Login}
+//	@Router		/public/user/register [post]
 func (p *PublicApi) Register(ctx *gin.Context) {
 	var requestData request.UserRegister
 	var err error
@@ -154,30 +145,19 @@ func (p *PublicApi) Register(ctx *gin.Context) {
 	}
 
 	data := userModel.AddData{Username: requestData.Username, Password: requestData.Password, Email: requestData.Email}
-	var user userModel.User
-	var token string
-	err = global.GvaDb.Transaction(
-		func(tx *gorm.DB) error {
-			user, err = userService.Base.Register(data, tx)
-			if err != nil {
-				return err
-			}
-			//注册成功 获取token
-			customClaims := commonService.MakeCustomClaims(user.ID)
-			token, err = commonService.GenerateJWT(customClaims)
-			if err != nil {
-				return err
-			}
-			return err
-		},
-	)
+
+	user, err := userService.Register(data, ctx)
 	if responseError(err, ctx) {
 		return
 	}
-	// 发送不成功不影响主流程
-	_ = thirdpartyService.SendNotificationEmail(constant.NotificationOfRegistrationSuccess, &user)
+	// 注册成功 获取token
+	customClaims := commonService.MakeCustomClaims(user.ID)
+	token, err := commonService.GenerateJWT(customClaims)
+	if responseError(err, ctx) {
+		return
+	}
 
-	responseData := response.Register{Token: token}
+	responseData := response.Register{Token: token, TokenExpirationTime: customClaims.ExpiresAt.Time}
 	err = responseData.User.SetData(user)
 	if responseError(err, ctx) {
 		return
@@ -185,6 +165,62 @@ func (p *PublicApi) Register(ctx *gin.Context) {
 	response.OkWithDetailed(responseData, "注册成功", ctx)
 }
 
+// TourRequest
+//
+//	@Tags		User
+//	@Accept		json
+//	@Produce	json
+//	@Param		body	body		request.TourApply	true	"data"
+//	@Success	200		{object}	response.Data{Data=response.Login}
+//	@Router		/public/user/tour [post]
+func (p *PublicApi) TourRequest(ctx *gin.Context) {
+	var requestData request.TourApply
+	if err := ctx.ShouldBindJSON(&requestData); err != nil {
+		response.FailToParameter(ctx, err)
+		return
+	}
+	if !requestData.CheckSign() {
+		response.Forbidden(ctx)
+		return
+	}
+	user, err := userService.EnableTourist(requestData.DeviceNumber, contextFunc.GetClient(ctx), ctx)
+	if err != nil {
+		if errors.Is(err, global.ErrTooManyTourists) {
+			ctx.Header("Cache-Control", "max-age=300")
+		}
+		response.FailToError(ctx, err)
+		return
+	}
+	// response
+	customClaims := commonService.MakeCustomClaims(user.ID)
+	token, err := commonService.GenerateJWT(customClaims)
+	if responseError(err, ctx) {
+		return
+	}
+	responseData := response.Login{Token: token, TokenExpirationTime: customClaims.ExpiresAt.Time}
+	err = responseData.User.SetData(user)
+	if responseError(err, ctx) {
+		return
+	}
+	clientInfo, err := user.GetUserClient(contextFunc.GetClient(ctx), db.Db)
+	if responseError(err, ctx) {
+		return
+	}
+	err = responseData.SetDataFormClientInto(clientInfo)
+	if responseError(err, ctx) {
+		return
+	}
+	response.OkWithDetailed(responseData, "welcome", ctx)
+}
+
+// UpdatePassword
+//
+//	@Tags		User
+//	@Accept		json
+//	@Produce	json
+//	@Param		body	body		request.UserForgetPassword	true	"data"
+//	@Success	204		{object}	response.NoContent
+//	@Router		/public/user/password [put]
 func (p *PublicApi) UpdatePassword(ctx *gin.Context) {
 	var requestData request.UserForgetPassword
 	if err := ctx.ShouldBindJSON(&requestData); err != nil {
@@ -200,19 +236,38 @@ func (p *PublicApi) UpdatePassword(ctx *gin.Context) {
 	if responseError(err, ctx) {
 		return
 	}
-	err = global.GvaDb.Transaction(
-		func(tx *gorm.DB) error {
-			return userService.Base.UpdatePassword(user, requestData.Password, tx)
-		},
-	)
-	// 发送不成功不影响主流程
-	_ = thirdpartyService.SendNotificationEmail(constant.NotificationOfUpdatePassword, &user)
+	err = userService.UpdatePassword(user, requestData.Password, ctx)
 	if responseError(err, ctx) {
 		return
 	}
 	response.Ok(ctx)
 }
 
+// RefreshToken
+//
+//	@Tags		User
+//	@Accept		json
+//	@Produce	json
+//	@Success	200	{object}	response.Data{Data=response.Token}
+//	@Router		/user/token/refresh [post]
+func (u *UserApi) RefreshToken(ctx *gin.Context) {
+	claims := contextFunc.GetClaims(ctx)
+	token, newClaims, err := commonService.RefreshJWT(claims)
+	if responseError(err, ctx) {
+		return
+	}
+	responseData := response.Token{Token: token, TokenExpirationTime: newClaims.ExpiresAt.Time}
+	response.OkWithData(responseData, ctx)
+}
+
+// UpdatePassword
+//
+//	@Tags		User
+//	@Accept		json
+//	@Produce	json
+//	@Param		body	body		request.UserUpdatePassword	true	"data"
+//	@Success	204		{object}	response.NoContent
+//	@Router		/user/password [put]
 func (u *UserApi) UpdatePassword(ctx *gin.Context) {
 	var requestData request.UserUpdatePassword
 	if err := ctx.ShouldBindJSON(&requestData); err != nil {
@@ -229,19 +284,21 @@ func (u *UserApi) UpdatePassword(ctx *gin.Context) {
 		return
 	}
 
-	err = global.GvaDb.Transaction(
-		func(tx *gorm.DB) error {
-			return userService.Base.UpdatePassword(user, requestData.Password, tx)
-		},
-	)
-	// 发送不成功不影响主流程
-	_ = thirdpartyService.SendNotificationEmail(constant.NotificationOfUpdatePassword, &user)
+	err = userService.UpdatePassword(user, requestData.Password, ctx)
 	if responseError(err, ctx) {
 		return
 	}
 	response.Ok(ctx)
 }
 
+// UpdateInfo
+//
+//	@Tags		User
+//	@Accept		json
+//	@Produce	json
+//	@Param		body	body		request.UserUpdateInfo	true	"data"
+//	@Success	204		{object}	response.NoContent
+//	@Router		/user/current [put]
 func (u *UserApi) UpdateInfo(ctx *gin.Context) {
 	var requestData request.UserUpdateInfo
 	var err error
@@ -254,13 +311,21 @@ func (u *UserApi) UpdateInfo(ctx *gin.Context) {
 	if responseError(err, ctx) {
 		return
 	}
-	err = global.GvaDb.Model(&user).Update("username", requestData.Username).Error
+	err = userService.UpdateInfo(user, requestData.Username, ctx)
 	if responseError(err, ctx) {
 		return
 	}
 	response.Ok(ctx)
 }
 
+// SearchUser
+//
+//	@Tags		User
+//	@Accept		json
+//	@Produce	json
+//	@Param		body	body		request.UserSearch	true	"data"
+//	@Success	200		{object}	response.Data{Data=response.List[response.UserInfo]{}}
+//	@Router		/user/search [get]
 func (u *UserApi) SearchUser(ctx *gin.Context) {
 	var requestData request.UserSearch
 	var err error
@@ -284,6 +349,14 @@ func (u *UserApi) SearchUser(ctx *gin.Context) {
 	response.OkWithData(responseData, ctx)
 }
 
+// SetCurrentAccount
+//
+//	@Tags		User
+//	@Accept		json
+//	@Produce	json
+//	@Param		body	body		request.Id	true	"data"
+//	@Success	204		{object}	response.NoContent
+//	@Router		/user/client/current/account [put]
 func (u *UserApi) SetCurrentAccount(ctx *gin.Context) {
 	var requestData request.Id
 	if err := ctx.ShouldBindJSON(&requestData); err != nil {
@@ -295,17 +368,21 @@ func (u *UserApi) SetCurrentAccount(ctx *gin.Context) {
 		return
 	}
 
-	err := global.GvaDb.Transaction(
-		func(tx *gorm.DB) error {
-			return userService.Base.SetClientAccount(accountUser, contextFunc.GetClient(ctx), account, tx)
-		},
-	)
+	err := userService.SetClientAccount(accountUser, contextFunc.GetClient(ctx), account, ctx)
 	if responseError(err, ctx) {
 		return
 	}
 	response.Ok(ctx)
 }
 
+// SetCurrentShareAccount
+//
+//	@Tags		User
+//	@Accept		json
+//	@Produce	json
+//	@Param		body	body		request.Id	true	"data"
+//	@Success	204		{object}	response.NoContent
+//	@Router		/user/client/current/share/account [put]
 func (u *UserApi) SetCurrentShareAccount(ctx *gin.Context) {
 	var requestData request.Id
 	if err := ctx.ShouldBindJSON(&requestData); err != nil {
@@ -321,17 +398,21 @@ func (u *UserApi) SetCurrentShareAccount(ctx *gin.Context) {
 		return
 	}
 
-	err := global.GvaDb.Transaction(
-		func(tx *gorm.DB) error {
-			return userService.Base.SetClientShareAccount(accountUser, contextFunc.GetClient(ctx), account, tx)
-		},
-	)
+	err := userService.SetClientShareAccount(accountUser, contextFunc.GetClient(ctx), account, ctx)
 	if responseError(err, ctx) {
 		return
 	}
 	response.Ok(ctx)
 }
 
+// SendCaptchaEmail
+//
+//	@Tags		User
+//	@Accept		json
+//	@Produce	json
+//	@Param		body	body		request.UserSendEmail	true	"data"
+//	@Success	200		{object}	response.Data{Data=response.ExpirationTime}
+//	@Router		/user/client/current/share/account [post]
 func (u *UserApi) SendCaptchaEmail(ctx *gin.Context) {
 	var requestData request.UserSendEmail
 	if err := ctx.ShouldBindJSON(&requestData); err != nil {
@@ -348,28 +429,39 @@ func (u *UserApi) SendCaptchaEmail(ctx *gin.Context) {
 	if responseError(err, ctx) {
 		return
 	}
-
-	err = thirdpartyService.SendCaptchaEmail(user.Email, requestData.Type)
-	if responseError(err, ctx) {
-		return
+	isSuccess := nats.PublishTaskWithPayload(
+		nats.TaskSendCaptchaEmail, nats.PayloadSendCaptchaEmail{
+			Email: user.Email, Action: requestData.Type,
+		},
+	)
+	if !isSuccess {
+		response.FailToError(ctx, errors.New("发送失败"))
 	}
 	response.OkWithData(response.ExpirationTime{ExpirationTime: global.Config.Captcha.EmailCaptchaTimeOut}, ctx)
 }
 
+// Home
+//
+//	@Tags		User
+//	@Accept		json
+//	@Produce	json
+//	@Param		body	body		request.UserHome	true	"data"
+//	@Success	200		{object}	response.Data{Data=response.UserHome}
+//	@Router		/user/home [get]
 func (u *UserApi) Home(ctx *gin.Context) {
 	var requestData request.UserHome
 	if err := ctx.ShouldBindJSON(&requestData); err != nil {
 		response.FailToParameter(ctx, err)
 		return
 	}
-	pass := checkFunc.AccountBelong(requestData.AccountId, ctx)
+	account, _, pass := checkFunc.AccountBelongAndGet(requestData.AccountId, ctx)
 	if false == pass {
 		return
 	}
 
 	group := egroup.WithContext(ctx)
-	nowTime := time.Now()
-	year, month, day := time.Now().Date()
+	nowTime, timeLocation := account.GetNowTime(), account.GetTimeLocation()
+	year, month, day := nowTime.Date()
 	var todayData, yesterdayData, weekData, monthData, yearData response.TransactionStatistic
 	condition := transactionModel.StatisticCondition{
 		ForeignKeyCondition: transactionModel.ForeignKeyCondition{AccountId: requestData.AccountId},
@@ -382,35 +474,35 @@ func (u *UserApi) Home(ctx *gin.Context) {
 			return err
 		}
 		*data = response.TransactionStatistic{
-			IncomeExpenseStatistic: result,
-			StartTime:              startTime.Unix(),
-			EndTime:                endTime.Unix(),
+			IEStatistic: result,
+			StartTime:   startTime,
+			EndTime:     endTime,
 		}
 		return nil
 	}
 	handelGoroutineOne := func() error {
 		var err error
-		//今日统计
+		// 今日统计
 		if err = handelOneTime(
 			&todayData,
-			time.Date(year, month, day, 0, 0, 0, 0, time.Local),
-			time.Date(year, month, day, 23, 59, 59, 0, time.Local),
+			time.Date(year, month, day, 0, 0, 0, 0, timeLocation),
+			time.Date(year, month, day, 23, 59, 59, 0, timeLocation),
 		); err != nil {
 			return err
 		}
-		//昨日统计
+		// 昨日统计
 		if err = handelOneTime(
 			&yesterdayData,
-			time.Date(year, month, day-1, 0, 0, 0, 0, time.Local),
-			time.Date(year, month, day-1, 23, 59, 59, 0, time.Local),
+			time.Date(year, month, day-1, 0, 0, 0, 0, timeLocation),
+			time.Date(year, month, day-1, 23, 59, 59, 0, timeLocation),
 		); err != nil {
 			return err
 		}
-		//周统计
+		// 周统计
 		if err = handelOneTime(
 			&weekData,
-			util.Time.GetFirstSecondOfMonday(nowTime),
-			time.Date(year, month, day, 23, 59, 59, 0, time.Local),
+			timeTool.GetFirstSecondOfWeek(nowTime),
+			timeTool.GetLastSecondOfWeek(nowTime),
 		); err != nil {
 			return err
 		}
@@ -419,19 +511,19 @@ func (u *UserApi) Home(ctx *gin.Context) {
 
 	handelGoroutineTwo := func() error {
 		var err error
-		//月统计
+		// 月统计
 		if err = handelOneTime(
 			&monthData,
-			util.Time.GetFirstSecondOfMonth(nowTime),
-			time.Date(year, month, day, 23, 59, 59, 0, time.Local),
+			timeTool.GetFirstSecondOfMonth(nowTime),
+			timeTool.GetLastSecondOfMonth(nowTime),
 		); err != nil {
 			return err
 		}
-		//年统计
+		// 年统计
 		if err = handelOneTime(
 			&yearData,
-			util.Time.GetFirstSecondOfYear(nowTime),
-			time.Date(year, month, day, 23, 59, 59, 0, time.Local),
+			timeTool.GetFirstSecondOfYear(nowTime),
+			timeTool.GetLastSecondOfYear(nowTime),
 		); err != nil {
 			return err
 		}
@@ -439,7 +531,6 @@ func (u *UserApi) Home(ctx *gin.Context) {
 	}
 	group.Go(handelGoroutineOne)
 	group.Go(handelGoroutineTwo)
-	// 等待所有 Goroutine 完成
 	if err := group.Wait(); responseError(err, ctx) {
 		return
 	}
@@ -452,6 +543,12 @@ func (u *UserApi) Home(ctx *gin.Context) {
 	response.OkWithData(responseData, ctx)
 }
 
+// GetTransactionShareConfig
+//
+//	@Tags		User/Config
+//	@Produce	json
+//	@Success	200	{object}	response.Data{Data=response.UserTransactionShareConfig}
+//	@Router		/user/transaction/share/config [get]
 func (u *UserApi) GetTransactionShareConfig(ctx *gin.Context) {
 	user, err := contextFunc.GetUser(ctx)
 	if responseError(err, ctx) {
@@ -469,6 +566,14 @@ func (u *UserApi) GetTransactionShareConfig(ctx *gin.Context) {
 	response.OkWithData(responseData, ctx)
 }
 
+// UpdateTransactionShareConfig
+//
+//	@Tags		User/Config
+//	@Accept		json
+//	@Produce	json
+//	@Param		body	body		request.UserTransactionShareConfigUpdate	true	"data"
+//	@Success	200		{object}	response.Data{Data=response.UserTransactionShareConfig}
+//	@Router		/user/transaction/share/config [put]
 func (u *UserApi) UpdateTransactionShareConfig(ctx *gin.Context) {
 	var err error
 	// 处理请求数据
@@ -492,9 +597,9 @@ func (u *UserApi) UpdateTransactionShareConfig(ctx *gin.Context) {
 	}
 
 	if requestData.Status {
-		err = config.OpenDisplayFlag(flag, global.GvaDb)
+		err = config.OpenDisplayFlag(flag, db.Db)
 	} else {
-		err = config.ClosedDisplayFlag(flag, global.GvaDb)
+		err = config.ClosedDisplayFlag(flag, db.Db)
 	}
 	// 响应
 	if responseError(err, ctx) {
@@ -520,6 +625,12 @@ func (u *UserApi) responseAndMaskUserInfo(data userModel.UserInfo) response.User
 	}
 }
 
+// GetFriendList
+//
+//	@Tags		User/Friend
+//	@Produce	json
+//	@Success	200	{object}	response.Data{Data=response.List[response.UserInfo]{}}
+//	@Router		/user/friend/list [get]
 func (u *UserApi) GetFriendList(ctx *gin.Context) {
 	user, err := contextFunc.GetUser(ctx)
 	if responseError(err, ctx) {
@@ -556,13 +667,21 @@ func (u *UserApi) responseUserFriendInvitation(data userModel.FriendInvitation) 
 	}
 	responseData = response.UserFriendInvitation{
 		Id:         data.ID,
-		CreateTime: data.CreatedAt.Unix(),
+		CreateTime: data.CreatedAt,
 	}
 	responseData.Inviter.SetMaskData(inviterInfo)
 	responseData.Inviter.SetMaskData(inviteeInfo)
 	return
 }
 
+// CreateFriendInvitation
+//
+//	@Tags		User/Friend/Invitation
+//	@Accept		json
+//	@Produce	json
+//	@Param		body	body		request.UserCreateFriendInvitation	true	"data"
+//	@Success	200		{object}	response.Data{Data=response.UserFriendInvitation}
+//	@Router		/user/friend/invitation [post]
 func (u *UserApi) CreateFriendInvitation(ctx *gin.Context) {
 	var requestData request.UserCreateFriendInvitation
 	if err := ctx.ShouldBindJSON(&requestData); err != nil {
@@ -575,19 +694,12 @@ func (u *UserApi) CreateFriendInvitation(ctx *gin.Context) {
 	}
 	// 处理
 	var invitation userModel.FriendInvitation
-	txFunc := func(tx *gorm.DB) error {
-		var invitee userModel.User
-		invitee, err = userModel.NewDao(tx).SelectById(requestData.Invitee)
-		if err != nil {
-			return err
-		}
-		invitation, err = userService.Friend.CreateInvitation(user, invitee, tx)
-		if err != nil {
-			return err
-		}
-		return nil
+	var invitee userModel.User
+	invitee, err = userModel.NewDao().SelectById(requestData.Invitee)
+	if responseError(err, ctx) {
+		return
 	}
-	err = global.GvaDb.Transaction(txFunc)
+	invitation, err = userService.Friend.CreateInvitation(user, invitee, ctx)
 	if responseError(err, ctx) {
 		return
 	}
@@ -612,6 +724,13 @@ func (u *UserApi) getFriendInvitationByParam(ctx *gin.Context) (result userModel
 	return
 }
 
+// AcceptFriendInvitation
+//
+//	@Tags		User/Friend/Invitation
+//	@Produce	json
+//	@Param		id	path		int	true	"Invitation ID"
+//	@Success	200	{object}	response.Data{Data=response.UserFriendInvitation}
+//	@Router		/user/friend/invitation/{id}/accept [put]
 func (u *UserApi) AcceptFriendInvitation(ctx *gin.Context) {
 	invitation, pass := u.getFriendInvitationByParam(ctx)
 	if false == pass {
@@ -621,11 +740,7 @@ func (u *UserApi) AcceptFriendInvitation(ctx *gin.Context) {
 		response.FailToError(ctx, errors.New("非被邀请者！"))
 		return
 	}
-	txFunc := func(tx *gorm.DB) error {
-		_, _, err := userService.Friend.AcceptInvitation(&invitation, tx)
-		return err
-	}
-	err := global.GvaDb.Transaction(txFunc)
+	_, _, err := userService.Friend.AcceptInvitation(&invitation, ctx)
 	if responseError(err, ctx) {
 		return
 	}
@@ -637,6 +752,13 @@ func (u *UserApi) AcceptFriendInvitation(ctx *gin.Context) {
 	response.OkWithData(responseData, ctx)
 }
 
+// RefuseFriendInvitation
+//
+//	@Tags		User/Friend/Invitation
+//	@Produce	json
+//	@Param		id	path		int	true	"Invitation ID"
+//	@Success	200	{object}	response.Data{Data=response.UserFriendInvitation}
+//	@Router		/user/friend/invitation/{id}/refuse [put]
 func (u *UserApi) RefuseFriendInvitation(ctx *gin.Context) {
 	invitation, pass := u.getFriendInvitationByParam(ctx)
 	if false == pass {
@@ -646,11 +768,7 @@ func (u *UserApi) RefuseFriendInvitation(ctx *gin.Context) {
 		response.FailToError(ctx, errors.New("非被邀请者！"))
 		return
 	}
-	txFunc := func(tx *gorm.DB) error {
-		err := userService.Friend.RefuseInvitation(&invitation, tx)
-		return err
-	}
-	err := global.GvaDb.Transaction(txFunc)
+	err := userService.Friend.RefuseInvitation(&invitation, ctx)
 	if responseError(err, ctx) {
 		return
 	}
@@ -662,6 +780,12 @@ func (u *UserApi) RefuseFriendInvitation(ctx *gin.Context) {
 	response.OkWithData(responseData, ctx)
 }
 
+// GetFriendInvitationList
+//
+//	@Tags		User/Friend/Invitation
+//	@Produce	json
+//	@Success	200	{object}	response.Data{Data=response.List[response.UserFriendInvitation]{}}
+//	@Router		/user/friend/invitation [get]
 func (u *UserApi) GetFriendInvitationList(ctx *gin.Context) {
 	var requestData request.UserGetFriendInvitation
 	if err := ctx.ShouldBindJSON(&requestData); err != nil {
@@ -690,6 +814,14 @@ func (u *UserApi) GetFriendInvitationList(ctx *gin.Context) {
 	response.OkWithData(response.List[response.UserFriendInvitation]{List: responseData}, ctx)
 }
 
+// GetAccountInvitationList
+//
+//	@Tags		User/Friend/Invitation
+//	@Accept		json
+//	@Produce	json
+//	@Param		body	body		request.UserGetAccountInvitationList	true	"query condition"
+//	@Success	200		{object}	response.Data{Data=response.AccountUserInvitation}
+//	@Router		/user/account/invitation/list [get]
 func (u *UserApi) GetAccountInvitationList(ctx *gin.Context) {
 	var err error
 	var requestData request.UserGetAccountInvitationList

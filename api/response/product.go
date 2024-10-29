@@ -1,31 +1,33 @@
 package response
 
 import (
-	"KeepAccount/global/constant"
+	"github.com/ZiRunHua/LeapLedger/global/constant"
 )
 
-type ProductGetOne struct {
+type ProductOne struct {
 	UniqueKey string
 	Name      string
 }
 
-type ProductGetList struct {
-	List []ProductGetOne
+type ProductList struct {
+	List []ProductOne
 }
 
-type ProductGetTransactionCategory struct {
+type ProductTransactionCategory struct {
 	Id            uint
 	Name          string
 	IncomeExpense constant.IncomeExpense
 }
 
-type ProductGetTransactionCategoryList struct {
-	List []ProductGetTransactionCategory
+type ProductTransactionCategoryList struct {
+	List []ProductTransactionCategory
 }
-type ProductGetMappingTree struct {
-	Tree []ProductGetMappingTreeFather
+
+type ProductMappingTree struct {
+	Tree []ProductMappingTreeFather
 }
-type ProductGetMappingTreeFather struct {
+
+type ProductMappingTreeFather struct {
 	FatherId uint
 	Children []uint
 }

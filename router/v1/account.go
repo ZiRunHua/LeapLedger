@@ -1,41 +1,42 @@
 package v1
 
 import (
-	v1 "KeepAccount/api/v1"
-	"github.com/gin-gonic/gin"
+	"github.com/ZiRunHua/LeapLedger/router/group"
 )
 
-type AccountRouter struct{}
-
-func (a *AccountRouter) InitAccountRouter(Router *gin.RouterGroup) {
-	router := Router.Group("account")
-	baseApi := v1.ApiGroupApp.AccountApi
+func init() {
+	// base path: /account/{accountId}
+	router := group.Private.Group("account")
+	baseApi := apiApp.AccountApi
 	{
 		router.POST("", baseApi.CreateOne)
-		router.PUT("/:id", baseApi.Update)
-		router.DELETE("/:id", baseApi.Delete)
+		group.AccountAdministrator.PUT("", baseApi.Update)
+		group.AccountAdministrator.DELETE("", baseApi.Delete)
 		router.GET("/list", baseApi.GetList)
 		router.GET("/list/:type", baseApi.GetListByType)
-		router.GET("/:id", baseApi.GetOne)
-		router.GET("/:id/info/:type", baseApi.GetInfo)
-		router.GET("/:id/info", baseApi.GetInfo)
-		//模板
+		group.Account.GET("", baseApi.GetOne)
+		group.Account.GET("/info/:type", baseApi.GetInfo)
+		group.Account.GET("/info", baseApi.GetInfo)
+		// 模板
 		router.GET("/template/list", baseApi.GetAccountTemplateList)
 		router.POST("/form/template/:id", baseApi.CreateOneByTemplate)
-		router.POST("/:id/transaction/category/init", baseApi.InitTransCategoryByTemplate)
-		//共享
-		router.PUT("/user/:id", baseApi.UpdateUser)
-		router.GET("/:id/user/list", baseApi.GetUserList)
-		router.GET("/user/:id/info", baseApi.GetUserInfo)
+		group.AccountCreator.POST("/transaction/category/init", baseApi.InitCategoryByTemplate)
+		// 共享
+		group.AccountCreator.PUT("/user/:id", baseApi.UpdateUser)
+		group.Account.GET("/user/list", baseApi.GetUserList)
+		group.Account.GET("/user/:id/info", baseApi.GetUserInfo)
 		router.GET("/user/invitation/list", baseApi.GetUserInvitationList)
-		router.POST("/:id/user/invitation", baseApi.CreateAccountUserInvitation)
-		router.POST("/user/invitation/:id/accept", baseApi.AcceptAccountUserInvitation)
-		router.POST("/user/invitation/:id/refuse", baseApi.RefuseAccountUserInvitation)
-		//账本关联
-		router.GET("/:id/mapping", baseApi.GetAccountMapping)
-		router.GET("/:id/mapping/list", baseApi.GetAccountMappingList)
-		router.DELETE("/mapping/:id", baseApi.DeleteAccountMapping)
-		router.POST("/:id/mapping", baseApi.CreateAccountMapping)
-		router.PUT("/mapping/:id", baseApi.UpdateAccountMapping)
+		group.AccountOwnEditor.POST("/user/invitation", baseApi.CreateAccountUserInvitation)
+		router.PUT("/user/invitation/:id/accept", baseApi.AcceptAccountUserInvitation)
+		router.PUT("/user/invitation/:id/refuse", baseApi.RefuseAccountUserInvitation)
+		// 账本关联
+		group.AccountOwnEditor.GET("/mapping", baseApi.GetAccountMapping)
+		group.AccountOwnEditor.DELETE("/mapping/:id", baseApi.DeleteAccountMapping)
+		group.Account.GET("/mapping/list", baseApi.GetAccountMappingList)
+		group.AccountOwnEditor.POST("/mapping", baseApi.CreateAccountMapping)
+		group.AccountOwnEditor.PUT("/mapping/:id", baseApi.UpdateAccountMapping)
+		// 账本用户配置
+		group.AccountOwnEditor.GET("/user/config", baseApi.GetUserConfig)
+		group.AccountOwnEditor.PUT("/user/config/flag/:flag", baseApi.UpdateUserConfigFlag)
 	}
 }

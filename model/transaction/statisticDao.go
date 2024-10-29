@@ -1,9 +1,10 @@
 package transactionModel
 
 import (
-	"KeepAccount/global"
-	"KeepAccount/global/constant"
-	accountModel "KeepAccount/model/account"
+	"errors"
+	"github.com/ZiRunHua/LeapLedger/global"
+	"github.com/ZiRunHua/LeapLedger/global/constant"
+	accountModel "github.com/ZiRunHua/LeapLedger/model/account"
 	"gorm.io/gorm"
 	"time"
 )
@@ -64,6 +65,12 @@ type CategoryAmountRankCondition struct {
 	EndTime   time.Time
 }
 
+func (c *CategoryAmountRankCondition) Local() {
+	location := accountModel.NewDao().GetTimeLocation(c.Account.ID)
+	c.StartTime = c.StartTime.In(location)
+	c.EndTime = c.EndTime.In(location)
+}
+
 // CategoryAmountRank  StatisticDao.GetCategoryAmountRank查询结果
 type CategoryAmountRank struct {
 	CategoryId uint
@@ -71,22 +78,26 @@ type CategoryAmountRank struct {
 }
 
 func (s *StatisticDao) GetCategoryAmountRank(
-	ie constant.IncomeExpense, condition CategoryAmountRankCondition, limit int,
+	ie constant.IncomeExpense, condition CategoryAmountRankCondition, limit *int,
 ) (result []CategoryAmountRank, err error) {
+	condition.Local()
 	query := s.db.Where("account_id = ?", condition.Account.ID)
 	query = query.Where("date BETWEEN ? AND ?", condition.StartTime, condition.EndTime)
 
 	query = query.Select("SUM(amount) as Amount,SUM(count) as Count,category_id").Group("category_id")
-	err = s.query(ie, query).Order("Amount desc").Limit(limit).Find(&result).Error
+	if limit != nil {
+		query = query.Limit(*limit)
+	}
+	err = s.query(ie, query).Order("Amount desc").Find(&result).Error
 	return result, err
 }
 
-// GetIeStatisticByCondition 查询收支统计 返回 global.IncomeExpenseStatistic
+// GetIeStatisticByCondition 查询收支统计 返回 global.IEStatistic
 func (s *StatisticDao) GetIeStatisticByCondition(ie *constant.IncomeExpense, condition StatisticCondition) (
-	result global.IncomeExpenseStatistic, err error,
+	result global.IEStatistic, err error,
 ) {
 	if false == condition.CheckAvailability() {
-		return
+		return result, errors.New("查询条件错误")
 	}
 	query := condition.addConditionToQuery(s.db)
 	if ie.QueryIncome() {

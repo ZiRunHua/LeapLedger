@@ -1,12 +1,13 @@
 package global
 
 import (
-	"KeepAccount/initialize"
+	"github.com/ZiRunHua/LeapLedger/initialize"
 	"go.uber.org/zap"
 )
 
 var (
 	GvaDb  = initialize.Db
+	GvaRdb = initialize.Rdb
 	Config = initialize.Config
 	Cache  = initialize.Cache
 )
@@ -19,6 +20,7 @@ var (
 
 func init() {
 	GvaDb = initialize.Db
+	GvaRdb = initialize.Rdb
 	Config = initialize.Config
 	Cache = initialize.Cache
 

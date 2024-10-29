@@ -1,17 +1,17 @@
 package request
 
 import (
-	"KeepAccount/global/constant"
-	transactionModel "KeepAccount/model/transaction"
+	"github.com/ZiRunHua/LeapLedger/global/constant"
+	transactionModel "github.com/ZiRunHua/LeapLedger/model/transaction"
+	"time"
 )
 
 type TransactionCreateOne struct {
-	AccountId     uint
 	Amount        int
 	CategoryId    uint
 	IncomeExpense constant.IncomeExpense
 	Remark        string
-	TradeTime     uint
+	TradeTime     time.Time
 }
 
 type TransactionUpdateOne struct {
@@ -21,7 +21,7 @@ type TransactionUpdateOne struct {
 	CategoryId    uint
 	IncomeExpense constant.IncomeExpense
 	Remark        string
-	TradeTime     uint
+	TradeTime     time.Time
 }
 
 type TransactionQueryCondition struct {
@@ -35,8 +35,8 @@ type TransactionQueryCondition struct {
 }
 
 func (t *TransactionQueryCondition) GetCondition() transactionModel.Condition {
-	startTime := t.TimeFrame.GetStartTime()
-	endTime := t.TimeFrame.GetEndTime()
+	startTime := t.TimeFrame.StartTime
+	endTime := t.TimeFrame.EndTime
 	return transactionModel.Condition{
 		IncomeExpense:       t.IncomeExpense,
 		TimeCondition:       transactionModel.TimeCondition{TradeStartTime: &startTime, TradeEndTime: &endTime},
@@ -56,15 +56,15 @@ func (t *TransactionQueryCondition) GetForeignKeyCondition() transactionModel.Fo
 func (t *TransactionQueryCondition) GetStatisticCondition() transactionModel.StatisticCondition {
 	return transactionModel.StatisticCondition{
 		ForeignKeyCondition: t.GetForeignKeyCondition(),
-		StartTime:           t.GetStartTime(),
-		EndTime:             t.GetEndTime(),
+		StartTime:           t.StartTime,
+		EndTime:             t.EndTime,
 	}
 }
 
 func (t *TransactionQueryCondition) GetExtensionCondition() transactionModel.ExtensionCondition {
 	return transactionModel.ExtensionCondition{
-		MiniAmount: t.MinimumAmount,
-		MaxAmount:  t.MaximumAmount,
+		MinAmount: t.MinimumAmount,
+		MaxAmount: t.MaximumAmount,
 	}
 }
 
@@ -91,6 +91,35 @@ type TransactionDayStatistic struct {
 type TransactionCategoryAmountRank struct {
 	AccountId     uint                   `binding:"required"`
 	IncomeExpense constant.IncomeExpense `binding:"required,oneof=income expense"`
-	Limit         int                    `binding:"required"`
+	Limit         *int                   `binding:"omitempty"`
 	TimeFrame
+}
+
+type TransactionAmountRank struct {
+	AccountId     uint                   `binding:"required"`
+	IncomeExpense constant.IncomeExpense `binding:"required,oneof=income expense"`
+	TimeFrame
+}
+
+type TransactionTimingConfig struct {
+	UserId     uint
+	Type       transactionModel.TimingType
+	OffsetDays int
+	NextTime   time.Time
+}
+
+type TransactionTiming struct {
+	Trans  transactionModel.Info
+	Config TransactionTimingConfig
+}
+
+func (tt TransactionTiming) GetTimingModel() transactionModel.Timing {
+	return transactionModel.Timing{
+		AccountId:  tt.Trans.AccountId,
+		TransInfo:  tt.Trans,
+		UserId:     tt.Config.UserId,
+		Type:       tt.Config.Type,
+		OffsetDays: tt.Config.OffsetDays,
+		NextTime:   tt.Config.NextTime,
+	}
 }

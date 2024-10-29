@@ -8,7 +8,7 @@ import (
 
 type ExpenseAccountStatistic struct {
 	Statistic
-	AccountId uint `gorm:"column:account_id;primaryKey"`
+	AccountId uint `gorm:"primaryKey"`
 }
 
 func (i *ExpenseAccountStatistic) TableName() string {
@@ -23,7 +23,9 @@ func (e *ExpenseAccountStatistic) Accumulate(
 	updatesValue := e.GetUpdatesValue(amount, count)
 	update := where.Updates(updatesValue)
 	err := update.Error
-
+	if err != nil {
+		return err
+	}
 	if update.RowsAffected == 0 {
 		e.Date = tradeTime
 		e.AccountId = accountId
@@ -39,8 +41,9 @@ func (e *ExpenseAccountStatistic) Accumulate(
 
 type ExpenseAccountUserStatistic struct {
 	Statistic
-	AccountId uint `gorm:"column:account_id;primaryKey"`
-	UserId    uint `gorm:"column:user_id;primaryKey"`
+	AccountId  uint `gorm:"primaryKey"`
+	UserId     uint `gorm:"primaryKey"`
+	CategoryId uint `gorm:"primaryKey"`
 }
 
 func (i *ExpenseAccountUserStatistic) TableName() string {
@@ -48,20 +51,23 @@ func (i *ExpenseAccountUserStatistic) TableName() string {
 }
 
 func (e *ExpenseAccountUserStatistic) Accumulate(
-	tradeTime time.Time, accountId uint, userId uint, amount int, count int, tx *gorm.DB,
+	tradeTime time.Time, accountId uint, userId uint, categoryId uint, amount int, count int, tx *gorm.DB,
 ) error {
 	tradeTime = e.GetDate(tradeTime)
 	where := tx.Model(e).Where(
-		"date = ? AND account_id = ? AND user_id = ?", tradeTime, accountId, userId,
+		"date = ? AND account_id = ? AND user_id = ? AND category_id = ?", tradeTime, accountId, userId, categoryId,
 	)
 	updatesValue := e.GetUpdatesValue(amount, count)
 	update := where.Updates(updatesValue)
 	err := update.Error
-
+	if err != nil {
+		return err
+	}
 	if update.RowsAffected == 0 {
 		e.Date = tradeTime
 		e.AccountId = accountId
 		e.UserId = userId
+		e.CategoryId = categoryId
 		e.Amount = amount
 		e.Count = count
 		err = tx.Create(e).Error
@@ -74,8 +80,8 @@ func (e *ExpenseAccountUserStatistic) Accumulate(
 
 type ExpenseCategoryStatistic struct {
 	Statistic
-	CategoryId uint `gorm:"column:category_id;primaryKey"`
-	AccountId  uint `gorm:"column:account_id"` //冗余字段
+	CategoryId uint `gorm:"primaryKey"`
+	AccountId  uint //冗余字段
 }
 
 func (e *ExpenseCategoryStatistic) TableName() string {
@@ -90,7 +96,9 @@ func (e *ExpenseCategoryStatistic) Accumulate(
 	updatesValue := e.GetUpdatesValue(amount, count)
 	update := where.Updates(updatesValue)
 	err := update.Error
-
+	if err != nil {
+		return err
+	}
 	if update.RowsAffected == 0 {
 		e.Date = tradeTime
 		e.CategoryId = categoryId

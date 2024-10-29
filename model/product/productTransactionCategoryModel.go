@@ -1,17 +1,16 @@
 package productModel
 
 import (
-	"KeepAccount/global"
-	"KeepAccount/global/constant"
-	commonModel "KeepAccount/model/common"
-	queryFunc "KeepAccount/model/common/query"
+	"github.com/ZiRunHua/LeapLedger/global"
+	"github.com/ZiRunHua/LeapLedger/global/constant"
+	commonModel "github.com/ZiRunHua/LeapLedger/model/common"
 )
 
 type TransactionCategory struct {
-	ID            uint                   `gorm:"primary_key;column:id"`
-	ProductKey    string                 `gorm:"column:product_key"`
-	IncomeExpense constant.IncomeExpense `gorm:"column:income_expense;size:8;comment:'收支类型'"`
-	Name          string                 `gorm:"column:name;size:64"`
+	ID            uint                   `gorm:"primary_key"`
+	ProductKey    string                 `gorm:"uniqueIndex:unique_name,priority:1"`
+	IncomeExpense constant.IncomeExpense `gorm:"size:8;comment:'收支类型';uniqueIndex:unique_name,priority:2"`
+	Name          string                 `gorm:"size:64;uniqueIndex:unique_name,priority:3"`
 	commonModel.BaseModel
 }
 
@@ -27,11 +26,7 @@ func (tc *TransactionCategory) SelectById(id uint) error {
 	return global.GvaDb.First(tc, id).Error
 }
 
-func (tc *TransactionCategory) Exits(query interface{}, args ...interface{}) (bool, error) {
-	return queryFunc.Exist[*TransactionCategory](query, args)
-}
-
-func (tc *TransactionCategory) GetMap(productKey string) (map[uint]TransactionCategory, error) {
+func (tc *TransactionCategory) GetMap(productKey Key) (map[uint]TransactionCategory, error) {
 	transCategoryMap := make(map[uint]TransactionCategory)
 	var prodTransCategory TransactionCategory
 	rows, err := global.GvaDb.Model(&prodTransCategory).Where(
@@ -50,7 +45,7 @@ func (tc *TransactionCategory) GetMap(productKey string) (map[uint]TransactionCa
 	return transCategoryMap, nil
 }
 
-func (tc *TransactionCategory) GetIncomeExpenseAndNameMap(productKey KeyValue) (
+func (tc *TransactionCategory) GetIncomeExpenseAndNameMap(productKey Key) (
 	result map[constant.IncomeExpense]map[string]TransactionCategory, err error,
 ) {
 	var prodTransCategory TransactionCategory

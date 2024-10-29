@@ -1,7 +1,9 @@
 package transactionModel
 
 import (
-	"KeepAccount/global/constant"
+	"github.com/ZiRunHua/LeapLedger/global/constant"
+	accountModel "github.com/ZiRunHua/LeapLedger/model/account"
+	"github.com/ZiRunHua/LeapLedger/util/timeTool"
 	"gorm.io/gorm"
 	"time"
 )
@@ -27,11 +29,16 @@ func (f *ForeignKeyCondition) addConditionToQuery(db *gorm.DB) *gorm.DB {
 // GetStatisticTableName 根据查询条件返回合适的查询表格
 // gorm的Model方法视乎有问题 只会在第一次执行Model时更新查询的表格 故返回表名而不是模型
 func (f *ForeignKeyCondition) GetStatisticTableName(ie constant.IncomeExpense) string {
+	var model statisticModel
 	if ie == constant.Income {
-		return f.getIncomeStatisticModel().TableName()
+		model = f.getIncomeStatisticModel()
 	} else {
-		return f.getExpendStatisticModel().TableName()
+		model = f.getExpendStatisticModel()
 	}
+	if model == nil {
+		return "transaction"
+	}
+	return model.TableName()
 }
 
 func (f *ForeignKeyCondition) getIncomeStatisticModel() statisticModel {
@@ -43,8 +50,9 @@ func (f *ForeignKeyCondition) getIncomeStatisticModel() statisticModel {
 		}
 	} else if f.UserIds == nil {
 		return &IncomeCategoryStatistic{}
+	} else {
+		return &IncomeAccountUserStatistic{}
 	}
-	return nil
 }
 
 func (f *ForeignKeyCondition) getExpendStatisticModel() statisticModel {
@@ -56,8 +64,9 @@ func (f *ForeignKeyCondition) getExpendStatisticModel() statisticModel {
 		}
 	} else if f.UserIds == nil {
 		return &ExpenseCategoryStatistic{}
+	} else {
+		return &ExpenseAccountUserStatistic{}
 	}
-	return nil
 }
 
 // Condition 交易记录查询条件 用于交易记录和统计的查询
@@ -68,20 +77,29 @@ type Condition struct {
 	ExtensionCondition
 }
 
-func (tc *Condition) addConditionToQuery(db *gorm.DB) *gorm.DB {
-	query := tc.ForeignKeyCondition.addConditionToQuery(db)
-	query = tc.TimeCondition.addConditionToQuery(query)
-	query = tc.ExtensionCondition.addConditionToQuery(query)
-	if tc.IncomeExpense != nil {
-		query = query.Where("income_expense = ?", *tc.IncomeExpense)
+func (c *Condition) addConditionToQuery(db *gorm.DB) *gorm.DB {
+	query := c.ForeignKeyCondition.addConditionToQuery(db)
+	query = c.TimeCondition.addConditionToQuery(query)
+	query = c.ExtensionCondition.addConditionToQuery(query)
+	if c.IncomeExpense != nil {
+		query = query.Where("income_expense = ?", *c.IncomeExpense)
 	}
 	return query
 }
 
-// TimeCondition 交易表时间条件条件
+// TimeCondition 交易表时间查询条件
 type TimeCondition struct {
 	TradeStartTime *time.Time
 	TradeEndTime   *time.Time
+}
+
+func NewTimeCondition() *TimeCondition {
+	return &TimeCondition{}
+}
+
+func (tc *TimeCondition) SetTradeTimes(startTime, endTime time.Time) {
+	tc.TradeStartTime = &startTime
+	tc.TradeEndTime = &endTime
 }
 
 func (tc *TimeCondition) addConditionToQuery(query *gorm.DB) *gorm.DB {
@@ -96,16 +114,16 @@ func (tc *TimeCondition) addConditionToQuery(query *gorm.DB) *gorm.DB {
 
 // ExtensionCondition 拓展查询条件 多是无索引条件
 type ExtensionCondition struct {
-	MiniAmount, MaxAmount *int
+	MinAmount, MaxAmount *int
 }
 
-func (ec *ExtensionCondition) IsConditionSet() bool {
-	return ec != nil && (ec.MiniAmount != nil || ec.MaxAmount != nil)
+func (ec *ExtensionCondition) IsSet() bool {
+	return ec != nil && (ec.MinAmount != nil || ec.MaxAmount != nil)
 }
 
 func (ec *ExtensionCondition) addConditionToQuery(query *gorm.DB) *gorm.DB {
-	if ec.MiniAmount != nil {
-		query = query.Where("amount >= ?", *ec.MiniAmount)
+	if ec.MinAmount != nil {
+		query = query.Where("amount >= ?", *ec.MinAmount)
 	}
 	if ec.MaxAmount != nil {
 		query = query.Where("amount <= ?", *ec.MaxAmount)
@@ -118,12 +136,38 @@ type StatisticCondition struct {
 	ForeignKeyCondition
 	StartTime time.Time
 	EndTime   time.Time
+
+	accountId uint
+	location  *time.Location
 }
 
-// addConditionToQuery 通过条件获取附带查询条件的gorm.DB
+func (s *StatisticCondition) getLocation() *time.Location {
+	if s.accountId == s.AccountId && s.location != nil {
+		return s.location
+	}
+	var err error
+	s.location, err = time.LoadLocation(accountModel.NewDao().GetLocation(s.AccountId))
+	if err != nil {
+		panic(err)
+	}
+	s.accountId = s.AccountId
+	return s.location
+}
+
+// addConditionToQuery 通过条件获取附带查询条件的gorm.db
 func (s *StatisticCondition) addConditionToQuery(db *gorm.DB) *gorm.DB {
 	query := s.ForeignKeyCondition.addConditionToQuery(db)
-	query = query.Where("date BETWEEN ? AND ?", s.StartTime, s.EndTime)
+	switch true {
+	case !s.StartTime.IsZero() && !s.EndTime.IsZero():
+		query = query.Where(
+			"date BETWEEN ? AND ?", timeTool.ToDay(s.StartTime.In(s.getLocation())),
+			timeTool.ToDay(s.EndTime.In(s.getLocation())),
+		)
+	case !s.StartTime.IsZero():
+		query = query.Where("date >=", timeTool.ToDay(s.StartTime.In(s.getLocation())))
+	case !s.EndTime.IsZero():
+		query = query.Where("date <=", timeTool.ToDay(s.EndTime.In(s.getLocation())))
+	}
 	return query
 }
 
@@ -152,17 +196,13 @@ func NewStatisticConditionBuilder(accountId uint) *StatisticConditionBuilder {
 }
 
 // WithUserIds 设置用户ids
-func (b *StatisticConditionBuilder) WithUserIds(
-	Ids []uint,
-) *StatisticConditionBuilder {
+func (b *StatisticConditionBuilder) WithUserIds(Ids []uint) *StatisticConditionBuilder {
 	b.condition.UserIds = &Ids
 	return b
 }
 
 // WithCategoryIds 设置交易类型ids
-func (b *StatisticConditionBuilder) WithCategoryIds(
-	Ids []uint,
-) *StatisticConditionBuilder {
+func (b *StatisticConditionBuilder) WithCategoryIds(Ids []uint) *StatisticConditionBuilder {
 	b.condition.CategoryIds = &Ids
 	return b
 }

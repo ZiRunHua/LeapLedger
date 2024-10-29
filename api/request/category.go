@@ -1,7 +1,7 @@
 package request
 
 import (
-	"KeepAccount/global/constant"
+	"github.com/ZiRunHua/LeapLedger/global/constant"
 )
 
 type CategoryOne struct {
@@ -24,12 +24,11 @@ type CategoryUpdateOne struct {
 }
 
 type CategoryCreateOneFather struct {
-	AccountId     uint
 	Name          string
 	IncomeExpense constant.IncomeExpense
 }
 
-type CategoryMoveCategory struct {
+type CategoryMove struct {
 	Previous *uint
 	FatherId *uint
 }
@@ -39,12 +38,10 @@ type CategoryMoveFather struct {
 }
 
 type CategoryGetTree struct {
-	AccountId     uint `binding:"required"`
 	IncomeExpense *constant.IncomeExpense
 }
 
 type CategoryGetList struct {
-	AccountId     uint                    `binding:"required"`
 	IncomeExpense *constant.IncomeExpense `binding:"omitempty"`
 }
 
@@ -53,6 +50,5 @@ type CategoryMapping struct {
 }
 
 type CategoryGetMappingTree struct {
-	ParentAccountId uint `binding:"required"`
-	ChildAccountId  uint `binding:"required"`
+	MappingAccountId uint `binding:"required"`
 }

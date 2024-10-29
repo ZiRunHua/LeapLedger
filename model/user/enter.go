@@ -1,16 +1,16 @@
 package userModel
 
-import "KeepAccount/global"
-
-type dao struct {
-}
+import "github.com/ZiRunHua/LeapLedger/global/db"
 
 func init() {
-	tables := []interface{}{TransactionShareConfig{}, Friend{}, FriendInvitation{}}
-	for _, table := range tables {
-		err := global.GvaDb.AutoMigrate(&table)
-		if err != nil {
-			panic(err)
-		}
+	tables := []interface{}{
+		User{}, UserClientWeb{}, UserClientAndroid{}, UserClientIos{}, Tour{},
+		Friend{}, FriendInvitation{},
+		TransactionShareConfig{},
+		Log{},
+	}
+	err := db.InitDb.AutoMigrate(tables...)
+	if err != nil {
+		panic(err)
 	}
 }

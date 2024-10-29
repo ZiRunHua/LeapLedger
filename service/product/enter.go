@@ -1,6 +1,6 @@
 package productService
 
-import transactionService "KeepAccount/service/transaction"
+import transactionService "github.com/ZiRunHua/LeapLedger/service/transaction"
 
 type Group struct {
 	Product

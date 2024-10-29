@@ -1,0 +1,21 @@
+name: Push Tag
+
+on:
+  push:
+    tags:
+      - '*'
+
+jobs:
+  create-release:
+    uses: ./.github/workflows/common-create-release.yml
+    with:
+      draft: true
+
+  push-image:
+    needs: create-release
+    uses: ./.github/workflows/common-push-image.yml
+    with:
+      tag: ${{ github.ref_name }}
+    secrets:
+      DOCKER_HUB_USERNAME: ${{ secrets.DOCKER_HUB_USERNAME }}
+      DOCKER_HUB_ACCESS_TOKEN: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}

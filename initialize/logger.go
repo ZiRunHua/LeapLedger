@@ -1,22 +1,21 @@
 package initialize
 
 import (
+	"os"
+
+	"github.com/ZiRunHua/LeapLedger/global/constant"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
-	"os"
 )
 
 type _logger struct {
-	Path    string          `yaml:"Path"`   // 日志路径
-	Level   string          `yaml:"Level"`  // 日志级别
-	Format  string          `yaml:"Format"` // 日志格式
-	encoder zapcore.Encoder // 这是一个字段，不需要YAML标签
+	encoder zapcore.Encoder
 }
 
 const (
-	_requestLogPath = "log/request.log"
-	_errorLogPath   = "log/error.log"
-	_panicLogPath   = "log/panic.log"
+	_requestLogPath = constant.WORK_PATH + "/log/request.log"
+	_errorLogPath   = constant.WORK_PATH + "/log/error.log"
+	_panicLogPath   = constant.WORK_PATH + "/log/panic.log"
 )
 
 func (l *_logger) do() error {
