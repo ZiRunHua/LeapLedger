@@ -20,11 +20,6 @@ func init() {
 	)
 }
 
-func (t *_task) UpdateCategoryMapping(category categoryModel.Category) error {
-	_ = nats.PublishTaskWithPayload[categoryModel.Category](nats.TaskUpdateCategoryMapping, category)
-	return nil
-}
-
 func (t *_task) MappingCategoryToAccountMapping(mappingAccount accountModel.Mapping) error {
 	_ = nats.PublishTaskWithPayload[accountModel.Mapping](nats.TaskMappingCategoryToAccountMapping, mappingAccount)
 	return nil

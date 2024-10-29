@@ -1,8 +1,10 @@
 package thirdpartyService
 
 import (
-	"KeepAccount/global"
 	"context"
+	"strings"
+
+	"KeepAccount/global"
 	"github.com/go-resty/resty/v2"
 )
 
@@ -23,7 +25,12 @@ func (as *aiServer) ChineseSimilarityMatching(sourceStr string, targetList []str
 	target string, err error,
 ) {
 	if false == as.IsOpen() {
-		return
+		for _, targetStr := range targetList {
+			if strings.Compare(sourceStr, targetStr) == 0 {
+				return targetStr, nil
+			}
+		}
+		return target, nil
 	}
 	responseData, err := as.requestChineseSimilarity([]string{sourceStr}, targetList, ctx)
 	if err != nil {
@@ -40,7 +47,18 @@ func (as *aiServer) BatchChineseSimilarityMatching(sourceList, targetList []stri
 	map[string]string, error,
 ) {
 	if false == as.IsOpen() {
-		return make(map[string]string), nil
+		targetNameMap := make(map[string]struct{})
+		for _, targetStr := range targetList {
+			targetNameMap[targetStr] = struct{}{}
+		}
+		result := make(map[string]string)
+		for _, sourceStr := range sourceList {
+			if _, exist := targetNameMap[sourceStr]; !exist {
+				continue
+			}
+			result[sourceStr] = sourceStr
+		}
+		return result, nil
 	}
 	responseData, err := as.requestChineseSimilarity(sourceList, targetList, ctx)
 	if err != nil {
@@ -61,7 +79,9 @@ type chineseSimilarityResponse []struct {
 	Similarity     float32
 }
 
-func (as *aiServer) requestChineseSimilarity(SourceList, TargetList []string, ctx context.Context) (chineseSimilarityResponse, error) {
+func (as *aiServer) requestChineseSimilarity(
+	SourceList, TargetList []string,
+	ctx context.Context) (chineseSimilarityResponse, error) {
 	var response struct {
 		aiApiResponse
 		Data chineseSimilarityResponse

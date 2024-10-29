@@ -1,6 +1,10 @@
 package categoryService
 
 import (
+	"context"
+	"strings"
+	"time"
+
 	"KeepAccount/global"
 	"KeepAccount/global/constant"
 	"KeepAccount/global/cus"
@@ -11,10 +15,8 @@ import (
 	transactionModel "KeepAccount/model/transaction"
 	userModel "KeepAccount/model/user"
 	"KeepAccount/util/dataTool"
-	"context"
 	"github.com/pkg/errors"
 	"gorm.io/gorm"
-	"time"
 )
 
 type Category struct {
@@ -109,7 +111,7 @@ func (catSvc *Category) UpdateCategoryMapping(category categoryModel.Category, c
 					return err
 				}
 				for _, mainCategory := range mainCategoryList {
-					if target == mainCategory.Name {
+					if strings.Compare(target, mainCategory.Name) == 0 {
 						_, err = categoryDao.CreateMapping(mainCategory, category)
 						if err != nil && !errors.Is(err, gorm.ErrDuplicatedKey) {
 							return err
@@ -458,15 +460,10 @@ func (catSvc *Category) MappingCategoryToAccountMapping(
 
 func (catSvc *Category) mappingAccountCategoryByAI(
 	mainAccount, mappingAccount accountModel.Account, ctx context.Context,
-) error {
-	tx := db.Get(ctx)
-	if false == aiService.IsOpen() {
-		return nil
-	}
+) (err error) {
 	var mainCategoryList, mappingCategoryList dataTool.Slice[string, categoryModel.Category]
-	var err error
 	var matchingResult map[string]string
-	categoryDao := categoryModel.NewDao(tx)
+	categoryDao := categoryModel.NewDao(db.Get(ctx))
 	for _, ie := range []constant.IncomeExpense{constant.Income, constant.Expense} {
 		// 查询交易类型
 		mainCategoryList, err = categoryDao.GetListByAccount(mainAccount, &ie)
@@ -507,6 +504,12 @@ func (catSvc *Category) mappingAccountCategoryByAI(
 			},
 		)
 		for mappingName, mainName := range matchingResult {
+			if _, exit := mainNameMap[mainName]; !exit {
+				continue
+			}
+			if _, exit := mappingNameMap[mappingName]; !exit {
+				continue
+			}
 			_, err = categoryDao.CreateMapping(mainNameMap[mainName], mappingNameMap[mappingName])
 			if err != nil && !errors.Is(err, gorm.ErrDuplicatedKey) {
 				return err
