@@ -14,19 +14,13 @@
 
 <table>
   <tr>
-    <td align="center"><img src="https://github.com/user-attachments/assets/e5151e7a-6b1f-4903-b4f1-8ffdc20c1b46" alt="Description" width="220"></td>
-    <td align="center"><img src="https://github.com/user-attachments/assets/03dce625-a340-4aa5-92fd-ac4e59ee18b9" alt="Description" width="220"></td>
-    <td align="center"><img src="https://github.com/user-attachments/assets/fd19053c-a469-4fcd-9d1e-9371c094039c" alt="Description" width="220"></td>
+    <td align="center"><img src="https://github.com/user-attachments/assets/e5151e7a-6b1f-4903-b4f1-8ffdc20c1b46" alt="Description" width="150"></td>
+    <td align="center"><img src="https://github.com/user-attachments/assets/03dce625-a340-4aa5-92fd-ac4e59ee18b9" alt="Description" width="150"></td>
+    <td align="center"><img src="https://github.com/user-attachments/assets/fd19053c-a469-4fcd-9d1e-9371c094039c" alt="Description" width="150"></td>
+    <td align="center"><img src="https://github.com/user-attachments/assets/4d605f41-18fc-41b0-bbdf-d50ae1ecc550" alt="Description" width="150"></td>
+    <td align="center"><img src="https://github.com/user-attachments/assets/0579110f-66b5-4739-9cc7-bcaeef4e246f" alt="Description" width="150"></td>
   </tr>
 </table>
-
-<table>
-  <tr>
-    <td align="center"><img src="https://github.com/user-attachments/assets/4d605f41-18fc-41b0-bbdf-d50ae1ecc550" alt="Description" width="220"></td>
-    <td align="center"><img src="https://github.com/user-attachments/assets/0579110f-66b5-4739-9cc7-bcaeef4e246f" alt="Description" width="220"></td>
-  </tr>
-</table>
-
 
 ## Client
 Flutter client project transfer: [LeapLedger-App](https://github.com/ZiRunHua/LeapLedger-App)
@@ -142,3 +136,6 @@ Email: <a href="mailto:zeng807046079@gmail.com">zeng807046079@gmail.com</a>
 
 ## Acknowledgements
 Thanks to my friend You for testing, which saved me a lot of effort. I really appreciate it!
+
+## Stargazers over time
+[![Stargazers over time](https://starchart.cc/ZiRunHua/LeapLedger.svg?variant=adaptive)](https://starchart.cc/ZiRunHua/LeapLedger)
