@@ -3,6 +3,7 @@
 ![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/ZiRunHua/LeapLedger/CI.yml)
 ![GitHub Release](https://img.shields.io/github/v/release/ZiRunHua/LeapLedger)
 ![Docker Pulls](https://img.shields.io/docker/pulls/xiaozirun/leap-ledger)
+[![Go Report Card](https://goreportcard.com/badge/github.com/ZiRunHua/LeapLedger)](https://goreportcard.com/report/github.com/ZiRunHua/LeapLedger)
 ![GitHub stars](https://img.shields.io/github/stars/ZiRunHua/LeapLedger?style=social)
 
 <h1 align="center">LeapLedger</h1>
