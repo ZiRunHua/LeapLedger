@@ -1,7 +1,8 @@
 # 服务初始化的配置文件 执行代码详见 ./initialize/initialize.go
 # This is the service initialization configuration file execution code see ./initialize/initialize.go
 
-# Production mode reduces some logging and closes the interface documentation api
+# can set `debug` or `production`
+# `debug` mode can print mysql and redis logs and `/public/swagger/index.html` api
 Mode: debug
 
 System:
@@ -10,7 +11,7 @@ System:
   JwtKey: ""
   # Some apis use symmetric signature keys that can be configured to improve security
   ClientSignKey: ""
-  
+
 Redis:
   Addr: "leap-ledger-redis:6379"
   Password: ""
