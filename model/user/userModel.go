@@ -2,12 +2,13 @@ package userModel
 
 import (
 	"errors"
+	"strconv"
+	"time"
+
 	"github.com/ZiRunHua/LeapLedger/global"
 	"github.com/ZiRunHua/LeapLedger/global/constant"
 	commonModel "github.com/ZiRunHua/LeapLedger/model/common"
 	"gorm.io/gorm"
-	"strconv"
-	"time"
 )
 
 type User struct {
@@ -87,4 +88,24 @@ func (t *Tour) Use(db *gorm.DB) error {
 		return errors.New("tourist used")
 	}
 	return db.Model(t).Where("user_id = ?", t.UserId).Update("status", true).Error
+}
+
+type Config[V bool | int | string] struct {
+	UserId uint `gorm:"index"`
+	Key    string
+	Value  V
+	commonModel.BaseModel
+}
+
+func (c Config[V]) TableName() string {
+	switch any(c).(type) {
+	case bool:
+		return "user_config_bool"
+	case string:
+		return "user_config_string"
+	case int:
+		return "user_config_int"
+	default:
+		return "user_config_string"
+	}
 }
