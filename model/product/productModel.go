@@ -29,8 +29,3 @@ func (p *Product) SelectByKey(key Key) (result Product, err error) {
 	err = global.GvaDb.Where("key = ?", key).First(&result).Error
 	return
 }
-
-func (p *Product) GetBill() (*Bill, error) {
-	bill := &Bill{}
-	return bill.SelectByPrimaryKey(string(p.Key))
-}

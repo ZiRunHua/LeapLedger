@@ -1,9 +1,10 @@
 package productModel
 
 import (
+	"time"
+
 	"github.com/ZiRunHua/LeapLedger/global/constant"
-	commonModel "github.com/ZiRunHua/LeapLedger/model/common"
-	queryFunc "github.com/ZiRunHua/LeapLedger/model/common/query"
+	"gorm.io/gorm"
 )
 
 type Bill struct {
@@ -11,17 +12,38 @@ type Bill struct {
 	Encoding   constant.Encoding
 	StartRow   int
 	DateFormat string `gorm:"default:2006-01-02 15:04:05;"`
-	commonModel.BaseModel
 }
 
 func (b *Bill) TableName() string {
 	return "product_bill"
 }
 
-func (b *Bill) IsEmpty() bool {
-	return b.ProductKey == ""
+type BillImport struct {
+	ID          uint
+	Status      ImportStatus
+	IgnoreCount int
+	FinishCount int
+	EndTime     time.Time
+	gorm.Model
 }
 
-func (b *Bill) SelectByPrimaryKey(key string) (*Bill, error) {
-	return queryFunc.FirstByField[*Bill]("product_key", key)
+func (b *BillImport) TableName() string { return "product_bill_import" }
+
+type ImportStatus int8
+
+const (
+	ImportStatusOfReady ImportStatus = iota
+	ImportStatusOfImporting
+	ImportStatusOfFinish
+	ImportStatusOfCancel
+)
+
+type BillImportMapping struct {
+	ID          uint
+	Status      int8
+	IgnoreCount int
+	FinishCount int
+	gorm.Model
 }
+
+func (b *BillImportMapping) TableName() string { return "product_bill_import_mapping" }
