@@ -6,7 +6,7 @@ func init() {
 	tables := []interface{}{
 		User{}, UserClientWeb{}, UserClientAndroid{}, UserClientIos{}, Tour{},
 		Friend{}, FriendInvitation{},
-		TransactionShareConfig{},
+		TransactionShareConfig{}, BillImportConfig{},
 		Log{},
 	}
 	err := db.InitDb.AutoMigrate(tables...)

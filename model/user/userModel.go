@@ -62,11 +62,6 @@ func (u *User) ModifyAsTourist(db *gorm.DB) error {
 	).Error
 }
 
-func (u *User) GetTransactionShareConfig() (TransactionShareConfig, error) {
-	data := TransactionShareConfig{}
-	return data, data.SelectByUserId(u.ID)
-}
-
 type Tour struct {
 	UserId    uint `gorm:"primary"`
 	Status    bool
