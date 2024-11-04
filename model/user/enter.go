@@ -11,6 +11,6 @@ func init() {
 	}
 	err := db.InitDb.AutoMigrate(tables...)
 	if err != nil {
-		panic(err)
+		panic(err.Error())
 	}
 }

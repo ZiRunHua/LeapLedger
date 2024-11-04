@@ -1,18 +1,38 @@
 package userModel
 
 import (
+	"time"
+
 	"github.com/ZiRunHua/LeapLedger/global"
 	"gorm.io/gorm"
-	"time"
 )
 
+func newDefaultConfig(userId uint) []Config {
+	base := ConfigBase{UserId: userId}
+	return []Config{
+		&TransactionShareConfig{ConfigBase: base, DisplayFlags: DISPLAY_FLAGS_DEFAULT},
+		&BillImportConfig{ConfigBase: base},
+	}
+}
+
+type Config interface {
+	GetUserId() uint
+	SetUserId(uint)
+}
+
+type ConfigBase struct {
+	Config
+	UserId    uint `gorm:"primarykey"`
+	CreatedAt time.Time
+	UpdatedAt time.Time
+}
+
+func (cb *ConfigBase) GetUserId() uint   { return cb.UserId }
+func (cb *ConfigBase) SetUserId(id uint) { cb.UserId = id }
+
 type TransactionShareConfig struct {
-	ID           uint           `gorm:"primarykey"`
-	UserId       uint           `gorm:"comment:'用户ID';unique"`
-	DisplayFlags Flag           `gorm:"comment:'展示字段标志'"`
-	CreatedAt    time.Time      `gorm:"type:TIMESTAMP"`
-	UpdatedAt    time.Time      `gorm:"type:TIMESTAMP"`
-	DeletedAt    gorm.DeletedAt `gorm:"index;type:TIMESTAMP"`
+	ConfigBase
+	DisplayFlags Flag `gorm:"comment:'展示字段标志'"`
 }
 
 type Flag uint
@@ -44,10 +64,14 @@ func (u *TransactionShareConfig) OpenDisplayFlag(flag Flag, db *gorm.DB) error {
 }
 
 func (u *TransactionShareConfig) ClosedDisplayFlag(flag Flag, db *gorm.DB) error {
-	where := db.Where("user_id = ? AND display_flags & ? >0", u.UserId, flag)
+	where := db.Where("user_id = ? AND display_flags & ? > 0", u.UserId, flag)
 	return where.Model(&u).Update("display_flags", gorm.Expr("display_flags ^ ?", flag)).Error
 }
 
 func (u *TransactionShareConfig) GetFlagStatus(flag Flag) bool {
 	return u.DisplayFlags&flag > 0
+}
+
+type BillImportConfig struct {
+	ConfigBase
 }

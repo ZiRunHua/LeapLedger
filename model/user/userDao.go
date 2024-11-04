@@ -54,7 +54,10 @@ func (u *UserDao) Add(data AddData) (User, error) {
 		Email:    data.Email,
 	}
 	err := u.db.Create(&user).Error
-	return user, err
+	if err != nil {
+		return user, err
+	}
+	return user, u.InitConfig(user)
 }
 
 func (u *UserDao) SelectById(id uint, args ...interface{}) (User, error) {
@@ -238,4 +241,49 @@ func (u *UserDao) SelectByUnusedTour() (tour Tour, err error) {
 		},
 	).First(&tour).Error
 	return tour, err
+}
+
+func (u *UserDao) InitConfig(user User) error {
+	for _, c := range newDefaultConfig(user.ID) {
+		err := u.CreateConfig(c)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (u *UserDao) CreateConfig(config Config) error {
+	return u.db.Create(config).Error
+}
+
+func (u *UserDao) ReadConfig(config Config) error {
+	return u.db.Model(config).First(config).Error
+}
+
+func (u *UserDao) ReadConfigValue(config Config, key string) error {
+	return u.db.Model(config).Select(key).Error
+}
+
+func (u *UserDao) UpdateConfig(config Config) error {
+	return u.db.Model(config).Updates(config).Error
+}
+
+func (u *UserDao) UpdateConfigByKey(config Config, key string) error {
+	return u.db.Model(config).Select(key).Updates(config).Error
+}
+
+func (u *UserDao) ClosedConfigBinaryField(config Config, key string, flag int) error {
+	err := u.db.Model(config).Where(
+		"user_id = ? AND display_flags & ? > 0", config.GetUserId(), flag,
+	).Update(key, gorm.Expr(key+" ^ ?", flag)).Error
+	// if no record is found, consider it closed
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil
+	}
+	return err
+}
+
+func (u *UserDao) OpenConfigBinaryField(config Config, key string, flag int) error {
+	return u.db.Model(config).Update(key, gorm.Expr(key+" | ?", flag)).Error
 }

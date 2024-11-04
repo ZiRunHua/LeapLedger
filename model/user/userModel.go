@@ -89,23 +89,3 @@ func (t *Tour) Use(db *gorm.DB) error {
 	}
 	return db.Model(t).Where("user_id = ?", t.UserId).Update("status", true).Error
 }
-
-type Config[V bool | int | string] struct {
-	UserId uint `gorm:"index"`
-	Key    string
-	Value  V
-	commonModel.BaseModel
-}
-
-func (c Config[V]) TableName() string {
-	switch any(c).(type) {
-	case bool:
-		return "user_config_bool"
-	case string:
-		return "user_config_string"
-	case int:
-		return "user_config_int"
-	default:
-		return "user_config_string"
-	}
-}
