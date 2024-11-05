@@ -34,7 +34,7 @@ jobs:
       - name: Run tests and make report
         run: |
           docker exec leap-ledger-server sh -c "go install github.com/jstemmer/go-junit-report@latest"
-          docker exec leap-ledger-server sh -c "go test -v 2>&1 ./... -coverprofile=docs/coverage.out | go-junit-report > docs/test-report.xml"
+          docker exec leap-ledger-server sh -c "go test -timeout 5m -v 2>&1 ./... -coverprofile=docs/coverage.out | go-junit-report > docs/test-report.xml"
         continue-on-error: false
 
       - name: Upload test-report.xml
