@@ -1,12 +1,13 @@
 package manager
 
 import (
+	"runtime/debug"
+
 	"github.com/ZiRunHua/LeapLedger/global/constant"
 	"github.com/ZiRunHua/LeapLedger/initialize"
 	"github.com/ZiRunHua/LeapLedger/util/log"
 	"github.com/nats-io/nats.go/jetstream"
 	"go.uber.org/zap"
-	"runtime/debug"
 )
 
 var (
@@ -33,10 +34,6 @@ var (
 )
 
 func init() {
-	initManager()
-}
-
-func initManager() {
 	var err error
 	js, err = jetstream.New(natsConn)
 	if err != nil {

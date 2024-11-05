@@ -22,6 +22,7 @@ type EventManager interface {
 	Publish(event Event, payload []byte) bool
 	Subscribe(event Event, triggerTask Task, fetchTaskData func(eventData []byte) ([]byte, error))
 	SubscribeToNewConsumer(event Event, name string, handler MessageHandler)
+	updateAllCustomerConfig(func(*jetstream.ConsumerConfig) error, context.Context) error
 }
 
 const (
@@ -115,6 +116,7 @@ func (em *eventManager) Subscribe(event Event, triggerTask Task, fetchTaskData f
 		},
 	)
 }
+
 func (em *eventManager) SubscribeToNewConsumer(event Event, name string, handler MessageHandler) {
 	em.msgHandlerMap.LoadOrStore(
 		event.subject(), func(payload []byte) error {
@@ -140,6 +142,30 @@ func (em *eventManager) SubscribeToNewConsumer(event Event, name string, handler
 	if err != nil {
 		panic(err)
 	}
+}
+
+func (em *eventManager) updateAllCustomerConfig(
+	handle func(*jetstream.ConsumerConfig) error, ctx context.Context,
+) error {
+	consumersList := em.stream.ListConsumers(ctx)
+	if err := consumersList.Err(); err != nil {
+		return err
+	}
+	for info := range consumersList.Info() {
+		err := em.stream.ListConsumers(ctx).Err()
+		if err != nil {
+			return err
+		}
+		err = handle(&info.Config)
+		if err != nil {
+			return err
+		}
+		_, err = em.stream.UpdateConsumer(ctx, info.Config)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 type eventMsgHandler struct {
