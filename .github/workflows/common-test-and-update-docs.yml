@@ -6,6 +6,9 @@ on:
       ref:
         required: true
         type: string
+    secrets:
+      CODECOV_TOKEN:
+        required: true
 
 jobs:
   test-and-update-docs:
@@ -32,7 +35,6 @@ jobs:
         run: |
           docker exec leap-ledger-server sh -c "go install github.com/jstemmer/go-junit-report@latest"
           docker exec leap-ledger-server sh -c "go test -v 2>&1 ./... -coverprofile=docs/coverage.out | go-junit-report > docs/test-report.xml"
-          docker exec leap-ledger-server sh -c "go tool cover -html=docs/coverage.out -o docs/coverage.html"
         continue-on-error: false
 
       - name: Upload test-report.xml
@@ -41,11 +43,20 @@ jobs:
           name: test-report.xml
           path: docs/test-report.xml
 
-      - name: Upload coverage.html
-        uses: actions/upload-artifact@v4
+      - name: Upload results to Codecov
+        uses: codecov/codecov-action@v4
         with:
-          name: coverage-report
-          path: docs/coverage.html
+          files: docs/coverage.out
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+
+      - name: Upload test results to Codecov
+        if: ${{ !cancelled() }}
+        uses: codecov/test-results-action@v1
+        with:
+          files: docs/test-report.xml
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
       - name: Execute updateDocs.sh in container
         run: docker exec leap-ledger-server sh "./docs/updateDocs.sh"
@@ -62,6 +73,7 @@ jobs:
             git commit -m "update docs" || echo "No changes to commit."
             git push origin ${{ inputs.ref }}
           fi
+        continue-on-error: true
 
       - name: Docker Compose Down
         run: |
