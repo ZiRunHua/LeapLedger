@@ -2,10 +2,11 @@ package cron
 
 import (
 	"context"
+
+	"github.com/ZiRunHua/LeapLedger/global"
 	"github.com/ZiRunHua/LeapLedger/global/constant"
 	"github.com/ZiRunHua/LeapLedger/global/nats"
 	"github.com/ZiRunHua/LeapLedger/initialize"
-	"github.com/ZiRunHua/LeapLedger/util/log"
 	"go.uber.org/zap"
 )
 
@@ -19,7 +20,7 @@ var (
 
 func init() {
 	var err error
-	logger, err = log.GetNewZapLogger(logPath)
+	logger, err = global.Config.Logger.New(logPath)
 	if err != nil {
 		panic(err)
 	}

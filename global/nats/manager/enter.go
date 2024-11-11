@@ -3,9 +3,9 @@ package manager
 import (
 	"runtime/debug"
 
+	"github.com/ZiRunHua/LeapLedger/global"
 	"github.com/ZiRunHua/LeapLedger/global/constant"
 	"github.com/ZiRunHua/LeapLedger/initialize"
-	"github.com/ZiRunHua/LeapLedger/util/log"
 	"github.com/nats-io/nats.go/jetstream"
 	"go.uber.org/zap"
 )
@@ -39,15 +39,15 @@ func init() {
 	if err != nil {
 		panic(err)
 	}
-	taskLogger, err = log.GetNewZapLogger(natsTaskLogPath)
+	taskLogger, err = global.Config.Logger.New(natsTaskLogPath)
 	if err != nil {
 		panic(err)
 	}
-	eventLogger, err = log.GetNewZapLogger(natsEventLogPath)
+	eventLogger, err = global.Config.Logger.New(natsEventLogPath)
 	if err != nil {
 		panic(err)
 	}
-	dlqLogger, err = log.GetNewZapLogger(dlqLogPath)
+	dlqLogger, err = global.Config.Logger.New(dlqLogPath)
 	if err != nil {
 		panic(err)
 	}

@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 
+	"github.com/ZiRunHua/LeapLedger/global"
 	"github.com/ZiRunHua/LeapLedger/global/constant"
 	"github.com/ZiRunHua/LeapLedger/global/cus"
 	"github.com/ZiRunHua/LeapLedger/global/db"
@@ -14,7 +15,6 @@ import (
 	_productService "github.com/ZiRunHua/LeapLedger/service/product"
 	_userService "github.com/ZiRunHua/LeapLedger/service/user"
 	"github.com/ZiRunHua/LeapLedger/util"
-	_log "github.com/ZiRunHua/LeapLedger/util/log"
 	"github.com/ZiRunHua/LeapLedger/util/rand"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
@@ -48,7 +48,7 @@ var (
 
 func init() {
 	var err error
-	if errorLog, err = _log.GetNewZapLogger(constant.LOG_PATH + "/service/template/error.log"); err != nil {
+	if errorLog, err = global.Config.Logger.New(constant.LOG_PATH + "/service/template/error.log"); err != nil {
 		panic(err)
 	}
 
