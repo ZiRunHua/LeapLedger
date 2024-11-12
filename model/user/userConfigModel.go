@@ -56,4 +56,6 @@ func (u *TransactionShareConfig) GetFlagStatus(flag Flag) bool {
 
 type BillImportConfig struct {
 	ConfigBase
+	IgnoreUnmappedCategory bool
+	CheckSameTransaction   bool
 }

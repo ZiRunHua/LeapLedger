@@ -27,13 +27,13 @@ func TestExampleConfig(t *testing.T) {
 		},
 		func() error {
 			config.Type = "test"
-			return dao.UpdateConfigByKey(config, "type")
+			return dao.UpdateConfigColumns(config, "type")
 		},
 		func() error {
-			return dao.OpenConfigBinaryField(config, "flags", 8)
+			return dao.EnableConfigBinaryFlag(config, "flags", 8)
 		},
 		func() error {
-			return dao.ClosedConfigBinaryField(config, "flags", 8)
+			return dao.DisableConfigBinaryFlag(config, "flags", 8)
 		},
 		func() error {
 			config = &TestConfig{
@@ -50,7 +50,7 @@ func TestExampleConfig(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		err = dao.ReadConfig(config)
+		err = dao.GetConfig(config)
 		if err != nil {
 			t.Fatal(err)
 		}

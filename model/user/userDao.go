@@ -243,7 +243,6 @@ func (u *UserDao) SelectByUnusedTour() (tour Tour, err error) {
 	return tour, err
 }
 
-// InitConfig init Config
 func (u *UserDao) InitConfig(user User) error {
 	for _, c := range newDefaultConfig(user.ID) {
 		err := u.CreateConfig(c)
@@ -258,23 +257,23 @@ func (u *UserDao) CreateConfig(config Config) error {
 	return u.db.Create(config).Error
 }
 
-func (u *UserDao) ReadConfig(config Config) error {
-	return u.db.Model(config).First(config).Error
+func (u *UserDao) GetConfig(config Config) error {
+	return u.db.First(config).Error
 }
 
-func (u *UserDao) ReadConfigValue(config Config, key string) error {
-	return u.db.Model(config).Select(key).Error
+func (u *UserDao) GetConfigColumns(config Config, column interface{}, columns ...interface{}) error {
+	return u.db.Model(config).Select(column, columns).Error
 }
 
 func (u *UserDao) UpdateConfig(config Config) error {
 	return u.db.Model(config).Updates(config).Error
 }
 
-func (u *UserDao) UpdateConfigByKey(config Config, key string) error {
-	return u.db.Model(config).Select(key).Updates(config).Error
+func (u *UserDao) UpdateConfigColumns(config Config, column interface{}, columns ...interface{}) error {
+	return u.db.Model(config).Select(column, columns).Updates(config).Error
 }
 
-func (u *UserDao) ClosedConfigBinaryField(config Config, key string, flag uint) error {
+func (u *UserDao) DisableConfigBinaryFlag(config Config, key string, flag uint) error {
 	err := u.db.Model(config).Where(
 		"user_id = ? AND ? & ? > 0", config.GetUserId(), key, flag,
 	).Update(key, gorm.Expr("? ^ ?", key, flag)).Error
@@ -285,6 +284,6 @@ func (u *UserDao) ClosedConfigBinaryField(config Config, key string, flag uint) 
 	return err
 }
 
-func (u *UserDao) OpenConfigBinaryField(config Config, key string, flag uint) error {
+func (u *UserDao) EnableConfigBinaryFlag(config Config, key string, flag uint) error {
 	return u.db.Model(config).Update(key, gorm.Expr("? | ?", key, flag)).Error
 }
