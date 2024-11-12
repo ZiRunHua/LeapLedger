@@ -2,7 +2,6 @@ package main
 
 import (
 	"bufio"
-	"github.com/ZiRunHua/LeapLedger/global/constant"
 	"go/ast"
 	"go/parser"
 	"go/token"
@@ -10,11 +9,13 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/ZiRunHua/LeapLedger/global/constant"
 )
 
 func main() {
-	handleDir(constant.WORK_PATH + "/api/request/")
-	handleDir(constant.WORK_PATH + "/api/response/")
+	handleDir(filepath.Clean(constant.RootDir + "/api/request/"))
+	handleDir(filepath.Clean(constant.RootDir + "/api/response/"))
 }
 func handleDir(path string) {
 	_ = filepath.Walk(

@@ -13,10 +13,10 @@ type _logger struct {
 	encoder zapcore.Encoder
 }
 
-const (
-	_requestLogPath = constant.WORK_PATH + "/log/request.log"
-	_errorLogPath   = constant.WORK_PATH + "/log/error.log"
-	_panicLogPath   = constant.WORK_PATH + "/log/panic.log"
+var (
+	_requestLogPath = filepath.Join(constant.RootDir, "log", "request.log")
+	_errorLogPath   = filepath.Join(constant.RootDir, "log", "error.log")
+	_panicLogPath   = filepath.Join(constant.RootDir, "log", "panic.log")
 )
 
 func (l *_logger) do() error {

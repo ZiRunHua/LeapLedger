@@ -2,6 +2,7 @@ package cron
 
 import (
 	"context"
+	"path/filepath"
 
 	"github.com/ZiRunHua/LeapLedger/global"
 	"github.com/ZiRunHua/LeapLedger/global/constant"
@@ -10,10 +11,9 @@ import (
 	"go.uber.org/zap"
 )
 
-const logPath = constant.LOG_PATH + "/cron.log"
-
 var (
-	logger *zap.Logger
+	logPath = filepath.Join(constant.LogPath, "cron.log")
+	logger  *zap.Logger
 
 	Scheduler = initialize.Scheduler
 )

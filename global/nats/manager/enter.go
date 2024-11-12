@@ -1,6 +1,7 @@
 package manager
 
 import (
+	"path/filepath"
 	"runtime/debug"
 
 	"github.com/ZiRunHua/LeapLedger/global"
@@ -25,7 +26,7 @@ var (
 	DlqManage   DlqManager
 )
 
-const natsLogPath = constant.LOG_PATH + "/nats/"
+var natsLogPath = filepath.Join(constant.LogPath, "nats")
 
 var (
 	taskLogger  *zap.Logger

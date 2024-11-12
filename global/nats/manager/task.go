@@ -2,6 +2,7 @@ package manager
 
 import (
 	"fmt"
+	"path/filepath"
 	"runtime"
 	"time"
 
@@ -20,9 +21,12 @@ type TaskManager interface {
 }
 
 const (
-	natsTaskName    = "task"
-	natsTaskPrefix  = "task"
-	natsTaskLogPath = natsLogPath + "task.log"
+	natsTaskName   = "task"
+	natsTaskPrefix = "task"
+)
+
+var (
+	natsTaskLogPath = filepath.Join(natsLogPath, "task.log")
 )
 
 type Task string

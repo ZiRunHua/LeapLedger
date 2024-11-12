@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"path/filepath"
 	"runtime"
 	"time"
 
@@ -26,9 +27,12 @@ type EventManager interface {
 }
 
 const (
-	natsEventName    = "event"
-	natsEventPrefix  = "event"
-	natsEventLogPath = natsLogPath + "event.log"
+	natsEventName   = "event"
+	natsEventPrefix = "event"
+)
+
+var (
+	natsEventLogPath = filepath.Join(natsLogPath, "event.log")
 )
 
 type Event string

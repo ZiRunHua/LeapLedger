@@ -4,6 +4,7 @@ package manager
 import (
 	"errors"
 	"fmt"
+	"path/filepath"
 
 	"github.com/ZiRunHua/LeapLedger/util/dataTool"
 	natsServer "github.com/nats-io/nats-server/v2/server"
@@ -25,9 +26,14 @@ type DlqManager interface {
 	RepublishBatch(batch int, ctx context.Context) (int, error)
 }
 
-const dlqName = "dlq"
-const dlqPrefix = "dlq"
-const dlqLogPath = natsLogPath + "dlq.log"
+const (
+	dlqName   = "dlq"
+	dlqPrefix = "dlq"
+)
+
+var (
+	dlqLogPath = filepath.Join(natsLogPath, "dlq.log")
+)
 
 type dlqManager struct {
 	DlqManager

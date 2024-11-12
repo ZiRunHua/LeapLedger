@@ -3,6 +3,7 @@ package templateService
 import (
 	"context"
 	"errors"
+	"path/filepath"
 
 	"github.com/ZiRunHua/LeapLedger/global"
 	"github.com/ZiRunHua/LeapLedger/global/constant"
@@ -48,7 +49,8 @@ var (
 
 func init() {
 	var err error
-	if errorLog, err = global.Config.Logger.New(constant.LOG_PATH + "/service/template/error.log"); err != nil {
+	logPath := filepath.Clean(constant.LogPath + "/service/template/error.log")
+	if errorLog, err = global.Config.Logger.New(logPath); err != nil {
 		panic(err)
 	}
 

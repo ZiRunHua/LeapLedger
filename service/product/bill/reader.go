@@ -10,6 +10,7 @@ package bill
 
 import (
 	"context"
+	"path/filepath"
 	"strings"
 
 	"github.com/ZiRunHua/LeapLedger/global"
@@ -22,9 +23,10 @@ import (
 	"go.uber.org/zap"
 )
 
-const logPath = constant.LOG_PATH + "/service/product/bill.log"
-
-var logger *zap.Logger
+var (
+	logPath = filepath.Clean(constant.LogPath + "/service/product/bill.log")
+	logger  *zap.Logger
+)
 
 func init() {
 	var err error
