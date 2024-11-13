@@ -551,7 +551,7 @@ func (u *UserApi) Home(ctx *gin.Context) {
 func (u *UserApi) GetTransactionShareConfig(ctx *gin.Context) {
 	var config userModel.TransactionShareConfig
 	config.UserId = contextFunc.GetUserId(ctx)
-	err := userModel.NewDao().ReadConfig(&config)
+	err := userModel.NewDao().GetConfig(&config)
 	if responseError(err, ctx) {
 		return
 	}
@@ -585,9 +585,9 @@ func (u *UserApi) UpdateTransactionShareConfig(ctx *gin.Context) {
 	var config userModel.TransactionShareConfig
 	config.UserId = contextFunc.GetUserId(ctx)
 	if requestData.Status {
-		err = userModel.NewDao().OpenConfigBinaryField(&config, "display_flags", flag)
+		err = userModel.NewDao().EnableConfigBinaryFlag(&config, "display_flags", flag)
 	} else {
-		err = userModel.NewDao().ClosedConfigBinaryField(&config, "display_flags", flag)
+		err = userModel.NewDao().DisableConfigBinaryFlag(&config, "display_flags", flag)
 	}
 	// response
 	if responseError(err, ctx) {
