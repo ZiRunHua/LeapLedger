@@ -3,6 +3,7 @@ package ws
 import (
 	"errors"
 	"io"
+	"sync"
 	"sync/atomic"
 
 	"github.com/ZiRunHua/LeapLedger/api/response"
@@ -186,4 +187,20 @@ func (t *TotalData) add(ie constant.IncomeExpense, amount int) {
 
 func (t *TotalData) ignore() {
 	t.IgnoreCount.Add(1)
+}
+
+type BillImportConfig struct {
+	lock sync.Mutex
+}
+
+func (bic *BillImportConfig) Fetch() {
+
+}
+
+func (bic *BillImportConfig) UpdateColumns() {
+
+}
+
+func (bic *BillImportConfig) TempUpdateColumns() {
+
 }

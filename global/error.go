@@ -51,6 +51,9 @@ var ErrSameAsTheOldPassword = errors.New("新旧密码相同")
 // 账本
 var ErrAccountType = errors.New("账本类型不允许该操作")
 
+// transaction
+var ErrTransactionSame = errors.New("transaction same")
+
 // 交易类型
 var ErrCategoryNameEmpty = errors.New("名称不可为空")
 var ErrCategorySameName = errors.New("类型名称相同")

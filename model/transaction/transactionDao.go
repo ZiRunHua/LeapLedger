@@ -35,7 +35,19 @@ func (t *TransactionDao) SelectById(id uint, forUpdate bool) (result Transaction
 
 func (t *TransactionDao) Create(info Info, recordType RecordType) (result Transaction, err error) {
 	result.Info, result.RecordType = info, recordType
-	return result, t.db.Create(&result).Error
+	err = t.db.Create(&result).Error
+	if err != nil {
+		return
+	}
+	hash, err := info.Hash()
+	if err != nil {
+		return
+	}
+	err = t.db.Create(&Hash{AccountId: info.AccountId, TransId: result.ID, Hash: hash}).Error
+	if errors.Is(err, gorm.ErrDuplicatedKey) {
+		err = global.ErrTransactionSame
+	}
+	return
 }
 
 func (t *TransactionDao) GetListByCondition(condition Condition, offset int, limit int) (

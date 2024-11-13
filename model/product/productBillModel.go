@@ -1,10 +1,7 @@
 package productModel
 
 import (
-	"time"
-
 	"github.com/ZiRunHua/LeapLedger/global/constant"
-	"gorm.io/gorm"
 )
 
 type Bill struct {
@@ -17,33 +14,3 @@ type Bill struct {
 func (b *Bill) TableName() string {
 	return "product_bill"
 }
-
-type BillImport struct {
-	ID          uint
-	Status      ImportStatus
-	IgnoreCount int
-	FinishCount int
-	EndTime     time.Time
-	gorm.Model
-}
-
-func (b *BillImport) TableName() string { return "product_bill_import" }
-
-type ImportStatus int8
-
-const (
-	ImportStatusOfReady ImportStatus = iota
-	ImportStatusOfImporting
-	ImportStatusOfFinish
-	ImportStatusOfCancel
-)
-
-type BillImportMapping struct {
-	ID          uint
-	Status      int8
-	IgnoreCount int
-	FinishCount int
-	gorm.Model
-}
-
-func (b *BillImportMapping) TableName() string { return "product_bill_import_mapping" }

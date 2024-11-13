@@ -1,7 +1,9 @@
 package transactionModel
 
 import (
+	"bytes"
 	"database/sql"
+	"encoding/gob"
 	"errors"
 	"time"
 
@@ -13,20 +15,38 @@ import (
 	queryFunc "github.com/ZiRunHua/LeapLedger/model/common/query"
 	userModel "github.com/ZiRunHua/LeapLedger/model/user"
 	"github.com/ZiRunHua/LeapLedger/util/timeTool"
+	"golang.org/x/crypto/blake2b"
 	"gorm.io/datatypes"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )
 
-type Transaction struct {
-	ID         uint `gorm:"primarykey"`
-	RecordType RecordType
-	Info
-	CreatedAt time.Time      `gorm:"type:TIMESTAMP"`
-	UpdatedAt time.Time      `gorm:"type:TIMESTAMP"`
-	DeletedAt gorm.DeletedAt `gorm:"index;type:TIMESTAMP"`
-	commonModel.BaseModel
-}
+type (
+	Transaction struct {
+		ID         uint `gorm:"primarykey"`
+		RecordType RecordType
+		Info
+		CreatedAt time.Time      `gorm:"type:TIMESTAMP"`
+		UpdatedAt time.Time      `gorm:"type:TIMESTAMP"`
+		DeletedAt gorm.DeletedAt `gorm:"index;type:TIMESTAMP"`
+		commonModel.BaseModel
+	}
+
+	Info struct {
+		UserId, AccountId, CategoryId uint
+		IncomeExpense                 constant.IncomeExpense
+		Amount                        int
+		Remark                        string
+		TradeTime                     time.Time `gorm:"type:TIMESTAMP"`
+	}
+
+	Hash struct {
+		AccountId uint `gorm:"default:null;primary_key"`
+		TransId   uint
+		Hash      []byte `gorm:"type:char(256);primary_key"`
+	}
+)
+
 type RecordType int8
 
 const (
@@ -35,14 +55,6 @@ const (
 	RecordTypeOfSync
 	RecordTypeOfImport
 )
-
-type Info struct {
-	UserId, AccountId, CategoryId uint
-	IncomeExpense                 constant.IncomeExpense
-	Amount                        int
-	Remark                        string
-	TradeTime                     time.Time `gorm:"type:TIMESTAMP"`
-}
 
 func (i *Info) Check(db *gorm.DB) error {
 	category, err := categoryModel.NewDao(db).SelectById(i.CategoryId)
@@ -59,6 +71,27 @@ func (i *Info) Check(db *gorm.DB) error {
 	}
 	return nil
 }
+
+// Hash generates a hash for the Info struct using a binary encoding and the Blake2b hash function.
+func (i *Info) Hash() ([]byte, error) {
+	// Set UserId to 0 to ensure that this field does not affect the hash computation
+	info := *i
+	info.UserId = 0
+	var buf bytes.Buffer
+	enc := gob.NewEncoder(&buf)
+	err := enc.Encode(&info)
+	if err != nil {
+		return nil, err
+	}
+	hash, err := blake2b.New256(nil)
+	if err != nil {
+		return nil, err
+	}
+	hash.Write(buf.Bytes())
+	return hash.Sum(nil), nil
+}
+
+func (b *Hash) TableName() string { return "transaction_hash" }
 
 func (t *Transaction) ForUpdate(tx *gorm.DB) error {
 	if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).First(t).Error; err != nil {
@@ -82,29 +115,29 @@ func (t *Transaction) Exits(query interface{}, args ...interface{}) (bool, error
 	return queryFunc.Exist[*Transaction](query, args)
 }
 
-func (t *Info) GetCategory(db ...*gorm.DB) (category categoryModel.Category, err error) {
+func (i *Info) GetCategory(db ...*gorm.DB) (category categoryModel.Category, err error) {
 	if len(db) > 0 {
-		err = db[0].First(&category, t.CategoryId).Error
+		err = db[0].First(&category, i.CategoryId).Error
 	} else {
-		err = global.GvaDb.First(&category, t.CategoryId).Error
+		err = global.GvaDb.First(&category, i.CategoryId).Error
 	}
 	return
 }
 
-func (t *Info) GetUser(selects ...interface{}) (user userModel.User, err error) {
+func (i *Info) GetUser(selects ...interface{}) (user userModel.User, err error) {
 	if len(selects) > 0 {
-		err = global.GvaDb.Select(selects[0], selects[1:]...).First(&user, t.UserId).Error
+		err = global.GvaDb.Select(selects[0], selects[1:]...).First(&user, i.UserId).Error
 	} else {
-		err = global.GvaDb.First(&user, t.UserId).Error
+		err = global.GvaDb.First(&user, i.UserId).Error
 	}
 	return
 }
 
-func (t *Info) GetAccount(db ...*gorm.DB) (account accountModel.Account, err error) {
+func (i *Info) GetAccount(db ...*gorm.DB) (account accountModel.Account, err error) {
 	if len(db) > 0 {
-		err = db[0].First(&account, t.AccountId).Error
+		err = db[0].First(&account, i.AccountId).Error
 	} else {
-		err = global.GvaDb.First(&account, t.AccountId).Error
+		err = global.GvaDb.First(&account, i.AccountId).Error
 	}
 	return
 }
@@ -132,18 +165,18 @@ type StatisticData struct {
 	Location      string
 }
 
-func (t *Info) GetStatisticData(isAdd bool) StatisticData {
+func (i *Info) GetStatisticData(isAdd bool) StatisticData {
 	if isAdd {
 		return StatisticData{
-			AccountId: t.AccountId, UserId: t.UserId, IncomeExpense: t.IncomeExpense,
-			CategoryId: t.CategoryId, TradeTime: t.TradeTime, Amount: t.Amount, Count: 1,
-			Location: accountModel.NewDao().GetLocation(t.AccountId),
+			AccountId: i.AccountId, UserId: i.UserId, IncomeExpense: i.IncomeExpense,
+			CategoryId: i.CategoryId, TradeTime: i.TradeTime, Amount: i.Amount, Count: 1,
+			Location: accountModel.NewDao().GetLocation(i.AccountId),
 		}
 	}
 	return StatisticData{
-		AccountId: t.AccountId, UserId: t.UserId, IncomeExpense: t.IncomeExpense,
-		CategoryId: t.CategoryId, TradeTime: t.TradeTime, Amount: -t.Amount, Count: -1,
-		Location: accountModel.NewDao().GetLocation(t.AccountId),
+		AccountId: i.AccountId, UserId: i.UserId, IncomeExpense: i.IncomeExpense,
+		CategoryId: i.CategoryId, TradeTime: i.TradeTime, Amount: -i.Amount, Count: -1,
+		Location: accountModel.NewDao().GetLocation(i.AccountId),
 	}
 }
 

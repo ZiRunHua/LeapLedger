@@ -14,7 +14,6 @@ import (
 	transactionModel "github.com/ZiRunHua/LeapLedger/model/transaction"
 
 	"github.com/pkg/errors"
-	"golang.org/x/sync/errgroup"
 	"gorm.io/gorm"
 )
 
@@ -330,118 +329,6 @@ func (txnService *Transaction) CreateMapping(
 	return
 }
 
-func (txnService *Transaction) CreateMultiple(
-	accountUser accountModel.User, account accountModel.Account, transactionList []transactionModel.Transaction,
-	tx *gorm.DB,
-) (failTransList []*transactionModel.Transaction, err error) {
-	if account.ID != accountUser.AccountId {
-		err = global.ErrAccountId
-		return
-	}
-	err = accountUser.CheckTransAddByUserId(accountUser.UserId)
-	if err != nil {
-		return
-	}
-
-	var categoryIds []uint
-	if err = tx.Model(&categoryModel.Category{}).Where("account_id = ?", account.ID).Pluck(
-		"id", &categoryIds,
-	).Error; err != nil {
-		return nil, err
-	}
-	categoryIdMap := make(map[uint]bool)
-	for _, id := range categoryIds {
-		categoryIdMap[id] = true
-	}
-
-	incomeAmount, expenseAmount := make(map[string]map[uint]int), make(map[string]map[uint]int)
-	incomeCount, expenseCount := make(map[string]map[uint]int), make(map[string]map[uint]int)
-
-	var incomeTransList, expenseTransList []*transactionModel.Transaction
-	var key string
-	for index := range transactionList {
-		transactionList[index].UserId = accountUser.UserId
-		transaction := transactionList[index]
-		if !categoryIdMap[transaction.CategoryId] {
-			failTransList = append(failTransList, &transaction)
-			continue
-		}
-		if transaction.IncomeExpense == constant.Income {
-			incomeTransList = append(incomeTransList, &transaction)
-			key = transaction.TradeTime.Format("2006-01-02")
-			if incomeAmount[key] == nil {
-				incomeAmount[key] = map[uint]int{transaction.CategoryId: transaction.Amount}
-				incomeCount[key] = map[uint]int{transaction.CategoryId: 1}
-			} else {
-				incomeAmount[key][transaction.CategoryId] += transaction.Amount
-				incomeCount[key][transaction.CategoryId]++
-			}
-		} else if transaction.IncomeExpense == constant.Expense {
-			expenseTransList = append(expenseTransList, &transaction)
-			key = transaction.TradeTime.Format("2006-01-02")
-			if expenseAmount[key] == nil {
-				expenseAmount[key] = map[uint]int{transaction.CategoryId: transaction.Amount}
-				expenseCount[key] = map[uint]int{transaction.CategoryId: 1}
-			} else {
-				expenseAmount[key][transaction.CategoryId] += transaction.Amount
-				expenseCount[key][transaction.CategoryId]++
-			}
-		} else {
-			failTransList = append(failTransList, &transaction)
-			continue
-		}
-	}
-	var transaction transactionModel.Transaction
-	if len(incomeTransList) > 0 {
-		if err = tx.Model(&transaction).Create(incomeTransList).Error; err != nil {
-			return nil, err
-		}
-
-		if err = txnService.addStatisticAfterCreateMultiple(
-			account, accountUser, constant.Income, incomeAmount, incomeCount, tx,
-		); err != nil {
-			return nil, err
-		}
-	}
-	if len(expenseTransList) > 0 {
-		if err = tx.Model(&transaction).Create(expenseTransList).Error; err != nil {
-			return nil, err
-		}
-		if err = txnService.addStatisticAfterCreateMultiple(
-			account, accountUser, constant.Expense, expenseAmount, expenseCount, tx,
-		); err != nil {
-			return nil, err
-		}
-	}
-	return failTransList, err
-}
-
-func (txnService *Transaction) addStatisticAfterCreateMultiple(
-	account accountModel.Account, accountUser accountModel.User, incomeExpense constant.IncomeExpense,
-	amountList map[string]map[uint]int, countList map[string]map[uint]int, tx *gorm.DB,
-) error {
-	ctx := context.WithValue(context.Background(), cus.Tx, tx)
-	var err error
-	var tradeTime time.Time
-	for date, categoryList := range amountList {
-		if tradeTime, err = time.Parse("2006-01-02", date); err != nil {
-			return err
-		}
-		for categoryId, amount := range categoryList {
-			if err = txnService.updateStatistic(
-				transactionModel.StatisticData{
-					AccountId: account.ID, UserId: accountUser.UserId, IncomeExpense: incomeExpense,
-					CategoryId: categoryId,
-					TradeTime:  tradeTime, Amount: amount, Count: countList[date][categoryId],
-				}, ctx,
-			); err != nil {
-				return err
-			}
-		}
-	}
-	return nil
-}
-
 type Option struct {
 	// isSyncTrans 交易数据至同步关联账本
 	isSyncTrans bool
@@ -470,30 +357,4 @@ func (txnService *Transaction) NewOptionFormConfig(trans transactionModel.Info, 
 func (o *Option) IsSyncTrans() *Option {
 	o.isSyncTrans = true
 	return o
-}
-
-type TransTask func(trans transactionModel.Transaction, ctx context.Context) error
-
-// handelTransTasks
-func _(taskList []TransTask, trans transactionModel.Transaction, ctx context.Context) error {
-	if len(taskList) > 2 {
-		errGroup, _ := errgroup.WithContext(ctx)
-		handFunc := func(task TransTask, trans transactionModel.Transaction, ctx context.Context) {
-			errGroup.Go(func() error { return task(trans, ctx) })
-		}
-		for _, task := range taskList {
-			handFunc(task, trans, ctx)
-		}
-		if err := errGroup.Wait(); err != nil {
-			return err
-		}
-	} else {
-		for _, task := range taskList {
-			err := task(trans, ctx)
-			if err != nil {
-				return err
-			}
-		}
-	}
-	return nil
 }
