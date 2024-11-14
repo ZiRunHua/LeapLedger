@@ -1,0 +1,54 @@
+# 服务初始化的配置文件 执行代码详见 ./initialize/initialize.go
+# This is the service initialization configuration file execution code see ./initialize/initialize.go
+
+# can set `debug` or `production`
+# `debug` mode can print mysql and redis logs and `/public/swagger/index.html` api
+Mode: debug
+
+System:
+  Addr: 8080
+  RouterPrefix: ""
+  JwtKey: ""
+  # Some apis use symmetric signature keys that can be configured to improve security
+  ClientSignKey: ""
+
+Redis:
+  Addr: "localhost:6379"
+  Password: ""
+  Db: 0
+  LockDb: 1
+
+Mysql:
+  Path: "localhost"
+  Port: "3306"
+  Config: "parseTime=True&loc=Local"
+  DbName: "leap_ledger"
+  Username: "root"
+  Password: ""
+
+Nats:
+  ServerUrl: localhost:4222
+  # This is the topic that the consumer server needs to subscribe to, such as createTourist, statisticUpdate, transactionSync.
+  # subjects see ./global/nats/nats.go
+  Subjects: [all]
+
+Captcha:
+  KeyLong: 6
+  ImgWidth: 180
+  ImgHeight: 50
+  OpenCaptcha: 0
+  OpenCaptchaTimeout: 3600
+  EmailCaptcha: 0
+  EmailCaptchaTimeOut: 3600
+
+ThirdParty:
+  # WeCom used to send domain email
+  WeCom:
+    CorpId: ""
+    CorpSecret: ""
+  # Ai is used to obtain Chinese similarity, which is used to match transaction types
+  # https://huggingface.co/google-bert/bert-base-chinese
+  Ai:
+    Host: "" # leap-ledger-ai-server
+    Port: "" # 5000
+    MinSimilarity: 0.85

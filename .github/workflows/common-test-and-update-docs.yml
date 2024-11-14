@@ -9,6 +9,8 @@ on:
     secrets:
       CODECOV_TOKEN:
         required: true
+permissions:
+  contents: read
 
 jobs:
   test-and-update-docs:
@@ -18,24 +20,49 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Build image
-        run: |
-          docker build -t xiaozirun/leap-ledger:latest -f docker/Dockerfile .
+      - name: Set up Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: 1.23.0
 
       - name: Set up Docker Compose
         run: |
           sudo curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
           sudo chmod +x /usr/local/bin/docker-compose
 
-      - name: Start server
-        run: |
-          docker-compose -f docker-compose.yaml up -d leap-ledger-mysql && docker-compose -f docker-compose.yaml up -d
+      - name: Copy config.yaml
+        run: cp -f .github/config.yaml config.yaml
 
-      - name: Run tests and make report
+      - name: Start mysql
         run: |
-          docker exec leap-ledger-server sh -c "go install github.com/jstemmer/go-junit-report@latest"
-          docker exec leap-ledger-server sh -c "go test -timeout 5m -v 2>&1 ./... -coverprofile=docs/coverage.out | go-junit-report > docs/test-report.xml"
-        continue-on-error: false
+          docker-compose -f docker-compose.yaml up -d leap-ledger-mysql leap-ledger-nats leap-ledger-redis
+
+      - name: Wait for MySQL to be ready
+        run: |
+          # Set the maximum retry count and interval (e.g., 30 retries, 5 seconds each)
+          max_retries=30
+          retries=0
+          until docker exec leap-ledger-mysql mysqladmin -u root -p"$MYSQL_ROOT_PASSWORD" ping --silent; do
+            if [ $retries -ge $max_retries ]; then
+              echo "MySQL failed to start after $max_retries retries!"
+              exit 1
+            fi
+            retries=$((retries + 1))
+            echo "Waiting for MySQL to be ready... Retry $retries/$max_retries"
+            sleep 5
+          done
+
+      - name: Go mod
+        run: |
+          sudo chmod -R 666 ./docker
+          go mod download
+          go mod tidy
+
+      - name: Exec test
+        run: |
+          go install github.com/jstemmer/go-junit-report/v2@latest
+          go test -timeout 5m -v 2>&1 ./... -coverprofile=docs/coverage.out | tee docs/test-process.log
+          go-junit-report < docs/test-process.log > docs/test-report.xml
 
       - name: Upload test-report.xml
         uses: actions/upload-artifact@v4
@@ -58,11 +85,13 @@ jobs:
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
-      - name: Execute updateDocs.sh in container
-        run: docker exec leap-ledger-server sh "./docs/updateDocs.sh"
+      - name: Update docs
+        run: |
+          sudo chmod -R 777 ./
+          go install github.com/swaggo/swag/cmd/swag@latest
+          swag init -p pascalcase
 
       - name: Commit and push changes
-        # https://github.com/actions/checkout/discussions/479
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
@@ -72,7 +101,6 @@ jobs:
           else
             git commit -m "update docs" || echo "No changes to commit."
             git push origin ${{ inputs.ref }}
-          fi
         continue-on-error: true
 
       - name: Docker Compose Down
