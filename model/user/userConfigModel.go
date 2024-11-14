@@ -1,31 +1,60 @@
 package userModel
 
 import (
+	"reflect"
 	"time"
 )
 
-func newDefaultConfig(userId uint) []Config {
-	base := ConfigBase{UserId: userId}
-	return []Config{
-		&TransactionShareConfig{ConfigBase: base, DisplayFlags: DISPLAY_FLAGS_DEFAULT},
-		&BillImportConfig{ConfigBase: base},
+var DefaultConfigs = newDefaultConfigs(
+	[]Config{
+		&TransactionShareConfig{DisplayFlags: DISPLAY_FLAGS_DEFAULT},
+		&BillImportConfig{IgnoreUnmappedCategory: false, CheckSameTransaction: true},
+	},
+)
+
+type (
+	Config interface {
+		GetUserId() uint
+		SetUserId(uint)
+		TableName() string
 	}
-}
-
-type Config interface {
-	GetUserId() uint
-	SetUserId(uint)
-}
-
-type ConfigBase struct {
-	Config
-	UserId    uint `gorm:"primarykey"`
-	CreatedAt time.Time
-	UpdatedAt time.Time
-}
+	ConfigBase struct {
+		UserId    uint `gorm:"primarykey"`
+		CreatedAt time.Time
+		UpdatedAt time.Time
+	}
+	defaultConfigs struct {
+		configs    []Config
+		configsMap map[string]Config
+	}
+)
 
 func (cb *ConfigBase) GetUserId() uint   { return cb.UserId }
 func (cb *ConfigBase) SetUserId(id uint) { cb.UserId = id }
+
+func newDefaultConfigs(configs []Config) defaultConfigs {
+	configsMap := make(map[string]Config, len(configs))
+	for _, config := range configs {
+		configsMap[config.TableName()] = config
+	}
+	return defaultConfigs{configs: configs, configsMap: configsMap}
+}
+
+func (dc defaultConfigs) Iterator(userId uint) func(yield func(Config) bool) {
+	return func(yield func(Config) bool) {
+		for _, config := range dc.configs {
+			config = deepCopyConfig(config)
+			config.SetUserId(userId)
+			if !yield(config) {
+				return
+			}
+		}
+	}
+}
+
+func (dc defaultConfigs) GetConfig(config Config) Config {
+	return deepCopyConfig(dc.configsMap[config.TableName()])
+}
 
 type TransactionShareConfig struct {
 	ConfigBase
@@ -58,4 +87,15 @@ type BillImportConfig struct {
 	ConfigBase
 	IgnoreUnmappedCategory bool
 	CheckSameTransaction   bool
+}
+
+func (u *BillImportConfig) TableName() string {
+	return "user_bill_import_config"
+}
+
+func deepCopyConfig(config Config) Config {
+	elem := reflect.ValueOf(config).Elem()
+	value := reflect.New(elem.Type())
+	value.Elem().Set(elem)
+	return value.Interface().(Config)
 }

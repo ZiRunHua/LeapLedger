@@ -57,7 +57,14 @@ func (u *UserDao) Add(data AddData) (User, error) {
 	if err != nil {
 		return user, err
 	}
-	return user, u.InitConfig(user)
+	// init config
+	for _, c := range DefaultConfigs.Iterator(user.ID) {
+		err = u.CreateConfig(c)
+		if err != nil {
+			return user, err
+		}
+	}
+	return user, nil
 }
 
 func (u *UserDao) SelectById(id uint, args ...interface{}) (User, error) {
@@ -243,26 +250,25 @@ func (u *UserDao) SelectByUnusedTour() (tour Tour, err error) {
 	return tour, err
 }
 
-func (u *UserDao) InitConfig(user User) error {
-	for _, c := range newDefaultConfig(user.ID) {
-		err := u.CreateConfig(c)
-		if err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
 func (u *UserDao) CreateConfig(config Config) error {
 	return u.db.Create(config).Error
 }
 
 func (u *UserDao) GetConfig(config Config) error {
-	return u.db.First(config).Error
+	err := u.db.First(config).Error
+	if err == nil {
+		return nil
+	}
+	// not call FirstOrCreate directly because DefaultConfigs.GetConfig uses reflection,
+	// so keep calls to a minimum.
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return u.db.Assign(DefaultConfigs.GetConfig(config)).FirstOrCreate(config).Error
+	}
+	return err
 }
 
 func (u *UserDao) GetConfigColumns(config Config, column interface{}, columns ...interface{}) error {
-	return u.db.Model(config).Select(column, columns).Error
+	return u.db.Select(column, columns).First(config).Error
 }
 
 func (u *UserDao) UpdateConfig(config Config) error {
@@ -270,7 +276,7 @@ func (u *UserDao) UpdateConfig(config Config) error {
 }
 
 func (u *UserDao) UpdateConfigColumns(config Config, column interface{}, columns ...interface{}) error {
-	return u.db.Model(config).Select(column, columns).Updates(config).Error
+	return u.db.Select(column, columns).Updates(config).Error
 }
 
 func (u *UserDao) DisableConfigBinaryFlag(config Config, key string, flag uint) error {
