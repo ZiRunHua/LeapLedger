@@ -48,16 +48,16 @@ func (tm *taskManager) init(js jetstream.JetStream, logger *zap.Logger) error {
 		Retention: jetstream.InterestPolicy,
 		MaxAge:    24 * time.Hour * 7,
 	}
-	customerConfig := jetstream.ConsumerConfig{
-		Name:          natsTaskPrefix + "_customer",
-		Durable:       natsTaskPrefix + "_customer",
+	consumerConfig := jetstream.ConsumerConfig{
+		Name:          natsTaskPrefix + "_consumer",
+		Durable:       natsTaskPrefix + "_consumer",
 		AckPolicy:     jetstream.AckExplicitPolicy,
 		BackOff:       backOff,
 		MaxDeliver:    len(backOff) + 1,
 		MaxAckPending: runtime.GOMAXPROCS(0) * 3,
 	}
 
-	err := tm.manageInitializers.init(js, streamConfig, customerConfig)
+	err := tm.manageInitializers.init(js, streamConfig, consumerConfig)
 	if err != nil {
 		return err
 	}

@@ -23,7 +23,7 @@ type EventManager interface {
 	Publish(event Event, payload []byte) bool
 	Subscribe(event Event, triggerTask Task, fetchTaskData func(eventData []byte) ([]byte, error))
 	SubscribeToNewConsumer(event Event, name string, handler MessageHandler)
-	updateAllCustomerConfig(func(*jetstream.ConsumerConfig) error, context.Context) error
+	updateAllConsumerConfig(func(*jetstream.ConsumerConfig) error, context.Context) error
 }
 
 const (
@@ -63,15 +63,15 @@ func (em *eventManager) init(js jetstream.JetStream, taskManage *taskManager, lo
 		Retention: jetstream.InterestPolicy,
 		MaxAge:    24 * time.Hour * 7,
 	}
-	customerConfig := jetstream.ConsumerConfig{
-		Name:          natsEventPrefix + "_customer",
-		Durable:       natsEventPrefix + "_customer",
+	consumerConfig := jetstream.ConsumerConfig{
+		Name:          natsEventPrefix + "_consumer",
+		Durable:       natsEventPrefix + "_consumer",
 		AckPolicy:     jetstream.AckExplicitPolicy,
 		BackOff:       backOff,
 		MaxDeliver:    len(backOff) + 1,
 		MaxAckPending: runtime.GOMAXPROCS(0) * 3,
 	}
-	err := em.manageInitializers.init(js, streamConfig, customerConfig)
+	err := em.manageInitializers.init(js, streamConfig, consumerConfig)
 	if err != nil {
 		return err
 	}
@@ -129,16 +129,16 @@ func (em *eventManager) SubscribeToNewConsumer(event Event, name string, handler
 		},
 	)
 	ctx := context.Background()
-	config, err := em.getCustomerConfig(ctx)
+	config, err := em.getConsumerConfig(ctx)
 	if err != nil {
 		panic(err)
 	}
 	config.Name, config.Durable, config.FilterSubjects = name, name, []string{event.subject()}
-	customer, err := em.newCustomer(ctx, config)
+	consumer, err := em.newConsumer(ctx, config)
 	if err != nil {
 		panic(err)
 	}
-	_, err = customer.Consume(
+	_, err = consumer.Consume(
 		func(msg jetstream.Msg) {
 			receiveMsg(msg, func(msg jetstream.Msg) error { return handler(msg.Data()) }, em.logger)
 		},
@@ -148,7 +148,7 @@ func (em *eventManager) SubscribeToNewConsumer(event Event, name string, handler
 	}
 }
 
-func (em *eventManager) updateAllCustomerConfig(
+func (em *eventManager) updateAllConsumerConfig(
 	handle func(*jetstream.ConsumerConfig) error, ctx context.Context,
 ) error {
 	consumersList := em.stream.ListConsumers(ctx)

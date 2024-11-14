@@ -41,7 +41,7 @@ type dlqManager struct {
 	manageInitializers
 	dlqMsgHandler
 	register     dlqStreamRegister
-	pullCustomer pullCustomer
+	pullConsumer pullConsumer
 }
 
 func (dm *dlqManager) init(js jetstream.JetStream, registerStream []jetstream.Stream, logger *zap.Logger) (err error) {
@@ -60,21 +60,21 @@ func (dm *dlqManager) init(js jetstream.JetStream, registerStream []jetstream.St
 		Subjects:  subjects,
 		Retention: jetstream.InterestPolicy,
 	}
-	customerConfig := jetstream.ConsumerConfig{
-		Name:       dlqPrefix + "_customer",
-		Durable:    dlqPrefix + "_customer",
+	consumerConfig := jetstream.ConsumerConfig{
+		Name:       dlqPrefix + "_consumer",
+		Durable:    dlqPrefix + "_consumer",
 		AckPolicy:  jetstream.AckExplicitPolicy,
 		MaxDeliver: 0,
 	}
-	err = dm.manageInitializers.init(js, streamConfig, customerConfig)
+	err = dm.manageInitializers.init(js, streamConfig, consumerConfig)
 	if err != nil {
 		return err
 	}
-	err = dm.pullCustomer.updateConfig(
+	err = dm.pullConsumer.updateConfig(
 		js, streamConfig.Name,
 		jetstream.ConsumerConfig{
-			Name:       dlqPrefix + "_pull_customer",
-			Durable:    dlqPrefix + "_pull_customer",
+			Name:       dlqPrefix + "_pull_consumer",
+			Durable:    dlqPrefix + "_pull_consumer",
 			AckPolicy:  jetstream.AckExplicitPolicy,
 			MaxDeliver: 0,
 		},
@@ -87,7 +87,7 @@ func (dm *dlqManager) init(js jetstream.JetStream, registerStream []jetstream.St
 }
 
 func (dm *dlqManager) RepublishBatch(batch int, ctx context.Context) (int, error) {
-	msgBatch, err := dm.pullCustomer.fetchMsg(batch)
+	msgBatch, err := dm.pullConsumer.fetchMsg(batch)
 	if err != nil {
 		if errors.Is(err, nats.ErrMsgNotFound) {
 			return 0, nil

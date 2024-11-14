@@ -67,7 +67,7 @@ func UpdateTestBackOff() {
 	updateFunc := func() {
 		ctx := context.TODO()
 		backOff = testBackOff
-		err := eventManage.updateAllCustomerConfig(
+		err := eventManage.updateAllConsumerConfig(
 			func(config *jetstream.ConsumerConfig) error {
 				config.BackOff = backOff
 				config.MaxDeliver = len(backOff) + 1
@@ -100,7 +100,7 @@ type manageInitializers struct {
 }
 
 func (mi *manageInitializers) init(
-	js jetstream.JetStream, streamConfig jetstream.StreamConfig, customerConfig jetstream.ConsumerConfig,
+	js jetstream.JetStream, streamConfig jetstream.StreamConfig, consumerConfig jetstream.ConsumerConfig,
 ) (err error) {
 	mi.js = js
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
@@ -109,7 +109,7 @@ func (mi *manageInitializers) init(
 	if err != nil {
 		return err
 	}
-	return mi.updateCustomerConfig(ctx, customerConfig)
+	return mi.updateConsumerConfig(ctx, consumerConfig)
 }
 
 func (mi *manageInitializers) updateStreamConfig(
@@ -120,15 +120,15 @@ func (mi *manageInitializers) updateStreamConfig(
 	return err
 }
 
-func (mi *manageInitializers) updateCustomerConfig(
+func (mi *manageInitializers) updateConsumerConfig(
 	ctx context.Context,
-	customerConfig jetstream.ConsumerConfig,
+	consumerConfig jetstream.ConsumerConfig,
 ) (err error) {
-	mi.consumer, err = mi.js.CreateOrUpdateConsumer(ctx, mi.stream.CachedInfo().Config.Name, customerConfig)
+	mi.consumer, err = mi.js.CreateOrUpdateConsumer(ctx, mi.stream.CachedInfo().Config.Name, consumerConfig)
 	return err
 }
 
-func (mi *manageInitializers) getCustomerConfig(ctx context.Context) (config jetstream.ConsumerConfig, err error) {
+func (mi *manageInitializers) getConsumerConfig(ctx context.Context) (config jetstream.ConsumerConfig, err error) {
 	info, err := mi.consumer.Info(ctx)
 	if err != nil {
 		return config, err
@@ -137,7 +137,7 @@ func (mi *manageInitializers) getCustomerConfig(ctx context.Context) (config jet
 	return config, err
 }
 
-func (mi *manageInitializers) newCustomer(ctx context.Context, config jetstream.ConsumerConfig) (
+func (mi *manageInitializers) newConsumer(ctx context.Context, config jetstream.ConsumerConfig) (
 	jetstream.Consumer, error,
 ) {
 	return mi.js.CreateOrUpdateConsumer(ctx, mi.stream.CachedInfo().Config.Name, config)

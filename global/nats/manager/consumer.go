@@ -7,11 +7,11 @@ import (
 	"github.com/nats-io/nats.go/jetstream"
 )
 
-type pullCustomer struct {
+type pullConsumer struct {
 	consumer jetstream.Consumer
 }
 
-func (mi *pullCustomer) updateConfig(
+func (mi *pullConsumer) updateConfig(
 	js jetstream.JetStream,
 	streamName string,
 	config jetstream.ConsumerConfig,
@@ -22,6 +22,6 @@ func (mi *pullCustomer) updateConfig(
 	return err
 }
 
-func (mi *pullCustomer) fetchMsg(batch int) (jetstream.MessageBatch, error) {
+func (mi *pullConsumer) fetchMsg(batch int) (jetstream.MessageBatch, error) {
 	return mi.consumer.FetchNoWait(batch)
 }
