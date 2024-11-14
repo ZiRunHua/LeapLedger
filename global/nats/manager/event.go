@@ -17,7 +17,7 @@ import (
 
 // EventManager is used to manage events.
 // EventManager has a dedicated consumer group that publishes tasks to TaskManage when events are triggered,
-// and new consumer groups can be created to consume events.
+// and new consumer groups can be created to Consume events.
 // These consumer groups use the same stream.
 type EventManager interface {
 	Publish(event Event, payload []byte) bool
@@ -39,8 +39,6 @@ type Event string
 
 func (t Event) subject() string { return fmt.Sprintf("%s.subject_%s", natsEventPrefix, t) }
 
-func (t Event) queue() string { return fmt.Sprintf("%s.queue_%s", natsEventPrefix, t) }
-
 const EventRetryTriggerTask Event = "retry_trigger_task"
 
 type RetryTriggerTask struct {
@@ -52,10 +50,12 @@ type eventManager struct {
 	EventManager
 	manageInitializers
 	eventMsgHandler
+
+	dlqRegisterStream
 }
 
 func (em *eventManager) init(js jetstream.JetStream, taskManage *taskManager, logger *zap.Logger) error {
-	em.eventMsgHandler.init(logger)
+	em.eventMsgHandler.init()
 	em.taskManage = taskManage
 	streamConfig := jetstream.StreamConfig{
 		Name:      natsEventName,
@@ -71,12 +71,11 @@ func (em *eventManager) init(js jetstream.JetStream, taskManage *taskManager, lo
 		MaxDeliver:    len(backOff) + 1,
 		MaxAckPending: runtime.GOMAXPROCS(0) * 3,
 	}
-	err := em.manageInitializers.init(js, streamConfig, consumerConfig)
+	err := em.manageInitializers.init(js, streamConfig, consumerConfig, logger)
 	if err != nil {
 		return err
 	}
-	_, err = em.consumer.Consume(em.receiveMsg)
-	return err
+	return em.manageInitializers.setMainConsumerConsume(context.TODO(), em.msgHandle)
 }
 
 func (em *eventManager) Publish(event Event, payload []byte) bool {
@@ -88,6 +87,7 @@ func (em *eventManager) Publish(event Event, payload []byte) bool {
 	return true
 }
 
+// Subscribe sets up the task triggered by an event.
 func (em *eventManager) Subscribe(event Event, triggerTask Task, fetchTaskData func(eventData []byte) ([]byte, error)) {
 	taskMap, _ := em.eventToTask.LoadOrStore(event, dataTool.NewSyncMap[Task, MessageHandler]())
 	taskMap.Store(
@@ -128,20 +128,13 @@ func (em *eventManager) SubscribeToNewConsumer(event Event, name string, handler
 			return nil
 		},
 	)
-	ctx := context.Background()
-	config, err := em.getConsumerConfig(ctx)
-	if err != nil {
-		panic(err)
-	}
-	config.Name, config.Durable, config.FilterSubjects = name, name, []string{event.subject()}
-	consumer, err := em.newConsumer(ctx, config)
-	if err != nil {
-		panic(err)
-	}
-	_, err = consumer.Consume(
-		func(msg jetstream.Msg) {
-			receiveMsg(msg, func(msg jetstream.Msg) error { return handler(msg.Data()) }, em.logger)
+	_, err := em.consumerManger.NewConsumer(
+		context.TODO(),
+		func(config *jetstream.ConsumerConfig) error {
+			config.Name, config.Durable, config.FilterSubjects = name, name, []string{event.subject()}
+			return nil
 		},
+		func(_ string, payload []byte) error { return handler(payload) },
 	)
 	if err != nil {
 		panic(err)
@@ -151,25 +144,17 @@ func (em *eventManager) SubscribeToNewConsumer(event Event, name string, handler
 func (em *eventManager) updateAllConsumerConfig(
 	handle func(*jetstream.ConsumerConfig) error, ctx context.Context,
 ) error {
-	consumersList := em.stream.ListConsumers(ctx)
-	if err := consumersList.Err(); err != nil {
+	return em.consumerManger.UpdateAllConsumerConfig(handle, ctx)
+}
+
+func (em *eventManager) getStreamName() string { return natsEventName }
+
+func (em *eventManager) reConsume(ctx context.Context, consumer string, streamSeq uint64) error {
+	rawMsg, err := em.stream.GetMsg(ctx, streamSeq)
+	if err != nil {
 		return err
 	}
-	for info := range consumersList.Info() {
-		err := em.stream.ListConsumers(ctx).Err()
-		if err != nil {
-			return err
-		}
-		err = handle(&info.Config)
-		if err != nil {
-			return err
-		}
-		_, err = em.stream.UpdateConsumer(ctx, info.Config)
-		if err != nil {
-			return err
-		}
-	}
-	return nil
+	return em.consumerManger.ReConsume(ctx, consumer, rawMsg)
 }
 
 type eventMsgHandler struct {
@@ -177,23 +162,16 @@ type eventMsgHandler struct {
 	msgHandlerMap dataTool.Map[string, MessageHandler]
 	msgManger
 
-	logger *zap.Logger
-
 	taskManage *taskManager
 }
 
-func (em *eventMsgHandler) init(logger *zap.Logger) {
-	em.logger = logger
+func (em *eventMsgHandler) init() {
 	em.eventToTask = dataTool.NewSyncMap[Event, dataTool.Map[Task, MessageHandler]]()
 	em.msgHandlerMap = dataTool.NewSyncMap[string, MessageHandler]()
 }
 
-func (em *eventMsgHandler) receiveMsg(msg jetstream.Msg) {
-	receiveMsg(msg, func(msg jetstream.Msg) error { return em.msgHandle(msg.Subject(), msg.Data()) }, em.logger)
-}
-
 func (em *eventMsgHandler) getHandler(subject string) (MessageHandler, error) {
-	if subject == string(EventRetryTriggerTask) {
+	if subject == EventRetryTriggerTask.subject() {
 		return func(payload []byte) error {
 			var data RetryTriggerTask
 			err := json.Unmarshal(payload, &data)

@@ -2,7 +2,6 @@ package manager
 
 import (
 	"path/filepath"
-	"runtime/debug"
 
 	"github.com/ZiRunHua/LeapLedger/global"
 	"github.com/ZiRunHua/LeapLedger/global/constant"
@@ -77,30 +76,8 @@ func init() {
 
 	dlqManage = &dlqManager{}
 	DlqManage = dlqManage
-	err = dlqManage.init(js, []jetstream.Stream{taskManage.stream, eventManage.stream}, dlqLogger)
+	err = dlqManage.init(js, []dlqRegisterStream{taskManage, eventManage}, dlqLogger)
 	if err != nil {
 		panic(err)
 	}
-}
-
-func receiveMsg(msg jetstream.Msg, handle func(msg jetstream.Msg) error, logger *zap.Logger) {
-	var err error
-	defer func() {
-		r := recover()
-		if r == nil {
-			if err != nil {
-				logger.Error("receiveMsg err", zap.Error(err))
-				err = msg.Nak()
-			} else {
-				err = msg.Ack()
-			}
-		} else {
-			logger.Error("receiveMsg panic", zap.Any("panic", r), zap.Stack(string(debug.Stack())))
-			err = msg.Nak()
-		}
-		if err != nil {
-			logger.Error("receiveMsg ack err", zap.Error(err))
-		}
-	}()
-	err = handle(msg)
 }

@@ -2,29 +2,43 @@ package manager
 
 // dead letter queue
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"path/filepath"
+	"runtime/debug"
 
-	"github.com/ZiRunHua/LeapLedger/util/dataTool"
 	natsServer "github.com/nats-io/nats-server/v2/server"
+
+	"context"
+	"github.com/ZiRunHua/LeapLedger/util/dataTool"
 	"github.com/nats-io/nats.go"
 	"github.com/nats-io/nats.go/jetstream"
 	"go.uber.org/zap"
-)
-
-import (
-	"context"
-	"encoding/json"
 )
 
 // The DlqManager is used to manage dead letters.
 // Use a dead letter queue by passing in a jetstream.Stream registration.
 // Messages in DlqManager will use stream_seq to query the complete message on the registered stream,
 // provided that the message still exists, and the message will be published as a new message on the registered stream.
-type DlqManager interface {
-	RepublishBatch(batch int, ctx context.Context) (int, error)
-}
+type (
+	DlqManager interface {
+		RepublishBatch(batch int, ctx context.Context) (msgNum int, err error)
+	}
+
+	dlqManager struct {
+		DlqManager
+
+		manageInitializers
+		register     dlqStreamRegister
+		pullConsumer pullConsumer
+	}
+
+	dlqRegisterStream interface {
+		getStreamName() string
+		reConsume(ctx context.Context, consumer string, streamSeq uint64) error
+	}
+)
 
 const (
 	dlqName   = "dlq"
@@ -35,19 +49,11 @@ var (
 	dlqLogPath = filepath.Join(natsLogPath, "dlq.log")
 )
 
-type dlqManager struct {
-	DlqManager
+func (dm *dlqManager) init(
+	js jetstream.JetStream, registerStreams []dlqRegisterStream, logger *zap.Logger) (err error) {
+	dm.register.streamMap = dataTool.NewSyncMap[string, dlqRegisterStream]()
 
-	manageInitializers
-	dlqMsgHandler
-	register     dlqStreamRegister
-	pullConsumer pullConsumer
-}
-
-func (dm *dlqManager) init(js jetstream.JetStream, registerStream []jetstream.Stream, logger *zap.Logger) (err error) {
-	dm.logger, dm.register.streamMap = logger, dataTool.NewSyncMap[string, jetstream.Stream]()
-
-	err = dm.register.register(registerStream...)
+	err = dm.register.register(registerStreams...)
 	if err != nil {
 		return err
 	}
@@ -66,7 +72,7 @@ func (dm *dlqManager) init(js jetstream.JetStream, registerStream []jetstream.St
 		AckPolicy:  jetstream.AckExplicitPolicy,
 		MaxDeliver: 0,
 	}
-	err = dm.manageInitializers.init(js, streamConfig, consumerConfig)
+	err = dm.manageInitializers.init(js, streamConfig, consumerConfig, logger)
 	if err != nil {
 		return err
 	}
@@ -82,11 +88,18 @@ func (dm *dlqManager) init(js jetstream.JetStream, registerStream []jetstream.St
 	if err != nil {
 		return err
 	}
-	_, err = dm.consumer.Consume(dm.receiveMsg)
-	return err
+	return dm.manageInitializers.setMainConsumerConsume(
+		context.TODO(), func(subject string, payload []byte) error {
+			dm.logger.Info(
+				"msg", zap.String("subject", subject),
+				zap.ByteString("data", payload),
+			)
+			return nil
+		},
+	)
 }
 
-func (dm *dlqManager) RepublishBatch(batch int, ctx context.Context) (int, error) {
+func (dm *dlqManager) RepublishBatch(batch int, ctx context.Context) (msgNum int, err error) {
 	msgBatch, err := dm.pullConsumer.fetchMsg(batch)
 	if err != nil {
 		if errors.Is(err, nats.ErrMsgNotFound) {
@@ -94,81 +107,60 @@ func (dm *dlqManager) RepublishBatch(batch int, ctx context.Context) (int, error
 		}
 		return 0, err
 	}
-	var count int
+
 	for msg := range msgBatch.Messages() {
-		count++
-		err = dm.republishDieMsg(msg, ctx)
-		if err != nil {
-			dm.logger.Error("republishDieMsg err", zap.Error(err))
-			err = msg.Nak()
-			if err != nil {
-				dm.logger.Error("Republish nck", zap.Error(err))
-			}
-		} else {
-			err = msg.Ack()
-			if err != nil {
-				dm.logger.Error("Republish ack", zap.Error(err))
-			}
-		}
+		msgNum++
+		dm.republishDieMsg(ctx, msg)
 	}
-	return count, nil
+	return msgNum, err
 }
 
-func (dm *dlqManager) republishDieMsg(msg jetstream.Msg, ctx context.Context) (err error) {
+func (dm *dlqManager) republishDieMsg(ctx context.Context, msg jetstream.Msg) (isSuccess bool) {
+	var err error
+	defer func() {
+		if r := recover(); r != nil {
+			dm.logger.Panic(
+				"reConsume", zap.String("subject", msg.Subject()), zap.ByteString("data", msg.Data()),
+				zap.Any("panic", r), zap.Stack(string(debug.Stack())),
+			)
+			return
+		}
+		if err == nil {
+			err = msg.Ack()
+		}
+		if err != nil {
+			dm.logger.Error(
+				"reConsume", zap.String("subject", msg.Subject()), zap.ByteString("data", msg.Data()),
+				zap.Error(err),
+			)
+		}
+	}()
 	var advisory natsServer.JSConsumerDeliveryExceededAdvisory
 	err = json.Unmarshal(msg.Data(), &advisory)
 	if err != nil {
-		return err
+		return
 	}
-	var republishMsg *nats.Msg
-	republishMsg, err = dm.getMsgByAdvisory(advisory, ctx)
-	if err != nil {
-		return err
+	stream, exist := dm.register.streamMap.Load(advisory.Stream)
+	if !exist {
+		err = ErrStreamNotExist
+		return
 	}
-	_, err = dm.js.PublishMsg(ctx, republishMsg)
-	return err
-}
-
-func (dm *dlqManager) getMsgByAdvisory(advisory natsServer.JSConsumerDeliveryExceededAdvisory, ctx context.Context) (
-	*nats.Msg, error,
-) {
-	streamRawMsg, err := dm.register.selectMsgByDeliveryExceededAdvisory(advisory, ctx)
-	if err != nil {
-		return nil, err
+	err = stream.reConsume(ctx, advisory.Consumer, advisory.StreamSeq)
+	if errors.Is(err, jetstream.ErrMsgNotFound) {
+		// ignore
+		err = nil
+		return false
 	}
-	return &nats.Msg{
-		Subject: streamRawMsg.Subject,
-		Data:    streamRawMsg.Data,
-		Header:  streamRawMsg.Header,
-	}, nil
-}
-
-type dlqMsgHandler struct {
-	logger *zap.Logger
-}
-
-func (dmh *dlqMsgHandler) receiveMsg(msg jetstream.Msg) {
-	dmh.logMsg(msg)
-	err := msg.Ack()
-	if err != nil {
-		dmh.logger.Error("receive msg", zap.Error(err))
-	}
-}
-
-func (dmh *dlqMsgHandler) logMsg(msg jetstream.Msg) {
-	dmh.logger.Info(
-		"msg", zap.String(msgHeaderKeySubject, msg.Headers().Get(msgHeaderKeySubject)),
-		zap.String("data", string(msg.Data())),
-	)
+	return err == nil
 }
 
 type dlqStreamRegister struct {
-	streamMap dataTool.Map[string, jetstream.Stream]
+	streamMap dataTool.Map[string, dlqRegisterStream]
 }
 
-func (dsr *dlqStreamRegister) register(streams ...jetstream.Stream) error {
+func (dsr *dlqStreamRegister) register(streams ...dlqRegisterStream) error {
 	for _, stream := range streams {
-		dsr.streamMap.LoadOrStore(stream.CachedInfo().Config.Name, stream)
+		dsr.streamMap.LoadOrStore(stream.getStreamName(), stream)
 	}
 	return nil
 }
@@ -176,26 +168,15 @@ func (dsr *dlqStreamRegister) register(streams ...jetstream.Stream) error {
 func (dsr *dlqStreamRegister) getMaxDeliveriesEvents() ([]string, error) {
 	var events []string
 	dsr.streamMap.Range(
-		func(_ string, stream jetstream.Stream) bool {
+		func(_ string, stream dlqRegisterStream) bool {
 			events = append(
 				events, fmt.Sprintf(
 					"$JS.EVENT.ADVISORY.CONSUMER.MAX_DELIVERIES.%s.*",
-					stream.(jetstream.Stream).CachedInfo().Config.Name,
+					stream.getStreamName(),
 				),
 			)
 			return true
 		},
 	)
 	return events, nil
-}
-
-func (dsr *dlqStreamRegister) selectMsgByDeliveryExceededAdvisory(
-	advisory natsServer.JSConsumerDeliveryExceededAdvisory,
-	ctx context.Context,
-) (*jetstream.RawStreamMsg, error) {
-	stream, exist := dsr.streamMap.Load(advisory.Stream)
-	if !exist {
-		return nil, ErrStreamNotExist
-	}
-	return stream.(jetstream.Stream).GetMsg(ctx, advisory.StreamSeq)
 }

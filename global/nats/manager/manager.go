@@ -2,6 +2,7 @@ package manager
 
 import (
 	"context"
+	"go.uber.org/zap"
 	"log"
 	"sync"
 	"time"
@@ -55,14 +56,13 @@ var testBackOff = []time.Duration{
 	time.Second,
 }
 
+var updateTestBackOffOnce sync.Once
+
 // UpdateTestBackOff
 // Most test samples are suspended for 30 seconds to wait for message consumption,
 // and test whether retry and dead letter queues work properly,
 // so to ensure that the test samples execute properly,
 // you need to retry at least 10 times within 30 seconds.
-
-var once sync.Once
-
 func UpdateTestBackOff() {
 	updateFunc := func() {
 		ctx := context.TODO()
@@ -90,55 +90,40 @@ func UpdateTestBackOff() {
 		time.Sleep(time.Second * 3)
 		log.Print("update test back off finish")
 	}
-	once.Do(updateFunc)
+	updateTestBackOffOnce.Do(updateFunc)
 }
 
 type manageInitializers struct {
-	js       jetstream.JetStream
-	stream   jetstream.Stream
-	consumer jetstream.Consumer
+	js             jetstream.JetStream
+	stream         jetstream.Stream
+	consumer       jetstream.Consumer
+	consumerManger ConsumerManger
+
+	logger *zap.Logger
 }
 
 func (mi *manageInitializers) init(
 	js jetstream.JetStream, streamConfig jetstream.StreamConfig, consumerConfig jetstream.ConsumerConfig,
+	logger *zap.Logger,
 ) (err error) {
-	mi.js = js
+	mi.js, mi.logger = js, logger
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
-	err = mi.updateStreamConfig(ctx, streamConfig)
+	mi.stream, err = mi.js.CreateOrUpdateStream(ctx, streamConfig)
 	if err != nil {
 		return err
 	}
-	return mi.updateConsumerConfig(ctx, consumerConfig)
-}
-
-func (mi *manageInitializers) updateStreamConfig(
-	ctx context.Context,
-	streamConfig jetstream.StreamConfig,
-) (err error) {
-	mi.stream, err = mi.js.CreateOrUpdateStream(ctx, streamConfig)
-	return err
-}
-
-func (mi *manageInitializers) updateConsumerConfig(
-	ctx context.Context,
-	consumerConfig jetstream.ConsumerConfig,
-) (err error) {
-	mi.consumer, err = mi.js.CreateOrUpdateConsumer(ctx, mi.stream.CachedInfo().Config.Name, consumerConfig)
-	return err
-}
-
-func (mi *manageInitializers) getConsumerConfig(ctx context.Context) (config jetstream.ConsumerConfig, err error) {
-	info, err := mi.consumer.Info(ctx)
+	mi.consumer, err = mi.stream.CreateOrUpdateConsumer(ctx, consumerConfig)
 	if err != nil {
-		return config, err
+		return err
 	}
-	config = info.Config
-	return config, err
+	mi.consumerManger, err = NewConsumerManger(ctx, mi.stream, mi.consumer, logger)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
-func (mi *manageInitializers) newConsumer(ctx context.Context, config jetstream.ConsumerConfig) (
-	jetstream.Consumer, error,
-) {
-	return mi.js.CreateOrUpdateConsumer(ctx, mi.stream.CachedInfo().Config.Name, config)
+func (mi *manageInitializers) setMainConsumerConsume(ctx context.Context, handler consumerMessageHandler) (err error) {
+	return mi.consumerManger.Consume(ctx, mi.consumer, handler)
 }
