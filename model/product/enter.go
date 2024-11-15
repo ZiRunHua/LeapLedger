@@ -2,16 +2,18 @@ package productModel
 
 import (
 	"context"
+	"os"
+	"path/filepath"
+
 	"github.com/ZiRunHua/LeapLedger/global/constant"
 	"github.com/ZiRunHua/LeapLedger/global/cus"
 	"github.com/ZiRunHua/LeapLedger/global/db"
 	"github.com/ZiRunHua/LeapLedger/util/fileTool"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
-	"os"
 )
 
-var initSqlFile = constant.DATA_PATH + "/database/product.sql"
+var initSqlFile = filepath.Clean(constant.DataPath + "/database/product.sql")
 
 func init() {
 	// table

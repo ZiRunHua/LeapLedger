@@ -64,14 +64,33 @@ var testBackOff = []time.Duration{
 var once sync.Once
 
 func UpdateTestBackOff() {
-	once.Do(
-		func() {
-			backOff = testBackOff
-			initManager()
-			time.Sleep(time.Second * 3)
-			log.Print("update test back off finish")
-		},
-	)
+	updateFunc := func() {
+		ctx := context.TODO()
+		backOff = testBackOff
+		err := eventManage.updateAllCustomerConfig(
+			func(config *jetstream.ConsumerConfig) error {
+				config.BackOff = backOff
+				config.MaxDeliver = len(backOff) + 1
+				return nil
+			}, ctx,
+		)
+		if err != nil {
+			panic(err)
+		}
+		info, err := taskManage.consumer.Info(ctx)
+		if err != nil {
+			panic(err)
+		}
+		info.Config.BackOff = backOff
+		info.Config.MaxDeliver = len(backOff) + 1
+		_, err = taskManage.stream.UpdateConsumer(ctx, info.Config)
+		if err != nil {
+			panic(err)
+		}
+		time.Sleep(time.Second * 3)
+		log.Print("update test back off finish")
+	}
+	once.Do(updateFunc)
 }
 
 type manageInitializers struct {

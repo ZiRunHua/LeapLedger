@@ -1,12 +1,14 @@
 package manager
 
 import (
+	"path/filepath"
+	"runtime/debug"
+
+	"github.com/ZiRunHua/LeapLedger/global"
 	"github.com/ZiRunHua/LeapLedger/global/constant"
 	"github.com/ZiRunHua/LeapLedger/initialize"
-	"github.com/ZiRunHua/LeapLedger/util/log"
 	"github.com/nats-io/nats.go/jetstream"
 	"go.uber.org/zap"
-	"runtime/debug"
 )
 
 var (
@@ -24,7 +26,7 @@ var (
 	DlqManage   DlqManager
 )
 
-const natsLogPath = constant.LOG_PATH + "/nats/"
+var natsLogPath = filepath.Join(constant.LogPath, "nats")
 
 var (
 	taskLogger  *zap.Logger
@@ -33,24 +35,20 @@ var (
 )
 
 func init() {
-	initManager()
-}
-
-func initManager() {
 	var err error
 	js, err = jetstream.New(natsConn)
 	if err != nil {
 		panic(err)
 	}
-	taskLogger, err = log.GetNewZapLogger(natsTaskLogPath)
+	taskLogger, err = global.Config.Logger.New(natsTaskLogPath)
 	if err != nil {
 		panic(err)
 	}
-	eventLogger, err = log.GetNewZapLogger(natsEventLogPath)
+	eventLogger, err = global.Config.Logger.New(natsEventLogPath)
 	if err != nil {
 		panic(err)
 	}
-	dlqLogger, err = log.GetNewZapLogger(dlqLogPath)
+	dlqLogger, err = global.Config.Logger.New(dlqLogPath)
 	if err != nil {
 		panic(err)
 	}

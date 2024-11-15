@@ -2,6 +2,9 @@ package thirdpartyService
 
 import (
 	"context"
+	"errors"
+
+	"github.com/ZiRunHua/LeapLedger/global"
 	"github.com/ZiRunHua/LeapLedger/global/nats"
 	userModel "github.com/ZiRunHua/LeapLedger/model/user"
 )
@@ -9,7 +12,11 @@ import (
 func init() {
 	nats.SubscribeTaskWithPayload(
 		nats.TaskSendCaptchaEmail, func(t nats.PayloadSendCaptchaEmail, ctx context.Context) error {
-			return GroupApp.sendCaptchaEmail(t.Email, t.Action)
+			err := GroupApp.sendCaptchaEmail(t.Email, t.Action)
+			if errors.Is(err, global.ErrServiceClosed) {
+				return nil
+			}
+			return err
 		},
 	)
 	nats.SubscribeTaskWithPayload(
@@ -18,7 +25,11 @@ func init() {
 			if err != nil {
 				return err
 			}
-			return GroupApp.sendNotificationEmail(user, t.Notification)
+			err = GroupApp.sendNotificationEmail(user, t.Notification)
+			if errors.Is(err, global.ErrServiceClosed) {
+				return nil
+			}
+			return err
 		},
 	)
 }

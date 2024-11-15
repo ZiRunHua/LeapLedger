@@ -2,12 +2,13 @@ package userModel
 
 import (
 	"errors"
+	"strconv"
+	"time"
+
 	"github.com/ZiRunHua/LeapLedger/global"
 	"github.com/ZiRunHua/LeapLedger/global/constant"
 	commonModel "github.com/ZiRunHua/LeapLedger/model/common"
 	"gorm.io/gorm"
-	"strconv"
-	"time"
 )
 
 type User struct {
@@ -59,11 +60,6 @@ func (u *User) ModifyAsTourist(db *gorm.DB) error {
 			"email":    "player" + strconv.Itoa(int(u.ID)),
 		},
 	).Error
-}
-
-func (u *User) GetTransactionShareConfig() (TransactionShareConfig, error) {
-	data := TransactionShareConfig{}
-	return data, data.SelectByUserId(u.ID)
 }
 
 type Tour struct {

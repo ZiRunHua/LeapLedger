@@ -2,6 +2,7 @@ package email
 
 import (
 	"fmt"
+
 	"github.com/ZiRunHua/LeapLedger/global/cron"
 )
 
@@ -43,7 +44,14 @@ func (e *thirdPartyResponseError) Error() string {
 
 func init() {
 	_, err := cron.Scheduler.Every(30).Minute().Do(
-		cron.MakeJobFunc(Service.getToken),
+		cron.MakeJobFunc(
+			func() error {
+				if false == ServiceStatus {
+					return nil
+				}
+				return Service.getToken()
+			},
+		),
 	)
 	if err != nil {
 		panic(err)

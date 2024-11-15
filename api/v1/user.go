@@ -12,7 +12,6 @@ import (
 	accountModel "github.com/ZiRunHua/LeapLedger/model/account"
 	transactionModel "github.com/ZiRunHua/LeapLedger/model/transaction"
 	userModel "github.com/ZiRunHua/LeapLedger/model/user"
-	"github.com/ZiRunHua/LeapLedger/util"
 	"github.com/ZiRunHua/LeapLedger/util/timeTool"
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
@@ -550,12 +549,10 @@ func (u *UserApi) Home(ctx *gin.Context) {
 //	@Success	200	{object}	response.Data{Data=response.UserTransactionShareConfig}
 //	@Router		/user/transaction/share/config [get]
 func (u *UserApi) GetTransactionShareConfig(ctx *gin.Context) {
-	user, err := contextFunc.GetUser(ctx)
-	if responseError(err, ctx) {
-		return
-	}
 	var config userModel.TransactionShareConfig
-	if err = config.SelectByUserId(user.ID); responseError(err, ctx) {
+	config.UserId = contextFunc.GetUserId(ctx)
+	err := userModel.NewDao().GetConfig(&config)
+	if responseError(err, ctx) {
 		return
 	}
 	var responseData response.UserTransactionShareConfig
@@ -575,37 +572,24 @@ func (u *UserApi) GetTransactionShareConfig(ctx *gin.Context) {
 //	@Success	200		{object}	response.Data{Data=response.UserTransactionShareConfig}
 //	@Router		/user/transaction/share/config [put]
 func (u *UserApi) UpdateTransactionShareConfig(ctx *gin.Context) {
-	var err error
-	// 处理请求数据
 	var requestData request.UserTransactionShareConfigUpdate
-	if err = ctx.ShouldBindJSON(&requestData); err != nil {
+	if err := ctx.ShouldBindJSON(&requestData); err != nil {
 		response.FailToParameter(ctx, err)
 		return
 	}
-	user, err := contextFunc.GetUser(ctx)
-	if responseError(err, ctx) {
-		return
-	}
-	// 处理
-	config, err := user.GetTransactionShareConfig()
-	if responseError(err, ctx) {
-		return
-	}
+	// handle
 	flag, err := request.GetFlagByFlagName(requestData.Flag)
 	if responseError(err, ctx) {
 		return
 	}
-
+	var config userModel.TransactionShareConfig
+	config.UserId = contextFunc.GetUserId(ctx)
 	if requestData.Status {
-		err = config.OpenDisplayFlag(flag, db.Db)
+		err = userModel.NewDao().EnableConfigBinaryFlag(&config, "display_flags", flag)
 	} else {
-		err = config.ClosedDisplayFlag(flag, db.Db)
+		err = userModel.NewDao().DisableConfigBinaryFlag(&config, "display_flags", flag)
 	}
-	// 响应
-	if responseError(err, ctx) {
-		return
-	}
-	config, err = user.GetTransactionShareConfig()
+	// response
 	if responseError(err, ctx) {
 		return
 	}
@@ -615,14 +599,6 @@ func (u *UserApi) UpdateTransactionShareConfig(ctx *gin.Context) {
 		return
 	}
 	response.OkWithData(responseData, ctx)
-}
-
-func (u *UserApi) responseAndMaskUserInfo(data userModel.UserInfo) response.UserInfo {
-	return response.UserInfo{
-		Id:       data.ID,
-		Username: data.Username,
-		Email:    util.Str.MaskEmail(data.Email),
-	}
 }
 
 // GetFriendList

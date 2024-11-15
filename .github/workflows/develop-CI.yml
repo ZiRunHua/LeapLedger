@@ -10,6 +10,8 @@ jobs:
     uses: ./.github/workflows/common-test-and-update-docs.yml
     with:
       ref: ${{ github.ref }}
+    secrets:
+      CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
   push-image:
     needs: test-and-update-docs

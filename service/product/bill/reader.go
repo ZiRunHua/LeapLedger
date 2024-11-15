@@ -9,28 +9,28 @@
 package bill
 
 import (
+	"context"
+	"path/filepath"
+	"strings"
+
+	"github.com/ZiRunHua/LeapLedger/global"
 	"github.com/ZiRunHua/LeapLedger/global/constant"
+	"github.com/ZiRunHua/LeapLedger/global/db"
 	accountModel "github.com/ZiRunHua/LeapLedger/model/account"
 	productModel "github.com/ZiRunHua/LeapLedger/model/product"
 	transactionModel "github.com/ZiRunHua/LeapLedger/model/transaction"
-	"github.com/ZiRunHua/LeapLedger/util/log"
-	"go.uber.org/zap"
-	"strings"
-)
-
-import (
-	"context"
-	"github.com/ZiRunHua/LeapLedger/global/db"
 	"github.com/pkg/errors"
+	"go.uber.org/zap"
 )
 
-const logPath = constant.LOG_PATH + "/service/product/bill.log"
-
-var logger *zap.Logger
+var (
+	logPath = filepath.Clean(constant.LogPath + "/service/product/bill.log")
+	logger  *zap.Logger
+)
 
 func init() {
 	var err error
-	if logger, err = log.GetNewZapLogger(logPath); err != nil {
+	if logger, err = global.Config.Logger.New(logPath); err != nil {
 		panic(err)
 	}
 }
