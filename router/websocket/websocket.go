@@ -1,9 +1,6 @@
 package websocket
 
 import (
-	"net"
-	"time"
-
 	"github.com/ZiRunHua/LeapLedger/api/v1/ws/msg"
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
@@ -20,19 +17,6 @@ func Use(handler func(conn *websocket.Conn, ctx *gin.Context) error) gin.Handler
 		if err != nil {
 			panic(err)
 		}
-		conn.SetPingHandler(
-			func(message string) error {
-				err := conn.WriteControl(websocket.PongMessage, []byte(message), time.Now().Add(1))
-				if err == websocket.ErrCloseSent {
-					return nil
-				} else if e, ok := err.(net.Error); ok && e.Temporary() {
-					return nil
-				}
-				return err
-			},
-		)
-		conn.SetPongHandler(nil)
-		conn.SetCloseHandler(nil)
 		defer conn.Close()
 		err = handler(conn, ctx)
 		if err != nil {

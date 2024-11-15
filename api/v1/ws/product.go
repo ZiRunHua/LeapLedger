@@ -17,19 +17,35 @@ import (
 	"github.com/gorilla/websocket"
 )
 
-type BillImportWebsocket struct {
-	account accountModel.Account
-	conn    *websocket.Conn
-	msg.Reader
+type (
+	BillImportWebsocket interface {
+		Read() error
+		ReadFile() (name []byte, file io.Reader, err error)
 
-	WaitRetryTrans *dataTool.RWMutexMap[string, transactionModel.Info]
-	RetryingTrans  *dataTool.RWMutexMap[string, transactionModel.Info]
+		SendTransactionCreateSuccess(transaction transactionModel.Transaction) error
+		SendTransactionCreateFail(transInfo transactionModel.Info, failErr error) error
 
-	total TotalData
-}
+		RegisterMsgHandlerCreateRetry(handler func(transactionModel.Info) error)
+		RegisterMsgHandlerIgnoreTrans()
 
-func NewBillImportWebsocket(conn *websocket.Conn, account accountModel.Account) *BillImportWebsocket {
-	return &BillImportWebsocket{
+		TryFinish() error
+		SendError() error
+	}
+
+	billImportWebsocket struct {
+		account accountModel.Account
+		conn    *websocket.Conn
+		msg.Reader
+
+		WaitRetryTrans *dataTool.RWMutexMap[string, transactionModel.Info]
+		RetryingTrans  *dataTool.RWMutexMap[string, transactionModel.Info]
+
+		total TotalData
+	}
+)
+
+func NewBillImportWebsocket(conn *websocket.Conn, account accountModel.Account) BillImportWebsocket {
+	return &billImportWebsocket{
 		account:        account,
 		conn:           conn,
 		Reader:         msg.NewReader(),
@@ -38,7 +54,7 @@ func NewBillImportWebsocket(conn *websocket.Conn, account accountModel.Account) 
 	}
 }
 
-func (b *BillImportWebsocket) SendTransactionCreateSuccess(transaction transactionModel.Transaction) error {
+func (b *billImportWebsocket) SendTransactionCreateSuccess(transaction transactionModel.Transaction) error {
 	var transDetail response.TransactionDetail
 	err := transDetail.SetData(transaction, &b.account)
 	if err != nil {
@@ -48,7 +64,7 @@ func (b *BillImportWebsocket) SendTransactionCreateSuccess(transaction transacti
 	return msg.Send(b.conn, "createSuccess", transDetail)
 }
 
-func (b *BillImportWebsocket) SendTransactionCreateFail(transInfo transactionModel.Info, failErr error) error {
+func (b *billImportWebsocket) SendTransactionCreateFail(transInfo transactionModel.Info, failErr error) error {
 	var transDetail response.TransactionDetail
 	err := transDetail.SetDataIgnoreErr(
 		transactionModel.Transaction{
@@ -77,7 +93,7 @@ func (b *BillImportWebsocket) SendTransactionCreateFail(transInfo transactionMod
 	return nil
 }
 
-func (b *BillImportWebsocket) RegisterMsgHandlerCreateRetry(handler func(transactionModel.Info) error) {
+func (b *billImportWebsocket) RegisterMsgHandlerCreateRetry(handler func(transactionModel.Info) error) {
 	type MsgTransactionCreateRetry struct {
 		Id        string
 		TransInfo transactionModel.Info
@@ -112,7 +128,7 @@ func (b *BillImportWebsocket) RegisterMsgHandlerCreateRetry(handler func(transac
 	)
 }
 
-func (b *BillImportWebsocket) RegisterMsgHandlerIgnoreTrans() {
+func (b *billImportWebsocket) RegisterMsgHandlerIgnoreTrans() {
 	msg.RegisterHandle[string](
 		b.Reader, "ignoreTrans",
 		func(id string) (err error) {
@@ -126,18 +142,18 @@ func (b *BillImportWebsocket) RegisterMsgHandlerIgnoreTrans() {
 	)
 }
 
-func (b *BillImportWebsocket) TryFinish() error {
+func (b *billImportWebsocket) TryFinish() error {
 	return b.tryFinish()
 }
 
-func (b *BillImportWebsocket) tryFinish() error {
+func (b *billImportWebsocket) tryFinish() error {
 	if b.WaitRetryTrans.Len() != 0 || b.RetryingTrans.Len() != 0 {
 		return nil
 	}
 	return b.SendFinish()
 }
 
-func (b *BillImportWebsocket) SendFinish() error {
+func (b *billImportWebsocket) SendFinish() error {
 	type Total struct {
 		ExpenseAmount, IncomeAmount            int64
 		ExpenseCount, IncomeCount, IgnoreCount int32
@@ -153,11 +169,11 @@ func (b *BillImportWebsocket) SendFinish() error {
 	)
 }
 
-func (b *BillImportWebsocket) Read() error {
+func (b *billImportWebsocket) Read() error {
 	return msg.ForReadAndHandleJsonMsg(b.Reader, b.conn)
 }
 
-func (b *BillImportWebsocket) ReadFile() (name []byte, file io.Reader, err error) {
+func (b *billImportWebsocket) ReadFile() (name []byte, file io.Reader, err error) {
 	name, err = msg.ReadBytes(b.Reader, b.conn)
 	if err != nil {
 		return
@@ -166,7 +182,7 @@ func (b *BillImportWebsocket) ReadFile() (name []byte, file io.Reader, err error
 	return
 }
 
-func (b *BillImportWebsocket) SendError() error {
+func (b *billImportWebsocket) SendError() error {
 	return msg.SendError(b.conn, errors.New("test"))
 }
 

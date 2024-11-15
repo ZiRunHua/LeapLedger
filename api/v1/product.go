@@ -1,15 +1,21 @@
 package v1
 
 import (
+	"context"
+	"errors"
+
 	"github.com/ZiRunHua/LeapLedger/api/request"
 	"github.com/ZiRunHua/LeapLedger/api/response"
 	"github.com/ZiRunHua/LeapLedger/api/v1/ws"
 	"github.com/ZiRunHua/LeapLedger/global"
 	"github.com/ZiRunHua/LeapLedger/global/cus"
 	"github.com/ZiRunHua/LeapLedger/global/db"
+	accountModel "github.com/ZiRunHua/LeapLedger/model/account"
 	categoryModel "github.com/ZiRunHua/LeapLedger/model/category"
 	productModel "github.com/ZiRunHua/LeapLedger/model/product"
 	transactionModel "github.com/ZiRunHua/LeapLedger/model/transaction"
+	userModel "github.com/ZiRunHua/LeapLedger/model/user"
+	"github.com/ZiRunHua/LeapLedger/service/product/bill"
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
 	"golang.org/x/sync/errgroup"
@@ -244,7 +250,11 @@ func (p *ProductApi) ImportProductBill(conn *websocket.Conn, ctx *gin.Context) e
 	account, accountUser := contextFunc.GetAccount(ctx), contextFunc.GetAccountUser(ctx)
 	transOption := transactionService.NewDefaultOption()
 	msgHandle := ws.NewBillImportWebsocket(conn, account)
-
+	config := new(userModel.BillImportConfig)
+	err := userModel.NewDao().GetConfig(config)
+	if err != nil {
+		return err
+	}
 	createTransFunc := func(transInfo transactionModel.Info) error {
 		var trans transactionModel.Transaction
 		var err error
@@ -285,6 +295,9 @@ func (p *ProductApi) ImportProductBill(conn *websocket.Conn, ctx *gin.Context) e
 				if err == nil {
 					err = createTransFunc(transInfo)
 				} else {
+					if (errors.Is(err, bill.ErrCategoryMappingNotExist)) && config.IgnoreUnmappedCategory {
+						return nil
+					}
 					err = msgHandle.SendTransactionCreateFail(transInfo, err)
 				}
 				return err
@@ -298,4 +311,30 @@ func (p *ProductApi) ImportProductBill(conn *websocket.Conn, ctx *gin.Context) e
 	)
 	group.Go(msgHandle.Read)
 	return group.Wait()
+}
+
+func (p *ProductApi) BuildTransCreateHandler(
+	ctx context.Context,
+	accountUser accountModel.User,
+	check, msgHandle ws.BillImportWebsocket) func(transInfo transactionModel.Info) error {
+	transOption := transactionService.NewDefaultOption()
+	var trans transactionModel.Transaction
+	var err error
+	return func(transInfo transactionModel.Info) error {
+		err = db.Transaction(
+			ctx, func(ctx *cus.TxContext) error {
+				transInfo.UserId = accountUser.UserId
+				trans, err = transactionService.Create(
+					transInfo, accountUser, transactionModel.RecordTypeOfImport, transOption, ctx,
+				)
+				return err
+			},
+		)
+		if err != nil {
+			err = msgHandle.SendTransactionCreateFail(transInfo, err)
+		} else {
+			err = msgHandle.SendTransactionCreateSuccess(trans)
+		}
+		return err
+	}
 }

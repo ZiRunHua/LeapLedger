@@ -8,6 +8,7 @@ import (
 	accountModel "github.com/ZiRunHua/LeapLedger/model/account"
 	productModel "github.com/ZiRunHua/LeapLedger/model/product"
 	transactionModel "github.com/ZiRunHua/LeapLedger/model/transaction"
+	userModel "github.com/ZiRunHua/LeapLedger/model/user"
 	"github.com/ZiRunHua/LeapLedger/service/product/bill"
 	"github.com/ZiRunHua/LeapLedger/util/fileTool"
 )
@@ -58,4 +59,17 @@ func (proService *Product) ProcessesBill(
 		}
 	}
 	return nil
+}
+func (proService *Product) BuildTransactionHandler(
+	config userModel.BillImportConfig,
+	accountUser accountModel.User) func(transactionModel.Info, context.Context) (transactionModel.Transaction, error) {
+	option := transactionServer.NewDefaultOption()
+	return func(transInfo transactionModel.Info, ctx context.Context) (transactionModel.Transaction, error) {
+		trans, err := transactionServer.Create(transInfo, accountUser, transactionModel.RecordTypeOfImport, option, ctx)
+		if err == nil {
+			return trans, err
+		}
+
+		return trans, err
+	}
 }
