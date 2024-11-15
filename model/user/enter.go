@@ -13,7 +13,7 @@ func init() {
 	if err != nil {
 		panic(err.Error())
 	}
-	for _, config := range defaultConfigs.Iterator(0) {
+	for config := range DefaultConfigs.Iterator(0) {
 		err = db.InitDb.AutoMigrate(config)
 		if err != nil {
 			panic(err)

@@ -13,25 +13,6 @@ type UserDao struct {
 	db *gorm.DB
 }
 
-type _baseInterface interface {
-	Add(data AddData) (User, error)
-	SelectById(id uint, args ...interface{}) (User, error)
-	PluckNameById(id uint) (string, error)
-	SelectByEmail(email string) (User, error)
-	SelectUserInfoById(id uint) (result UserInfo, err error)
-	SelectUserInfoByCondition(condition Condition) ([]UserInfo, error)
-}
-
-type _friendInterface interface {
-	CreateFriendInvitation(uint, uint) (FriendInvitation, error)
-	SelectFriendInvitation(inviter uint, invitee uint, forUpdate bool) (result FriendInvitation, err error)
-	SelectFriendInvitationList(inviter *uint, invitee *uint) (result []FriendInvitation, err error)
-	SelectFriend(uint, uint) (Friend, error)
-	IsRealFriend(userId uint, friendId uint) (bool, error)
-	AddFriend(uint, uint, AddMode) (Friend, error)
-	SelectFriendList(uint) ([]Friend, error)
-}
-
 func NewDao(db ...*gorm.DB) *UserDao {
 	if len(db) > 0 {
 		return &UserDao{
@@ -58,7 +39,7 @@ func (u *UserDao) Add(data AddData) (User, error) {
 		return user, err
 	}
 	// init config
-	for _, c := range DefaultConfigs.Iterator(user.ID) {
+	for c := range DefaultConfigs.Iterator(user.ID) {
 		err = u.CreateConfig(c)
 		if err != nil {
 			return user, err
@@ -268,21 +249,21 @@ func (u *UserDao) GetConfig(config Config) error {
 }
 
 func (u *UserDao) GetConfigColumns(config Config, column interface{}, columns ...interface{}) error {
-	return u.db.Select(column, columns).First(config).Error
+	return u.db.Select(column, columns...).First(config).Error
 }
 
 func (u *UserDao) UpdateConfig(config Config) error {
-	return u.db.Model(config).Updates(config).Error
+	return u.db.Where("user_id = ?", config.GetUserId()).Updates(config).Error
 }
 
 func (u *UserDao) UpdateConfigColumns(config Config, column interface{}, columns ...interface{}) error {
-	return u.db.Select(column, columns).Updates(config).Error
+	return u.db.Select(column, columns...).Updates(config).Error
 }
 
 func (u *UserDao) DisableConfigBinaryFlag(config Config, key string, flag uint) error {
 	err := u.db.Model(config).Where(
-		"user_id = ? AND ? & ? > 0", config.GetUserId(), key, flag,
-	).Update(key, gorm.Expr("? ^ ?", key, flag)).Error
+		"user_id = ? AND ? & ? > 0", config.GetUserId(), gorm.Expr(key), flag,
+	).Update(key, gorm.Expr("? ^ ?", gorm.Expr(key), flag)).Error
 	// if no record is found, consider it closed
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		return nil
@@ -291,5 +272,5 @@ func (u *UserDao) DisableConfigBinaryFlag(config Config, key string, flag uint) 
 }
 
 func (u *UserDao) EnableConfigBinaryFlag(config Config, key string, flag uint) error {
-	return u.db.Model(config).Update(key, gorm.Expr("? | ?", key, flag)).Error
+	return u.db.Model(config).Update(key, gorm.Expr("? | ?", gorm.Expr(key), flag)).Error
 }
