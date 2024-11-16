@@ -248,42 +248,27 @@ func (p *ProductApi) getProductByParam(ctx *gin.Context) (productModel.Product, 
 //	@Router			/account/{accountId}/product/{key}/bill/import [get]
 func (p *ProductApi) ImportProductBill(conn *websocket.Conn, ctx *gin.Context) error {
 	account, accountUser := contextFunc.GetAccount(ctx), contextFunc.GetAccountUser(ctx)
-	transOption := transactionService.NewDefaultOption()
-	msgHandle := ws.NewBillImportWebsocket(conn, account)
-	config := new(userModel.BillImportConfig)
-	err := userModel.NewDao().GetConfig(config)
+	msgHandle, err := ws.NewBillImportWebsocket(conn, account, accountUser)
 	if err != nil {
 		return err
 	}
-	createTransFunc := func(transInfo transactionModel.Info) error {
-		var trans transactionModel.Transaction
-		var err error
-		err = db.Transaction(
-			ctx, func(ctx *cus.TxContext) error {
-				transInfo.UserId = accountUser.UserId
-				trans, err = transactionService.Create(
-					transInfo, accountUser, transactionModel.RecordTypeOfImport, transOption, ctx,
-				)
-				return err
-			},
-		)
-		if err != nil {
-			err = msgHandle.SendTransactionCreateFail(transInfo, err)
-		} else {
-			err = msgHandle.SendTransactionCreateSuccess(trans)
-		}
-		return err
-	}
-
-	msgHandle.RegisterMsgHandlerCreateRetry(createTransFunc)
+	transCreateHandler := p.BuildTransCreateHandler(ctx, accountUser, msgHandle.GetConfig(), msgHandle)
+	// register receive message handlers
+	msgHandle.RegisterMsgHandlerCreateRetry(transCreateHandler)
 	msgHandle.RegisterMsgHandlerIgnoreTrans()
-
+	msgHandle.RegisterMsgHandlerConfigUpdate(
+		func(config userModel.BillImportConfig) error {
+			transCreateHandler = p.BuildTransCreateHandler(ctx, accountUser, config, msgHandle)
+			return nil
+		},
+	)
+	// get file
 	fileName, file, err := msgHandle.ReadFile()
 	if err != nil {
 		return err
 	}
 	billFile := productService.GetNewBillFile(string(fileName), file)
-
+	// import
 	var group errgroup.Group
 	group.Go(
 		func() error {
@@ -293,9 +278,10 @@ func (p *ProductApi) ImportProductBill(conn *websocket.Conn, ctx *gin.Context) e
 			}
 			handler := func(transInfo transactionModel.Info, err error) error {
 				if err == nil {
-					err = createTransFunc(transInfo)
+					err = transCreateHandler(transInfo)
 				} else {
-					if (errors.Is(err, bill.ErrCategoryMappingNotExist)) && config.IgnoreUnmappedCategory {
+					if (errors.Is(err, bill.ErrCategoryMappingNotExist)) &&
+						msgHandle.GetConfig().IgnoreUnmappedCategory {
 						return nil
 					}
 					err = msgHandle.SendTransactionCreateFail(transInfo, err)
@@ -316,20 +302,15 @@ func (p *ProductApi) ImportProductBill(conn *websocket.Conn, ctx *gin.Context) e
 func (p *ProductApi) BuildTransCreateHandler(
 	ctx context.Context,
 	accountUser accountModel.User,
-	check, msgHandle ws.BillImportWebsocket) func(transInfo transactionModel.Info) error {
-	transOption := transactionService.NewDefaultOption()
+	config userModel.BillImportConfig,
+	msgHandle ws.BillImportWebsocket,
+) func(transInfo transactionModel.Info) error {
 	var trans transactionModel.Transaction
 	var err error
+	handler := productService.BuildTransCreateHandler(ctx, accountUser, config)
 	return func(transInfo transactionModel.Info) error {
-		err = db.Transaction(
-			ctx, func(ctx *cus.TxContext) error {
-				transInfo.UserId = accountUser.UserId
-				trans, err = transactionService.Create(
-					transInfo, accountUser, transactionModel.RecordTypeOfImport, transOption, ctx,
-				)
-				return err
-			},
-		)
+		transInfo.UserId = accountUser.UserId
+		trans, err = handler(transInfo)
 		if err != nil {
 			err = msgHandle.SendTransactionCreateFail(transInfo, err)
 		} else {

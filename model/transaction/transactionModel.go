@@ -2,6 +2,7 @@ package transactionModel
 
 import (
 	"bytes"
+	"crypto/sha1"
 	"database/sql"
 	"encoding/gob"
 	"errors"
@@ -15,7 +16,6 @@ import (
 	queryFunc "github.com/ZiRunHua/LeapLedger/model/common/query"
 	userModel "github.com/ZiRunHua/LeapLedger/model/user"
 	"github.com/ZiRunHua/LeapLedger/util/timeTool"
-	"golang.org/x/crypto/blake2b"
 	"gorm.io/datatypes"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
@@ -41,9 +41,9 @@ type (
 	}
 
 	Hash struct {
-		AccountId uint `gorm:"default:null;primary_key"`
-		TransId   uint
-		Hash      []byte `gorm:"type:char(256);primary_key"`
+		TransId   uint   `gorm:"primary_key"`
+		AccountId uint   `gorm:"uniqueIndex:idx_hash,priority:1"`
+		Hash      []byte `gorm:"type:char(128);uniqueIndex:idx_hash,priority:2"`
 	}
 )
 
@@ -83,10 +83,7 @@ func (i *Info) Hash() ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	hash, err := blake2b.New256(nil)
-	if err != nil {
-		return nil, err
-	}
+	hash := sha1.New()
 	hash.Write(buf.Bytes())
 	return hash.Sum(nil), nil
 }

@@ -33,21 +33,55 @@ func (t *TransactionDao) SelectById(id uint, forUpdate bool) (result Transaction
 	return
 }
 
-func (t *TransactionDao) Create(info Info, recordType RecordType) (result Transaction, err error) {
-	result.Info, result.RecordType = info, recordType
-	err = t.db.Create(&result).Error
+func (t *TransactionDao) Create(info Info, recordType RecordType) (transaction Transaction, err error) {
+	transaction.Info, transaction.RecordType = info, recordType
+	err = t.db.Create(&transaction).Error
 	if err != nil {
 		return
 	}
-	hash, err := info.Hash()
+	hashBytes, err := info.Hash()
 	if err != nil {
 		return
 	}
-	err = t.db.Create(&Hash{AccountId: info.AccountId, TransId: result.ID, Hash: hash}).Error
+	err = t.db.Create(&Hash{TransId: transaction.ID, AccountId: info.AccountId, Hash: hashBytes}).Error
 	if errors.Is(err, gorm.ErrDuplicatedKey) {
 		err = global.ErrTransactionSame
 	}
 	return
+}
+
+func (t *TransactionDao) Update(trans *Transaction) error {
+	err := t.db.Select(
+		"income_expense", "category_id", "amount", "remark", "trade_time",
+	).Updates(trans).Error
+	if err != nil {
+		return err
+	}
+	hashBytes, err := trans.Hash()
+	if err != nil {
+		return err
+	}
+	hash := Hash{TransId: trans.ID, AccountId: trans.AccountId, Hash: hashBytes}
+	err = t.db.Select("hash").Updates(&hash).Error
+	if err == nil {
+		return nil
+	}
+	// Handle the case where the record is not found.
+	// This can occur due to various reasons, such as:
+	// - The transaction existed before a service upgrade.
+	// - The record was not inserted originally due to hash conflicts.
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		err = t.db.Create(&hash).Error
+		if err == nil {
+			return nil
+		} else if errors.Is(err, gorm.ErrDuplicatedKey) {
+			return global.ErrTransactionSame
+		}
+		return err
+	} else if errors.Is(err, gorm.ErrDuplicatedKey) {
+		return global.ErrTransactionSame
+	}
+	return err
 }
 
 func (t *TransactionDao) GetListByCondition(condition Condition, offset int, limit int) (

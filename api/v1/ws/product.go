@@ -3,7 +3,6 @@ package ws
 import (
 	"errors"
 	"io"
-	"sync"
 	"sync/atomic"
 
 	"github.com/ZiRunHua/LeapLedger/api/response"
@@ -12,6 +11,7 @@ import (
 	"github.com/ZiRunHua/LeapLedger/global/constant"
 	accountModel "github.com/ZiRunHua/LeapLedger/model/account"
 	transactionModel "github.com/ZiRunHua/LeapLedger/model/transaction"
+	userModel "github.com/ZiRunHua/LeapLedger/model/user"
 	"github.com/ZiRunHua/LeapLedger/util/dataTool"
 	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
@@ -27,14 +27,19 @@ type (
 
 		RegisterMsgHandlerCreateRetry(handler func(transactionModel.Info) error)
 		RegisterMsgHandlerIgnoreTrans()
+		RegisterMsgHandlerConfigUpdate(afterConfigChange func(config userModel.BillImportConfig) error)
 
+		GetConfig() userModel.BillImportConfig
 		TryFinish() error
 		SendError() error
 	}
 
 	billImportWebsocket struct {
-		account accountModel.Account
-		conn    *websocket.Conn
+		account     accountModel.Account
+		accountUser accountModel.User
+		Config      BillImportConfig
+
+		conn *websocket.Conn
 		msg.Reader
 
 		WaitRetryTrans *dataTool.RWMutexMap[string, transactionModel.Info]
@@ -44,14 +49,23 @@ type (
 	}
 )
 
-func NewBillImportWebsocket(conn *websocket.Conn, account accountModel.Account) BillImportWebsocket {
+func NewBillImportWebsocket(conn *websocket.Conn, account accountModel.Account, accountUser accountModel.User) (
+	BillImportWebsocket, error,
+) {
+	billConfig := &userModel.BillImportConfig{}
+	billConfig.SetUserId(accountUser.UserId)
+	err := userModel.NewDao().GetConfig(billConfig)
+	if err != nil {
+		return nil, err
+	}
 	return &billImportWebsocket{
 		account:        account,
+		Config:         BillImportConfig{config: billConfig},
 		conn:           conn,
 		Reader:         msg.NewReader(),
 		WaitRetryTrans: dataTool.NewRWMutexMap[string, transactionModel.Info](),
 		RetryingTrans:  dataTool.NewRWMutexMap[string, transactionModel.Info](),
-	}
+	}, nil
 }
 
 func (b *billImportWebsocket) SendTransactionCreateSuccess(transaction transactionModel.Transaction) error {
@@ -142,6 +156,34 @@ func (b *billImportWebsocket) RegisterMsgHandlerIgnoreTrans() {
 	)
 }
 
+func (b *billImportWebsocket) RegisterMsgHandlerConfigUpdate(afterConfigChange func(config userModel.BillImportConfig) error) {
+	updateHandle := func(f func() error) error {
+		if err := f(); err != nil {
+			return err
+		}
+		return afterConfigChange(*b.Config.config)
+	}
+	msg.RegisterHandle[[]byte](
+		b.Reader, "configUpdateIgnoreSameTrans",
+		func(_ []byte) error { return updateHandle(b.Config.tempIgnoreUnmappedCategory) },
+	)
+	msg.RegisterHandle[[]byte](
+		b.Reader, "configUpdateIgnoreAllSameTrans",
+		func(_ []byte) error { return updateHandle(b.Config.ignoreSameTransaction) },
+	)
+	msg.RegisterHandle[[]byte](
+		b.Reader, "configUpdateIgnoreUnmappedCategory",
+		func(_ []byte) error { return updateHandle(b.Config.tempIgnoreUnmappedCategory) },
+	)
+	msg.RegisterHandle[[]byte](
+		b.Reader, "configUpdateIgnoreAllUnmappedCategory",
+		func(_ []byte) error { return updateHandle(b.Config.ignoreSameTransaction) },
+	)
+}
+
+func (b *billImportWebsocket) GetConfig() userModel.BillImportConfig {
+	return *b.Config.config
+}
 func (b *billImportWebsocket) TryFinish() error {
 	return b.tryFinish()
 }
@@ -205,18 +247,27 @@ func (t *TotalData) ignore() {
 	t.IgnoreCount.Add(1)
 }
 
+// BillImportConfig Manage config updates from clients when importing
 type BillImportConfig struct {
-	lock sync.Mutex
+	config *userModel.BillImportConfig
 }
 
-func (bic *BillImportConfig) Fetch() {
-
+func (bic *BillImportConfig) ignoreUnmappedCategory() error {
+	bic.config.IgnoreUnmappedCategory = true
+	return userModel.NewDao().UpdateConfigColumns(bic.config, "ignore_unmapped_category")
 }
 
-func (bic *BillImportConfig) UpdateColumns() {
-
+func (bic *BillImportConfig) tempIgnoreUnmappedCategory() error {
+	bic.config.CheckSameTransMode = userModel.CheckSameTransModeOfIgnore
+	return nil
 }
 
-func (bic *BillImportConfig) TempUpdateColumns() {
+func (bic *BillImportConfig) ignoreSameTransaction() error {
+	bic.config.CheckSameTransMode = userModel.CheckSameTransModeOfIgnore
+	return userModel.NewDao().UpdateConfigColumns(bic.config, "check_same_trans_mode")
+}
 
+func (bic *BillImportConfig) tempIgnoreSameTransaction() error {
+	bic.config.CheckSameTransMode = userModel.CheckSameTransModeOfIgnore
+	return nil
 }

@@ -8,7 +8,7 @@ import (
 var DefaultConfigs = newDefaultConfigs(
 	[]Config{
 		&TransactionShareConfig{DisplayFlags: DISPLAY_FLAGS_DEFAULT},
-		&BillImportConfig{IgnoreUnmappedCategory: false, CheckSameTransaction: true},
+		&BillImportConfig{IgnoreUnmappedCategory: false, CheckSameTransMode: CheckSameTransModeOfTip},
 	},
 )
 
@@ -52,6 +52,8 @@ func (dc defaultConfigs) Iterator(userId uint) func(yield func(Config) bool) {
 	}
 }
 
+// GetConfig retrieves the default configuration associated with the table name
+// A deep copy is performed using reflection to ensure the original configuration is not modified.
 func (dc defaultConfigs) GetConfig(config Config) Config {
 	return deepCopyConfig(dc.configsMap[config.TableName()])
 }
@@ -83,15 +85,21 @@ func (u *TransactionShareConfig) GetFlagStatus(flag Flag) bool {
 	return u.DisplayFlags&flag > 0
 }
 
-type BillImportConfig struct {
-	ConfigBase
-	IgnoreUnmappedCategory bool
-	CheckSameTransaction   bool
-}
+type (
+	BillImportConfig struct {
+		ConfigBase
+		IgnoreUnmappedCategory bool
+		CheckSameTransMode     CheckSameTransMode
+	}
+	CheckSameTransMode = uint
+)
 
-func (u *BillImportConfig) TableName() string {
-	return "user_bill_import_config"
-}
+const (
+	CheckSameTransModeOfIgnore = iota
+	CheckSameTransModeOfTip    = iota
+)
+
+func (u *BillImportConfig) TableName() string { return "user_bill_import_config" }
 
 func deepCopyConfig(config Config) Config {
 	elem := reflect.ValueOf(config).Elem()

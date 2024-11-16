@@ -7,7 +7,7 @@ func init() {
 		Transaction{}, Mapping{},
 		ExpenseAccountStatistic{}, ExpenseAccountUserStatistic{}, ExpenseCategoryStatistic{},
 		IncomeAccountStatistic{}, IncomeAccountUserStatistic{}, IncomeCategoryStatistic{},
-		Timing{}, TimingExec{},
+		Timing{}, TimingExec{}, Hash{},
 	}
 	err := db.InitDb.AutoMigrate(tables...)
 	if err != nil {

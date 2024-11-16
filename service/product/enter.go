@@ -1,6 +1,6 @@
 package productService
 
-import transactionService "github.com/ZiRunHua/LeapLedger/service/transaction"
+import _transactionService "github.com/ZiRunHua/LeapLedger/service/transaction"
 
 type Group struct {
 	Product
@@ -8,4 +8,4 @@ type Group struct {
 
 var GroupApp = new(Group)
 
-var transactionServer = transactionService.GroupApp
+var transactionService = _transactionService.GroupApp

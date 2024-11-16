@@ -41,7 +41,9 @@ func (txnService *Transaction) Create(
 			}
 			// handle
 			trans, err = transactionModel.NewDao(tx).Create(transInfo, recordType)
-			if err != nil {
+			if errors.Is(err, global.ErrTransactionSame) && option.checkSameTrans {
+				return err
+			} else if err != nil {
 				return errors.WithStack(err)
 			}
 			if option.isSyncTrans {
@@ -79,10 +81,19 @@ func (txnService *Transaction) Update(
 			if oldTrans.UpdatedAt.Add(time.Second * 3).After(time.Now()) {
 				return errors.WithStack(global.ErrFrequentOperation)
 			}
-			err = tx.Model(&trans).Select(
-				"income_expense", "category_id", "amount", "remark", "trade_time",
-			).Updates(trans).Error
-			if err != nil {
+			err = transactionModel.NewDao(tx).Update(&trans)
+			if errors.Is(err, global.ErrTransactionSame) {
+				if option.checkSameTrans {
+					return err
+				} else {
+					// No rollback transaction needs to remove the old hash value
+					err = tx.Delete(&transactionModel.Hash{TransId: trans.ID}).Error
+					if err != nil {
+						return err
+					}
+				}
+				return err
+			} else if err != nil {
 				return errors.WithStack(err)
 			}
 			if option.isSyncTrans {
@@ -330,16 +341,16 @@ func (txnService *Transaction) CreateMapping(
 }
 
 type Option struct {
-	// isSyncTrans 交易数据至同步关联账本
+	// isSyncTrans indicates whether to synchronize the transaction to the mapping account.
 	isSyncTrans bool
+	// checkSameTrans determines how to handle duplicate transactions.
+	// true: returns global.ErrTransactionSame and rolls back the transaction.
+	// false: ignores global.ErrTransactionSame.
+	checkSameTrans bool
 }
 
 func (txnService *Transaction) NewDefaultOption() Option {
-	return Option{isSyncTrans: false}
-}
-
-func (txnService *Transaction) NewOption() Option {
-	return Option{}
+	return Option{isSyncTrans: false, checkSameTrans: false}
 }
 
 func (txnService *Transaction) NewOptionFormConfig(trans transactionModel.Info, ctx context.Context) (
@@ -356,5 +367,10 @@ func (txnService *Transaction) NewOptionFormConfig(trans transactionModel.Info, 
 
 func (o *Option) IsSyncTrans() *Option {
 	o.isSyncTrans = true
+	return o
+}
+
+func (o *Option) WithCheckSameTrans(value bool) *Option {
+	o.checkSameTrans = value
 	return o
 }

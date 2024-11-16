@@ -60,16 +60,22 @@ func (proService *Product) ProcessesBill(
 	}
 	return nil
 }
-func (proService *Product) BuildTransactionHandler(
-	config userModel.BillImportConfig,
-	accountUser accountModel.User) func(transactionModel.Info, context.Context) (transactionModel.Transaction, error) {
-	option := transactionServer.NewDefaultOption()
-	return func(transInfo transactionModel.Info, ctx context.Context) (transactionModel.Transaction, error) {
-		trans, err := transactionServer.Create(transInfo, accountUser, transactionModel.RecordTypeOfImport, option, ctx)
-		if err == nil {
-			return trans, err
-		}
 
-		return trans, err
+func (proService *Product) BuildTransCreateHandler(
+	ctx context.Context,
+	accountUser accountModel.User,
+	config userModel.BillImportConfig,
+) func(transInfo transactionModel.Info) (transactionModel.Transaction, error) {
+	transOption := transactionService.NewDefaultOption()
+	switch config.CheckSameTransMode {
+	case userModel.CheckSameTransModeOfIgnore:
+		transOption.WithCheckSameTrans(false)
+	case userModel.CheckSameTransModeOfTip:
+		transOption.WithCheckSameTrans(true)
+	}
+	return func(transInfo transactionModel.Info) (transactionModel.Transaction, error) {
+		return transactionService.Create(
+			transInfo, accountUser, transactionModel.RecordTypeOfImport, transOption, ctx,
+		)
 	}
 }
