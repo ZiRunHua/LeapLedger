@@ -20,7 +20,7 @@ services:
       - leap-ledger-redis
   leap-ledger-mysql:
     container_name: leap-ledger-mysql
-    image: mysql:8.0.22
+    image: mysql:8.0.30
     environment:
       MYSQL_ALLOW_EMPTY_PASSWORD: "yes"
       MYSQL_DATABASE: leap_ledger
