@@ -1,10 +1,11 @@
 package websocket
 
 import (
+	"github.com/ZiRunHua/LeapLedger/global"
+	"go.uber.org/zap"
 	"net"
 	"time"
 
-	"github.com/ZiRunHua/LeapLedger/api/v1/ws/msg"
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
 )
@@ -36,10 +37,7 @@ func Use(handler func(conn *websocket.Conn, ctx *gin.Context) error) gin.Handler
 		defer conn.Close()
 		err = handler(conn, ctx)
 		if err != nil {
-			err = msg.SendError(conn, err)
-			if err != nil {
-				panic(err)
-			}
+			global.ErrorLogger.Error("websocket err", zap.Error(err))
 		}
 	}
 }
