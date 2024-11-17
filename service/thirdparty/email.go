@@ -3,28 +3,30 @@ package thirdpartyService
 import (
 	"bytes"
 	"fmt"
+	"os"
+	"path/filepath"
+	"time"
+
 	"github.com/ZiRunHua/LeapLedger/global"
 	"github.com/ZiRunHua/LeapLedger/global/constant"
 	userModel "github.com/ZiRunHua/LeapLedger/model/user"
 	commonService "github.com/ZiRunHua/LeapLedger/service/common"
 	"github.com/ZiRunHua/LeapLedger/util/rand"
 	"github.com/pkg/errors"
-	"os"
-	"time"
 )
 
 var emailTemplate map[constant.Notification][]byte
 var emailTemplateFilePath = map[constant.Notification]string{
-	constant.NotificationOfCaptcha:             "/template/email/captcha.html",
-	constant.NotificationOfRegistrationSuccess: "/template/email/registerSuccess.html",
-	constant.NotificationOfUpdatePassword:      "/template/email/updatePassword.html",
+	constant.NotificationOfCaptcha:             filepath.Clean("/template/email/captcha.html"),
+	constant.NotificationOfRegistrationSuccess: filepath.Clean("/template/email/registerSuccess.html"),
+	constant.NotificationOfUpdatePassword:      filepath.Clean("/template/email/updatePassword.html"),
 }
 
 func init() {
 	emailTemplate = make(map[constant.Notification][]byte, len(emailTemplateFilePath))
 	var err error
 	for notification, path := range emailTemplateFilePath {
-		if emailTemplate[notification], err = os.ReadFile(constant.DATA_PATH + path); err != nil {
+		if emailTemplate[notification], err = os.ReadFile(filepath.Clean(constant.DataPath + path)); err != nil {
 			panic(err)
 		}
 	}

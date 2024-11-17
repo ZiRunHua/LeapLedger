@@ -89,7 +89,7 @@ docker-compose up -d
 ```
 Access http://localhost:8080/public/health to verify the service.
 
-For custom configurations, refer to: [./config.yaml](./config.yaml)
+If you don't want to rely on Docker, you can modify the request addresses of mysql, nats, and redis in the [./config.yaml](./config.yaml) file and run it locally
 
 For client packaging details, visit: https://github.com/ZiRunHua/LeapLedger-App
 

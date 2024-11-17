@@ -94,7 +94,7 @@ docker-compose up -d
 ```
 访问http://localhost:8080/public/health 验证服务
 
-自定义配置详见：[./config.yaml](./config.yaml)
+如果不想依赖Docker，可以修改[./config.yaml](./config.yaml)文件中的mysql、nats和redis的请求地址等信息后直接在本地运行
 
 客户端打包详见：https://github.com/ZiRunHua/LeapLedger-App
 

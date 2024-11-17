@@ -3,6 +3,7 @@ package initialize
 import (
 	"context"
 	"os"
+	"path/filepath"
 	"time"
 
 	"github.com/ZiRunHua/LeapLedger/global/constant"
@@ -61,14 +62,12 @@ func init() {
 	}
 }
 
-const _configDirectoryPath = constant.WORK_PATH
-
 func initConfig() error {
 	configFileName := os.Getenv("CONFIG_FILE_NAME")
 	if len(configFileName) == 0 {
 		configFileName = "config.yaml"
 	}
-	configPath := _configDirectoryPath + "/" + configFileName
+	configPath := filepath.Join(constant.RootDir, configFileName)
 	yamlFile, err := os.ReadFile(configPath)
 	if err != nil {
 		return err

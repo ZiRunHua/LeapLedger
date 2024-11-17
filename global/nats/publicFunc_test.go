@@ -31,219 +31,262 @@ func newTaskData() taskData {
 }
 func TestTaskPublishAndSubscribe(t *testing.T) {
 	task := Task(t.Name() + uuid.NewString())
-	success := false
+	msgChan := make(chan struct{})
 	SubscribeTask(
 		task, func(ctx context.Context) error {
-			success = true
+			msgChan <- struct{}{}
 			return nil
 		},
 	)
 	t.Run(
 		"Publish task", func(t *testing.T) {
 			t.Parallel()
-			time.Sleep(time.Second * 3)
 			if !PublishTask(task) {
 				t.Error("Publish fail")
 			}
-			time.Sleep(time.Second * 3)
-			if !success {
-				t.Fail()
-			}
+			<-msgChan
+			close(msgChan)
 		},
 	)
 	withPayloadTask, data := Task(t.Name()+uuid.NewString()), newTaskData()
-	var withPayloadTaskSuccess bool
+	msgWithDataChan := make(chan struct{ Data taskData })
 	SubscribeTaskWithPayloadAndProcessInTransaction(
 		withPayloadTask, func(pushData taskData, ctx context.Context) error {
-			withPayloadTaskSuccess = reflect.DeepEqual(data, pushData)
+			msgWithDataChan <- struct{ Data taskData }{Data: pushData}
 			return nil
 		},
 	)
 	t.Run(
 		"Publish task With payload", func(t *testing.T) {
 			t.Parallel()
-			time.Sleep(time.Second * 3)
 			if !PublishTaskWithPayload(withPayloadTask, data) {
 				t.Error("Publish fail")
 			}
-			time.Sleep(time.Second * 3)
-			if !withPayloadTaskSuccess {
-				t.Fail()
+			msg := <-msgWithDataChan
+			if !reflect.DeepEqual(msg.Data, data) {
+				t.Fatal("push data not equal:", msg.Data, data)
 			}
+			close(msgWithDataChan)
 		},
 	)
 }
 
 func TestEventPublishAndSubscribe(t *testing.T) {
+	var taskCount = 10
 	taskMap, event := make(map[Task]int), Event(uuid.NewString())
-	for i := 0; i < 10; i++ {
+	taskChan := make(chan struct{ Task Task }, taskCount)
+	for i := 0; i < taskCount; i++ {
 		task := Task("task_" + uuid.NewString())
-		taskMap[task] = 0
 		SubscribeTask(
 			task, func(ctx context.Context) error {
-				taskMap[task]++
+				taskChan <- struct{ Task Task }{task}
 				return nil
 			},
 		)
-	}
-	time.Sleep(time.Second)
-	for task := range taskMap {
+		taskMap[task]++
 		BindTaskToEvent(event, task)
 	}
 	t.Run(
 		"publish", func(t *testing.T) {
-			time.Sleep(time.Second * 3)
+			t.Parallel()
 			PublishEvent(event)
-			time.Sleep(time.Second * 10)
-			for task, value := range taskMap {
-				if value != 1 {
-					t.Log(task, "fail trigger count", value)
+			for true {
+				msg, open := <-taskChan
+				if !open {
+					t.Fatal(errors.New("chan close"))
 				}
+				taskMap[msg.Task]--
+				if taskMap[msg.Task] == 0 {
+					delete(taskMap, msg.Task)
+				} else if taskMap[msg.Task] < 0 {
+					t.Fatal(msg, errors.New("msg repeat"))
+				}
+				if len(taskMap) != 0 {
+					continue
+				}
+				if len(taskChan) != 0 {
+					t.Fatal(taskChan, errors.New("msg repeat"))
+				}
+				close(taskChan)
+				return
 			}
-			t.Log("task trigger info", taskMap)
+
 		},
 	)
 }
 
 func TestSubscribeEvent(t *testing.T) {
 	name := t.Name() + uuid.NewString()
-	event := Event(name)
-	var count atomic.Int32
-	count.Add(10)
 	var retryCount atomic.Int32
-	SubscribeEvent(
-		event, name, func(v int, ctx context.Context) error {
-			if retryCount.Add(1) < 10 {
-				return errors.New("test retry")
-			}
-			count.Add(int32(v))
-			return nil
+	eventToTask := map[Event]map[Task]struct{}{
+		Event(name + "_event_1"): {
+			Task(name + "_task_1"): struct{}{},
+			Task(name + "_task_2"): struct{}{},
+			Task(name + "_task_3"): struct{}{},
 		},
-	)
-	task := Task(name + "_task_1")
-	BindTaskToEvent(event, task)
-	SubscribeTaskWithPayload(
-		task, func(v int, ctx context.Context) error {
-			if retryCount.Add(1) < 10 {
-				return errors.New("test retry")
-			}
-			count.Add(int32(v))
-			return nil
-		},
-	)
-	task = Task(name + "_task_2")
-	BindTaskToEvent(event, task)
-	SubscribeTaskWithPayload(
-		task, func(v int, ctx context.Context) error {
-			if retryCount.Add(1) < 10 {
-				return errors.New("test retry")
-			}
-			count.Add(int32(v))
-			return nil
-		},
-	)
-	t.Run(
-		"publish", func(t *testing.T) {
-			t.Parallel()
-			time.Sleep(3 * time.Second)
-			PublishEventWithPayload(event, 1)
-			time.Sleep(30 * time.Second)
-			if count.Load() != 13 {
-				t.Fatal(count.Load())
-			}
-		},
-	)
+	}
+	eventSubmitCount := make(map[Event]int)
+	msgChan := make(chan struct{ Event Event })
+	// subscribe
+	for event, tasks := range eventToTask {
+		eventSubmitCount[event] = 1
+		SubscribeEvent(
+			event, string(event)+"_new_customer_group", func(v int, ctx context.Context) error {
+				if retryCount.Add(1) < 10 {
+					return errors.New("test retry")
+				}
+				msgChan <- struct{ Event Event }{event}
+				return nil
+			},
+		)
+		for task := range tasks {
+			eventSubmitCount[event]++
+			BindTaskToEvent(event, task)
+			SubscribeTaskWithPayload(
+				task, func(v int, ctx context.Context) error {
+					if retryCount.Add(1) < 10 {
+						return errors.New("test retry")
+					}
+					msgChan <- struct{ Event Event }{event}
+					return nil
+				},
+			)
+		}
+	}
+	for event := range eventToTask {
+		PublishEventWithPayload(event, 1)
+	}
+	for true {
+		msg, open := <-msgChan
+		if !open {
+			t.Fatal(errors.New("chan close"))
+		}
+		eventSubmitCount[msg.Event]--
+		if eventSubmitCount[msg.Event] == 0 {
+			delete(eventSubmitCount, msg.Event)
+		} else if eventSubmitCount[msg.Event] < 0 {
+			t.Fatal(msg, errors.New("msg repeat"))
+		}
+		if len(eventSubmitCount) == 0 {
+			close(msgChan)
+			t.Log("finish")
+			return
+		}
+	}
 }
 
 func TestOutboxTask(t *testing.T) {
-	taskMap := make(map[Task]*atomic.Int32)
-	var retryCount int32 = 2
-	for i := 0; i < 3; i++ {
+	var retryCount, taskNumber = 2, 3
+	msgChan, taskRetryCount := make(chan struct{}, taskNumber), make(map[Task]*atomic.Int32)
+	for i := 0; i < taskNumber; i++ {
 		task := Task(t.Name() + "task_" + uuid.NewString())
-		taskMap[task] = new(atomic.Int32)
+		taskRetryCount[task] = new(atomic.Int32)
+		taskRetryCount[task].Add(int32(retryCount))
 		SubscribeTaskWithPayload(
 			task, func(data int32, ctx context.Context) error {
-				if taskMap[task].Add(-1) > -retryCount {
+				if taskRetryCount[task].Add(-1) >= 0 {
 					return errors.New("test retry")
 				}
-				taskMap[task].Add(data)
+				msgChan <- struct{}{}
 				return nil
 			},
 		)
 	}
-	t.Run(
-		"publish", func(t *testing.T) {
-			t.Parallel()
-			time.Sleep(time.Second * 3)
-			for task := range taskMap {
-				err := db.Transaction(
-					context.TODO(), func(ctx *cus.TxContext) error {
-						return PublishTaskToOutboxWithPayload(ctx, task, retryCount+1)
-					},
-				)
-				if err != nil {
-					t.Fatal(err)
-				}
+	for task := range taskRetryCount {
+		err := db.Transaction(
+			context.TODO(), func(ctx *cus.TxContext) error {
+				return PublishTaskToOutboxWithPayload(ctx, task, 1)
+			},
+		)
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
+	for true {
+		_, open := <-msgChan
+		if open {
+			taskNumber--
+			if taskNumber == 0 {
+				close(msgChan)
+				return
 			}
-			time.Sleep(time.Second * 30)
-			for task, i := range taskMap {
-				if i.Load() != 1 {
-					t.Fatal(task, i)
-				}
-			}
-		},
-	)
+		} else {
+			t.Fatal(errors.New("chan close"))
+		}
+	}
 }
 
 func TestOutboxEvent(t *testing.T) {
-	eventMap := make(map[Event]*atomic.Int32)
-	eventToTask := make(map[Event][]Task)
-	for i := 0; i < 10; i++ {
+	const eventNumber, taskNumber = 10, 3
+	eventToTask, eventChan := make(map[Event]map[Task]struct{}), make(
+		chan struct {
+			Event Event
+			Task  Task
+		}, eventNumber*taskNumber,
+	)
+	for i := 0; i < eventNumber; i++ {
 		event := Event("event_" + uuid.NewString())
-		eventMap[event] = &atomic.Int32{}
-		for j := 0; j < 3; j++ {
+		eventToTask[event] = make(map[Task]struct{})
+		for j := 0; j < taskNumber; j++ {
 			task := Task("task_" + uuid.NewString())
-			eventToTask[event] = append(eventToTask[event], task)
+			eventToTask[event][task] = struct{}{}
 			SubscribeTaskWithPayload(
 				task, func(t int, ctx context.Context) error {
-					eventMap[event].Add(3)
+					eventChan <- struct {
+						Event Event
+						Task  Task
+					}{Event: event, Task: task}
 					return nil
 				},
 			)
 			BindTaskToEvent(event, task)
 		}
 	}
-	t.Run(
-		"public", func(t *testing.T) {
-			t.Parallel()
-			time.Sleep(time.Second * 3)
-			for event := range eventMap {
-				err := db.Transaction(
-					context.TODO(), func(ctx *cus.TxContext) error {
-						return PublishEventToOutboxWithPayload(ctx, event, 3)
-					},
-				)
-				if err != nil {
-					t.Fatal(err)
-				}
+	for event := range eventToTask {
+		err := db.Transaction(
+			context.TODO(), func(ctx *cus.TxContext) error {
+				return PublishEventToOutboxWithPayload(ctx, event, 3)
+			},
+		)
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
+	for true {
+		msg, open := <-eventChan
+		if open {
+			if _, exist := eventToTask[msg.Event][msg.Task]; !exist {
+				close(eventChan)
+				t.Fatal(msg, errors.New("msg repeat"))
 			}
-			time.Sleep(time.Second * 20)
-			for event, num := range eventMap {
-				if num.Load() != 9 {
-					t.Fatal(event, num.Load())
-				}
+			delete(eventToTask[msg.Event], msg.Task)
+			if len(eventToTask[msg.Event]) == 0 {
+				delete(eventToTask, msg.Event)
 			}
-		},
-	)
+			if len(eventToTask) == 0 {
+				if len(eventChan) > 0 {
+					close(eventChan)
+					t.Fatal(eventChan, errors.New("msg repeat"))
+				}
+				t.Log("finish")
+				close(eventChan)
+				return
+			}
+		} else {
+			t.Fatal(errors.New("chan close"))
+		}
+	}
 }
 
 func TestCustomerProcessingTimeout(t *testing.T) {
 	var count atomic.Int32
 	task := manager.Task(t.Name())
+	msgChan := make(chan struct{})
 	taskManage.Subscribe(
 		task, func(payload []byte) error {
 			count.Add(1)
 			time.Sleep(time.Second * 20)
+			msgChan <- struct{}{}
 			return nil
 		},
 	)
@@ -253,15 +296,16 @@ func TestCustomerProcessingTimeout(t *testing.T) {
 			t.Parallel()
 			err := db.Transaction(
 				context.TODO(), func(ctx *cus.TxContext) error {
-					return PublishTaskToOutbox(ctx, Task(task))
+					return PublishTaskToOutbox(ctx, task)
 				},
 			)
 			if err != nil {
 				t.Fatal(err)
 			}
-			time.Sleep(time.Second * 31)
+			<-msgChan
+			close(msgChan)
 			if count.Load() != 1 {
-				t.Fatal("count not is 1,count:", count.Load())
+				t.Fatal("msg repeat, repeat count:", count.Load()-1)
 			}
 		},
 	)

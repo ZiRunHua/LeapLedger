@@ -15,8 +15,6 @@ type _nats struct {
 // NatsDb is used to record and retry failure messages
 // Enabled in consumer server
 
-const nastStoreDir = constant.RUNTIME_DATA_PATH + "/nats"
-
 func (n *_nats) do() error {
 	err := n.init()
 	if err != nil {

@@ -1,10 +1,11 @@
 package websocket
 
 import (
+	"github.com/ZiRunHua/LeapLedger/global"
+	"go.uber.org/zap"
 	"net"
 	"time"
 
-	"github.com/ZiRunHua/LeapLedger/api/v1/ws/msg"
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
 )
@@ -18,8 +19,7 @@ func Use(handler func(conn *websocket.Conn, ctx *gin.Context) error) gin.Handler
 	return func(ctx *gin.Context) {
 		conn, err := upgrader.Upgrade(ctx.Writer, ctx.Request, nil)
 		if err != nil {
-			ctx.JSONP(500, "error")
-			return
+			panic(err)
 		}
 		conn.SetPingHandler(
 			func(message string) error {
@@ -33,18 +33,11 @@ func Use(handler func(conn *websocket.Conn, ctx *gin.Context) error) gin.Handler
 			},
 		)
 		conn.SetPongHandler(nil)
-		conn.SetCloseHandler(
-			func(code int, text string) error {
-				return nil
-			},
-		)
+		conn.SetCloseHandler(nil)
 		defer conn.Close()
 		err = handler(conn, ctx)
 		if err != nil {
-			err = msg.SendError(conn, err)
-			if err != nil {
-				panic(err)
-			}
+			global.ErrorLogger.Error("websocket err", zap.Error(err))
 		}
 	}
 }

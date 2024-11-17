@@ -1,7 +1,9 @@
 package manager
 
 import (
+	"context"
 	"fmt"
+	"path/filepath"
 	"runtime"
 	"time"
 
@@ -20,9 +22,12 @@ type TaskManager interface {
 }
 
 const (
-	natsTaskName    = "task"
-	natsTaskPrefix  = "task"
-	natsTaskLogPath = natsLogPath + "task.log"
+	natsTaskName   = "task"
+	natsTaskPrefix = "task"
+)
+
+var (
+	natsTaskLogPath = filepath.Join(natsLogPath, "task.log")
 )
 
 type Task string
@@ -34,31 +39,32 @@ type taskManager struct {
 	TaskManager
 	manageInitializers
 	taskMsgHandler
+
+	dlqRegisterStream
 }
 
 func (tm *taskManager) init(js jetstream.JetStream, logger *zap.Logger) error {
-	tm.taskMsgHandler.init(logger)
+	tm.taskMsgHandler.init()
 	streamConfig := jetstream.StreamConfig{
 		Name:      natsTaskName,
 		Subjects:  []string{natsTaskPrefix + ".*"},
-		Retention: jetstream.InterestPolicy,
+		Retention: jetstream.LimitsPolicy,
 		MaxAge:    24 * time.Hour * 7,
 	}
-	customerConfig := jetstream.ConsumerConfig{
-		Name:          natsTaskPrefix + "_customer",
-		Durable:       natsTaskPrefix + "_customer",
+	consumerConfig := jetstream.ConsumerConfig{
+		Name:          natsTaskPrefix + "_consumer",
+		Durable:       natsTaskPrefix + "_consumer",
 		AckPolicy:     jetstream.AckExplicitPolicy,
 		BackOff:       backOff,
 		MaxDeliver:    len(backOff) + 1,
 		MaxAckPending: runtime.GOMAXPROCS(0) * 3,
 	}
 
-	err := tm.manageInitializers.init(js, streamConfig, customerConfig)
+	err := tm.manageInitializers.init(js, streamConfig, consumerConfig, logger)
 	if err != nil {
 		return err
 	}
-	_, err = tm.consumer.Consume(tm.receiveMsg)
-	return err
+	return tm.manageInitializers.setMainConsumerConsume(context.TODO(), tm.msgHandle)
 }
 
 func (tm *taskManager) Publish(task Task, payload []byte) bool {
@@ -85,21 +91,34 @@ func (tm *taskManager) GetMessageHandler(task Task) (MessageHandler, error) {
 	return tm.getHandler(task.subject())
 }
 
+func (tm *taskManager) getStreamName() string { return natsTaskName }
+
+func (tm *taskManager) reConsume(ctx context.Context, _ string, streamSeq uint64) error {
+	rawMsg, err := tm.stream.GetMsg(ctx, streamSeq)
+
+	if err != nil {
+		return err
+	}
+	// taskManager has only one consumer group, so it uses the PublishMsgAsync method directly
+	_, err = tm.js.PublishMsgAsync(
+		&nats.Msg{
+			Subject: rawMsg.Subject,
+			Data:    rawMsg.Data,
+			Header:  rawMsg.Header,
+		},
+	)
+	return err
+}
+
 type taskMsgHandler struct {
 	msgHandlerMap dataTool.Map[string, MessageHandler]
 	msgManger
-
-	logger *zap.Logger
 }
 
-func (tm *taskMsgHandler) init(logger *zap.Logger) {
-	tm.logger = logger
+func (tm *taskMsgHandler) init() {
 	tm.msgHandlerMap = dataTool.NewSyncMap[string, MessageHandler]()
 }
 
-func (tm *taskMsgHandler) receiveMsg(msg jetstream.Msg) {
-	receiveMsg(msg, func(msg jetstream.Msg) error { return tm.msgHandle(msg.Subject(), msg.Data()) }, tm.logger)
-}
 func (tm *taskMsgHandler) getHandler(subject string) (MessageHandler, error) {
 	handler, exist := tm.msgHandlerMap.Load(subject)
 	if !exist {
