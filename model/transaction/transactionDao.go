@@ -43,7 +43,7 @@ func (t *TransactionDao) Create(info Info, recordType RecordType) (transaction T
 	if err != nil {
 		return
 	}
-	err = t.db.Create(&Hash{TransId: transaction.ID, AccountId: info.AccountId, Hash: string(hashBytes)}).Error
+	err = t.db.Create(&Hash{TransId: transaction.ID, AccountId: info.AccountId, Hash: hashBytes}).Error
 	if errors.Is(err, gorm.ErrDuplicatedKey) {
 		err = global.ErrTransactionSame
 	}
@@ -61,16 +61,13 @@ func (t *TransactionDao) Update(trans *Transaction) error {
 	if err != nil {
 		return err
 	}
-	hash := Hash{TransId: trans.ID, AccountId: trans.AccountId, Hash: string(hashBytes)}
-	err = t.db.Select("hash").Updates(&hash).Error
-	if err == nil {
-		return nil
-	}
+	hash := Hash{TransId: trans.ID, AccountId: trans.AccountId, Hash: hashBytes}
+	result := t.db.Select("hash").Updates(&hash)
 	// Handle the case where the record is not found.
 	// This can occur due to various reasons, such as:
 	// - The transaction existed before a service upgrade.
 	// - The record was not inserted originally due to hash conflicts.
-	if errors.Is(err, gorm.ErrRecordNotFound) {
+	if result.RowsAffected == 0 {
 		err = t.db.Create(&hash).Error
 		if err == nil {
 			return nil
@@ -78,10 +75,10 @@ func (t *TransactionDao) Update(trans *Transaction) error {
 			return global.ErrTransactionSame
 		}
 		return err
-	} else if errors.Is(err, gorm.ErrDuplicatedKey) {
+	} else if errors.Is(result.Error, gorm.ErrDuplicatedKey) {
 		return global.ErrTransactionSame
 	}
-	return err
+	return result.Error
 }
 
 func (t *TransactionDao) GetListByCondition(condition Condition, offset int, limit int) (

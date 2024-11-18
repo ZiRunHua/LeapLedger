@@ -157,7 +157,7 @@ func (b *billImportWebsocket) RegisterMsgHandlerIgnoreTrans() {
 }
 
 func (b *billImportWebsocket) RegisterMsgHandlerConfigUpdate(afterConfigChange func(config userModel.BillImportConfig) error) {
-	updateHandle := func(f func() error) error {
+	updateHandler := func(f func() error) error {
 		if err := f(); err != nil {
 			return err
 		}
@@ -165,19 +165,19 @@ func (b *billImportWebsocket) RegisterMsgHandlerConfigUpdate(afterConfigChange f
 	}
 	msg.RegisterHandle[[]byte](
 		b.Reader, "configUpdateIgnoreSameTrans",
-		func(_ []byte) error { return updateHandle(b.Config.tempIgnoreUnmappedCategory) },
+		func(_ []byte) error { return updateHandler(b.Config.tempIgnoreUnmappedCategory) },
 	)
 	msg.RegisterHandle[[]byte](
 		b.Reader, "configUpdateIgnoreAllSameTrans",
-		func(_ []byte) error { return updateHandle(b.Config.ignoreSameTransaction) },
+		func(_ []byte) error { return updateHandler(b.Config.ignoreSameTransaction) },
 	)
 	msg.RegisterHandle[[]byte](
 		b.Reader, "configUpdateIgnoreUnmappedCategory",
-		func(_ []byte) error { return updateHandle(b.Config.tempIgnoreUnmappedCategory) },
+		func(_ []byte) error { return updateHandler(b.Config.tempIgnoreUnmappedCategory) },
 	)
 	msg.RegisterHandle[[]byte](
 		b.Reader, "configUpdateIgnoreAllUnmappedCategory",
-		func(_ []byte) error { return updateHandle(b.Config.ignoreSameTransaction) },
+		func(_ []byte) error { return updateHandler(b.Config.ignoreSameTransaction) },
 	)
 }
 

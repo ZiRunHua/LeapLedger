@@ -2,7 +2,6 @@ package transactionModel
 
 import (
 	"bytes"
-	"crypto/sha1"
 	"database/sql"
 	"encoding/gob"
 	"errors"
@@ -16,6 +15,7 @@ import (
 	queryFunc "github.com/ZiRunHua/LeapLedger/model/common/query"
 	userModel "github.com/ZiRunHua/LeapLedger/model/user"
 	"github.com/ZiRunHua/LeapLedger/util/timeTool"
+	"golang.org/x/crypto/blake2b"
 	"gorm.io/datatypes"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
@@ -43,7 +43,7 @@ type (
 	Hash struct {
 		TransId   uint   `gorm:"primary_key"`
 		AccountId uint   `gorm:"uniqueIndex:idx_hash,priority:1"`
-		Hash      string `gorm:"type:char(128);uniqueIndex:idx_hash,priority:2"`
+		Hash      []byte `gorm:"type:binary(32);uniqueIndex:idx_hash,priority:2"`
 	}
 )
 
@@ -74,16 +74,19 @@ func (i *Info) Check(db *gorm.DB) error {
 
 // Hash generates a hash for the Info struct using a binary encoding and the Blake2b hash function.
 func (i *Info) Hash() ([]byte, error) {
-	// Set UserId to 0 to ensure that this field does not affect the hash computation
 	info := *i
-	info.UserId = 0
+	// Set UserId to 0 to ensure that this field does not affect the hash computation
+	info.TradeTime, info.UserId = info.TradeTime.Truncate(time.Second), 0
 	var buf bytes.Buffer
 	enc := gob.NewEncoder(&buf)
 	err := enc.Encode(&info)
 	if err != nil {
 		return nil, err
 	}
-	hash := sha1.New()
+	hash, err := blake2b.New256(nil)
+	if err != nil {
+		return nil, err
+	}
 	hash.Write(buf.Bytes())
 	return hash.Sum(nil), nil
 }

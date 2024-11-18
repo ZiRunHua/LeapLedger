@@ -8,6 +8,7 @@ import (
 )
 
 type PublicApi struct {
+	_userPublic
 }
 
 type ApiGroup struct {

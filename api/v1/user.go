@@ -20,6 +20,9 @@ import (
 )
 
 type UserApi struct {
+	_userBase
+	_userFriend
+	_userConfig
 }
 
 type _userPublic interface {
@@ -29,7 +32,6 @@ type _userPublic interface {
 }
 
 type _userBase interface {
-	responseAndMaskUserInfo(userModel.UserInfo) response.UserInfo
 	UpdatePassword(ctx *gin.Context)
 	UpdateInfo(ctx *gin.Context)
 	SetCurrentAccount(ctx *gin.Context)
@@ -599,6 +601,42 @@ func (u *UserApi) UpdateTransactionShareConfig(ctx *gin.Context) {
 		return
 	}
 	response.OkWithData(responseData, ctx)
+}
+
+// GetBillImportConfig
+//
+//	@Tags		User/Config
+//	@Produce	json
+//	@Success	200	{object}	response.Data{Data=userModel.BillImportConfig}
+//	@Router		/user/bill_import/config [get]
+func (u *UserApi) GetBillImportConfig(ctx *gin.Context) {
+	var config userModel.BillImportConfig
+	config.UserId = contextFunc.GetUserId(ctx)
+	if responseError(userModel.NewDao().GetConfig(&config), ctx) {
+		return
+	}
+	response.OkWithData(config, ctx)
+}
+
+// UpdateBillImportConfig
+//
+//	@Tags		User/Config
+//	@Accept		json
+//	@Produce	json
+//	@Param		body	body		userModel.BillImportConfig	true	"data"
+//	@Success	200		{object}	response.Data{Data=userModel.BillImportConfig}
+//	@Router		/user/bill_import/config [put]
+func (u *UserApi) UpdateBillImportConfig(ctx *gin.Context) {
+	var config userModel.BillImportConfig
+	if err := ctx.ShouldBindJSON(&config); err != nil {
+		response.FailToParameter(ctx, err)
+		return
+	}
+	config.UserId = contextFunc.GetUserId(ctx)
+	if responseError(userModel.NewDao().UpdateConfig(&config), ctx) {
+		return
+	}
+	response.OkWithData(config, ctx)
 }
 
 // GetFriendList

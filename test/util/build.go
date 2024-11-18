@@ -57,6 +57,6 @@ func (n *Build) TransInfo(user userModel.User, category categoryModel.Category) 
 		IncomeExpense: category.IncomeExpense,
 		Amount:        rand.Int(1000),
 		Remark:        rand.String(15),
-		TradeTime:     time.Now(),
+		TradeTime:     time.Now().Truncate(time.Second),
 	}
 }
