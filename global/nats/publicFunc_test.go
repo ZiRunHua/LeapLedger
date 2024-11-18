@@ -3,6 +3,7 @@ package nats
 import (
 	"context"
 	"errors"
+	"fmt"
 	"reflect"
 	"sync/atomic"
 	"testing"
@@ -76,7 +77,7 @@ func TestEventPublishAndSubscribe(t *testing.T) {
 	taskMap, event := make(map[Task]int), Event(uuid.NewString())
 	taskChan := make(chan struct{ Task Task }, taskCount)
 	for i := 0; i < taskCount; i++ {
-		task := Task("task_" + uuid.NewString())
+		task := Task(fmt.Sprintf("task_%s_%d", t.Name(), i))
 		SubscribeTask(
 			task, func(ctx context.Context) error {
 				taskChan <- struct{ Task Task }{task}

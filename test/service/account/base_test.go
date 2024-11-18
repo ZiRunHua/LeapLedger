@@ -20,7 +20,6 @@ import (
 )
 
 func TestAccount(t *testing.T) {
-	t.Parallel()
 	user, err := build.User()
 	if err != nil {
 		t.Fatal(err)

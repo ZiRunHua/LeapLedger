@@ -92,7 +92,7 @@ func (userSvc *User) Register(addData userModel.AddData, ctx context.Context, op
 			user, err = userDao.Add(addData)
 			if err != nil {
 				if errors.Is(err, gorm.ErrDuplicatedKey) {
-					return errors.New("该邮箱已注册")
+					return global.ErrEmailRegistered
 				}
 				return
 			}

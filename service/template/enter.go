@@ -67,7 +67,7 @@ func init() {
 	ctx := cus.WithDb(context.Background(), db.InitDb)
 	// init template User
 	err = db.Transaction(ctx, initTemplateUser)
-	if err != nil {
+	if err != nil && !errors.Is(err, global.ErrEmailRegistered) {
 		panic(err)
 	}
 	initRank()
