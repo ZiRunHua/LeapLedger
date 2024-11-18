@@ -5,27 +5,41 @@ import (
 	"errors"
 	"reflect"
 	"strconv"
-	"sync/atomic"
 	"testing"
 	"time"
 
+	"github.com/ZiRunHua/LeapLedger/util/rand"
 	"github.com/google/uuid"
+	"golang.org/x/sync/errgroup"
 )
 
 func init() {
 	UpdateTestBackOff()
 }
 func TestSubscribeAndPublish(t *testing.T) {
-	var task = Task(t.Name() + uuid.NewString())
-	taskList := []Task{task + "_1", task + "_2", task + "_3"}
-	var count atomic.Int32
-	for _, name := range taskList {
+	var taskPrefix = Task(t.Name() + uuid.NewString())
+	taskList := []struct {
+		Task Task
+		Msg  []byte
+	}{
+		{
+			taskPrefix + "_1", []byte("msg1"),
+		},
+		{
+			taskPrefix + "_2", []byte("123"),
+		},
+		{
+			taskPrefix + "_3", []byte("msg3"),
+		},
+	}
+	msgChan := make(chan []byte, len(taskList))
+	for _, task := range taskList {
 		taskManage.Subscribe(
-			name, func(payload []byte) error {
-				if !reflect.DeepEqual(payload, []byte("1")) {
+			task.Task, func(payload []byte) error {
+				if !reflect.DeepEqual(payload, task.Msg) {
 					t.Fail()
 				}
-				count.Add(1)
+				msgChan <- payload
 				return nil
 			},
 		)
@@ -33,15 +47,20 @@ func TestSubscribeAndPublish(t *testing.T) {
 	t.Run(
 		"publish", func(t *testing.T) {
 			t.Parallel()
-			time.Sleep(time.Second * 3)
-			for _, name := range taskList {
-				taskManage.Publish(name, []byte("1"))
+			for _, task := range taskList {
+				taskManage.Publish(task.Task, task.Msg)
 			}
-			time.Sleep(time.Second * 10)
-			if count.Load() != int32(len(taskList)) {
-				t.Fatal("count not is ", count.Load())
+			count := 0
+			for true {
+				count++
+				if count == len(taskList) {
+					if len(msgChan) == 0 {
+						break
+					} else {
+						t.Fatal()
+					}
+				}
 			}
-			t.Log("count is:", count.Load())
 		},
 	)
 }
@@ -54,145 +73,255 @@ func TestEventSubscribeAndPublish(t *testing.T) {
 	for i := 1; i <= 3; i++ {
 		taskMap[taskPrefix+Task("_"+strconv.Itoa(i))] = false
 	}
-
+	msgChan := make(chan Task)
 	for task := range taskMap {
 		taskManage.Subscribe(
 			task, func(payload []byte) error {
-				taskMap[task] = true
+				msgChan <- task
 				return nil
 			},
 		)
 		eventManage.Subscribe(event, task, func(eventData []byte) ([]byte, error) { return eventData, nil })
 	}
 	t.Run(
-		"publish", func(t *testing.T) {
+		"event publish", func(t *testing.T) {
 			t.Parallel()
-			time.Sleep(time.Second * 3)
 			eventManage.Publish(event, []byte("test"))
-			time.Sleep(time.Second * 30)
-			for task, b := range taskMap {
-				if !b {
-					t.Fatal(task, "fail")
+			count := 0
+			for true {
+				taskMap[<-msgChan] = true
+				count++
+				if count == len(taskMap) {
+					if len(msgChan) == 0 {
+						for task, result := range taskMap {
+							if !result {
+								t.Fatal(task, " not trigger")
+							}
+						}
+						break
+					} else {
+						t.Fatal()
+					}
 				}
 			}
-			t.Log("task trigger info", taskMap)
 		},
 	)
 }
 
 func TestDql(t *testing.T) {
-	taskM := taskManage
-	var task = Task(t.Name())
-	var retryCount = 1
-	taskM.Subscribe(
-		task, func(payload []byte) error {
-			retryCount++
-			return errors.New("test dql")
-		},
-	)
-	t.Run(
-		"publish", func(t *testing.T) {
-			t.Parallel()
-			time.Sleep(time.Second * 3)
-			taskM.Publish(task, []byte("test"))
-			var backOffTime time.Duration
-			for _, duration := range backOff {
-				backOffTime += duration
-			}
-			time.Sleep(time.Second*3 + backOffTime)
-			batch, err := dlqManage.consumer.Fetch(10)
-			if err != nil {
-				t.Error(err)
-			}
-			var processCount int
-			for msg := range batch.Messages() {
-				processCount++
-				err = msg.Ack()
-				if err != nil {
-					t.Error(err)
-				}
-			}
-			t.Log("retry count", retryCount, "process count", processCount)
-		},
-	)
-}
-
-func TestDqlRepublish(t *testing.T) {
-	var task = Task(t.Name() + uuid.NewString())
-	var num = 3
-	var retryCount atomic.Uint32
+	var task, event = Task(t.Name() + rand.String(12)), Event(t.Name() + rand.String(12))
+	msgChan, msg := make(chan []byte), []byte(rand.String(12))
 	taskManage.Subscribe(
 		task, func(payload []byte) error {
-			retryCount.Add(1)
+			msgChan <- payload
 			return errors.New("test dql")
 		},
 	)
-	t.Run(
-		"republish die msg", func(t *testing.T) {
-			time.Sleep(time.Second)
-			for i := 0; i < num; i++ {
-				taskManage.Publish(task, []byte("test_"+strconv.FormatInt(int64(i), 10)))
+	taskManage.Publish(task, msg)
+	count := 0
+	for true {
+		<-msgChan
+		count++
+		if count == len(backOff)+1 {
+			if len(msgChan) == 0 {
+				break
+			} else {
+				t.Fatal("try too many times :", count+len(msgChan))
 			}
-			var backOffTime time.Duration
-			for _, duration := range backOff {
-				backOffTime += duration
-			}
-			t.Log("sleep", backOffTime)
-			time.Sleep(time.Second*3 + backOffTime)
-			var count atomic.Int32
-			count.Add(int32(num))
-			taskManage.Subscribe(
-				task, func(payload []byte) error {
-					count.Add(-1)
-					return nil
-				},
-			)
-			time.Sleep(time.Second * 3)
-			t.Log("retry count", retryCount.Load())
-			_, err := dlqManage.RepublishBatch(num*10, context.TODO())
-
-			if err != nil {
-				t.Fatal(err)
-			}
-			time.Sleep(time.Second * 30)
-			if 0 != count.Load() {
-				t.Fatal("die msg Remaining:", count.Load())
-			}
-		},
-	)
-}
-
-func BenchmarkDql(b *testing.B) {
-	taskM := taskManage
-	var task Task = Task(uuid.NewString())
-	var count = b.N
-	taskM.Subscribe(
+		}
+	}
+	taskManage.Subscribe(
 		task, func(payload []byte) error {
-			return errors.New("test dql")
+			msgChan <- payload
+			return nil
 		},
 	)
-	time.Sleep(time.Second * 5)
-	for i := 0; i < b.N; i++ {
-		taskM.Publish(task, []byte("test_"+strconv.FormatInt(int64(i), 10)))
+	time.Sleep(backOff[len(backOff)-1])
+	_, err := dlqManage.RepublishBatch(1, context.TODO())
+	if err != nil {
+		t.Fatal(err)
 	}
-	time.Sleep(time.Second * 20)
-	b.Run(
-		"republish", func(b *testing.B) {
-			taskM.Subscribe(
-				task, func(payload []byte) error {
-					count--
-					return nil
+	republishPayload := <-msgChan
+	if !reflect.DeepEqual(republishPayload, msg) {
+		t.Fatal("reConsume payload not compare", string(republishPayload), msg)
+	}
+	t.Run(
+		"event and task dql", func(t *testing.T) {
+			type TestEvent struct {
+				Event        Event
+				EventData    []byte
+				TriggerTasks []struct {
+					task          Task
+					fetchTaskData func(eventData []byte) ([]byte, error)
+					retryCount    int
+				}
+				ExecConsumers []struct {
+					name       string
+					retryCount int
+				}
+			}
+			var testEvent = TestEvent{
+				Event:     event + Event(rand.String(12)),
+				EventData: []byte("event_data_" + rand.String(12)),
+				TriggerTasks: []struct {
+					task          Task
+					fetchTaskData func(eventData []byte) ([]byte, error)
+					retryCount    int
+				}{
+					{
+						task:          task + "_0",
+						fetchTaskData: func(eventData []byte) ([]byte, error) { return eventData, nil },
+						retryCount:    0,
+					},
+					{
+						task:          task + "_1",
+						fetchTaskData: func(eventData []byte) ([]byte, error) { return eventData, nil },
+						retryCount:    (len(backOff)) / 2,
+					},
+					{
+						task:          task + "_2",
+						fetchTaskData: func(eventData []byte) ([]byte, error) { return eventData, nil },
+						retryCount:    len(backOff) + 1,
+					},
+				},
+				ExecConsumers: []struct {
+					name       string
+					retryCount int
+				}{
+					{
+						name:       string(task) + "_4",
+						retryCount: len(backOff) / 2,
+					},
+					{
+						name:       string(task) + "_5",
+						retryCount: len(backOff) + 1,
+					},
+					{
+						name:       string(task) + "_3",
+						retryCount: 0,
+					},
+				},
+			}
+
+			msgChan = make(chan []byte, 10)
+			var needToReConsume, noNeedToReConsume int
+			for _, triggerTask := range testEvent.TriggerTasks {
+				retryCount := 0
+				taskManage.Subscribe(
+					triggerTask.task, func(payload []byte) error {
+						if retryCount == triggerTask.retryCount {
+							t.Log(triggerTask.task, "finish")
+							msgChan <- payload
+							return nil
+						} else if retryCount > triggerTask.retryCount {
+							t.Fatal(
+								"too many retries or re-consuming errors,task:", triggerTask.task, retryCount, ">",
+								triggerTask.retryCount,
+							)
+							return nil
+						}
+						retryCount++
+						return errors.New("test dql")
+					},
+				)
+				eventManage.Subscribe(
+					testEvent.Event, triggerTask.task, func(eventData []byte) ([]byte, error) { return eventData, nil },
+				)
+				if triggerTask.retryCount >= len(backOff)+1 {
+					needToReConsume++
+				} else {
+					noNeedToReConsume++
+				}
+			}
+
+			for _, execConsumer := range testEvent.ExecConsumers {
+				retryCount := 0
+				eventManage.SubscribeToNewConsumer(
+					testEvent.Event,
+					execConsumer.name, func(payload []byte) error {
+						if retryCount == execConsumer.retryCount {
+							t.Log(execConsumer.name, "finish")
+							msgChan <- payload
+							return nil
+						} else if retryCount > execConsumer.retryCount {
+							t.Fatal(
+								"too many retries or re-consuming errors,consumer:", execConsumer.name, retryCount,
+								">",
+								execConsumer.retryCount,
+							)
+							return nil
+						}
+						retryCount++
+						return errors.New("test dql")
+					},
+				)
+				if execConsumer.retryCount >= len(backOff)+1 {
+					needToReConsume++
+				} else {
+					noNeedToReConsume++
+				}
+			}
+			eventManage.Publish(testEvent.Event, testEvent.EventData)
+			var successMsg int
+			for true {
+				msg = <-msgChan
+				successMsg++
+				if !reflect.DeepEqual(msg, testEvent.EventData) {
+					t.Fatal("payload not equal", msg, testEvent.EventData)
+				}
+				if successMsg >= noNeedToReConsume {
+					if noNeedToReConsume == successMsg && len(msgChan) == 0 {
+						break
+					}
+					t.Fatal("success msg to much:", noNeedToReConsume, successMsg+len(msgChan))
+				}
+			}
+			t.Run(
+				"test reConsume", func(t *testing.T) {
+					ctx, cancel := context.WithTimeout(context.TODO(), time.Second*30)
+					defer cancel()
+					g, _ := errgroup.WithContext(ctx)
+					g.Go(
+						func() error {
+							time.Sleep(backOff[len(backOff)-1])
+							for true {
+								count, err := dlqManage.RepublishBatch(10, context.TODO())
+								if err != nil {
+									t.Fatal(err)
+								}
+								if count == 0 {
+									break
+								}
+							}
+							return nil
+						},
+					)
+					g.Go(
+						func() error {
+							successMsg = 0
+							for true {
+								msg = <-msgChan
+								successMsg++
+								if !reflect.DeepEqual(msg, testEvent.EventData) {
+									t.Fatal("payload not equal", msg, testEvent.EventData)
+								}
+								if successMsg >= needToReConsume {
+									if needToReConsume == successMsg && len(msgChan) == 0 {
+										return nil
+									}
+									t.Fatal("success msg to much:", needToReConsume, successMsg, len(msgChan))
+								}
+							}
+							t.Fatal("success msg to much:", needToReConsume, successMsg, len(msgChan))
+							return nil
+						},
+					)
+					err := g.Wait()
+					if err != nil {
+						t.Fatal(err)
+					}
 				},
 			)
-
-			_, err := dlqManage.RepublishBatch(b.N, context.Background())
-			if err != nil {
-				b.Error(err)
-			}
 		},
 	)
-	time.Sleep(time.Second * 20)
-	if count != 0 {
-		b.Fatal("msg lose Publish:", b.N, " republish:", count)
-	}
 }

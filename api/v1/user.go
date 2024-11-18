@@ -1,6 +1,7 @@
 package v1
 
 import (
+	"golang.org/x/sync/errgroup"
 	"time"
 
 	"github.com/ZiRunHua/LeapLedger/api/request"
@@ -16,7 +17,6 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/pkg/errors"
-	"github.com/songzhibin97/gkit/egroup"
 )
 
 type UserApi struct {
@@ -459,8 +459,7 @@ func (u *UserApi) Home(ctx *gin.Context) {
 	if false == pass {
 		return
 	}
-
-	group := egroup.WithContext(ctx)
+	var group errgroup.Group
 	nowTime, timeLocation := account.GetNowTime(), account.GetTimeLocation()
 	year, month, day := nowTime.Date()
 	var todayData, yesterdayData, weekData, monthData, yearData response.TransactionStatistic

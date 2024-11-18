@@ -3,6 +3,7 @@ package v1
 import (
 	"context"
 	"errors"
+	"golang.org/x/sync/errgroup"
 	"time"
 
 	"github.com/ZiRunHua/LeapLedger/api/request"
@@ -16,7 +17,6 @@ import (
 	userModel "github.com/ZiRunHua/LeapLedger/model/user"
 	"github.com/ZiRunHua/LeapLedger/util/timeTool"
 	"github.com/gin-gonic/gin"
-	"github.com/songzhibin97/gkit/egroup"
 	"gorm.io/gorm"
 )
 
@@ -570,7 +570,7 @@ func (a *AccountApi) GetUserInfo(ctx *gin.Context) {
 		return
 	}
 	accountUser, account, nowTime := contextFunc.GetAccountUser(ctx), contextFunc.GetAccount(ctx), contextFunc.GetNowTime(ctx)
-	group := egroup.WithContext(ctx)
+	var group errgroup.Group
 	var todayTotal, monthTotal *global.IEStatisticWithTime
 	var recentTrans *response.TransactionDetailList
 	for _, infoType := range requestData.Types {
@@ -990,9 +990,9 @@ func (a *AccountApi) GetInfo(ctx *gin.Context) {
 		return nil
 	}
 	// process and response
-	var group *egroup.Group
+	var group *errgroup.Group
 	if len(types) > 1 {
-		group = egroup.WithContext(ctx)
+		group = &errgroup.Group{}
 	}
 	for i := range types {
 		t := types[i]
