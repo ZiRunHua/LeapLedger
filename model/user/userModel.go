@@ -63,7 +63,7 @@ func (u *User) ModifyAsTourist(db *gorm.DB) error {
 }
 
 type Tour struct {
-	UserId    uint `gorm:"primary"`
+	UserId    uint `gorm:"primarykey"`
 	Status    bool
 	CreatedAt time.Time      `gorm:"type:TIMESTAMP"`
 	UpdatedAt time.Time      `gorm:"type:TIMESTAMP"`

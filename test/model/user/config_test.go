@@ -91,15 +91,15 @@ func TestUserConfig(t *testing.T) {
 			err = dao.GetConfig(billConfig)
 			assert.NoError(t, err)
 			billConfig.IgnoreUnmappedCategory = !billConfig.IgnoreUnmappedCategory
-			billConfig.CheckSameTransaction = !billConfig.CheckSameTransaction
-			err = dao.UpdateConfigColumns(billConfig, "ignore_unmapped_category", "check_same_transaction")
+			billConfig.CheckSameTransMode = 1 + billConfig.CheckSameTransMode
+			err = dao.UpdateConfigColumns(billConfig, "ignore_unmapped_category", "check_same_trans_mode")
 			assert.NoError(t, err)
 
 			var updatedConfig userModel.BillImportConfig
 			err = db.Db.First(&updatedConfig, billConfig.UserId).Error
 			assert.NoError(t, err)
 			assert.Equal(t, updatedConfig.IgnoreUnmappedCategory, billConfig.IgnoreUnmappedCategory)
-			assert.Equal(t, updatedConfig.CheckSameTransaction, billConfig.CheckSameTransaction)
+			assert.Equal(t, updatedConfig.CheckSameTransMode, billConfig.CheckSameTransMode)
 		},
 	)
 }

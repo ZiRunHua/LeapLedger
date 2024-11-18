@@ -43,7 +43,7 @@ func (t *TransactionDao) Create(info Info, recordType RecordType) (transaction T
 	if err != nil {
 		return
 	}
-	err = t.db.Create(&Hash{TransId: transaction.ID, AccountId: info.AccountId, Hash: hashBytes}).Error
+	err = t.db.Create(&Hash{TransId: transaction.ID, AccountId: info.AccountId, Hash: string(hashBytes)}).Error
 	if errors.Is(err, gorm.ErrDuplicatedKey) {
 		err = global.ErrTransactionSame
 	}
@@ -61,7 +61,7 @@ func (t *TransactionDao) Update(trans *Transaction) error {
 	if err != nil {
 		return err
 	}
-	hash := Hash{TransId: trans.ID, AccountId: trans.AccountId, Hash: hashBytes}
+	hash := Hash{TransId: trans.ID, AccountId: trans.AccountId, Hash: string(hashBytes)}
 	err = t.db.Select("hash").Updates(&hash).Error
 	if err == nil {
 		return nil

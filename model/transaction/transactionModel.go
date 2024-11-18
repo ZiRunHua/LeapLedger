@@ -43,7 +43,7 @@ type (
 	Hash struct {
 		TransId   uint   `gorm:"primary_key"`
 		AccountId uint   `gorm:"uniqueIndex:idx_hash,priority:1"`
-		Hash      []byte `gorm:"type:char(128);uniqueIndex:idx_hash,priority:2"`
+		Hash      string `gorm:"type:char(128);uniqueIndex:idx_hash,priority:2"`
 	}
 )
 

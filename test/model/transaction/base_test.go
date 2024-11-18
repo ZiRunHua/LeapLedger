@@ -95,7 +95,7 @@ func TestTransactionDao_CreateAndUpdate(t *testing.T) {
 					duplicateHash := transactionModel.Hash{
 						TransId:   transaction.ID + 1,
 						AccountId: info.AccountId,
-						Hash:      hashBytes,
+						Hash:      string(hashBytes),
 					}
 					err = tx.Create(&duplicateHash).Error
 					assert.NoError(t, err)
