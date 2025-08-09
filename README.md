@@ -26,7 +26,6 @@
 ## 客户端
 flutter客户端项目传送：https://github.com/ZiRunHua/LeapLedger-App
 
-最新体验Android安装包下载：https://github.com/ZiRunHua/LeapLedger-App/releases/tag/v1.0.0 (数据不定期删除)
 ## 目录
 
 - [我们有](#我们有)
